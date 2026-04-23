@@ -14,7 +14,23 @@
       "mcp__Figma__get_metadata",
       "mcp__Figma__get_screenshot",
       "Bash(python3 -c ' *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(openssl rand *)",
+      "Bash(npm run *)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:ztxZCEvnEuizujuvsnwTmMGaERteCNBG@postgres-production-546a0.up.railway.app:5432/railway\" npx prisma migrate dev --name init)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:ztxZCEvnEuizujuvsnwTmMGaERteCNBG@shortline.proxy.rlwy.net:37898/railway\" npx prisma migrate dev --name init)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:ztxZCEvnEuizujuvsnwTmMGaERteCNBG@shortline.proxy.rlwy.net:37898/railway?sslmode=require\" npx prisma migrate dev --name init)",
+      "Bash(nc -zv shortline.proxy.rlwy.net 37898)",
+      "Bash(PGPASSWORD=\"ztxZCEvnEuizujuvsnwTmMGaERteCNBG\" psql -h shortline.proxy.rlwy.net -p 37898 -U postgres -d railway -c \"SELECT version\\(\\);\")",
+      "Bash(node -e ' *)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:ztxZCEvnEuizujuvsnwTmMGaERteCNBG@shortline.proxy.rlwy.net:37898/railway?connect_timeout=30&sslmode=prefer\" npx prisma db push)",
+      "Bash(openssl s_client -connect shortline.proxy.rlwy.net:37898 -quiet)",
+      "Bash(npm list *)",
+      "Bash(node -e \"require\\('pg'\\); console.log\\(require\\('pg'\\).Client.name\\)\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres:ztxZCEvnEuizujuvsnwTmMGaERteCNBG@shortline.proxy.rlwy.net:54236/railway\" npx prisma migrate dev --name init)",
+      "Bash(npx tsc *)",
+      "Bash(python3 \"/Users/efrenbravo/Library/Application Support/Claude/local-agent-mode-sessions/6fa1d402-a11d-4b9d-99d5-c4d7d7b29187/fb62a86c-187b-46ae-b923-292ee3b00616/rpm/plugin_01QJ2qZZ2tRAWQJyTsYJDVGP/.claude/skills/ui-ux-pro-max/scripts/search.py\" \"B2B agricultural marketplace SaaS professional trust\" --design-system -p \"Primar-IA\")",
+      "Bash(python3 \"/Users/efrenbravo/Library/Application Support/Claude/local-agent-mode-sessions/6fa1d402-a11d-4b9d-99d5-c4d7d7b29187/fb62a86c-187b-46ae-b923-292ee3b00616/rpm/plugin_01QJ2qZZ2tRAWQJyTsYJDVGP/.claude/skills/ui-ux-pro-max/scripts/search.py\" \"multi-step form auth registration dashboard sidebar\" --domain ux)"
     ]
   }
 }

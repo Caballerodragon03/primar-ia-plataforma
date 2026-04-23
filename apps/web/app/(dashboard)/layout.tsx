@@ -1,13 +1,16 @@
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+import { Sidebar } from '@/components/layout/Sidebar';
+import { DashboardHeader } from '@/components/layout/DashboardHeader';
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sidebar — Fase 1B */}
-      <aside className="w-[140px] bg-white border-r border-border flex-shrink-0" />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <DashboardHeader />
+        <main className="flex-1 overflow-auto p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
