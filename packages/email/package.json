@@ -1,0 +1,21 @@
+{
+  "name": "@primaria/email",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@react-email/components": "^0.0.27",
+    "resend": "^4.0.1",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "@types/react": "^18.3.12",
+    "@types/node": "^22.10.0"
+  }
+}

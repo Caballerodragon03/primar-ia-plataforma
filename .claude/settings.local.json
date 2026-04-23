@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__0ab7cde3-c802-4e16-922d-bf031a480048__get_metadata",
+      "mcp__0ab7cde3-c802-4e16-922d-bf031a480048__get_screenshot",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); mcps = d.get\\('mcpServers', {}\\); [print\\(k, ':', list\\(v.keys\\(\\)\\)\\) for k,v in mcps.items\\(\\)]\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -c \" import json, sys d = json.load\\(sys.stdin\\) for k, v in d.items\\(\\): if 'figma' in k.lower\\(\\): print\\(k, ':', json.dumps\\(v, indent=2\\)[:500]\\) \")",
+      "Bash(python3 -c \" import json, sys d = json.load\\(sys.stdin\\) print\\('Keys:', list\\(d.keys\\(\\)\\)[:20]\\) print\\('Type:', type\\(d\\)\\) if isinstance\\(d, list\\): print\\('First item:', json.dumps\\(d[0], indent=2\\)[:300]\\) \")",
+      "Bash(python3 -c \" import json, sys d = json.load\\(sys.stdin\\) plugins = d.get\\('plugins', []\\) for p in plugins: name = p.get\\('name',''\\) or p.get\\('id',''\\) or str\\(p\\) if 'figma' in name.lower\\(\\) or '0ab7cde3' in str\\(p\\): print\\(json.dumps\\(p, indent=2\\)[:800]\\) \")",
+      "Bash(python3 -c \" import json, sys d = json.load\\(sys.stdin\\) plugins = d.get\\('plugins', []\\) print\\('Total plugins:', len\\(plugins\\)\\) for p in plugins[:5]: print\\(json.dumps\\(p, indent=2\\)[:400]\\) print\\('---'\\) \")",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "mcp__Figma__get_metadata",
+      "mcp__Figma__get_screenshot",
+      "Bash(python3 -c ' *)",
+      "Bash(npm install *)"
+    ]
+  }
+}

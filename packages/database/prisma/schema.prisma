@@ -1,0 +1,549 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  VENDEDOR
+  COMPRADOR
+  ADMIN
+}
+
+enum UserEstado {
+  EMAIL_NO_VERIFICADO
+  EMAIL_VERIFICADO
+  PENDIENTE_VERIFICACION
+  VERIFICADO_ACTIVO
+  RECHAZADO
+  PENDIENTE_ACLARACION
+  SUSPENDIDO
+}
+
+enum CertificadoEstado {
+  PENDIENTE
+  VERIFICADO
+  RECHAZADO
+  CADUCADO
+}
+
+enum LoteTipo {
+  VENTA_DIRECTA
+  SUBASTA
+}
+
+enum LoteEstado {
+  BORRADOR
+  ACTIVO
+  PARCIALMENTE_VENDIDO
+  VENDIDO
+  EXPIRADO
+  CANCELADO
+}
+
+enum PedidoEstado {
+  BORRADOR
+  ACTIVO
+  PARCIALMENTE_CUBIERTO
+  TOTALMENTE_CUBIERTO
+  CERRADO
+  CANCELADO
+}
+
+enum MatchEstado {
+  PROPUESTO
+  ENVIADO_VENDEDOR
+  ACEPTADO_VENDEDOR
+  RECHAZADO_VENDEDOR
+  PENDIENTE_PAGO
+  CONFIRMADO
+  CANCELADO
+}
+
+enum Incoterm {
+  EXW
+  FCA
+  FOB
+  CIF
+  DAP
+  DDP
+  FAS
+  CFR
+  CPT
+  CIP
+  DAT
+  DPU
+}
+
+enum TransaccionEstado {
+  PENDIENTE_PAGO
+  PAGO_CAPTURADO
+  EN_TRANSITO
+  ENTREGADO
+  EN_DISPUTA
+  COMPLETADO
+  CANCELADO
+  REEMBOLSADO
+}
+
+enum MensajeTipo {
+  TEXTO
+  IMAGEN
+  DOCUMENTO
+}
+
+enum ValoracionEstado {
+  PUBLICADA
+  PENDIENTE_REVISION
+  RECHAZADA
+}
+
+enum ValoracionTipo {
+  VENDEDOR_A_COMPRADOR
+  COMPRADOR_A_VENDEDOR
+}
+
+enum DisputaTipo {
+  CALIDAD
+  CANTIDAD
+  EMPAQUETADO
+  CALIBRES
+  PRODUCTO_DIFERENTE
+  OTRO
+}
+
+enum DisputaEstado {
+  ABIERTA
+  RESPUESTA_VENDEDOR
+  EN_REVISION
+  RESUELTA
+}
+
+enum DisputaResolucion {
+  FAVOR_COMPRADOR
+  FAVOR_VENDEDOR
+  PARCIAL
+  ACUERDO_PARTES
+}
+
+enum Tendencia {
+  UP
+  DOWN
+  STABLE
+}
+
+enum SuscripcionEstado {
+  ACTIVA
+  CANCELADA
+  PAUSADA
+  TRIAL
+}
+
+enum Idioma {
+  ES
+  EN
+}
+
+// ─── MODELOS ─────────────────────────────────────────────────────────────────
+
+model User {
+  id                      String     @id @default(cuid())
+  email                   String     @unique
+  username                String     @unique
+  passwordHash            String     @map("password_hash")
+  role                    UserRole
+  estado                  UserEstado @default(EMAIL_NO_VERIFICADO)
+  nombre                  String
+  apellidos               String
+  telefono                String?
+  fotoPerfil              String?    @map("foto_perfil_url")
+  idioma                  Idioma     @default(ES)
+  preferenciasNotif       Json?      @map("preferencias_notificaciones")
+  loginAttempts           Int        @default(0) @map("login_attempts")
+  lockedUntil             DateTime?  @map("locked_until")
+  createdAt               DateTime   @default(now()) @map("created_at")
+  updatedAt               DateTime   @updatedAt @map("updated_at")
+
+  empresa                 Empresa?
+  certificados            Certificado[]
+  lotes                   Lote[]
+  pedidos                 Pedido[]
+  transaccionesVendedor   Transaccion[]  @relation("TransaccionVendedor")
+  transaccionesComprador  Transaccion[]  @relation("TransaccionComprador")
+  mensajes                Mensaje[]
+  valoracionesEmitidas    Valoracion[]   @relation("ValoracionAutor")
+  valoracionesRecibidas   Valoracion[]   @relation("ValoracionDestinatario")
+  disputasAbiertas        Disputa[]      @relation("DisputaAbiertaPor")
+  disputasAdmin           Disputa[]      @relation("DisputaAdmin")
+  refreshTokens           RefreshToken[]
+  emailTokens             EmailToken[]
+  suscripcion             Suscripcion?
+  auditoria               Auditoria[]
+  certificadosVerificados Certificado[]  @relation("CertificadoVerificador")
+
+  @@index([email])
+  @@index([username])
+  @@index([role, estado])
+  @@map("users")
+}
+
+model Empresa {
+  id                    String   @id @default(cuid())
+  userId                String   @unique @map("user_id")
+  razonSocial           String   @map("razon_social")
+  cifNif                String   @unique @map("cif_nif")
+  formaJuridica         String?  @map("forma_juridica")
+  direccionFiscal       String   @map("direccion_fiscal")
+  ciudad                String?
+  codigoPostal          String?  @map("codigo_postal")
+  pais                  String   @default("ES")
+  personaContactoLegal  String   @map("persona_contacto_legal")
+  cargoContactoLegal    String   @map("cargo_contacto_legal")
+  stripeAccountId       String?  @map("stripe_account_id")
+  stripeOnboardingDone  Boolean  @default(false) @map("stripe_onboarding_done")
+  stripeCustomerId      String?  @map("stripe_customer_id")
+  descripcion           String?
+  fotosUrls             Json?    @map("fotos_urls")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([cifNif])
+  @@index([stripeAccountId])
+  @@map("empresas")
+}
+
+model Certificado {
+  id                  String            @id @default(cuid())
+  userId              String            @map("user_id")
+  numeroCertificado   String            @map("numero_certificado")
+  fechaEmision        DateTime          @map("fecha_emision")
+  fechaCaducidad      DateTime          @map("fecha_caducidad")
+  archivoUrl          String            @map("archivo_url")
+  archivoHashSha256   String            @map("archivo_hash_sha256")
+  estado              CertificadoEstado @default(PENDIENTE)
+  adminVerificadorId  String?           @map("admin_verificador_id")
+  fechaVerificacion   DateTime?         @map("fecha_verificacion")
+  notasVerificacion   String?           @map("notas_verificacion")
+  alerta60Enviada     Boolean           @default(false) @map("alerta_60_enviada")
+  alerta30Enviada     Boolean           @default(false) @map("alerta_30_enviada")
+  alerta15Enviada     Boolean           @default(false) @map("alerta_15_enviada")
+  alerta7Enviada      Boolean           @default(false) @map("alerta_7_enviada")
+  createdAt           DateTime          @default(now()) @map("created_at")
+
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminVerificador    User?             @relation("CertificadoVerificador", fields: [adminVerificadorId], references: [id])
+
+  @@index([userId, estado])
+  @@index([fechaCaducidad, estado])
+  @@map("certificados")
+}
+
+model Producto {
+  id          String     @id @default(cuid())
+  nombre      String     @unique
+  categoria   String
+  imagen      String?
+  activo      Boolean    @default(true)
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  variedades  Variedad[]
+  lotes       Lote[]
+  pedidos     Pedido[]
+  datosMercado DatosMercado[]
+
+  @@map("productos")
+}
+
+model Variedad {
+  id         String   @id @default(cuid())
+  productoId String   @map("producto_id")
+  nombre     String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  producto   Producto @relation(fields: [productoId], references: [id])
+  lotes      Lote[]
+  pedidos    Pedido[]
+  datosMercado DatosMercado[]
+
+  @@unique([productoId, nombre])
+  @@map("variedades")
+}
+
+model Lote {
+  id                     String     @id @default(cuid())
+  vendedorId             String     @map("vendedor_id")
+  productoId             String     @map("producto_id")
+  variedadId             String?    @map("variedad_id")
+  tipo                   LoteTipo
+  calibres               Json
+  datosHistoricos        Json?      @map("datos_historicos")
+  direccionRecogida      String     @map("direccion_recogida")
+  coordenadasLat         Float?     @map("coordenadas_lat")
+  coordenadasLng         Float?     @map("coordenadas_lng")
+  fechaDisponibilidad    DateTime   @map("fecha_disponibilidad")
+  certificaciones        Json?
+  fotosUrls              Json?      @map("fotos_urls")
+  comentariosAdicionales String?    @map("comentarios_adicionales")
+  estado                 LoteEstado @default(BORRADOR)
+  createdAt              DateTime   @default(now()) @map("created_at")
+  updatedAt              DateTime   @updatedAt @map("updated_at")
+
+  vendedor               User       @relation(fields: [vendedorId], references: [id])
+  producto               Producto   @relation(fields: [productoId], references: [id])
+  variedad               Variedad?  @relation(fields: [variedadId], references: [id])
+  matches                Match[]
+
+  @@index([vendedorId, estado])
+  @@index([productoId, estado])
+  @@index([fechaDisponibilidad])
+  @@map("lotes")
+}
+
+model Pedido {
+  id                     String       @id @default(cuid())
+  compradorId            String       @map("comprador_id")
+  productoId             String       @map("producto_id")
+  variedadId             String?      @map("variedad_id")
+  calibresSolicitados    Json         @map("calibres_solicitados")
+  incoterm               Incoterm
+  destinoFinal           String?      @map("destino_final")
+  frecuencia             String?
+  transporte             String?
+  costoLogisticaEstimado Decimal?     @map("costo_logistica_estimado") @db.Decimal(10, 2)
+  fechaEntregaDeseada    DateTime     @map("fecha_entrega_deseada")
+  notasAdicionales       String?      @map("notas_adicionales")
+  estado                 PedidoEstado @default(BORRADOR)
+  stripePaymentIntentId  String?      @unique @map("stripe_payment_intent_id")
+  contratoPdfUrl         String?      @map("contrato_pdf_url")
+  createdAt              DateTime     @default(now()) @map("created_at")
+  updatedAt              DateTime     @updatedAt @map("updated_at")
+
+  comprador              User         @relation(fields: [compradorId], references: [id])
+  producto               Producto     @relation(fields: [productoId], references: [id])
+  variedad               Variedad?    @relation(fields: [variedadId], references: [id])
+  matches                Match[]
+
+  @@index([compradorId, estado])
+  @@index([productoId, estado])
+  @@map("pedidos")
+}
+
+model Match {
+  id            String      @id @default(cuid())
+  loteId        String      @map("lote_id")
+  pedidoId      String      @map("pedido_id")
+  cantidadKg    Decimal     @map("cantidad_kg") @db.Decimal(10, 2)
+  precioKg      Decimal     @map("precio_kg") @db.Decimal(10, 4)
+  calibresJson  Json        @map("calibres_json")
+  estado        MatchEstado @default(PROPUESTO)
+  scoreMatching Float?      @map("score_matching")
+  scoreDetalle  Json?       @map("score_detalle")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  lote          Lote        @relation(fields: [loteId], references: [id])
+  pedido        Pedido      @relation(fields: [pedidoId], references: [id])
+  transaccion   Transaccion?
+
+  @@unique([loteId, pedidoId])
+  @@index([loteId, estado])
+  @@index([pedidoId, estado])
+  @@map("matches")
+}
+
+model Transaccion {
+  id                    String            @id @default(cuid())
+  matchId               String            @unique @map("match_id")
+  vendedorId            String            @map("vendedor_id")
+  compradorId           String            @map("comprador_id")
+  cantidadKg            Decimal           @map("cantidad_kg") @db.Decimal(10, 2)
+  precioTotal           Decimal           @map("precio_total") @db.Decimal(12, 2)
+  comisionPlataforma    Decimal           @map("comision_plataforma") @db.Decimal(10, 2)
+  comisionPorcentaje    Decimal           @map("comision_porcentaje") @db.Decimal(5, 4)
+  metodoPago            String?           @map("metodo_pago")
+  stripePaymentIntentId String?           @unique @map("stripe_payment_intent_id")
+  stripeTransferId      String?           @map("stripe_transfer_id")
+  estado                TransaccionEstado @default(PENDIENTE_PAGO)
+  qrToken               String?           @unique @map("qr_token")
+  qrUsado               Boolean           @default(false) @map("qr_usado")
+  qrFechaUso            DateTime?         @map("qr_fecha_uso")
+  contratoPdfUrl        String?           @map("contrato_pdf_url")
+  facturaPlataformaUrl  String?           @map("factura_plataforma_url")
+  facturaVendedorUrl    String?           @map("factura_vendedor_url")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+
+  match                 Match             @relation(fields: [matchId], references: [id])
+  vendedor              User              @relation("TransaccionVendedor", fields: [vendedorId], references: [id])
+  comprador             User              @relation("TransaccionComprador", fields: [compradorId], references: [id])
+  mensajes              Mensaje[]
+  valoraciones          Valoracion[]
+  disputas              Disputa[]
+
+  @@index([vendedorId, estado])
+  @@index([compradorId, estado])
+  @@index([estado])
+  @@map("transacciones")
+}
+
+model Mensaje {
+  id            String      @id @default(cuid())
+  transaccionId String      @map("transaccion_id")
+  remitenteId   String      @map("remitente_id")
+  contenido     String      @db.VarChar(2000)
+  tipo          MensajeTipo @default(TEXTO)
+  archivoUrl    String?     @map("archivo_url")
+  leido         Boolean     @default(false)
+  intentoBypass Boolean     @default(false) @map("intento_bypass")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  transaccion   Transaccion @relation(fields: [transaccionId], references: [id])
+  remitente     User        @relation(fields: [remitenteId], references: [id])
+
+  @@index([transaccionId, createdAt])
+  @@index([remitenteId, leido])
+  @@map("mensajes")
+}
+
+model Valoracion {
+  id             String           @id @default(cuid())
+  transaccionId  String           @map("transaccion_id")
+  autorId        String           @map("autor_id")
+  destinatarioId String           @map("destinatario_id")
+  tipo           ValoracionTipo
+  calidad        Int              @db.SmallInt
+  puntualidad    Int              @db.SmallInt
+  comunicacion   Int              @db.SmallInt
+  empaquetado    Int?             @db.SmallInt
+  profesionalidad Int?            @db.SmallInt
+  comentario     String?          @db.VarChar(500)
+  estado         ValoracionEstado @default(PUBLICADA)
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  transaccion    Transaccion      @relation(fields: [transaccionId], references: [id])
+  autor          User             @relation("ValoracionAutor", fields: [autorId], references: [id])
+  destinatario   User             @relation("ValoracionDestinatario", fields: [destinatarioId], references: [id])
+
+  @@unique([transaccionId, autorId])
+  @@index([destinatarioId, estado])
+  @@map("valoraciones")
+}
+
+model Disputa {
+  id                     String             @id @default(cuid())
+  transaccionId          String             @map("transaccion_id")
+  abiertaPorId           String             @map("abierta_por_id")
+  tipoProblema           DisputaTipo        @map("tipo_problema")
+  descripcion            String
+  evidenciasUrls         Json               @map("evidencias_urls")
+  respuestaVendedor      String?            @map("respuesta_vendedor")
+  evidenciasVendedorUrls Json?              @map("evidencias_vendedor_urls")
+  resolucion             DisputaResolucion?
+  porcentajeComprador    Decimal?           @map("porcentaje_comprador") @db.Decimal(5, 2)
+  porcentajeVendedor     Decimal?           @map("porcentaje_vendedor") @db.Decimal(5, 2)
+  adminId                String?            @map("admin_id")
+  notasAdmin             String?            @map("notas_admin")
+  estado                 DisputaEstado      @default(ABIERTA)
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  transaccion            Transaccion        @relation(fields: [transaccionId], references: [id])
+  abiertaPor             User               @relation("DisputaAbiertaPor", fields: [abiertaPorId], references: [id])
+  admin                  User?              @relation("DisputaAdmin", fields: [adminId], references: [id])
+
+  @@index([transaccionId])
+  @@index([estado])
+  @@map("disputas")
+}
+
+model DatosMercado {
+  id                   String    @id @default(cuid())
+  productoId           String    @map("producto_id")
+  variedadId           String?   @map("variedad_id")
+  precioMedioMes       Decimal   @map("precio_medio_mes") @db.Decimal(10, 4)
+  volumenTotalMes      Decimal   @map("volumen_total_mes") @db.Decimal(12, 2)
+  tendencia            Tendencia
+  variedadMasVendida   String?   @map("variedad_mas_vendida")
+  fechaCalculo         DateTime  @map("fecha_calculo") @db.Date
+  numTransaccionesBase Int       @map("num_transacciones_base")
+
+  producto             Producto  @relation(fields: [productoId], references: [id])
+  variedad             Variedad? @relation(fields: [variedadId], references: [id])
+
+  @@unique([productoId, variedadId, fechaCalculo])
+  @@index([fechaCalculo])
+  @@map("datos_mercado")
+}
+
+model Suscripcion {
+  id                   String            @id @default(cuid())
+  userId               String            @unique @map("user_id")
+  plan                 String
+  stripeSubscriptionId String?           @unique @map("stripe_subscription_id")
+  stripeCustomerId     String?           @map("stripe_customer_id")
+  estado               SuscripcionEstado @default(ACTIVA)
+  fechaInicio          DateTime          @map("fecha_inicio")
+  fechaFin             DateTime?         @map("fecha_fin")
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("suscripciones")
+}
+
+model RefreshToken {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  token      String   @unique
+  deviceInfo String?  @map("device_info")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model EmailToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  tipo      String
+  usedAt    DateTime? @map("used_at")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_tokens")
+}
+
+model Auditoria {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  accion    String
+  entidad   String
+  entidadId String?  @map("entidad_id")
+  datos     Json?
+  ip        String?
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entidad, entidadId])
+  @@index([createdAt])
+  @@map("auditoria")
+}
