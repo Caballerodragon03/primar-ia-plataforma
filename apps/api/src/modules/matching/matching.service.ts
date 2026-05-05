@@ -1,5 +1,5 @@
 import { prisma } from '@primaria/database';
-import type { Lote, Pedido, Match, LoteEstado } from '@primaria/database';
+import type { Lote, Pedido, Match, LoteEstado, TransaccionEstado } from '@primaria/database';
 import { AppError } from '../../middleware/error.middleware.js';
 import type { ContributeInput } from './matching.schema.js';
 import { sendMatchProposalEmail } from '../../shared/emails/transactional.js';
@@ -571,7 +571,7 @@ export class MatchingService {
           {
             transaccion: {
               stripePaymentIntentId: null,
-              estado: { notIn: ['COMPLETADO', 'ENTREGADO', 'CANCELADO', 'REEMBOLSADO', 'EN_DISPUTA'] },
+              estado: { notIn: ['COMPLETADO', 'ENTREGADO', 'CANCELADO', 'REEMBOLSADO', 'EN_DISPUTA'] as TransaccionEstado[] },
             },
           },
         ],
@@ -731,7 +731,7 @@ export class MatchingService {
               {
                 transaccion: {
                   stripePaymentIntentId: null,
-                  estado: { notIn: ['COMPLETADO', 'ENTREGADO', 'CANCELADO', 'REEMBOLSADO', 'EN_DISPUTA'] },
+                  estado: { notIn: ['COMPLETADO', 'ENTREGADO', 'CANCELADO', 'REEMBOLSADO', 'EN_DISPUTA'] as TransaccionEstado[] },
                 },
               },
             ],
