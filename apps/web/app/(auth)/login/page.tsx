@@ -40,8 +40,9 @@ export default function LoginPage() {
       const res = await api.post('/auth/login', data);
       const { accessToken, user } = res.data.data as { accessToken: string; user: { id: string; email: string; role: 'VENDEDOR' | 'COMPRADOR' | 'ADMIN'; estado: string; nombre: string; apellidos: string } };
       setAuth(user, accessToken);
-      if (user.role === 'COMPRADOR') router.push('/dashboard/buyer');
-      else router.push('/dashboard/seller');
+      if (user.role === 'COMPRADOR') router.push('/buyer');
+      else if (user.role === 'ADMIN') router.push('/admin/dashboard');
+      else router.push('/seller');
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Login failed. Please try again.';
       setServerError(message);

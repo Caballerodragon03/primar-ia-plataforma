@@ -1,0 +1,11 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "apps/web/Dockerfile"
+
+[deploy]
+startCommand = "node apps/web/server.js"
+healthcheckPath = "/"
+healthcheckTimeout = 30
+
+[[deploy.envVars]]
+# NEXT_PUBLIC_API_URL=https://api.primar-ia.com (or Railway internal URL)

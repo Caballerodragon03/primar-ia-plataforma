@@ -34,7 +34,7 @@ const step2Schema = z.object({
   pais: z.string().default('ES'),
   nombre: z.string().min(1, 'Required'),
   apellidos: z.string().min(1, 'Required'),
-  personaContactoLegal: z.string().min(2, 'Required'),
+  personaContactoLegal: z.string().optional(),
   cargoContactoLegal: z.string().min(2, 'Required'),
 });
 

@@ -3,7 +3,7 @@ import { forwardRef, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
+  label?: string;
   error?: string;
   hint?: string;
   showPasswordToggle?: boolean;
@@ -12,15 +12,17 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, hint, showPasswordToggle = false, type = 'text', id, className = '', ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
-    const inputId = id ?? label.toLowerCase().replace(/\s+/g, '-');
+    const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
     const inputType = showPasswordToggle ? (showPassword ? 'text' : 'password') : type;
 
     return (
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
-          {label}
-          {props.required && <span className="text-red-500 ml-0.5">*</span>}
-        </label>
+        {label && (
+          <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
+            {label}
+            {props.required && <span className="text-red-500 ml-0.5">*</span>}
+          </label>
+        )}
         <div className="relative">
           <input
             ref={ref}

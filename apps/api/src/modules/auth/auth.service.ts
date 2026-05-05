@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import { sendEmail } from '../../shared/email.js';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { prisma } from '@primaria/database';
@@ -64,6 +65,18 @@ export class AuthService {
       },
     });
 
+    // Send verification email (skips if RESEND_API_KEY is placeholder)
+    const verifyUrl = `${process.env.CORS_ORIGIN ?? 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+    await sendEmail({
+      to: user.email,
+      subject: 'Verifica tu cuenta en Primar-IA',
+      html: `<h2>Bienvenido a Primar-IA</h2>
+<p>Hola ${user.nombre},</p>
+<p>Por favor verifica tu cuenta haciendo clic en el siguiente enlace (válido 24 horas):</p>
+<a href="${verifyUrl}" style="background:#E1C44D;color:#1A1A1A;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Verificar cuenta</a>
+<p>Si no creaste esta cuenta, ignora este email.</p>`,
+    }).catch((err: Error) => console.error('[AUTH] Email send failed:', err.message));
+
     return { user, verificationToken };
   }
 
@@ -109,9 +122,8 @@ export class AuthService {
       exp: Math.floor(Date.now() / 1000) + 15 * 60, // 15m
     };
 
-    const accessToken = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions['expiresIn'],
-    });
+    // exp is already set in payload — do NOT pass expiresIn in options (causes conflict)
+    const accessToken = jwt.sign(payload, env.JWT_SECRET);
 
     // Create refresh token (opaque UUID stored in DB)
     const refreshToken = randomUUID();
@@ -177,9 +189,7 @@ export class AuthService {
       exp: Math.floor(Date.now() / 1000) + 15 * 60,
     };
 
-    const accessToken = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions['expiresIn'],
-    });
+    const accessToken = jwt.sign(payload, env.JWT_SECRET);
 
     // Rotate refresh token
     const newRefreshToken = randomUUID();

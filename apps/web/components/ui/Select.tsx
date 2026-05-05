@@ -5,11 +5,11 @@ import { ChevronDown } from 'lucide-react';
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
   error?: string;
-  options: { value: string; label: string }[];
+  options?: { value: string; label: string }[];
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, options, id, className = '', ...props }, ref) => {
+  ({ label, error, options, id, className = '', children, ...props }, ref) => {
     const inputId = id ?? label.toLowerCase().replace(/\s+/g, '-');
     return (
       <div className="flex flex-col gap-1.5">
@@ -32,9 +32,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ].join(' ')}
             {...props}
           >
-            {options.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
+            {options
+              ? options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))
+              : children}
           </select>
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         </div>

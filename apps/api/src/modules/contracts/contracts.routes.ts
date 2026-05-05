@@ -1,0 +1,29 @@
+import { Router } from 'express';
+import { requireAuth } from '../../middleware/auth.middleware.js';
+import {
+  downloadContract,
+  getContractInfo,
+  signContract,
+  uploadLotPhotos,
+  confirmDelivery,
+} from './contracts.controller.js';
+import { asyncHandler } from '../../shared/async-handler.js';
+
+export const contractsRouter = Router();
+
+contractsRouter.use(requireAuth);
+
+// GET /api/v1/contracts/:transaccionId — download PDF contract
+contractsRouter.get('/:transaccionId', asyncHandler(downloadContract));
+
+// GET /api/v1/contracts/:transaccionId/info — get contract info + signature status
+contractsRouter.get('/:transaccionId/info', asyncHandler(getContractInfo));
+
+// POST /api/v1/contracts/:transaccionId/sign — sign contract (buyer first, then seller)
+contractsRouter.post('/:transaccionId/sign', asyncHandler(signContract));
+
+// POST /api/v1/contracts/:transaccionId/photos — upload lot photos (seller only, after both sign)
+contractsRouter.post('/:transaccionId/photos', asyncHandler(uploadLotPhotos));
+
+// POST /api/v1/contracts/:transaccionId/confirm-delivery — buyer confirms delivery with QR
+contractsRouter.post('/:transaccionId/confirm-delivery', asyncHandler(confirmDelivery));

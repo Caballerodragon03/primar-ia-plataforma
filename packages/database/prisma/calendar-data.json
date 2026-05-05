@@ -1,0 +1,1246 @@
+[
+  {
+    "producto": "Tomate redondo",
+    "produccion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Tomate cherry",
+    "produccion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Pepino",
+    "produccion": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Pimiento verde",
+    "produccion": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Lechuga",
+    "produccion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Escarola",
+    "produccion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "comercializacion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "producto": "Acelga",
+    "produccion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Espinaca",
+    "produccion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Zanahoria",
+    "produccion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Berenjena",
+    "produccion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Calabacín",
+    "produccion": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Calabaza",
+    "produccion": [
+      9,
+      10,
+      11
+    ],
+    "comercializacion": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ]
+  },
+  {
+    "producto": "Cebolla",
+    "produccion": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Ajo",
+    "produccion": [
+      5,
+      6
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Puerro",
+    "produccion": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Brócoli",
+    "produccion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "comercializacion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  {
+    "producto": "Coliflor",
+    "produccion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "comercializacion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "producto": "Repollo / Col",
+    "produccion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "comercializacion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "producto": "Judía verde",
+    "produccion": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Espárrago verde",
+    "produccion": [
+      3,
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  {
+    "producto": "Alcachofa",
+    "produccion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "comercializacion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "producto": "Patata",
+    "produccion": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Boniato",
+    "produccion": [
+      9,
+      10,
+      11
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Setas / Champiñón",
+    "produccion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Naranja",
+    "produccion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  {
+    "producto": "Mandarina",
+    "produccion": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "comercializacion": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  {
+    "producto": "Limón",
+    "produccion": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "comercializacion": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  {
+    "producto": "Pomelo",
+    "produccion": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "comercializacion": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "producto": "Lima",
+    "produccion": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Albaricoque",
+    "produccion": [
+      5,
+      6,
+      7
+    ],
+    "comercializacion": [
+      5,
+      6,
+      7
+    ],
+    "notas": "Campaña breve jun-jul"
+  },
+  {
+    "producto": "Melocotón",
+    "produccion": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "comercializacion": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "notas": "Calanda alarga a oct"
+  },
+  {
+    "producto": "Nectarina",
+    "produccion": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "comercializacion": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "producto": "Paraguayo / Platerina",
+    "produccion": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "comercializacion": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "producto": "Ciruela",
+    "produccion": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "comercializacion": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "producto": "Cereza",
+    "produccion": [
+      5,
+      6,
+      7
+    ],
+    "comercializacion": [
+      5,
+      6,
+      7
+    ],
+    "notas": "Jerte pico jun-jul"
+  },
+  {
+    "producto": "Manzana",
+    "produccion": [
+      8,
+      9,
+      10,
+      11
+    ],
+    "comercializacion": [
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  {
+    "producto": "Pera",
+    "produccion": [
+      8,
+      9
+    ],
+    "comercializacion": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "producto": "Uva de mesa",
+    "produccion": [
+      8,
+      9,
+      10,
+      11
+    ],
+    "comercializacion": [
+      8,
+      9,
+      10,
+      11
+    ]
+  },
+  {
+    "producto": "Melón Piel de Sapo",
+    "produccion": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "comercializacion": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "producto": "Sandía",
+    "produccion": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "comercializacion": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "producto": "Fresa",
+    "produccion": [
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "notas": "Huelva; pico feb-may"
+  },
+  {
+    "producto": "Frambuesa",
+    "produccion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  {
+    "producto": "Arándano",
+    "produccion": [
+      3,
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  {
+    "producto": "Mora",
+    "produccion": [
+      5,
+      6,
+      7,
+      8
+    ],
+    "comercializacion": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  {
+    "producto": "Aguacate",
+    "produccion": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "notas": "Hass dic-abr; Lamb Hass may-jun; Reed jun-ago"
+  },
+  {
+    "producto": "Mango",
+    "produccion": [
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "comercializacion": [
+      9,
+      10,
+      11
+    ],
+    "notas": "Mejor época sep-nov (Málaga-Granada)"
+  },
+  {
+    "producto": "Papaya",
+    "produccion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  {
+    "producto": "Chirimoya",
+    "produccion": [
+      9,
+      10,
+      11,
+      12,
+      1
+    ],
+    "comercializacion": [
+      9,
+      10,
+      11,
+      12,
+      1
+    ],
+    "notas": "Costa Tropical"
+  },
+  {
+    "producto": "Pitaya (fruta del dragón)",
+    "produccion": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      1,
+      2
+    ],
+    "comercializacion": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      1,
+      2
+    ]
+  },
+  {
+    "producto": "Plátano",
+    "produccion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "comercializacion": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "notas": "Plátano de Canarias IGP"
+  },
+  {
+    "producto": "Kiwi",
+    "produccion": [
+      11,
+      12,
+      1
+    ],
+    "comercializacion": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "notas": "Hayward se corta nov-dic en Galicia"
+  },
+  {
+    "producto": "Granada",
+    "produccion": [
+      9,
+      10,
+      11
+    ],
+    "comercializacion": [
+      9,
+      10,
+      11,
+      12,
+      1
+    ],
+    "notas": "DOP inicio oct (Mollar de Elche)"
+  },
+  {
+    "producto": "Caqui (Persimón)",
+    "produccion": [
+      10,
+      11,
+      12
+    ],
+    "comercializacion": [
+      10,
+      11,
+      12,
+      1
+    ]
+  },
+  {
+    "producto": "Níspero",
+    "produccion": [
+      4,
+      5,
+      6
+    ],
+    "comercializacion": [
+      4,
+      5,
+      6
+    ]
+  },
+  {
+    "producto": "Higo / Breva",
+    "produccion": [
+      5,
+      6,
+      8,
+      9,
+      10
+    ],
+    "comercializacion": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  {
+    "producto": "Castaña",
+    "produccion": [
+      9,
+      10,
+      11
+    ],
+    "comercializacion": [
+      10,
+      11,
+      12,
+      1
+    ]
+  }
+]
