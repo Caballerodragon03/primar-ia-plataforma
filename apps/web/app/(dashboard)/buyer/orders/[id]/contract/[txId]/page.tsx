@@ -268,11 +268,40 @@ export default function BuyerContractPage() {
                 ref={canvasRef}
                 width={400}
                 height={150}
-                className="border border-gray-300 rounded-lg bg-white cursor-crosshair w-full"
+                className="border border-gray-300 rounded-lg bg-white cursor-crosshair w-full touch-none"
                 onMouseDown={startDraw}
                 onMouseMove={draw}
                 onMouseUp={stopDraw}
                 onMouseLeave={stopDraw}
+                onTouchStart={(e) => {
+                  const touch = e.touches[0];
+                  if (!touch) return;
+                  const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+                  const canvas = canvasRef.current;
+                  if (!canvas) return;
+                  const ctx = canvas.getContext('2d');
+                  if (!ctx) return;
+                  setIsDrawing(true);
+                  ctx.beginPath();
+                  ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+                }}
+                onTouchMove={(e) => {
+                  e.preventDefault();
+                  if (!isDrawing) return;
+                  const touch = e.touches[0];
+                  if (!touch) return;
+                  const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+                  const canvas = canvasRef.current;
+                  if (!canvas) return;
+                  const ctx = canvas.getContext('2d');
+                  if (!ctx) return;
+                  ctx.lineWidth = 2;
+                  ctx.lineCap = 'round';
+                  ctx.strokeStyle = '#1a1a2e';
+                  ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+                  ctx.stroke();
+                }}
+                onTouchEnd={stopDraw}
               />
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={clearSignature}>Clear</Button>

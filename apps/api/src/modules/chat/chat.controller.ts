@@ -9,7 +9,7 @@ export async function getConversations(req: Request, res: Response): Promise<voi
 
 export async function getMessages(req: Request, res: Response): Promise<void> {
   const transaccionId = req.params['transaccionId'] as string;
-  const page = req.query['page'] ? parseInt(req.query['page'] as string, 10) : 1;
+  const page = Math.max(1, parseInt(req.query['page'] as string, 10) || 1);
   const mensajes = await chatService.getMessages(transaccionId, req.user!.sub, page);
   res.json({ success: true, data: mensajes });
 }

@@ -117,12 +117,8 @@ export class DisputasService {
 
     const porcentajeVendedor = 100 - data.porcentajeComprador;
 
-    let nuevoEstadoTransaccion: string;
-    if (data.resolucion === 'FAVOR_COMPRADOR') {
-      nuevoEstadoTransaccion = 'REEMBOLSADO';
-    } else {
-      nuevoEstadoTransaccion = 'COMPLETADO';
-    }
+    const nuevoEstadoTransaccion: 'REEMBOLSADO' | 'COMPLETADO' =
+      data.resolucion === 'FAVOR_COMPRADOR' ? 'REEMBOLSADO' : 'COMPLETADO';
 
     const [updatedDisputa] = await prisma.$transaction([
       prisma.disputa.update({
@@ -138,7 +134,7 @@ export class DisputasService {
       }),
       prisma.transaccion.update({
         where: { id: disputa.transaccionId },
-        data: { estado: nuevoEstadoTransaccion as any },
+        data: { estado: nuevoEstadoTransaccion },
       }),
     ]);
 

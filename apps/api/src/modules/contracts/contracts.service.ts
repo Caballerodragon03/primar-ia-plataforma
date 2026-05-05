@@ -1,7 +1,9 @@
+import crypto from 'crypto';
 import PDFDocument from 'pdfkit';
 import { prisma } from '@primaria/database';
 import { AppError } from '../../middleware/error.middleware.js';
 import { generarQRToken } from '@primaria/shared';
+import { env } from '../../config/env.js';
 
 export class ContractsService {
   async getContractInfo(transaccionId: string, userId: string) {
@@ -100,8 +102,7 @@ export class ContractsService {
     });
 
     if (updated?.firmaComprador && updated?.firmaVendedor && !updated?.qrToken) {
-      const secret = process.env['QR_SECRET'] ?? 'primaria-qr-secret-default';
-      const { token } = generarQRToken(transaccionId, updated.compradorId, secret);
+      const { token } = generarQRToken(transaccionId, updated.compradorId, env.QR_HMAC_SECRET);
       await prisma.transaccion.update({
         where: { id: transaccionId },
         data: { qrToken: token },
@@ -154,7 +155,7 @@ export class ContractsService {
     if (tx.qrUsado) throw new AppError('El código QR ya fue utilizado', 400);
     if (!tx.qrToken) throw new AppError('No hay código QR generado para esta transacción', 400);
 
-    if (tx.qrToken !== qrToken) {
+    if (tx.qrToken.length !== qrToken.length || !crypto.timingSafeEqual(Buffer.from(tx.qrToken), Buffer.from(qrToken))) {
       throw new AppError('Código QR inválido', 400);
     }
 

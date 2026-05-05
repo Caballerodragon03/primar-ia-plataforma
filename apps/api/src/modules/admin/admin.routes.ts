@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { adminController } from './admin.controller.js';
 import { requireAuth, requireRole } from '../../middleware/auth.middleware.js';
+import { validateBody } from '../../middleware/validate.middleware.js';
+import { updateEstadoSchema } from './admin.schema.js';
 
 export const adminRouter = Router();
 
@@ -9,7 +11,7 @@ adminRouter.use(requireAuth, requireRole('ADMIN'));
 
 adminRouter.get('/users', adminController.listUsers.bind(adminController));
 adminRouter.get('/users/:id', adminController.getUserDetail.bind(adminController));
-adminRouter.patch('/users/:id/estado', adminController.updateUserEstado.bind(adminController));
+adminRouter.patch('/users/:id/estado', validateBody(updateEstadoSchema), adminController.updateUserEstado.bind(adminController));
 adminRouter.get('/certificados', adminController.listCertificados.bind(adminController));
 adminRouter.post('/certificados/:id/verify', adminController.verifyCertificado.bind(adminController));
 adminRouter.get('/stats', adminController.getDashboardStats.bind(adminController));

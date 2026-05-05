@@ -25,11 +25,30 @@ async function main() {
     await redis.connect();
     console.log('Redis connected');
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Primar-IA API running on http://localhost:${PORT}`);
       console.log(`Environment: ${env.NODE_ENV}`);
       startCronJobs();
     });
+
+    async function shutdown() {
+      console.log('[shutdown] Graceful shutdown initiated...');
+      server.close(() => {
+        console.log('[shutdown] HTTP server closed');
+      });
+      try {
+        await prisma.$disconnect();
+        console.log('[shutdown] Database disconnected');
+      } catch {}
+      try {
+        const redis = getRedis();
+        await redis.quit();
+        console.log('[shutdown] Redis disconnected');
+      } catch {}
+      process.exit(0);
+    }
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
   } catch (err) {
     console.error('Startup failed:', err);
     process.exit(1);

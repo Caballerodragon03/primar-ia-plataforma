@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { X, CreditCard, Building2, Lock } from 'lucide-react';
 import { Button } from './Button';
-import { Input } from './Input';
 import { api } from '@/lib/api';
 
 interface PaymentModalProps {
@@ -30,7 +29,6 @@ export function PaymentModal({
   onSuccess,
 }: PaymentModalProps) {
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('card');
-  const [cardNumber, setCardNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -60,7 +58,6 @@ export function PaymentModal({
     if (isLoading) return;
     setError(null);
     setSuccess(false);
-    setCardNumber('');
     setMetodoPago('card');
     onClose();
   };
@@ -182,23 +179,8 @@ export function PaymentModal({
                 </div>
               </fieldset>
 
-              {/* Card input (MVP placeholder) */}
-              {metodoPago === 'card' && (
-                <Input
-                  label="Card Number"
-                  placeholder="Test: 4242 4242 4242 4242"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
-                  hint="Phase 2 will use Stripe Elements for secure card processing."
-                />
-              )}
-              {metodoPago === 'sepa_debit' && (
-                <Input
-                  label="IBAN"
-                  placeholder="ES00 0000 0000 0000 0000 0000"
-                  hint="Phase 2 will use Stripe Elements for secure SEPA processing."
-                />
-              )}
+              {/* Stripe secure processing notice */}
+              <p className="text-sm text-gray-500">El pago se procesará de forma segura a través de Stripe.</p>
 
               {error && (
                 <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">

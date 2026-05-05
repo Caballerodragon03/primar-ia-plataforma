@@ -391,140 +391,146 @@ export class MatchingService {
     matchId: string,
     calibresContribucion: ContributeInput['calibresContribucion']
   ): Promise<Match> {
-    const match = await prisma.match.findUnique({
-      where: { id: matchId },
-      include: {
-        lote: true,
-        pedido: {
-          include: {
-            matches: {
-              where: { estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] } },
-              select: { id: true, cantidadKg: true },
+    // Wrap in a serializable transaction to prevent concurrent contributions
+    // from exceeding order capacity.
+    const updatedMatch = await prisma.$transaction(async (tx) => {
+      const match = await tx.match.findUnique({
+        where: { id: matchId },
+        include: {
+          lote: true,
+          pedido: {
+            include: {
+              matches: {
+                where: { estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] } },
+                select: { id: true, cantidadKg: true },
+              },
             },
           },
         },
-      },
-    });
-
-    if (!match) throw new AppError('Match no encontrado', 404);
-    if (match.lote.vendedorId !== vendedorId) throw new AppError('Acceso prohibido', 403);
-    if (!['PROPUESTO', 'ENVIADO_VENDEDOR'].includes(match.estado)) {
-      throw new AppError('El match no está en un estado aceptable para contribuir', 400);
-    }
-
-    const loteCalibres = toLoteCalibre(match.lote.calibres);
-
-    for (const contrib of calibresContribucion) {
-      const lc = loteCalibres.find((l) => l.calibre === contrib.calibre);
-      if (!lc) {
-        throw new AppError(`Calibre "${contrib.calibre}" no existe en el lote`, 400);
-      }
-      if (contrib.cantidad_kg > lc.cantidad_kg) {
-        throw new AppError(
-          `Calibre "${contrib.calibre}": cantidad solicitada (${contrib.cantidad_kg} kg) supera la disponible (${lc.cantidad_kg} kg)`,
-          400
-        );
-      }
-    }
-
-    const pedidoCalibres = toPedidoCalibre(match.pedido.calibresSolicitados);
-    const totalPedidoKg = pedidoCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
-
-    // Fix: filter by ID not object identity
-    const otrosCommittedKg = match.pedido.matches
-      .filter((om) => om.id !== matchId)
-      .reduce((s, om) => s + Number(om.cantidadKg), 0);
-
-    // Cap total contribution so coverage doesn't exceed 100%
-    const remainingOrderKg = Math.max(0, totalPedidoKg - otrosCommittedKg);
-    if (remainingOrderKg === 0) {
-      throw new AppError('Este pedido ya está completamente cubierto', 400);
-    }
-    const requestedTotalKg = calibresContribucion.reduce((s, c) => s + c.cantidad_kg, 0);
-    let adjustedCalibres = calibresContribucion;
-    if (requestedTotalKg > remainingOrderKg) {
-      const ratio = remainingOrderKg / requestedTotalKg;
-      adjustedCalibres = calibresContribucion
-        .map((c) => ({
-          ...c,
-          cantidad_kg: Math.floor(c.cantidad_kg * ratio * 1000) / 1000,
-        }))
-        .filter((c) => c.cantidad_kg > 0);
-    }
-
-    const cantidadKg = adjustedCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
-    const precioKg = computePrecioKgFromContribucion(loteCalibres, adjustedCalibres);
-
-    const totalCoveredKg = otrosCommittedKg + cantidadKg;
-    const coverage = totalPedidoKg > 0 ? totalCoveredKg / totalPedidoKg : 0;
-
-    // Actualizar match
-    const updatedMatch = await prisma.match.update({
-      where: { id: matchId },
-      data: {
-        estado: 'ACEPTADO_VENDEDOR',
-        calibresJson: adjustedCalibres,
-        cantidadKg,
-        precioKg,
-      },
-    });
-
-    // Actualizar estado del pedido (fix: TOTALMENTE_CUBIERTO when 100%)
-    const nuevoPedidoEstado =
-      coverage >= 1 ? 'TOTALMENTE_CUBIERTO' :
-      coverage > 0 ? 'PARCIALMENTE_CUBIERTO' :
-      match.pedido.estado;
-    if (nuevoPedidoEstado !== match.pedido.estado) {
-      await prisma.pedido.update({
-        where: { id: match.pedidoId },
-        data: { estado: nuevoPedidoEstado as 'TOTALMENTE_CUBIERTO' | 'PARCIALMENTE_CUBIERTO' },
       });
-    }
 
-    // Actualizar estado del lote según kg comprometidos
-    const loteMatchesAgg = await prisma.match.aggregate({
-      where: {
-        loteId: match.loteId,
-        estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] },
-        id: { not: matchId },
-      },
-      _sum: { cantidadKg: true },
-    });
-    const loteOtherKg = Number(loteMatchesAgg._sum.cantidadKg ?? 0);
-    const loteTotalCommittedKg = loteOtherKg + cantidadKg;
-    const loteTotalKg = loteCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
-    const loteCoverage = loteTotalKg > 0 ? loteTotalCommittedKg / loteTotalKg : 0;
+      if (!match) throw new AppError('Match no encontrado', 404);
+      if (match.lote.vendedorId !== vendedorId) throw new AppError('Acceso prohibido', 403);
+      if (!['PROPUESTO', 'ENVIADO_VENDEDOR'].includes(match.estado)) {
+        throw new AppError('El match no está en un estado aceptable para contribuir', 400);
+      }
 
-    const nuevaLoteEstado: LoteEstado =
-      loteCoverage >= 1 ? 'VENDIDO' :
-      loteCoverage > 0 ? 'PARCIALMENTE_VENDIDO' :
-      match.lote.estado as LoteEstado;
+      const loteCalibres = toLoteCalibre(match.lote.calibres);
 
-    if (nuevaLoteEstado !== match.lote.estado) {
-      await prisma.lote.update({
-        where: { id: match.loteId },
-        data: { estado: nuevaLoteEstado },
-      });
-    }
+      for (const contrib of calibresContribucion) {
+        const lc = loteCalibres.find((l) => l.calibre === contrib.calibre);
+        if (!lc) {
+          throw new AppError(`Calibre "${contrib.calibre}" no existe en el lote`, 400);
+        }
+        if (contrib.cantidad_kg > lc.cantidad_kg) {
+          throw new AppError(
+            `Calibre "${contrib.calibre}": cantidad solicitada (${contrib.cantidad_kg} kg) supera la disponible (${lc.cantidad_kg} kg)`,
+            400
+          );
+        }
+      }
 
-    // Crear Transaccion si no existe (habilita el chat entre las partes)
-    const existingTx = await prisma.transaccion.findUnique({ where: { matchId } });
-    if (!existingTx) {
-      const precioTotal = cantidadKg * precioKg;
-      const commission = calcularComision(precioTotal, 'card');
-      await prisma.transaccion.create({
+      const pedidoCalibres = toPedidoCalibre(match.pedido.calibresSolicitados);
+      const totalPedidoKg = pedidoCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
+
+      // Fix: filter by ID not object identity
+      const otrosCommittedKg = match.pedido.matches
+        .filter((om) => om.id !== matchId)
+        .reduce((s, om) => s + Number(om.cantidadKg), 0);
+
+      // Cap total contribution so coverage doesn't exceed 100%
+      const remainingOrderKg = Math.max(0, totalPedidoKg - otrosCommittedKg);
+      if (remainingOrderKg === 0) {
+        throw new AppError('Este pedido ya está completamente cubierto', 400);
+      }
+      const requestedTotalKg = calibresContribucion.reduce((s, c) => s + c.cantidad_kg, 0);
+      let adjustedCalibres = calibresContribucion;
+      if (requestedTotalKg > remainingOrderKg) {
+        const ratio = remainingOrderKg / requestedTotalKg;
+        adjustedCalibres = calibresContribucion
+          .map((c) => ({
+            ...c,
+            cantidad_kg: Math.floor(c.cantidad_kg * ratio * 1000) / 1000,
+          }))
+          .filter((c) => c.cantidad_kg > 0);
+      }
+
+      const cantidadKg = adjustedCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
+      const precioKg = computePrecioKgFromContribucion(loteCalibres, adjustedCalibres);
+
+      const totalCoveredKg = otrosCommittedKg + cantidadKg;
+      const coverage = totalPedidoKg > 0 ? totalCoveredKg / totalPedidoKg : 0;
+
+      // Actualizar match
+      const result = await tx.match.update({
+        where: { id: matchId },
         data: {
-          matchId,
-          vendedorId: match.lote.vendedorId,
-          compradorId: match.pedido.compradorId,
+          estado: 'ACEPTADO_VENDEDOR',
+          calibresJson: adjustedCalibres,
           cantidadKg,
-          precioTotal,
-          comisionPlataforma: commission.total,
-          comisionPorcentaje: commission.porcentaje,
-          estado: 'PENDIENTE_PAGO',
+          precioKg,
         },
       });
-    }
+
+      // Actualizar estado del pedido (fix: TOTALMENTE_CUBIERTO when 100%)
+      const nuevoPedidoEstado =
+        coverage >= 1 ? 'TOTALMENTE_CUBIERTO' :
+        coverage > 0 ? 'PARCIALMENTE_CUBIERTO' :
+        match.pedido.estado;
+      if (nuevoPedidoEstado !== match.pedido.estado) {
+        await tx.pedido.update({
+          where: { id: match.pedidoId },
+          data: { estado: nuevoPedidoEstado as 'TOTALMENTE_CUBIERTO' | 'PARCIALMENTE_CUBIERTO' },
+        });
+      }
+
+      // Actualizar estado del lote según kg comprometidos
+      const loteMatchesAgg = await tx.match.aggregate({
+        where: {
+          loteId: match.loteId,
+          estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] },
+          id: { not: matchId },
+        },
+        _sum: { cantidadKg: true },
+      });
+      const loteOtherKg = Number(loteMatchesAgg._sum.cantidadKg ?? 0);
+      const loteTotalCommittedKg = loteOtherKg + cantidadKg;
+      const loteTotalKg = loteCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
+      const loteCoverage = loteTotalKg > 0 ? loteTotalCommittedKg / loteTotalKg : 0;
+
+      const nuevaLoteEstado: LoteEstado =
+        loteCoverage >= 1 ? 'VENDIDO' :
+        loteCoverage > 0 ? 'PARCIALMENTE_VENDIDO' :
+        match.lote.estado as LoteEstado;
+
+      if (nuevaLoteEstado !== match.lote.estado) {
+        await tx.lote.update({
+          where: { id: match.loteId },
+          data: { estado: nuevaLoteEstado },
+        });
+      }
+
+      // Crear Transaccion si no existe (habilita el chat entre las partes)
+      const existingTx = await tx.transaccion.findUnique({ where: { matchId } });
+      if (!existingTx) {
+        const precioTotal = cantidadKg * precioKg;
+        const commission = calcularComision(precioTotal, 'card');
+        await tx.transaccion.create({
+          data: {
+            matchId,
+            vendedorId: match.lote.vendedorId,
+            compradorId: match.pedido.compradorId,
+            cantidadKg,
+            precioTotal,
+            comisionPlataforma: commission.total,
+            comisionPorcentaje: commission.porcentaje,
+            estado: 'PENDIENTE_PAGO',
+          },
+        });
+      }
+
+      return result;
+    }, { isolationLevel: 'Serializable' });
 
     return updatedMatch;
   }

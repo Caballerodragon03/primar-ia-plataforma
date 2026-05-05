@@ -40,7 +40,7 @@ if (env.NODE_ENV !== 'test') {
 app.use('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }));
 
 // Parsing
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -49,33 +49,15 @@ app.use('/api', apiRateLimiter);
 app.use('/api', noCache);
 
 // Health check
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), env: env.NODE_ENV });
+app.get('/health', async (_req, res) => {
+  try {
+    const { prisma } = await import('@primaria/database');
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: 'error', timestamp: new Date().toISOString() });
+  }
 });
-
-// Dev-only: unlock accounts and list users
-if (env.NODE_ENV === 'development') {
-  app.post('/dev/unlock-accounts', async (_req, res) => {
-    const { prisma } = await import('@primaria/database');
-    await prisma.user.updateMany({ data: { loginAttempts: 0, lockedUntil: null } });
-    res.json({ success: true, message: 'All accounts unlocked' });
-  });
-
-  app.post('/dev/reset-password', async (req, res) => {
-    const { prisma } = await import('@primaria/database');
-    const bcrypt = await import('bcrypt');
-    const { email, password } = req.body as { email: string; password: string };
-    const hash = await bcrypt.default.hash(password, 12);
-    await prisma.user.update({ where: { email }, data: { passwordHash: hash, loginAttempts: 0, lockedUntil: null } });
-    res.json({ success: true });
-  });
-
-  app.get('/dev/users', async (_req, res) => {
-    const { prisma } = await import('@primaria/database');
-    const users = await prisma.user.findMany({ select: { id: true, email: true, role: true, estado: true, nombre: true, loginAttempts: true, lockedUntil: true } });
-    res.json({ success: true, data: users });
-  });
-}
 
 // Routes
 app.use('/api/v1/auth', authRouter);

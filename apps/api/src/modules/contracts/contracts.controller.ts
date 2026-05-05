@@ -20,8 +20,8 @@ export async function getContractInfo(req: Request, res: Response): Promise<void
 export async function signContract(req: Request, res: Response): Promise<void> {
   const { transaccionId } = req.params as { transaccionId: string };
   const { signatureData } = req.body as { signatureData: string };
-  if (!signatureData) {
-    res.status(400).json({ success: false, error: 'signatureData is required' });
+  if (!signatureData || typeof signatureData !== 'string' || signatureData.length > 500000) {
+    res.status(400).json({ success: false, error: 'Firma inválida o demasiado grande' });
     return;
   }
   const result = await contractsService.signContract(transaccionId, req.user!.sub, signatureData);
@@ -31,7 +31,11 @@ export async function signContract(req: Request, res: Response): Promise<void> {
 export async function uploadLotPhotos(req: Request, res: Response): Promise<void> {
   const { transaccionId } = req.params as { transaccionId: string };
   const { photoUrls } = req.body as { photoUrls: string[] };
-  const result = await contractsService.uploadLotPhotos(transaccionId, req.user!.sub, photoUrls ?? []);
+  if (!Array.isArray(photoUrls) || photoUrls.length === 0) {
+    res.status(400).json({ success: false, error: 'Se requiere al menos una foto' });
+    return;
+  }
+  const result = await contractsService.uploadLotPhotos(transaccionId, req.user!.sub, photoUrls);
   res.json({ success: true, data: result });
 }
 

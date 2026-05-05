@@ -56,111 +56,127 @@ export class StripeService {
     matchId: string,
     metodoPago: 'card' | 'sepa_debit',
   ): Promise<{ clientSecret: string; transaccionId: string; totalAmount: number }> {
-    // 1. Load Match with Lote (vendedor empresa) and Pedido
-    const match = await prisma.match.findUnique({
-      where: { id: matchId },
-      include: {
-        lote: {
-          include: {
-            vendedor: {
-              include: { empresa: true },
+    // Wrap the check-and-create in a serializable transaction to prevent
+    // duplicate PaymentIntents from concurrent requests.
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Load Match with Lote (vendedor empresa) and Pedido
+      const match = await tx.match.findUnique({
+        where: { id: matchId },
+        include: {
+          lote: {
+            include: {
+              vendedor: {
+                include: { empresa: true },
+              },
             },
           },
+          pedido: true,
+          transaccion: true,
         },
-        pedido: true,
-        transaccion: true,
-      },
-    });
+      });
 
-    if (!match) throw new AppError('Match no encontrado', 404);
-    if (match.pedido.compradorId !== compradorId) {
-      throw new AppError('No autorizado para pagar este match', 403);
-    }
-    // Only reject if a Stripe PaymentIntent has already been created for this match.
-    // The matching service auto-creates a Transaccion (no PI) when a seller accepts,
-    // to enable chat — we must allow upgrading that placeholder to a real payment.
-    if (match.transaccion?.stripePaymentIntentId) {
-      throw new AppError('Ya existe una transacción para este match', 409);
-    }
+      if (!match) throw new AppError('Match no encontrado', 404);
+      if (match.pedido.compradorId !== compradorId) {
+        throw new AppError('No autorizado para pagar este match', 403);
+      }
+      // Only reject if a Stripe PaymentIntent has already been created for this match.
+      // The matching service auto-creates a Transaccion (no PI) when a seller accepts,
+      // to enable chat — we must allow upgrading that placeholder to a real payment.
+      if (match.transaccion?.stripePaymentIntentId) {
+        throw new AppError('Ya existe una transacción para este match', 409);
+      }
 
-    // 2. Compute total
-    const cantidadKg = Number(match.cantidadKg);
-    const precioKg = Number(match.precioKg);
-    const total = cantidadKg * precioKg;
+      // 2. Compute total
+      const cantidadKg = Number(match.cantidadKg);
+      const precioKg = Number(match.precioKg);
+      const total = cantidadKg * precioKg;
 
-    // 3. Compute comision
-    const comision = calcularComision(total, metodoPago);
+      // 3. Compute comision
+      const comision = calcularComision(total, metodoPago);
 
-    // 4. Vendedor empresa -> stripeAccountId (optional in test/dev)
-    const vendedorEmpresa = match.lote.vendedor.empresa;
-    const sellerReady =
-      vendedorEmpresa?.stripeAccountId && vendedorEmpresa.stripeOnboardingDone;
+      // 4. Vendedor empresa -> stripeAccountId (optional in test/dev)
+      const vendedorEmpresa = match.lote.vendedor.empresa;
+      const sellerReady =
+        vendedorEmpresa?.stripeAccountId && vendedorEmpresa.stripeOnboardingDone;
 
-    // 5. Create Stripe PaymentIntent (pre-auth / manual capture)
-    const paymentMethodTypes: string[] =
-      metodoPago === 'sepa_debit' ? ['sepa_debit'] : ['card'];
+      // 5. Create Stripe PaymentIntent (pre-auth / manual capture)
+      const paymentMethodTypes: string[] =
+        metodoPago === 'sepa_debit' ? ['sepa_debit'] : ['card'];
 
-    const intentParams: Stripe.PaymentIntentCreateParams = {
-      amount: Math.round(total * 100), // cents
-      currency: 'eur',
-      capture_method: 'manual',
-      payment_method_types: paymentMethodTypes,
-      metadata: {
-        matchId,
-        compradorId,
-        vendedorId: match.lote.vendedorId,
-      },
-    };
-
-    // Only route to seller Connect account if onboarding is complete
-    if (sellerReady) {
-      intentParams.application_fee_amount = Math.round(comision.total * 100);
-      intentParams.transfer_data = {
-        destination: vendedorEmpresa!.stripeAccountId!,
+      const intentParams: Stripe.PaymentIntentCreateParams = {
+        amount: Math.round(total * 100), // cents
+        currency: 'eur',
+        capture_method: 'manual',
+        payment_method_types: paymentMethodTypes,
+        metadata: {
+          matchId,
+          compradorId,
+          vendedorId: match.lote.vendedorId,
+        },
       };
-    }
 
-    const intent = await stripe.paymentIntents.create(intentParams);
+      // Only route to seller Connect account if onboarding is complete
+      if (sellerReady) {
+        intentParams.application_fee_amount = Math.round(comision.total * 100);
+        intentParams.transfer_data = {
+          destination: vendedorEmpresa!.stripeAccountId!,
+        };
+      }
 
-    // 6. Upsert Transaccion record.
-    // If the matching service already created a placeholder Transaccion (no PI),
-    // update it. Otherwise create a fresh record.
-    const txPayload = {
-      stripePaymentIntentId: intent.id,
-      metodoPago,
-      cantidadKg: match.cantidadKg,
-      precioTotal: total,
-      comisionPlataforma: comision.total,
-      comisionPorcentaje: comision.porcentaje,
-      estado: 'PENDIENTE_PAGO' as const,
-    };
-    const transaccion = match.transaccion
-      ? await prisma.transaccion.update({
-          where: { id: match.transaccion.id },
-          data: txPayload,
-        })
-      : await prisma.transaccion.create({
-          data: {
-            matchId,
-            vendedorId: match.lote.vendedorId,
-            compradorId,
-            ...txPayload,
-          },
-        });
+      const intent = await stripe.paymentIntents.create(intentParams);
 
-    // 7. Update Pedido.stripePaymentIntentId and advance match estado
-    await Promise.all([
-      prisma.pedido.update({
-        where: { id: match.pedidoId },
-        data: { stripePaymentIntentId: intent.id },
-      }),
-      prisma.match.update({
-        where: { id: matchId },
-        data: { estado: 'PENDIENTE_PAGO' },
-      }),
-    ]);
+      // 6. Upsert Transaccion record.
+      // If the matching service already created a placeholder Transaccion (no PI),
+      // update it. Otherwise create a fresh record.
+      const txPayload = {
+        stripePaymentIntentId: intent.id,
+        metodoPago,
+        cantidadKg: match.cantidadKg,
+        precioTotal: total,
+        comisionPlataforma: comision.total,
+        comisionPorcentaje: comision.porcentaje,
+        estado: 'PENDIENTE_PAGO' as const,
+      };
+      const transaccion = match.transaccion
+        ? await tx.transaccion.update({
+            where: { id: match.transaccion.id },
+            data: txPayload,
+          })
+        : await tx.transaccion.create({
+            data: {
+              matchId,
+              vendedorId: match.lote.vendedorId,
+              compradorId,
+              ...txPayload,
+            },
+          });
 
-    // 8. Notify buyer of order confirmation (non-blocking)
+      // 7. Update Pedido.stripePaymentIntentId and advance match estado
+      await Promise.all([
+        tx.pedido.update({
+          where: { id: match.pedidoId },
+          data: { stripePaymentIntentId: intent.id },
+        }),
+        tx.match.update({
+          where: { id: matchId },
+          data: { estado: 'PENDIENTE_PAGO' },
+        }),
+      ]);
+
+      return {
+        clientSecret: intent.client_secret!,
+        transaccionId: transaccion.id,
+        totalAmount: total,
+        // Pass data needed for email notification outside the transaction
+        _emailContext: {
+          pedidoId: match.pedidoId,
+          productoId: match.lote.productoId,
+          total,
+        },
+      };
+    }, { isolationLevel: 'Serializable' });
+
+    // 8. Notify buyer of order confirmation (non-blocking, outside transaction)
     void (async () => {
       try {
         const comprador = await prisma.user.findUnique({
@@ -168,14 +184,14 @@ export class StripeService {
           select: { email: true, nombre: true },
         });
         const producto = await prisma.producto.findUnique({
-          where: { id: match.lote.productoId },
+          where: { id: result._emailContext.productoId },
           select: { nombre: true },
         });
         if (comprador?.email) {
           await sendOrderConfirmedEmail(comprador.email, comprador.nombre, {
-            pedidoId: match.pedidoId,
-            productoNombre: producto?.nombre ?? match.lote.productoId,
-            totalAmount: total,
+            pedidoId: result._emailContext.pedidoId,
+            productoNombre: producto?.nombre ?? result._emailContext.productoId,
+            totalAmount: result._emailContext.total,
           });
         }
       } catch (emailErr) {
@@ -184,9 +200,9 @@ export class StripeService {
     })();
 
     return {
-      clientSecret: intent.client_secret!,
-      transaccionId: transaccion.id,
-      totalAmount: total,
+      clientSecret: result.clientSecret,
+      transaccionId: result.transaccionId,
+      totalAmount: result.totalAmount,
     };
   }
 

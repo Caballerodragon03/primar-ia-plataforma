@@ -55,17 +55,15 @@ export class QRService {
     if (transaccion.compradorId !== compradorId) {
       throw new AppError('Este QR no pertenece a tu transacción', 403);
     }
-    if (transaccion.qrUsado) {
-      throw new AppError('Este QR ya ha sido utilizado', 409);
-    }
 
     const result = verificarQRToken(token, env.QR_HMAC_SECRET);
     if (!result.valid) {
       throw new AppError('QR token inválido o expirado', 400);
     }
 
-    const updated = await prisma.transaccion.update({
-      where: { id: transaccion.id },
+    // Atomic check-and-set: only one concurrent request can succeed
+    const updateResult = await prisma.transaccion.updateMany({
+      where: { id: transaccion.id, qrUsado: false },
       data: {
         qrUsado: true,
         qrFechaUso: new Date(),
@@ -73,7 +71,16 @@ export class QRService {
       },
     });
 
-    return updated;
+    if (updateResult.count === 0) {
+      throw new AppError('Este QR ya ha sido utilizado', 409);
+    }
+
+    // Return the updated record
+    const updated = await prisma.transaccion.findUnique({
+      where: { id: transaccion.id },
+    });
+
+    return updated!;
   }
 }
 

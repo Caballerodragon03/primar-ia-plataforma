@@ -45,6 +45,15 @@ export default function BuyerDeliveryPage() {
       .finally(() => setLoading(false));
   }, [txId]);
 
+  // Clean up camera on unmount
+  useEffect(() => {
+    return () => {
+      if (videoRef.current?.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+      }
+    };
+  }, []);
+
   const startCamera = async () => {
     setShowScanner(true);
     setCameraError('');

@@ -30,4 +30,15 @@ if (!parsed.success) {
   process.exit(1);
 }
 
+if (parsed.data.NODE_ENV === 'production') {
+  const placeholders = ['sk_test_placeholder', 'whsec_placeholder', 're_placeholder', 'placeholder'];
+  const entries = Object.entries(parsed.data) as [string, string][];
+  for (const [key, value] of entries) {
+    if (typeof value === 'string' && placeholders.includes(value)) {
+      console.error(`FATAL: ${key} has a placeholder value in production`);
+      process.exit(1);
+    }
+  }
+}
+
 export const env = parsed.data;

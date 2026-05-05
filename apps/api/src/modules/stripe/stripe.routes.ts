@@ -1,5 +1,6 @@
 import { Router, raw } from 'express';
 import { requireAuth, requireRole } from '../../middleware/auth.middleware.js';
+import { apiRateLimiter } from '../../middleware/rateLimiter.middleware.js';
 import {
   startOnboarding,
   getStatus,
@@ -17,7 +18,7 @@ stripeRouter.get('/connect/status', requireAuth, requireRole('VENDEDOR'), getSta
 stripeRouter.post('/connect/onboard', requireAuth, requireRole('VENDEDOR'), startOnboarding);
 
 // ── Stripe webhook (raw body required) ───────────────────────────────────────
-stripeRouter.post('/webhook', raw({ type: 'application/json' }), stripeWebhook);
+stripeRouter.post('/webhook', apiRateLimiter, raw({ type: 'application/json' }), stripeWebhook);
 
 // ── Payment Intent (buyer creates pre-auth) ──────────────────────────────────
 stripeRouter.post('/payment-intent', requireAuth, requireRole('COMPRADOR'), createPaymentIntent);

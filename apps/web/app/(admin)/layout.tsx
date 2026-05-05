@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
@@ -7,7 +8,13 @@ import { LogOut, ShieldCheck } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { clearAuth } = useAuthStore();
+  const { clearAuth, user } = useAuthStore();
+
+  useEffect(() => {
+    if (!user || user.role !== 'ADMIN') router.replace('/login');
+  }, [user, router]);
+
+  if (!user || user.role !== 'ADMIN') return null;
 
   const handleLogout = async () => {
     try {
