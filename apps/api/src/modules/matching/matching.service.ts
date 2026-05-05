@@ -571,7 +571,7 @@ export class MatchingService {
           {
             transaccion: {
               stripePaymentIntentId: null,
-              estado: { notIn: ['COMPLETADO', 'ENTREGADO', 'CANCELADO', 'REEMBOLSADO', 'EN_DISPUTA'] as const },
+              estado: { notIn: ['COMPLETADO', 'ENTREGADO', 'CANCELADO', 'REEMBOLSADO', 'EN_DISPUTA'] },
             },
           },
         ],
@@ -731,7 +731,7 @@ export class MatchingService {
               {
                 transaccion: {
                   stripePaymentIntentId: null,
-                  estado: { notIn: ['COMPLETADO', 'ENTREGADO', 'CANCELADO', 'REEMBOLSADO', 'EN_DISPUTA'] as const },
+                  estado: { notIn: ['COMPLETADO', 'ENTREGADO', 'CANCELADO', 'REEMBOLSADO', 'EN_DISPUTA'] },
                 },
               },
             ],
