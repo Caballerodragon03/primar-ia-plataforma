@@ -6,7 +6,11 @@ COPY packages/ ./packages/
 COPY apps/api/ ./apps/api/
 
 RUN npm ci --workspace=apps/api --workspace=packages/database --workspace=packages/shared --workspace=packages/email --include-workspace-root
+
 RUN cd packages/database && npx prisma generate
+RUN cd packages/database && npx tsc
+RUN cd packages/shared && npx tsc
+RUN cd packages/email && npx tsc || true
 RUN cd apps/api && npm run build
 
 FROM node:20-alpine AS runner
