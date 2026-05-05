@@ -26,7 +26,6 @@ COPY --from=builder /app/packages/ ./packages/
 COPY --from=builder /app/apps/api/dist/ ./apps/api/dist/
 COPY --from=builder /app/apps/api/package.json ./apps/api/
 COPY --from=builder /app/node_modules/ ./node_modules/
-COPY --from=builder /app/apps/api/node_modules/ ./apps/api/node_modules/ 2>/dev/null || true
 
 EXPOSE 3001
 CMD ["node", "apps/api/dist/index.js"]
