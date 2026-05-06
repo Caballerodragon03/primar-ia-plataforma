@@ -7,14 +7,23 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, _hydrated } = useAuthStore();
+  const { user, _hydrated } = useAuthStore();
   const router = useRouter();
+  const isAuthenticated = user !== null;
 
   useEffect(() => {
     if (_hydrated && !isAuthenticated) router.replace('/login');
   }, [isAuthenticated, _hydrated, router]);
 
-  if (!_hydrated || !isAuthenticated) return null;
+  if (!_hydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-[#E1C44D] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="flex min-h-screen bg-background">

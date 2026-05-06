@@ -15,7 +15,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (_hydrated && (!user || user.role !== 'ADMIN')) router.replace('/login');
   }, [user, _hydrated, router]);
 
-  if (!_hydrated || !user || user.role !== 'ADMIN') return null;
+  if (!_hydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F8F6]">
+        <div className="w-8 h-8 border-4 border-[#E1C44D] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user || user.role !== 'ADMIN') return null;
 
   const handleLogout = async () => {
     try {

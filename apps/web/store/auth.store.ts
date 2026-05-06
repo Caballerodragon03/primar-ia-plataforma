@@ -37,9 +37,12 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'primaria-auth',
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
-      onRehydrateStorage: () => () => {
-        useAuthStore.setState({ _hydrated: true });
+      partialize: (state) => ({ user: state.user }),
+      onRehydrateStorage: () => (state) => {
+        useAuthStore.setState({
+          _hydrated: true,
+          isAuthenticated: state?.user != null,
+        });
       },
     }
   )
