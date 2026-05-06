@@ -149,6 +149,23 @@ enum Idioma {
   EN
 }
 
+enum ScoreStatus {
+  NEW_USER
+  ACTIVE
+  RESTRICTED
+}
+
+enum ScoreEventTipo {
+  PRIMERA_TRANSACCION
+  TRANSACCION_OK
+  INCIDENCIA_ABIERTA
+  DISPUTA_RESUELTA_CONTRA
+  DISPUTA_RESUELTA_FAVOR
+  RATING_RECIBIDO
+  ADMIN_PENALIZACION
+  ADMIN_INCENTIVO
+}
+
 // ─── MODELOS ─────────────────────────────────────────────────────────────────
 
 model User {
@@ -166,6 +183,12 @@ model User {
   preferenciasNotif       Json?      @map("preferencias_notificaciones")
   loginAttempts           Int        @default(0) @map("login_attempts")
   lockedUntil             DateTime?  @map("locked_until")
+  scoreFiabilidad         Decimal?   @map("score_fiabilidad") @db.Decimal(5, 2)
+  scoreStatus             ScoreStatus @default(NEW_USER) @map("score_status")
+  transaccionesOk         Int        @default(0) @map("transacciones_ok")
+  transaccionesIncid      Int        @default(0) @map("transacciones_incid")
+  ratingMedio             Decimal?   @map("rating_medio") @db.Decimal(3, 2)
+  numValoraciones         Int        @default(0) @map("num_valoraciones")
   createdAt               DateTime   @default(now()) @map("created_at")
   updatedAt               DateTime   @updatedAt @map("updated_at")
 
@@ -185,6 +208,9 @@ model User {
   suscripcion             Suscripcion?
   auditoria               Auditoria[]
   certificadosVerificados Certificado[]  @relation("CertificadoVerificador")
+  scoreEventsUser         ScoreEvent[]   @relation("ScoreEventUser")
+  scoreEventsAdmin        ScoreEvent[]   @relation("ScoreEventAdmin")
+  disputaMensajes         DisputaMensaje[]
 
   @@index([email])
   @@index([username])
@@ -319,6 +345,8 @@ model Pedido {
   costoLogisticaEstimado Decimal?     @map("costo_logistica_estimado") @db.Decimal(10, 2)
   fechaEntregaDeseada    DateTime     @map("fecha_entrega_deseada")
   notasAdicionales       String?      @map("notas_adicionales")
+  destinoLat             Float?       @map("destino_lat")
+  destinoLng             Float?       @map("destino_lng")
   estado                 PedidoEstado @default(BORRADOR)
   stripePaymentIntentId  String?      @unique @map("stripe_payment_intent_id")
   contratoPdfUrl         String?      @map("contrato_pdf_url")
@@ -452,6 +480,11 @@ model Disputa {
   resolucion             DisputaResolucion?
   porcentajeComprador    Decimal?           @map("porcentaje_comprador") @db.Decimal(5, 2)
   porcentajeVendedor     Decimal?           @map("porcentaje_vendedor") @db.Decimal(5, 2)
+  penalizacionComprador  Decimal?           @map("penalizacion_comprador") @db.Decimal(5, 2)
+  penalizacionVendedor   Decimal?           @map("penalizacion_vendedor") @db.Decimal(5, 2)
+  incentivoComprador     Decimal?           @map("incentivo_comprador") @db.Decimal(5, 2)
+  incentivoVendedor      Decimal?           @map("incentivo_vendedor") @db.Decimal(5, 2)
+  suscripcionGratisUserId String?           @map("suscripcion_gratis_user_id")
   adminId                String?            @map("admin_id")
   notasAdmin             String?            @map("notas_admin")
   estado                 DisputaEstado      @default(ABIERTA)
@@ -461,6 +494,7 @@ model Disputa {
   transaccion            Transaccion        @relation(fields: [transaccionId], references: [id])
   abiertaPor             User               @relation("DisputaAbiertaPor", fields: [abiertaPorId], references: [id])
   admin                  User?              @relation("DisputaAdmin", fields: [adminId], references: [id])
+  mensajes               DisputaMensaje[]
 
   @@index([transaccionId])
   @@index([estado])
@@ -495,6 +529,8 @@ model Suscripcion {
   estado               SuscripcionEstado @default(ACTIVA)
   fechaInicio          DateTime          @map("fecha_inicio")
   fechaFin             DateTime?         @map("fecha_fin")
+  comoCompensacion     Boolean           @default(false) @map("como_compensacion")
+  compensacionMeses    Int?              @map("compensacion_meses")
   createdAt            DateTime          @default(now()) @map("created_at")
   updatedAt            DateTime          @updatedAt @map("updated_at")
 
@@ -551,6 +587,42 @@ model Auditoria {
   @@index([entidad, entidadId])
   @@index([createdAt])
   @@map("auditoria")
+}
+
+model ScoreEvent {
+  id             String         @id @default(cuid())
+  userId         String         @map("user_id")
+  tipo           ScoreEventTipo
+  delta          Decimal        @db.Decimal(6, 2)
+  scoreAntes     Decimal?       @map("score_antes") @db.Decimal(5, 2)
+  scoreDespues   Decimal        @map("score_despues") @db.Decimal(5, 2)
+  motivo         String?
+  referenciaTipo String?        @map("referencia_tipo")
+  referenciaId   String?        @map("referencia_id")
+  adminId        String?        @map("admin_id")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  user           User           @relation("ScoreEventUser", fields: [userId], references: [id])
+  admin          User?          @relation("ScoreEventAdmin", fields: [adminId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("score_events")
+}
+
+model DisputaMensaje {
+  id         String   @id @default(cuid())
+  disputaId  String   @map("disputa_id")
+  autorId    String   @map("autor_id")
+  contenido  String   @db.VarChar(2000)
+  archivoUrl String?  @map("archivo_url")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  disputa    Disputa  @relation(fields: [disputaId], references: [id])
+  autor      User     @relation(fields: [autorId], references: [id])
+
+  @@index([disputaId, createdAt])
+  @@map("disputa_mensajes")
 }
 
 model BannedEntry {

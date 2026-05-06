@@ -24,44 +24,50 @@ export async function runMatchingForLot(req: Request, res: Response): Promise<vo
 /**
  * POST /api/v1/matching/orders/:pedidoId/run
  * Trigger matching for a specific order (COMPRADOR must own the order).
+ * Query param: ?sortBy=precio — sort results by precio asc instead of score desc.
  */
 export async function runMatchingForOrder(req: Request, res: Response): Promise<void> {
   const pedidoId = req.params['pedidoId'] as string;
   const compradorId = req.user!.sub;
+  const sortBy = req.query['sortBy'] as string | undefined;
 
   // Verify ownership
   const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
   if (!pedido) throw new AppError('Pedido no encontrado', 404);
   if (pedido.compradorId !== compradorId) throw new AppError('Acceso prohibido', 403);
 
-  const matches = await matchingService.runMatchingForOrder(pedidoId);
+  const matches = await matchingService.runMatchingForOrder(pedidoId, sortBy);
   res.json({ success: true, data: matches, total: matches.length });
 }
 
 /**
  * GET /api/v1/matching/seller/matches
  * List all matches for the logged-in seller across all their lots.
+ * Query param: ?sortBy=precio — sort by precioKg asc instead of score desc.
  */
 export async function listSellerMatches(req: Request, res: Response): Promise<void> {
   const vendedorId = req.user!.sub;
-  const matches = await matchingService.getMatchesForSeller(vendedorId);
+  const sortBy = req.query['sortBy'] as string | undefined;
+  const matches = await matchingService.getMatchesForSeller(vendedorId, undefined, sortBy);
   res.json({ success: true, data: matches });
 }
 
 /**
  * GET /api/v1/matching/lots/:loteId/matches
  * List matches for a specific lot (VENDEDOR must own it).
+ * Query param: ?sortBy=precio — sort by precioKg asc instead of score desc.
  */
 export async function listLotMatches(req: Request, res: Response): Promise<void> {
   const loteId = req.params['loteId'] as string;
   const vendedorId = req.user!.sub;
+  const sortBy = req.query['sortBy'] as string | undefined;
 
   // Verify ownership
   const lote = await prisma.lote.findUnique({ where: { id: loteId } });
   if (!lote) throw new AppError('Lote no encontrado', 404);
   if (lote.vendedorId !== vendedorId) throw new AppError('Acceso prohibido', 403);
 
-  const matches = await matchingService.getMatchesForSeller(vendedorId, loteId);
+  const matches = await matchingService.getMatchesForSeller(vendedorId, loteId, sortBy);
   res.json({ success: true, data: matches });
 }
 

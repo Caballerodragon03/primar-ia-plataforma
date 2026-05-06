@@ -11,6 +11,14 @@ type LoteCalibre = { calibre: string; cantidad_kg: number; precio_min_kg: number
 type PedidoCalibre = { calibre: string; cantidad_kg: number; precio_max_kg: number };
 type ContribucionCalibre = { calibre: string; cantidad_kg: number; incoterm?: string };
 
+// Vendedor fields required for scoring (joined via lote.vendedor)
+type VendedorScoring = {
+  scoreFiabilidad: { toNumber(): number } | null;
+  scoreStatus: 'NEW_USER' | 'ACTIVE' | 'RESTRICTED';
+  transaccionesOk: number;
+  transaccionesIncid: number;
+};
+
 export type MatchWithScore = Match & {
   indiceRentabilidad: number;
   pedido: {
@@ -29,6 +37,18 @@ export type MatchWithScore = Match & {
   };
 };
 
+// ─── Haversine ────────────────────────────────────────────────────────────────
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 // ─── Scoring helpers ──────────────────────────────────────────────────────────
 
 function toLoteCalibre(raw: unknown): LoteCalibre[] {
@@ -40,7 +60,7 @@ function toPedidoCalibre(raw: unknown): PedidoCalibre[] {
 }
 
 /**
- * Score de rentabilidad: precio ofrecido por el vendedor vs. precio máximo del comprador.
+ * Rentabilidad: precio ofrecido por el vendedor vs. precio máximo del comprador.
  * Rango: 0–1. Cuanto más cerca del precio máximo del comprador, mayor puntuación.
  */
 function scoreRentabilidad(loteCalibres: LoteCalibre[], pedidoCalibres: PedidoCalibre[]): number {
@@ -62,78 +82,157 @@ function scoreRentabilidad(loteCalibres: LoteCalibre[], pedidoCalibres: PedidoCa
 }
 
 /**
- * Score de recencia: lotes creados en los últimos 30 días puntúan más alto.
+ * Fiabilidad: basada en el scoreStatus y scoreFiabilidad del vendedor.
+ * NEW_USER con pocas transacciones → beneficio de duda 0.75.
+ */
+function scoreFiabilidad(vendedor: VendedorScoring): number {
+  if (
+    vendedor.scoreStatus === 'NEW_USER' &&
+    vendedor.transaccionesOk + vendedor.transaccionesIncid < 5
+  ) {
+    return 0.75;
+  }
+  if (vendedor.scoreFiabilidad === null) {
+    return 0.75;
+  }
+  return vendedor.scoreFiabilidad.toNumber() / 100;
+}
+
+/**
+ * Proximidad: distancia Haversine entre el lote y el destino del pedido.
+ * 0 km → 1.0, 800 km+ → 0.0. Sin coordenadas → 0.5 (neutro).
+ */
+function scoreProximidad(lote: Lote, pedido: Pedido): number {
+  if (lote.coordenadasLat == null || lote.coordenadasLng == null) return 0.5;
+  const pedidoWithCoords = pedido as Pedido & { destinoLat?: number | null; destinoLng?: number | null };
+  if (pedidoWithCoords.destinoLat == null || pedidoWithCoords.destinoLng == null) return 0.5;
+
+  const distKm = haversineKm(
+    lote.coordenadasLat,
+    lote.coordenadasLng,
+    pedidoWithCoords.destinoLat,
+    pedidoWithCoords.destinoLng
+  );
+  return Math.max(0, 1 - distKm / 800);
+}
+
+/**
+ * Recencia: lotes creados en los últimos 30 días puntúan más alto.
  */
 function scoreRecencia(lote: Lote): number {
   const MAX_DAYS = 30;
-  const ahora = Date.now();
-  const edadMs = ahora - lote.createdAt.getTime();
-  const edadDias = edadMs / (1000 * 60 * 60 * 24);
+  const edadDias = (Date.now() - lote.createdAt.getTime()) / (1000 * 60 * 60 * 24);
   if (edadDias >= MAX_DAYS) return 0;
   return 1 - edadDias / MAX_DAYS;
 }
 
 /**
- * Score de proximidad: Haversine entre lote y pedido (destino final).
- * Si no hay coordenadas, devuelve 0.5 (neutro).
- * 0 km → 1.0, 1000 km+ → 0.0.
+ * Cobertura: qué fracción de los kg solicitados cubre el lote (calibres compatibles).
+ * Sin cantidades definidas en el pedido → 0.5 (neutro).
  */
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+function scoreCobertura(loteCalibres: LoteCalibre[], pedidoCalibres: PedidoCalibre[]): number {
+  let totalKgDisponible = 0;
+  let totalKgSolicitado = 0;
 
-function scoreProximidad(lote: Lote, _pedido: Pedido): number {
-  // Pedido doesn't carry buyer coordinates in the schema; use neutral score.
-  // When buyer coordinates are available they can be added via a join on Empresa.
-  if (lote.coordenadasLat == null || lote.coordenadasLng == null) {
-    return 0.5;
+  for (const pc of pedidoCalibres) {
+    if (!pc.cantidad_kg || pc.cantidad_kg <= 0) {
+      // Si ningún calibre tiene cantidad definida → neutro
+      return 0.5;
+    }
+    const lc = loteCalibres.find((l) => l.calibre === pc.calibre);
+    if (lc) {
+      totalKgDisponible += lc.cantidad_kg;
+    }
+    totalKgSolicitado += pc.cantidad_kg;
   }
-  // No destination coordinates on Pedido → neutral
+
+  if (totalKgSolicitado === 0) return 0.5;
+  return Math.min(totalKgDisponible / totalKgSolicitado, 1.0);
+}
+
+/**
+ * CertMatch: compatibilidad de certificaciones lote vs. pedido.
+ * Pedido no tiene campo cert requerido aún → 1.0 (neutro).
+ */
+function scoreCertMatch(_lote: Lote, _pedido: Pedido): number {
+  // Future: compare lote.certificaciones (JSON string[]) vs pedido required certs
+  return 1.0;
+}
+
+/**
+ * Afinidad: historial de transacciones completadas entre este par de usuarios.
+ * Async porque necesita queries a la BD.
+ */
+async function scoreAfinidad(vendedorId: string, compradorId: string): Promise<number> {
+  // Check if there's a dispute resolved against the vendor with this buyer
+  const disputaContra = await prisma.disputa.findFirst({
+    where: {
+      resolucion: 'FAVOR_COMPRADOR',
+      transaccion: {
+        vendedorId,
+        compradorId,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (disputaContra) return 0.0;
+
+  // Count completed transactions between this pair (no disputes)
+  const completadas = await prisma.transaccion.count({
+    where: {
+      vendedorId,
+      compradorId,
+      estado: 'COMPLETADO',
+      disputas: { none: {} },
+    },
+  });
+
+  if (completadas >= 3) return 1.0;
+  if (completadas >= 1) return 0.7;
   return 0.5;
 }
 
 /**
- * Score de historial: placeholder MVP, neutro 0.5.
+ * Score compuesto con los 7 componentes ponderados.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function scoreHistorial(_vendedorId: string): number {
-  return 0.5;
-}
-
-/**
- * Score compuesto: 0.4*rentabilidad + 0.2*proximidad + 0.2*recencia + 0.2*historial
- */
-function computeScore(
-  lote: Lote,
+async function computeScore(
+  lote: Lote & { vendedor: VendedorScoring },
   pedido: Pedido,
-  vendedorId: string
-): { total: number; detalle: Record<string, number> } {
+  compradorId: string
+): Promise<{ total: number; detalle: Record<string, number> }> {
   const loteCalibres = toLoteCalibre(lote.calibres);
   const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
 
   const rentabilidad = scoreRentabilidad(loteCalibres, pedidoCalibres);
+  const fiabilidad = scoreFiabilidad(lote.vendedor);
   const proximidad = scoreProximidad(lote, pedido);
   const recencia = scoreRecencia(lote);
-  const historial = scoreHistorial(vendedorId);
+  const cobertura = scoreCobertura(loteCalibres, pedidoCalibres);
+  const certMatch = scoreCertMatch(lote, pedido);
+  const afinidad = await scoreAfinidad(lote.vendedorId, compradorId);
 
-  // Price is the most important signal for sellers; proximity is neutral without coords
-  const total = 0.6 * rentabilidad + 0.1 * proximidad + 0.2 * recencia + 0.1 * historial;
+  const total =
+    0.30 * rentabilidad +
+    0.25 * fiabilidad +
+    0.15 * proximidad +
+    0.10 * recencia +
+    0.10 * cobertura +
+    0.05 * certMatch +
+    0.05 * afinidad;
 
   return {
     total,
-    detalle: { rentabilidad, proximidad, recencia, historial },
+    detalle: { rentabilidad, fiabilidad, proximidad, recencia, cobertura, certMatch, afinidad },
   };
 }
 
-// ─── Mandatory criteria ───────────────────────────────────────────────────────
+// ─── Mandatory criteria (hard filters) ────────────────────────────────────────
 
-function meetsHardCriteria(lote: Lote, pedido: Pedido): boolean {
+function meetsHardCriteria(
+  lote: Lote & { vendedor: VendedorScoring },
+  pedido: Pedido
+): boolean {
   // 1. Mismo producto
   if (lote.productoId !== pedido.productoId) return false;
 
@@ -146,29 +245,62 @@ function meetsHardCriteria(lote: Lote, pedido: Pedido): boolean {
     return false;
   }
 
-  // 3. Al menos un calibre en común
+  // 3. Al menos un calibre en común con precio compatible
   const loteCalibres = toLoteCalibre(lote.calibres);
   const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
-  const loteSet = new Set(loteCalibres.map((c) => c.calibre));
-  const hasOverlap = pedidoCalibres.some((pc) => loteSet.has(pc.calibre));
-  if (!hasOverlap) return false;
-
-  // 4. Fecha disponibilidad <= fecha entrega deseada
-  if (lote.fechaDisponibilidad > pedido.fechaEntregaDeseada) return false;
-
-  // 5. Precio: al menos un calibre en común donde lote precio_min_kg <= pedido precio_max_kg
   const hasPriceFit = pedidoCalibres.some((pc) => {
     const lc = loteCalibres.find((l) => l.calibre === pc.calibre);
     return lc != null && lc.precio_min_kg <= pc.precio_max_kg;
   });
   if (!hasPriceFit) return false;
 
+  // 4. Fecha disponibilidad <= fecha entrega deseada
+  if (lote.fechaDisponibilidad > pedido.fechaEntregaDeseada) return false;
+
+  // 5. Vendedor no restringido
+  if (lote.vendedor.scoreStatus === 'RESTRICTED') return false;
+
+  // 6. Al menos un calibre con stock (cantidad_kg > 0)
+  const hasStock = loteCalibres.some((lc) => lc.cantidad_kg > 0);
+  if (!hasStock) return false;
+
   return true;
 }
 
+// ─── Anti-monopolio ────────────────────────────────────────────────────────────
+
+/**
+ * Si los top-5 resultados son del mismo vendedor, intercala el primer resultado
+ * de otro vendedor en posición 3 (índice 2).
+ */
+function applyAntiMonopoly(results: ScoredLote[]): ScoredLote[] {
+  if (results.length < 6) return results;
+
+  const top5VendedorIds = results.slice(0, 5).map((r) => r.lote.vendedorId);
+  const allSameVendor = top5VendedorIds.every((id) => id === top5VendedorIds[0]);
+
+  if (!allSameVendor) return results;
+
+  // Find the first result from a different vendor (position 5+)
+  const altIndex = results.findIndex((r) => r.lote.vendedorId !== top5VendedorIds[0]);
+  if (altIndex === -1) return results;
+
+  const spliced = results.splice(altIndex, 1);
+  const altResult = spliced[0];
+  if (!altResult) return results;
+  results.splice(2, 0, altResult);
+  return results;
+}
+
+// ─── Internal type for scored lots ────────────────────────────────────────────
+
+type ScoredLote = {
+  lote: Lote & { vendedor: VendedorScoring };
+  score: { total: number; detalle: Record<string, number> };
+};
+
 // ─── Default calibres/precio helpers ─────────────────────────────────────────
 
-/** Precio medio ponderado de los calibres del lote para los calibres solapados. */
 function computePrecioKgFromContribucion(
   loteCalibres: LoteCalibre[],
   contribucion: ContribucionCalibre[]
@@ -195,7 +327,19 @@ export class MatchingService {
    * registros Match en estado PROPUESTO.
    */
   async runMatchingForLot(loteId: string): Promise<Match[]> {
-    const lote = await prisma.lote.findUnique({ where: { id: loteId } });
+    const lote = await prisma.lote.findUnique({
+      where: { id: loteId },
+      include: {
+        vendedor: {
+          select: {
+            scoreFiabilidad: true,
+            scoreStatus: true,
+            transaccionesOk: true,
+            transaccionesIncid: true,
+          },
+        },
+      },
+    });
     if (!lote) throw new AppError('Lote no encontrado', 404);
     if (lote.estado !== 'ACTIVO') throw new AppError('El lote debe estar ACTIVO para ejecutar matching', 400);
 
@@ -208,20 +352,19 @@ export class MatchingService {
     for (const pedido of pedidos) {
       if (!meetsHardCriteria(lote, pedido)) continue;
 
-      const { total, detalle } = computeScore(lote, pedido, lote.vendedorId);
+      const { total, detalle } = await computeScore(lote, pedido, pedido.compradorId);
 
-      // Valores por defecto — se actualizan cuando el vendedor acepta
       const loteCalibres = toLoteCalibre(lote.calibres);
       const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
 
-      // Calibres solapados para la propuesta inicial
       const calibresIniciales = loteCalibres.filter((lc) =>
         pedidoCalibres.some((pc) => pc.calibre === lc.calibre && lc.precio_min_kg <= pc.precio_max_kg)
       );
       const cantidadKg = calibresIniciales.reduce((s, c) => s + c.cantidad_kg, 0);
-      const precioKg = cantidadKg > 0
-        ? calibresIniciales.reduce((s, c) => s + c.precio_min_kg * c.cantidad_kg, 0) / cantidadKg
-        : 0;
+      const precioKg =
+        cantidadKg > 0
+          ? calibresIniciales.reduce((s, c) => s + c.precio_min_kg * c.cantidad_kg, 0) / cantidadKg
+          : 0;
 
       const match = await prisma.match.upsert({
         where: { loteId_pedidoId: { loteId, pedidoId: pedido.id } },
@@ -251,10 +394,12 @@ export class MatchingService {
               select: { email: true, nombre: true },
             });
             const compradorEmpresa = pedido.compradorId
-              ? (await prisma.empresa.findUnique({
-                  where: { userId: pedido.compradorId },
-                  select: { razonSocial: true },
-                }))?.razonSocial ?? 'Comprador'
+              ? (
+                  await prisma.empresa.findUnique({
+                    where: { userId: pedido.compradorId },
+                    select: { razonSocial: true },
+                  })
+                )?.razonSocial ?? 'Comprador'
               : 'Comprador';
             if (vendedor?.email) {
               const producto = await prisma.producto.findUnique({
@@ -283,24 +428,51 @@ export class MatchingService {
 
   /**
    * Encuentra todos los lotes ACTIVOS compatibles con el pedido y crea/actualiza
-   * registros Match en estado PROPUESTO.
+   * registros Match en estado PROPUESTO. Aplica anti-monopolio y ordena por score.
    */
-  async runMatchingForOrder(pedidoId: string): Promise<Match[]> {
+  async runMatchingForOrder(pedidoId: string, sortBy?: string): Promise<Match[]> {
     const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
     if (!pedido) throw new AppError('Pedido no encontrado', 404);
     if (pedido.estado !== 'ACTIVO') throw new AppError('El pedido debe estar ACTIVO para ejecutar matching', 400);
 
     const lotes = await prisma.lote.findMany({
       where: { estado: 'ACTIVO' },
+      include: {
+        vendedor: {
+          select: {
+            scoreFiabilidad: true,
+            scoreStatus: true,
+            transaccionesOk: true,
+            transaccionesIncid: true,
+          },
+        },
+      },
     });
+
+    // Score all passing lots
+    const scored: ScoredLote[] = [];
+    for (const lote of lotes) {
+      if (!meetsHardCriteria(lote, pedido)) continue;
+      const score = await computeScore(lote, pedido, pedido.compradorId);
+      scored.push({ lote, score });
+    }
+
+    // Sort by scoreTotal desc (default) or precio asc
+    if (sortBy === 'precio') {
+      scored.sort((a, b) => {
+        const precioA = Math.min(...toLoteCalibre(a.lote.calibres).map((c) => c.precio_min_kg));
+        const precioB = Math.min(...toLoteCalibre(b.lote.calibres).map((c) => c.precio_min_kg));
+        return precioA - precioB;
+      });
+    } else {
+      scored.sort((a, b) => b.score.total - a.score.total);
+      applyAntiMonopoly(scored);
+    }
 
     const matches: Match[] = [];
 
-    for (const lote of lotes) {
-      if (!meetsHardCriteria(lote, pedido)) continue;
-
-      const { total, detalle } = computeScore(lote, pedido, lote.vendedorId);
-
+    for (const { lote, score } of scored) {
+      const { total, detalle } = score;
       const loteCalibres = toLoteCalibre(lote.calibres);
       const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
 
@@ -308,9 +480,10 @@ export class MatchingService {
         pedidoCalibres.some((pc) => pc.calibre === lc.calibre && lc.precio_min_kg <= pc.precio_max_kg)
       );
       const cantidadKg = calibresIniciales.reduce((s, c) => s + c.cantidad_kg, 0);
-      const precioKg = cantidadKg > 0
-        ? calibresIniciales.reduce((s, c) => s + c.precio_min_kg * c.cantidad_kg, 0) / cantidadKg
-        : 0;
+      const precioKg =
+        cantidadKg > 0
+          ? calibresIniciales.reduce((s, c) => s + c.precio_min_kg * c.cantidad_kg, 0) / cantidadKg
+          : 0;
 
       const match = await prisma.match.upsert({
         where: { loteId_pedidoId: { loteId: lote.id, pedidoId } },
@@ -339,8 +512,13 @@ export class MatchingService {
 
   /**
    * Devuelve los matches de los lotes de un vendedor con índice de rentabilidad.
+   * Soporta sortBy='precio' para ordenar por precioKg asc.
    */
-  async getMatchesForSeller(vendedorId: string, loteId?: string): Promise<MatchWithScore[]> {
+  async getMatchesForSeller(
+    vendedorId: string,
+    loteId?: string,
+    sortBy?: string
+  ): Promise<MatchWithScore[]> {
     const matches = await prisma.match.findMany({
       where: {
         lote: { vendedorId, estado: { not: 'VENDIDO' } },
@@ -374,7 +552,10 @@ export class MatchingService {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy:
+        sortBy === 'precio'
+          ? { precioKg: 'asc' }
+          : { scoreMatching: 'desc' },
     });
 
     return matches.map((m) => ({
@@ -391,146 +572,147 @@ export class MatchingService {
     matchId: string,
     calibresContribucion: ContributeInput['calibresContribucion']
   ): Promise<Match> {
-    // Wrap in a serializable transaction to prevent concurrent contributions
-    // from exceeding order capacity.
-    const updatedMatch = await prisma.$transaction(async (tx) => {
-      const match = await tx.match.findUnique({
-        where: { id: matchId },
-        include: {
-          lote: true,
-          pedido: {
-            include: {
-              matches: {
-                where: { estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] } },
-                select: { id: true, cantidadKg: true },
+    const updatedMatch = await prisma.$transaction(
+      async (tx) => {
+        const match = await tx.match.findUnique({
+          where: { id: matchId },
+          include: {
+            lote: true,
+            pedido: {
+              include: {
+                matches: {
+                  where: { estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] } },
+                  select: { id: true, cantidadKg: true },
+                },
               },
             },
           },
-        },
-      });
-
-      if (!match) throw new AppError('Match no encontrado', 404);
-      if (match.lote.vendedorId !== vendedorId) throw new AppError('Acceso prohibido', 403);
-      if (!['PROPUESTO', 'ENVIADO_VENDEDOR'].includes(match.estado)) {
-        throw new AppError('El match no está en un estado aceptable para contribuir', 400);
-      }
-
-      const loteCalibres = toLoteCalibre(match.lote.calibres);
-
-      for (const contrib of calibresContribucion) {
-        const lc = loteCalibres.find((l) => l.calibre === contrib.calibre);
-        if (!lc) {
-          throw new AppError(`Calibre "${contrib.calibre}" no existe en el lote`, 400);
-        }
-        if (contrib.cantidad_kg > lc.cantidad_kg) {
-          throw new AppError(
-            `Calibre "${contrib.calibre}": cantidad solicitada (${contrib.cantidad_kg} kg) supera la disponible (${lc.cantidad_kg} kg)`,
-            400
-          );
-        }
-      }
-
-      const pedidoCalibres = toPedidoCalibre(match.pedido.calibresSolicitados);
-      const totalPedidoKg = pedidoCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
-
-      // Fix: filter by ID not object identity
-      const otrosCommittedKg = match.pedido.matches
-        .filter((om) => om.id !== matchId)
-        .reduce((s, om) => s + Number(om.cantidadKg), 0);
-
-      // Cap total contribution so coverage doesn't exceed 100%
-      const remainingOrderKg = Math.max(0, totalPedidoKg - otrosCommittedKg);
-      if (remainingOrderKg === 0) {
-        throw new AppError('Este pedido ya está completamente cubierto', 400);
-      }
-      const requestedTotalKg = calibresContribucion.reduce((s, c) => s + c.cantidad_kg, 0);
-      let adjustedCalibres = calibresContribucion;
-      if (requestedTotalKg > remainingOrderKg) {
-        const ratio = remainingOrderKg / requestedTotalKg;
-        adjustedCalibres = calibresContribucion
-          .map((c) => ({
-            ...c,
-            cantidad_kg: Math.floor(c.cantidad_kg * ratio * 1000) / 1000,
-          }))
-          .filter((c) => c.cantidad_kg > 0);
-      }
-
-      const cantidadKg = adjustedCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
-      const precioKg = computePrecioKgFromContribucion(loteCalibres, adjustedCalibres);
-
-      const totalCoveredKg = otrosCommittedKg + cantidadKg;
-      const coverage = totalPedidoKg > 0 ? totalCoveredKg / totalPedidoKg : 0;
-
-      // Actualizar match
-      const result = await tx.match.update({
-        where: { id: matchId },
-        data: {
-          estado: 'ACEPTADO_VENDEDOR',
-          calibresJson: adjustedCalibres,
-          cantidadKg,
-          precioKg,
-        },
-      });
-
-      // Actualizar estado del pedido (fix: TOTALMENTE_CUBIERTO when 100%)
-      const nuevoPedidoEstado =
-        coverage >= 1 ? 'TOTALMENTE_CUBIERTO' :
-        coverage > 0 ? 'PARCIALMENTE_CUBIERTO' :
-        match.pedido.estado;
-      if (nuevoPedidoEstado !== match.pedido.estado) {
-        await tx.pedido.update({
-          where: { id: match.pedidoId },
-          data: { estado: nuevoPedidoEstado as 'TOTALMENTE_CUBIERTO' | 'PARCIALMENTE_CUBIERTO' },
         });
-      }
 
-      // Actualizar estado del lote según kg comprometidos
-      const loteMatchesAgg = await tx.match.aggregate({
-        where: {
-          loteId: match.loteId,
-          estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] },
-          id: { not: matchId },
-        },
-        _sum: { cantidadKg: true },
-      });
-      const loteOtherKg = Number(loteMatchesAgg._sum.cantidadKg ?? 0);
-      const loteTotalCommittedKg = loteOtherKg + cantidadKg;
-      const loteTotalKg = loteCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
-      const loteCoverage = loteTotalKg > 0 ? loteTotalCommittedKg / loteTotalKg : 0;
+        if (!match) throw new AppError('Match no encontrado', 404);
+        if (match.lote.vendedorId !== vendedorId) throw new AppError('Acceso prohibido', 403);
+        if (!['PROPUESTO', 'ENVIADO_VENDEDOR'].includes(match.estado)) {
+          throw new AppError('El match no está en un estado aceptable para contribuir', 400);
+        }
 
-      const nuevaLoteEstado: LoteEstado =
-        loteCoverage >= 1 ? 'VENDIDO' :
-        loteCoverage > 0 ? 'PARCIALMENTE_VENDIDO' :
-        match.lote.estado as LoteEstado;
+        const loteCalibres = toLoteCalibre(match.lote.calibres);
 
-      if (nuevaLoteEstado !== match.lote.estado) {
-        await tx.lote.update({
-          where: { id: match.loteId },
-          data: { estado: nuevaLoteEstado },
-        });
-      }
+        for (const contrib of calibresContribucion) {
+          const lc = loteCalibres.find((l) => l.calibre === contrib.calibre);
+          if (!lc) {
+            throw new AppError(`Calibre "${contrib.calibre}" no existe en el lote`, 400);
+          }
+          if (contrib.cantidad_kg > lc.cantidad_kg) {
+            throw new AppError(
+              `Calibre "${contrib.calibre}": cantidad solicitada (${contrib.cantidad_kg} kg) supera la disponible (${lc.cantidad_kg} kg)`,
+              400
+            );
+          }
+        }
 
-      // Crear Transaccion si no existe (habilita el chat entre las partes)
-      const existingTx = await tx.transaccion.findUnique({ where: { matchId } });
-      if (!existingTx) {
-        const precioTotal = cantidadKg * precioKg;
-        const commission = calcularComision(precioTotal, 'card');
-        await tx.transaccion.create({
+        const pedidoCalibres = toPedidoCalibre(match.pedido.calibresSolicitados);
+        const totalPedidoKg = pedidoCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
+
+        const otrosCommittedKg = match.pedido.matches
+          .filter((om) => om.id !== matchId)
+          .reduce((s, om) => s + Number(om.cantidadKg), 0);
+
+        const remainingOrderKg = Math.max(0, totalPedidoKg - otrosCommittedKg);
+        if (remainingOrderKg === 0) {
+          throw new AppError('Este pedido ya está completamente cubierto', 400);
+        }
+        const requestedTotalKg = calibresContribucion.reduce((s, c) => s + c.cantidad_kg, 0);
+        let adjustedCalibres = calibresContribucion;
+        if (requestedTotalKg > remainingOrderKg) {
+          const ratio = remainingOrderKg / requestedTotalKg;
+          adjustedCalibres = calibresContribucion
+            .map((c) => ({
+              ...c,
+              cantidad_kg: Math.floor(c.cantidad_kg * ratio * 1000) / 1000,
+            }))
+            .filter((c) => c.cantidad_kg > 0);
+        }
+
+        const cantidadKg = adjustedCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
+        const precioKg = computePrecioKgFromContribucion(loteCalibres, adjustedCalibres);
+
+        const totalCoveredKg = otrosCommittedKg + cantidadKg;
+        const coverage = totalPedidoKg > 0 ? totalCoveredKg / totalPedidoKg : 0;
+
+        const result = await tx.match.update({
+          where: { id: matchId },
           data: {
-            matchId,
-            vendedorId: match.lote.vendedorId,
-            compradorId: match.pedido.compradorId,
+            estado: 'ACEPTADO_VENDEDOR',
+            calibresJson: adjustedCalibres,
             cantidadKg,
-            precioTotal,
-            comisionPlataforma: commission.total,
-            comisionPorcentaje: commission.porcentaje,
-            estado: 'PENDIENTE_PAGO',
+            precioKg,
           },
         });
-      }
 
-      return result;
-    }, { isolationLevel: 'Serializable' });
+        const nuevoPedidoEstado =
+          coverage >= 1
+            ? 'TOTALMENTE_CUBIERTO'
+            : coverage > 0
+              ? 'PARCIALMENTE_CUBIERTO'
+              : match.pedido.estado;
+        if (nuevoPedidoEstado !== match.pedido.estado) {
+          await tx.pedido.update({
+            where: { id: match.pedidoId },
+            data: {
+              estado: nuevoPedidoEstado as 'TOTALMENTE_CUBIERTO' | 'PARCIALMENTE_CUBIERTO',
+            },
+          });
+        }
+
+        const loteMatchesAgg = await tx.match.aggregate({
+          where: {
+            loteId: match.loteId,
+            estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] },
+            id: { not: matchId },
+          },
+          _sum: { cantidadKg: true },
+        });
+        const loteOtherKg = Number(loteMatchesAgg._sum.cantidadKg ?? 0);
+        const loteTotalCommittedKg = loteOtherKg + cantidadKg;
+        const loteTotalKg = loteCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
+        const loteCoverage = loteTotalKg > 0 ? loteTotalCommittedKg / loteTotalKg : 0;
+
+        const nuevaLoteEstado: LoteEstado =
+          loteCoverage >= 1
+            ? 'VENDIDO'
+            : loteCoverage > 0
+              ? 'PARCIALMENTE_VENDIDO'
+              : (match.lote.estado as LoteEstado);
+
+        if (nuevaLoteEstado !== match.lote.estado) {
+          await tx.lote.update({
+            where: { id: match.loteId },
+            data: { estado: nuevaLoteEstado },
+          });
+        }
+
+        const existingTx = await tx.transaccion.findUnique({ where: { matchId } });
+        if (!existingTx) {
+          const precioTotal = cantidadKg * precioKg;
+          const commission = calcularComision(precioTotal, 'card');
+          await tx.transaccion.create({
+            data: {
+              matchId,
+              vendedorId: match.lote.vendedorId,
+              compradorId: match.pedido.compradorId,
+              cantidadKg,
+              precioTotal,
+              comisionPlataforma: commission.total,
+              comisionPorcentaje: commission.porcentaje,
+              estado: 'PENDIENTE_PAGO',
+            },
+          });
+        }
+
+        return result;
+      },
+      { isolationLevel: 'Serializable' }
+    );
 
     return updatedMatch;
   }
@@ -545,7 +727,6 @@ export class MatchingService {
     pendingContracts: number;
     pendingPhotos: number;
     pendingDeliveries: number;
-    // First-item IDs for direct deep-links from the dashboard
     firstPendingOfferOrderId?: string;
     firstPendingContractOrderId?: string;
     firstPendingContractTxId?: string;
@@ -556,7 +737,6 @@ export class MatchingService {
     firstPendingPhotosLotId?: string;
     firstPendingPhotosTxId?: string;
   }> {
-    // Unread messages: count messages sent by others that haven't been read
     const unreadMessages = await prisma.mensaje.count({
       where: {
         remitenteId: { not: userId },
@@ -577,7 +757,15 @@ export class MatchingService {
           {
             transaccion: {
               stripePaymentIntentId: null,
-              estado: { notIn: ['COMPLETADO', 'ENTREGADO', 'CANCELADO', 'REEMBOLSADO', 'EN_DISPUTA'] as TransaccionEstado[] },
+              estado: {
+                notIn: [
+                  'COMPLETADO',
+                  'ENTREGADO',
+                  'CANCELADO',
+                  'REEMBOLSADO',
+                  'EN_DISPUTA',
+                ] as TransaccionEstado[],
+              },
             },
           },
         ],
@@ -702,11 +890,44 @@ export class MatchingService {
     userId: string,
     role: string
   ): Promise<{
-    contracts: Array<{ txId: string; orderId: string; lotId: string; producto: string; counterpart: string; cantidadKg: number }>;
-    offers: Array<{ matchId: string; orderId: string; producto: string; seller: string; cantidadKg: number; precioKg: number }>;
-    deliveries: Array<{ txId: string; orderId: string; producto: string; seller: string; cantidadKg: number }>;
-    photos: Array<{ txId: string; lotId: string; producto: string; buyer: string; cantidadKg: number }>;
-    matches: Array<{ matchId: string; lotId: string; producto: string; buyer: string; cantidadKg: number; precioKg: number }>;
+    contracts: Array<{
+      txId: string;
+      orderId: string;
+      lotId: string;
+      producto: string;
+      counterpart: string;
+      cantidadKg: number;
+    }>;
+    offers: Array<{
+      matchId: string;
+      orderId: string;
+      producto: string;
+      seller: string;
+      cantidadKg: number;
+      precioKg: number;
+    }>;
+    deliveries: Array<{
+      txId: string;
+      orderId: string;
+      producto: string;
+      seller: string;
+      cantidadKg: number;
+    }>;
+    photos: Array<{
+      txId: string;
+      lotId: string;
+      producto: string;
+      buyer: string;
+      cantidadKg: number;
+    }>;
+    matches: Array<{
+      matchId: string;
+      lotId: string;
+      producto: string;
+      buyer: string;
+      cantidadKg: number;
+      precioKg: number;
+    }>;
   }> {
     console.log(`[getPendingTasksList] userId=${userId} role=${role}`);
     if (role === 'COMPRADOR') {
@@ -727,7 +948,6 @@ export class MatchingService {
             vendedor: { select: { nombre: true, apellidos: true } },
           },
         }),
-        // Only show offers where payment has NOT yet been authorized (no PI, not in terminal state)
         prisma.match.findMany({
           where: {
             pedido: { compradorId: userId },
@@ -737,7 +957,15 @@ export class MatchingService {
               {
                 transaccion: {
                   stripePaymentIntentId: null,
-                  estado: { notIn: ['COMPLETADO', 'ENTREGADO', 'CANCELADO', 'REEMBOLSADO', 'EN_DISPUTA'] as TransaccionEstado[] },
+                  estado: {
+                    notIn: [
+                      'COMPLETADO',
+                      'ENTREGADO',
+                      'CANCELADO',
+                      'REEMBOLSADO',
+                      'EN_DISPUTA',
+                    ] as TransaccionEstado[],
+                  },
                 },
               },
             ],
@@ -771,7 +999,9 @@ export class MatchingService {
         }),
       ]);
 
-      console.log(`[getPendingTasksList] COMPRADOR: ${pendingContracts.length} contracts, ${pendingOffers.length} offers, ${pendingDeliveries.length} deliveries`);
+      console.log(
+        `[getPendingTasksList] COMPRADOR: ${pendingContracts.length} contracts, ${pendingOffers.length} offers, ${pendingDeliveries.length} deliveries`
+      );
       return {
         contracts: pendingContracts.map((tx) => ({
           txId: tx.id,
@@ -782,12 +1012,16 @@ export class MatchingService {
           cantidadKg: Number(tx.cantidadKg),
         })),
         offers: pendingOffers.map((m) => {
-          const loteVendedor = (m.lote as unknown as { vendedor?: { nombre: string; apellidos: string } }).vendedor;
+          const loteVendedor = (
+            m.lote as unknown as { vendedor?: { nombre: string; apellidos: string } }
+          ).vendedor;
           return {
             matchId: m.id,
             orderId: m.pedido?.id ?? '',
             producto: m.lote?.producto?.nombre ?? 'N/D',
-            seller: loteVendedor ? `${loteVendedor.nombre} ${loteVendedor.apellidos}`.trim() : 'N/D',
+            seller: loteVendedor
+              ? `${loteVendedor.nombre} ${loteVendedor.apellidos}`.trim()
+              : 'N/D',
             cantidadKg: Number(m.cantidadKg),
             precioKg: Number(m.precioKg),
           };
@@ -840,7 +1074,6 @@ export class MatchingService {
           comprador: { select: { nombre: true, apellidos: true } },
         },
       }),
-      // Pending match offers: buyer-matched lots the seller hasn't accepted yet
       prisma.match.findMany({
         where: {
           lote: { vendedorId: userId },
@@ -884,7 +1117,8 @@ export class MatchingService {
         matchId: m.id,
         lotId: m.loteId,
         producto: m.lote?.producto?.nombre ?? 'N/D',
-        buyer: `${m.pedido?.comprador?.nombre ?? ''} ${m.pedido?.comprador?.apellidos ?? ''}`.trim(),
+        buyer:
+          `${m.pedido?.comprador?.nombre ?? ''} ${m.pedido?.comprador?.apellidos ?? ''}`.trim(),
         cantidadKg: Number(m.cantidadKg),
         precioKg: Number(m.precioKg),
       })),

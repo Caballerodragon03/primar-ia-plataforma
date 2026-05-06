@@ -2,6 +2,7 @@ import { prisma, type PedidoEstado, type MatchEstado } from '@primaria/database'
 import { AppError } from '../../middleware/error.middleware.js';
 import type { CreateOrderInput, UpdateOrderInput } from './orders.schema.js';
 import { matchingService } from '../matching/matching.service.js';
+import { geocodePedidoAsync } from '../matching/geocoding.service.js';
 
 type CalibreSolicitado = { calibre: string; cantidad_kg: number; precio_max_kg: number };
 
@@ -36,6 +37,11 @@ export class OrdersService {
       },
       include: { producto: true, variedad: true },
     });
+
+    // Geocode destinoFinal async (fire-and-forget, does not block response)
+    if (data.destinoFinal) {
+      geocodePedidoAsync(pedido.id, data.destinoFinal);
+    }
 
     // Auto-run matching when order is published
     if (pedido.estado === 'ACTIVO') {

@@ -15,3 +15,4 @@ export { PaymentModal } from './PaymentModal';
 export { ChatView } from './ChatView';
 export { SeasonalCalendar } from './SeasonalCalendar';
 export { IncotermWizard } from './IncotermWizard';
+export { ScoreBadge } from './ScoreBadge';

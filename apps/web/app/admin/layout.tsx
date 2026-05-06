@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
-import { LogOut, ShieldCheck } from 'lucide-react';
+import { LogOut, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -51,15 +51,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <nav className="bg-white border-b border-[#E5E7EB] px-6">
         <div className="flex gap-6">
           {[
-            { label: 'Dashboard', href: '/admin/dashboard' },
-            { label: 'Users', href: '/admin/users' },
-            { label: 'Certificates', href: '/admin/certificates' },
-          ].map(({ label, href }) => (
+            { label: 'Dashboard', href: '/admin/dashboard', icon: null },
+            { label: 'Users', href: '/admin/users', icon: null },
+            { label: 'Certificates', href: '/admin/certificates', icon: null },
+            { label: 'Incidentes', href: '/admin/incidents', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+          ].map(({ label, href, icon }) => (
             <Link
               key={href}
               href={href}
-              className="py-3 text-sm font-medium text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-[#E1C44D] transition-colors"
+              className="py-3 text-sm font-medium text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-[#E1C44D] transition-colors flex items-center gap-1.5"
             >
+              {icon}
               {label}
             </Link>
           ))}

@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { CoverageBar } from '@/components/ui/CoverageBar';
 import { PaymentModal } from '@/components/ui/PaymentModal';
 import { DisputeModal } from '@/components/ui/DisputeModal';
+import { ScoreBadge } from '@/components/ui/ScoreBadge';
 
 interface Match {
   id: string;
@@ -17,7 +18,13 @@ interface Match {
   precioKg: string;
   estado: string;
   lote: {
-    vendedor: { id: string; nombre: string; apellidos: string };
+    vendedor: {
+      id: string;
+      nombre: string;
+      apellidos: string;
+      scoreFiabilidad?: number | null;
+      scoreStatus?: 'NEW_USER' | 'ACTIVE' | 'RESTRICTED';
+    };
   };
   transaccion?: { id: string } | null;
 }
@@ -374,7 +381,16 @@ export default function OrderDetailPage() {
                     return (
                       <tr key={m.id} className="hover:bg-gray-50">
                         <td className="px-4 py-2.5 font-medium">
-                          {m.lote.vendedor.nombre} {m.lote.vendedor.apellidos}
+                          <div className="flex flex-col gap-0.5">
+                            <span>{m.lote.vendedor.nombre} {m.lote.vendedor.apellidos}</span>
+                            {m.lote.vendedor.scoreFiabilidad !== undefined && m.lote.vendedor.scoreStatus !== undefined && (
+                              <ScoreBadge
+                                score={m.lote.vendedor.scoreFiabilidad ?? null}
+                                status={m.lote.vendedor.scoreStatus}
+                                size="sm"
+                              />
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-2.5">{kg.toLocaleString('es-ES')}</td>
                         <td className="px-4 py-2.5">{price > 0 ? `€${price.toFixed(3)}` : '—'}</td>

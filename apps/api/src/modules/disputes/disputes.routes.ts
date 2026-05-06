@@ -2,13 +2,22 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, requireRole, requireEstado } from '../../middleware/auth.middleware.js';
 import { validateBody } from '../../middleware/validate.middleware.js';
-import { createDisputaSchema, respuestaVendedorSchema, resolverDisputaSchema } from './disputes.schema.js';
+import {
+  createDisputaSchema,
+  respuestaVendedorSchema,
+  resolverDisputaSchema,
+  resolverDisputaAdminSchema,
+  sendDisputaMensajeSchema,
+} from './disputes.schema.js';
 import {
   createDisputa,
   listDisputas,
   getDisputa,
   responderDisputa,
   resolverDisputa,
+  resolverDisputaAdmin,
+  sendDisputaMensaje,
+  getDisputaMensajes,
 } from './disputes.controller.js';
 import { asyncHandler } from '../../shared/async-handler.js';
 
@@ -58,4 +67,28 @@ disputesRouter.post(
   requireRole('ADMIN'),
   validateBody(resolverDisputaSchema),
   asyncHandler(resolverDisputa)
+);
+
+// POST /api/v1/disputes/:id/resolve-admin — extended admin resolution with score/ban/suscripcion
+disputesRouter.post(
+  '/:id/resolve-admin',
+  requireAuth,
+  requireRole('ADMIN'),
+  validateBody(resolverDisputaAdminSchema),
+  asyncHandler(resolverDisputaAdmin)
+);
+
+// POST /api/v1/disputes/:id/messages — send a dispute chat message (auth required)
+disputesRouter.post(
+  '/:id/messages',
+  requireAuth,
+  validateBody(sendDisputaMensajeSchema),
+  asyncHandler(sendDisputaMensaje)
+);
+
+// GET /api/v1/disputes/:id/messages — list dispute chat messages (auth required)
+disputesRouter.get(
+  '/:id/messages',
+  requireAuth,
+  asyncHandler(getDisputaMensajes)
 );

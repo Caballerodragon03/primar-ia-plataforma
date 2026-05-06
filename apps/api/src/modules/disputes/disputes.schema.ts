@@ -34,3 +34,25 @@ export const resolverDisputaSchema = z.object({
 });
 
 export type ResolverDisputaInput = z.infer<typeof resolverDisputaSchema>;
+
+export const resolverDisputaAdminSchema = z.object({
+  resolucion: z.enum(['FAVOR_COMPRADOR', 'FAVOR_VENDEDOR', 'PARCIAL', 'ACUERDO_PARTES']),
+  porcentajeComprador: z.number().min(0).max(100),
+  notasAdmin: z.string().optional(),
+  penalizacionComprador: z.number().min(-50).max(0).optional(),
+  penalizacionVendedor: z.number().min(-50).max(0).optional(),
+  incentivoComprador: z.number().min(0).max(25).optional(),
+  incentivoVendedor: z.number().min(0).max(25).optional(),
+  suscripcionGratisUserId: z.string().optional(),
+  banearComprador: z.boolean().optional(),
+  banearVendedor: z.boolean().optional(),
+});
+
+export type ResolverDisputaAdminInput = z.infer<typeof resolverDisputaAdminSchema>;
+
+export const sendDisputaMensajeSchema = z.object({
+  contenido: z.string().min(1).max(2000),
+  archivoUrl: z.string().url().optional(),
+});
+
+export type SendDisputaMensajeInput = z.infer<typeof sendDisputaMensajeSchema>;

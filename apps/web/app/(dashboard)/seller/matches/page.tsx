@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { MatchCard, type Match } from '@/components/ui/MatchCard';
 import { ContributeModal } from '@/components/ui/ContributeModal';
 
-type Tab = 'best' | 'distance' | 'newest';
+type Tab = 'best' | 'price' | 'distance' | 'newest';
 
 interface IncotermPrefs {
   recommended: string;
@@ -28,6 +28,7 @@ function loadIncotermPrefs(): IncotermPrefs | null {
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'best', label: 'Best Match' },
+  { key: 'price', label: 'Best Price' },
   { key: 'distance', label: 'Closest Distance' },
   { key: 'newest', label: 'Newest' },
 ];
@@ -63,6 +64,9 @@ function sortMatches(matches: Match[], tab: Tab): Match[] {
   const copy = [...matches];
   if (tab === 'best') {
     return copy.sort((a, b) => (b.scoreMatching ?? 0) - (a.scoreMatching ?? 0));
+  }
+  if (tab === 'price') {
+    return copy.sort((a, b) => Number(a.precioKg) - Number(b.precioKg));
   }
   if (tab === 'distance') {
     return copy.sort((a, b) => {
