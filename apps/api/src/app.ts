@@ -17,6 +17,7 @@ import { chatRouter } from './modules/chat/chat.routes.js';
 import { disputesRouter } from './modules/disputes/disputes.routes.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { scoringRouter } from './modules/scoring/scoring.routes.js';
+import { valoracionesRouter } from './modules/valoraciones/valoraciones.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { apiRateLimiter } from './middleware/rateLimiter.middleware.js';
 import { requestId, noCache } from './middleware/security.middleware.js';
@@ -73,6 +74,7 @@ app.use('/api/v1/chat', chatRouter);
 app.use('/api/v1/disputes', disputesRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/scoring', scoringRouter);
+app.use('/api/v1/valoraciones', valoracionesRouter);
 
 // 404
 app.use((_req, res) => {

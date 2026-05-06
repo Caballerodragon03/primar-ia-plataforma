@@ -58,6 +58,8 @@ export class ContractsService {
       qrToken: tx.qrToken ?? null,
       qrUsado: tx.qrUsado,
       fotosLoteUrls: tx.fotosLoteUrls ?? [],
+      vendedorId: tx.vendedorId,
+      compradorId: tx.compradorId,
     };
   }
 

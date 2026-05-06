@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, AlertTriangle, Download, Edit2, X, QrCode, Zap, Lock, MessageSquare, FileText, CheckCircle2, Package } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Download, Edit2, X, QrCode, Zap, Lock, MessageSquare, FileText, CheckCircle2, Package, Star } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -11,12 +11,14 @@ import { CoverageBar } from '@/components/ui/CoverageBar';
 import { PaymentModal } from '@/components/ui/PaymentModal';
 import { DisputeModal } from '@/components/ui/DisputeModal';
 import { ScoreBadge } from '@/components/ui/ScoreBadge';
+import { RatingModal } from '@/components/RatingModal';
 
 interface Match {
   id: string;
   cantidadKg: string;
   precioKg: string;
   estado: string;
+  scoreMatching?: number | null;
   lote: {
     vendedor: {
       id: string;
@@ -54,6 +56,8 @@ interface ContractInfo {
   qrToken: string | null;
   qrUsado: boolean;
   fotosLoteUrls: string[];
+  vendedorId: string;
+  compradorId: string;
 }
 
 type CalibreItem = { calibre: string; cantidad_kg: number; precio_max_kg: number };
@@ -126,6 +130,7 @@ export default function OrderDetailPage() {
   const [disputeTransaccionId, setDisputeTransaccionId] = useState<string>('');
   const [disputeOrderInfo, setDisputeOrderInfo] = useState<{ product: string; seller: string; kg: number } | undefined>(undefined);
   const [txInfoMap, setTxInfoMap] = useState<Record<string, ContractInfo>>({});
+  const [ratingTx, setRatingTx] = useState<{ transaccionId: string; vendedorId: string } | null>(null);
 
   const fetchOrder = useCallback(async () => {
     setIsLoading(true);
@@ -368,7 +373,7 @@ export default function OrderDetailPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50">
-                    {['SELLER', 'QTY (kg)', 'PRICE (€/kg)', 'STATUS', 'ACTIONS'].map((h) => (
+                    {['SELLER', 'SCORE', 'QTY (kg)', 'PRICE (€/kg)', 'STATUS', 'ACTIONS'].map((h) => (
                       <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
@@ -391,6 +396,18 @@ export default function OrderDetailPage() {
                               />
                             )}
                           </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          {m.scoreMatching != null ? (
+                            <span className={[
+                              'inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-semibold',
+                              m.scoreMatching >= 0.7 ? 'bg-green-100 text-green-700' :
+                              m.scoreMatching >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-600',
+                            ].join(' ')}>
+                              {Math.round(m.scoreMatching * 100)}/100
+                            </span>
+                          ) : <span className="text-gray-400 text-xs">—</span>}
                         </td>
                         <td className="px-4 py-2.5">{kg.toLocaleString('es-ES')}</td>
                         <td className="px-4 py-2.5">{price > 0 ? `€${price.toFixed(3)}` : '—'}</td>
@@ -505,9 +522,19 @@ export default function OrderDetailPage() {
                     />
                   )}
                   {info.qrUsado && (
-                    <div className="p-4 flex items-center gap-2 text-green-700">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <p className="text-sm font-medium">You confirmed delivery. Payment released.</p>
+                    <div className="p-4 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-green-700">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <p className="text-sm font-medium">You confirmed delivery. Payment released.</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1 text-yellow-600 border-yellow-300 hover:bg-yellow-50"
+                        onClick={() => setRatingTx({ transaccionId: m.transaccion!.id, vendedorId: info.vendedorId })}
+                      >
+                        <Star className="w-3.5 h-3.5" /> Rate Seller
+                      </Button>
                     </div>
                   )}
                   {!info.qrToken && !info.firmaVendedor && (
@@ -564,6 +591,16 @@ export default function OrderDetailPage() {
         orderInfo={disputeOrderInfo}
         onSuccess={fetchOrder}
       />
+
+      {/* Rating Modal */}
+      {ratingTx && (
+        <RatingModal
+          transaccionId={ratingTx.transaccionId}
+          destinatarioId={ratingTx.vendedorId}
+          tipo="COMPRADOR_A_VENDEDOR"
+          onClose={() => setRatingTx(null)}
+        />
+      )}
 
       {/* Payment Modal */}
       <PaymentModal
