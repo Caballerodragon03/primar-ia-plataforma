@@ -400,6 +400,9 @@ export class MatchingService {
           scoreDetalle: detalle,
         },
         update: {
+          cantidadKg,
+          precioKg,
+          calibresJson: calibresIniciales,
           scoreMatching: total,
           scoreDetalle: detalle,
           estado: 'PROPUESTO',
@@ -540,6 +543,9 @@ export class MatchingService {
           scoreDetalle: detalle,
         },
         update: {
+          cantidadKg,
+          precioKg,
+          calibresJson: calibresIniciales,
           scoreMatching: total,
           scoreDetalle: detalle,
           estado: 'PROPUESTO',
