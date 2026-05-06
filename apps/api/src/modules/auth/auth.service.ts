@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { prisma } from '@primaria/database';
 import { env } from '../../config/env.js';
 import { AppError } from '../../middleware/error.middleware.js';
+import { adminService } from '../admin/admin.service.js';
 import type { RegisterInput, LoginInput } from './auth.schema.js';
 import type { JWTPayload } from '@primaria/shared';
 
@@ -14,6 +15,10 @@ const LOCK_TIME_MS = 15 * 60 * 1000; // 15 min
 
 export class AuthService {
   async register(data: RegisterInput) {
+    // Check if email or CIF is banned
+    const banCheck = await adminService.isBanned(data.email, data.cifNif);
+    if (banCheck.banned) throw new AppError('Este registro no está permitido. Contacte con info@primar-ia.com', 403);
+
     // Check email uniqueness
     const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
     if (existingUser) throw new AppError('Email ya registrado', 409);

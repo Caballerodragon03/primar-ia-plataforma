@@ -12,6 +12,8 @@ adminRouter.use(requireAuth, requireRole('ADMIN'));
 adminRouter.get('/users', adminController.listUsers.bind(adminController));
 adminRouter.get('/users/:id', adminController.getUserDetail.bind(adminController));
 adminRouter.patch('/users/:id/estado', validateBody(updateEstadoSchema), adminController.updateUserEstado.bind(adminController));
+adminRouter.post('/users/:id/ban', adminController.banUser.bind(adminController));
+adminRouter.delete('/users/:id', adminController.deleteUser.bind(adminController));
 adminRouter.get('/certificados', adminController.listCertificados.bind(adminController));
 adminRouter.post('/certificados/:id/verify', adminController.verifyCertificado.bind(adminController));
 adminRouter.get('/stats', adminController.getDashboardStats.bind(adminController));

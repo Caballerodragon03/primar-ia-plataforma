@@ -190,6 +190,59 @@ ${notasAdmin ? `<p><strong>Motivo:</strong> ${notasAdmin}</p>` : ''}
     return updated;
   }
 
+  // ── Ban user (block email + CIF from re-registering, then delete account) ───
+
+  async banUser(userId: string, adminId: string, reason?: string): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { empresa: { select: { cifNif: true } } },
+    });
+    if (!user) throw new AppError('Usuario no encontrado', 404);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.bannedEntry.create({
+        data: {
+          email: user.email,
+          cifNif: user.empresa?.cifNif ?? null,
+          reason: reason ?? null,
+          bannedBy: adminId,
+        },
+      });
+      await tx.user.delete({ where: { id: userId } });
+    });
+
+    await sendEmail({
+      to: user.email,
+      subject: 'Tu cuenta en Primar-IA ha sido cancelada',
+      html: `<h2>Hola ${user.nombre},</h2>
+<p>Tu cuenta en Primar-IA ha sido cancelada de forma permanente por incumplimiento de nuestros Términos y Condiciones.</p>
+${reason ? `<p><strong>Motivo:</strong> ${reason}</p>` : ''}
+<p>Si consideras que se trata de un error, puedes ponerte en contacto con nosotros en info@primar-ia.com.</p>`,
+    }).catch((err: Error) => console.error('[ADMIN] Ban email failed:', err.message));
+  }
+
+  // ── Delete user (remove account, allow re-registration) ────────────────────
+
+  async deleteUser(userId: string): Promise<void> {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new AppError('Usuario no encontrado', 404);
+    await prisma.user.delete({ where: { id: userId } });
+  }
+
+  // ── Check if email or CIF is banned ────────────────────────────────────────
+
+  async isBanned(email: string, cifNif?: string): Promise<{ banned: boolean; reason?: string }> {
+    const entry = await prisma.bannedEntry.findFirst({
+      where: {
+        OR: [
+          { email },
+          ...(cifNif ? [{ cifNif }] : []),
+        ],
+      },
+    });
+    return entry ? { banned: true, reason: entry.reason ?? undefined } : { banned: false };
+  }
+
   // ── Certificate management ───────────────────────────────────────────────────
 
   async listCertificados(filters?: {

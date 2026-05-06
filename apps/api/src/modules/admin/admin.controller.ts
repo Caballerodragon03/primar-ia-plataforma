@@ -68,6 +68,28 @@ export class AdminController {
     }
   }
 
+  // POST /api/v1/admin/users/:id/ban
+  async banUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const adminId = req.user!.sub;
+      const { reason } = req.body as { reason?: string };
+      await adminService.banUser(req.params['id'] as string, adminId, reason);
+      res.json({ success: true, message: 'Usuario baneado y cuenta eliminada' });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // DELETE /api/v1/admin/users/:id
+  async deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await adminService.deleteUser(req.params['id'] as string);
+      res.json({ success: true, message: 'Cuenta eliminada' });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // GET /api/v1/admin/stats
   async getDashboardStats(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

@@ -552,3 +552,16 @@ model Auditoria {
   @@index([createdAt])
   @@map("auditoria")
 }
+
+model BannedEntry {
+  id        String   @id @default(cuid())
+  email     String?
+  cifNif    String?  @map("cif_nif")
+  reason    String?
+  bannedBy  String   @map("banned_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([email])
+  @@unique([cifNif])
+  @@map("banned_entries")
+}
