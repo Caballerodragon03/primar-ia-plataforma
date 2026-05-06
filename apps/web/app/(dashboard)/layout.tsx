@@ -7,14 +7,14 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, _hydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) router.replace('/login');
-  }, [isAuthenticated, router]);
+    if (_hydrated && !isAuthenticated) router.replace('/login');
+  }, [isAuthenticated, _hydrated, router]);
 
-  if (!isAuthenticated) return null;
+  if (!_hydrated || !isAuthenticated) return null;
 
   return (
     <div className="flex min-h-screen bg-background">

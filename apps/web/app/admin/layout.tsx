@@ -2,19 +2,20 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
 import { LogOut, ShieldCheck } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { clearAuth, user } = useAuthStore();
+  const { clearAuth, user, _hydrated } = useAuthStore();
 
   useEffect(() => {
-    if (!user || user.role !== 'ADMIN') router.replace('/login');
-  }, [user, router]);
+    if (_hydrated && (!user || user.role !== 'ADMIN')) router.replace('/login');
+  }, [user, _hydrated, router]);
 
-  if (!user || user.role !== 'ADMIN') return null;
+  if (!_hydrated || !user || user.role !== 'ADMIN') return null;
 
   const handleLogout = async () => {
     try {
@@ -54,13 +55,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             { label: 'Users', href: '/admin/users' },
             { label: 'Certificates', href: '/admin/certificates' },
           ].map(({ label, href }) => (
-            <a
+            <Link
               key={href}
               href={href}
               className="py-3 text-sm font-medium text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-[#E1C44D] transition-colors"
             >
               {label}
-            </a>
+            </Link>
           ))}
         </div>
       </nav>

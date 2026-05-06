@@ -13,6 +13,7 @@ interface AuthUser {
 interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
+  _hydrated: boolean;
   setAuth: (user: AuthUser, token: string) => void;
   clearAuth: () => void;
   isAuthenticated: boolean;
@@ -20,10 +21,11 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       accessToken: null,
       isAuthenticated: false,
+      _hydrated: false,
       setAuth: (user, accessToken) => {
         localStorage.setItem('accessToken', accessToken);
         set({ user, accessToken, isAuthenticated: true });
@@ -35,7 +37,10 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'primaria-auth',
-      partialize: (state) => ({ user: state.user }),
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      onRehydrateStorage: () => () => {
+        useAuthStore.setState({ _hydrated: true });
+      },
     }
   )
 );
