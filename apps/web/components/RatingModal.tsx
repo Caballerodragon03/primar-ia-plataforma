@@ -19,14 +19,19 @@ interface EjeRating {
   label: string;
 }
 
-const EJES_COMUNES: EjeRating[] = [
+const EJES_VENDEDOR: EjeRating[] = [
   { key: 'calidad', label: 'Calidad del producto' },
-  { key: 'puntualidad', label: 'Puntualidad' },
+  { key: 'puntualidad', label: 'Puntualidad en la entrega' },
+  { key: 'empaquetado', label: 'Empaquetado' },
   { key: 'comunicacion', label: 'Comunicación' },
   { key: 'profesionalidad', label: 'Profesionalidad' },
 ];
 
-const EJE_EMPAQUETADO: EjeRating = { key: 'empaquetado', label: 'Empaquetado' };
+const EJES_COMPRADOR: EjeRating[] = [
+  { key: 'comunicacion', label: 'Comunicación' },
+  { key: 'profesionalidad', label: 'Profesionalidad' },
+  { key: 'puntualidad', label: 'Puntualidad en el pago' },
+];
 
 function StarPicker({
   value,
@@ -76,9 +81,7 @@ type RatingValues = Record<string, number>;
 
 export function RatingModal({ transaccionId, destinatarioId, tipo, onClose }: RatingModalProps) {
   const ejes: EjeRating[] =
-    tipo === 'COMPRADOR_A_VENDEDOR'
-      ? [...EJES_COMUNES, EJE_EMPAQUETADO]
-      : EJES_COMUNES;
+    tipo === 'COMPRADOR_A_VENDEDOR' ? EJES_VENDEDOR : EJES_COMPRADOR;
 
   const [ratings, setRatings] = useState<RatingValues>(
     () => Object.fromEntries(ejes.map((e) => [e.key, 0]))

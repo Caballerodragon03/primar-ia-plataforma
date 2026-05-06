@@ -450,7 +450,7 @@ model Valoracion {
   autorId        String           @map("autor_id")
   destinatarioId String           @map("destinatario_id")
   tipo           ValoracionTipo
-  calidad        Int              @db.SmallInt
+  calidad        Int?             @db.SmallInt
   puntualidad    Int              @db.SmallInt
   comunicacion   Int              @db.SmallInt
   empaquetado    Int?             @db.SmallInt

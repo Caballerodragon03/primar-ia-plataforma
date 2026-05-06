@@ -6,11 +6,11 @@ export const createValoracionSchema = z.object({
   transaccionId: z.string().min(1),
   destinatarioId: z.string().min(1),
   tipo: z.enum(['VENDEDOR_A_COMPRADOR', 'COMPRADOR_A_VENDEDOR']),
-  calidad: starField,
+  calidad: starField.optional(),      // only for COMPRADOR_A_VENDEDOR
+  empaquetado: starField.optional(),  // only for COMPRADOR_A_VENDEDOR
   puntualidad: starField,
   comunicacion: starField,
-  profesionalidad: starField.optional(),
-  empaquetado: starField.optional(),
+  profesionalidad: starField,
   comentario: z.string().max(500).optional(),
 });
 

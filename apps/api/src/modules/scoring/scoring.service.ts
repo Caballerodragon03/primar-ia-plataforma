@@ -300,7 +300,8 @@ export class ScoringService {
 
     const avg =
       valoraciones.reduce((sum, v) => {
-        const fields: number[] = [v.calidad, v.puntualidad, v.comunicacion];
+        const fields: number[] = [v.puntualidad, v.comunicacion];
+        if (v.calidad !== null) fields.push(v.calidad);
         if (v.empaquetado !== null) fields.push(v.empaquetado);
         if (v.profesionalidad !== null) fields.push(v.profesionalidad);
         const fieldAvg = fields.reduce((a, b) => a + b, 0) / fields.length;

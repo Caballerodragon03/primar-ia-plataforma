@@ -62,6 +62,7 @@ export default function MyLotsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [globalFilter, setGlobalFilter] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingRating, setPendingRating] = useState<{ transaccionId: string; lotId: string; orderId: string; destinatarioId: string } | null>(null);
 
   const fetchLots = useCallback(async (tab: string) => {
     setIsLoading(true);
@@ -78,13 +79,14 @@ export default function MyLotsPage() {
 
   useEffect(() => { fetchLots(activeTab); }, [activeTab, fetchLots]);
 
+  useEffect(() => {
+    api.get('/valoraciones/pending').then(({ data }) => setPendingRating(data.data)).catch(() => {});
+  }, []);
+
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setGlobalFilter('');
   };
-
-  const completedLots = lots.filter((l) => l.estado === 'VENDIDO' || l.estado === 'COMPLETADO');
-  const firstCompleted = completedLots[0];
 
   return (
     <div className="p-6 space-y-6">
@@ -98,14 +100,14 @@ export default function MyLotsPage() {
         </Link>
       </div>
 
-      {!isLoading && firstCompleted && (
+      {pendingRating && (
         <div className="flex items-center gap-3 bg-yellow-50 border border-yellow-300 rounded-card px-4 py-3">
           <Star className="w-4 h-4 text-yellow-500 flex-shrink-0 fill-yellow-500" />
           <p className="text-sm text-yellow-900 flex-1">
-            Tienes {completedLots.length > 1 ? `${completedLots.length} transacciones pendientes` : 'una transaccion pendiente'} de valorar.
+            Tienes una transacción pendiente de valorar.
           </p>
           <Link
-            href={`/seller/lots/${firstCompleted.id}`}
+            href={`/seller/lots/${pendingRating.lotId}/qr/${pendingRating.transaccionId}`}
             className="text-xs font-medium text-yellow-800 underline hover:no-underline flex-shrink-0"
           >
             Valorar ahora

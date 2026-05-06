@@ -40,10 +40,10 @@ export class ValoracionesService {
         autorId,
         destinatarioId: input.destinatarioId,
         tipo: input.tipo,
-        calidad: input.calidad,
+        calidad: input.calidad ?? null,
         puntualidad: input.puntualidad,
         comunicacion: input.comunicacion,
-        profesionalidad: input.profesionalidad ?? null,
+        profesionalidad: input.profesionalidad,
         empaquetado: input.empaquetado ?? null,
         comentario: input.comentario ?? null,
       },
@@ -54,6 +54,40 @@ export class ValoracionesService {
       .catch((err: unknown) => console.error('[Valoraciones] score update failed:', err));
 
     return valoracion;
+  }
+
+  async getPending(userId: string, role: string): Promise<{
+    transaccionId: string;
+    lotId: string;
+    orderId: string;
+    destinatarioId: string;
+    tipo: 'VENDEDOR_A_COMPRADOR' | 'COMPRADOR_A_VENDEDOR';
+  } | null> {
+    const isVendedor = role === 'VENDEDOR';
+
+    const tx = await prisma.transaccion.findFirst({
+      where: {
+        ...(isVendedor ? { vendedorId: userId } : { compradorId: userId }),
+        qrUsado: true,
+        valoraciones: { none: { autorId: userId } },
+      },
+      select: {
+        id: true,
+        vendedorId: true,
+        compradorId: true,
+        match: { select: { loteId: true, pedidoId: true } },
+      },
+    });
+
+    if (!tx) return null;
+
+    return {
+      transaccionId: tx.id,
+      lotId: tx.match.loteId,
+      orderId: tx.match.pedidoId,
+      destinatarioId: isVendedor ? tx.compradorId : tx.vendedorId,
+      tipo: isVendedor ? 'VENDEDOR_A_COMPRADOR' : 'COMPRADOR_A_VENDEDOR',
+    };
   }
 }
 

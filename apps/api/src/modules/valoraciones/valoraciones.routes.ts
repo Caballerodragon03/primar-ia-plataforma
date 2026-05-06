@@ -6,11 +6,15 @@ import { createValoracionSchema } from './valoraciones.schema.js';
 
 export const valoracionesRouter = Router();
 
+valoracionesRouter.get(
+  '/pending',
+  requireAuth,
+  (req, res, next) => { valoracionesController.getPending(req, res).catch(next); }
+);
+
 valoracionesRouter.post(
   '/',
   requireAuth,
   validateBody(createValoracionSchema),
-  (req, res, next) => {
-    valoracionesController.create(req, res).catch(next);
-  }
+  (req, res, next) => { valoracionesController.create(req, res).catch(next); }
 );
