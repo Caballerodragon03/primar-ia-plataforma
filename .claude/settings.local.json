@@ -150,7 +150,10 @@
       "Bash(curl -s \"http://localhost:3001/api/v1/orders?tab=closed\" -H \"Authorization: Bearer test\")",
       "Bash(DATABASE_URL='postgresql://postgres:ztxZCEvnEuizujuvsnwTmMGaERteCNBG@shortline.proxy.rlwy.net:54236/railway' node --input-type=module)",
       "Bash(curl -s http://localhost:3001/api/v1/matching/notifications/summary -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
