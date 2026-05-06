@@ -1,5 +1,5 @@
-# PRIMAR-IA — Contexto Maestro para Claude Code v4.0
-*Actualizado el 2026-05-06 — PRODUCCIÓN LIVE en app.primar-ia.com + api.primar-ia.com, security audit completado, todas las fases 1A-1F implementadas*
+# PRIMAR-IA — Contexto Maestro para Claude Code v5.0
+*Actualizado el 2026-05-06 — PRODUCCIÓN LIVE. Scoring de fiabilidad, incidencias con chat, matching v2 (7 componentes + geocoding), admin incidents panel, rating modal.*
 
 ---
 
@@ -168,8 +168,9 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 - Branch: main (direct push, auto-deploy)
 
 ### Migración de BD
-- **Estado:** Migración `20260423154131_init` aplicada en Railway PostgreSQL
-- **Schema actual:** 18 modelos, 20 enums
+- **Migración 1:** `20260423154131_init` — schema base
+- **Migración 2:** `20260506155239_scoring_incidents_matching` — scoring, DisputaMensaje, ScoreEvent
+- **Schema actual:** 20 modelos, 22 enums
 
 ---
 
@@ -351,11 +352,13 @@ Seller: Dashboard, My Lots, Publish Lot, Matches (scroll), Contribute Modal, Lot
 │   │           ├── orders/           ← CRUD + detail
 │   │           ├── matching/         ← algorithm + contribute (serializable tx)
 │   │           ├── contracts/        ← PDF generation + QR HMAC (timingSafeEqual)
-│   │           ├── disputes/         ← create + respond
+│   │           ├── disputes/         ← create + respond + resolverAdmin (multi-acción) + chat DisputaMensaje
+│   │           ├── scoring/          ← ScoringService (event-sourcing) + admin penalty/incentivo endpoints
 │   │           ├── chat/             ← messages + bypass detection + pagination
 │   │           ├── products/         ← catalog CRUD
 │   │           ├── stripe/           ← webhooks + onboarding + QR verification (atomic)
 │   │           ├── upload/           ← R2 file upload
+│   │           ├── matching/         ← algorithm v2 (7 componentes) + geocoding.service.ts (Nominatim)
 │   │           └── admin/            ← user/cert verification + Zod validation
 │   │
 │   └── web/
@@ -370,9 +373,13 @@ Seller: Dashboard, My Lots, Publish Lot, Matches (scroll), Contribute Modal, Lot
 │       │   │   ├── layout.tsx        ← Auth guard + Sidebar + Header
 │       │   │   ├── buyer/            ← page, orders/[id], orders/[id]/contract/[txId], orders/[id]/delivery/[txId], messages/, analytics/, profile/
 │       │   │   └── seller/           ← page, lots/[id], lots/[id]/contract/[txId], lots/[id]/qr/[txId], lots/new, matches/, messages/, analytics/, profile/
-│       │   └── (admin)/
-│       │       └── layout.tsx        ← ADMIN role guard
-│       ├── components/ui/            ← Button, Input, Select, StepProgress, FileDropzone, KPICard, PaymentModal (Stripe-only)
+│       │   └── admin/
+│       │       ├── layout.tsx        ← ADMIN role guard + nav con Incidentes link
+│       │       ├── dashboard/
+│       │       ├── users/
+│       │       ├── certificates/
+│       │       └── incidents/        ← Lista incidentes + [id] detalle (evidencias, chat, resolución)
+│       ├── components/ui/            ← Button, Input, Select, StepProgress, FileDropzone, KPICard, PaymentModal (Stripe-only), ScoreBadge (estrellas)
 │       ├── components/layout/        ← Sidebar, DashboardHeader
 │       ├── lib/api.ts                ← Axios + interceptor + timeout 15s + singleton refresh
 │       └── store/auth.store.ts       ← Zustand persist
@@ -398,11 +405,19 @@ Seller: Dashboard, My Lots, Publish Lot, Matches (scroll), Contribute Modal, Lot
 
 *(Sin cambios desde v3 — 18 modelos, 20 enums. Ver schema.prisma directamente si se necesita referencia.)*
 
-**Modelos:** User, Empresa, Certificado, Producto, Variedad, Lote, Pedido, Match, Transaccion, Mensaje, Valoracion, Disputa, DatosMercado, Suscripcion, RefreshToken, EmailToken, Auditoria
+**Modelos (20):** User, Empresa, Certificado, Producto, Variedad, Lote, Pedido, Match, Transaccion, Mensaje, Valoracion, Disputa, **DisputaMensaje**, DatosMercado, Suscripcion, RefreshToken, EmailToken, Auditoria, BannedEntry, **ScoreEvent**
+
+**Campos nuevos en modelos existentes:**
+- `User`: scoreFiabilidad Decimal?, scoreStatus ScoreStatus, transaccionesOk Int, transaccionesIncid Int, ratingMedio Decimal?, numValoraciones Int
+- `Pedido`: destinoLat Float?, destinoLng Float? (geocodificado automáticamente desde destinoFinal via Nominatim)
+- `Disputa`: penalizacionComprador/Vendedor, incentivoComprador/Vendedor, suscripcionGratisUserId, relación mensajes DisputaMensaje[]
+- `Suscripcion`: comoCompensacion Boolean, compensacionMeses Int?
 
 **Enums clave:**
 - UserRole: VENDEDOR | COMPRADOR | ADMIN
 - UserEstado: EMAIL_NO_VERIFICADO → EMAIL_VERIFICADO → PENDIENTE_VERIFICACION → VERIFICADO_ACTIVO | RECHAZADO | PENDIENTE_ACLARACION | SUSPENDIDO
+- **ScoreStatus:** NEW_USER | ACTIVE | RESTRICTED
+- **ScoreEventTipo:** PRIMERA_TRANSACCION | TRANSACCION_OK | INCIDENCIA_ABIERTA | DISPUTA_RESUELTA_CONTRA | DISPUTA_RESUELTA_FAVOR | RATING_RECIBIDO | ADMIN_PENALIZACION | ADMIN_INCENTIVO
 - LoteEstado: BORRADOR | ACTIVO | PARCIALMENTE_VENDIDO | VENDIDO | EXPIRADO | CANCELADO
 - PedidoEstado: BORRADOR | ACTIVO | PARCIALMENTE_CUBIERTO | TOTALMENTE_CUBIERTO | CERRADO | CANCELADO
 - TransaccionEstado: PENDIENTE_PAGO | PAGO_CAPTURADO | EN_TRANSITO | ENTREGADO | EN_DISPUTA | COMPLETADO | CANCELADO | REEMBOLSADO
@@ -419,16 +434,66 @@ calcularComision(importeBase: number, metodoPago: 'card' | 'sepa_debit')
 // SEPA: -0.4pp
 ```
 
-### Algoritmo de Matching v1 MVP (IMPLEMENTADO)
+### Algoritmo de Matching v2 (IMPLEMENTADO — matching.service.ts)
 ```
-Score = w1*rentabilidad(0.4) + w2*proximidad(0.2) + w3*recencia(0.2) + w4*historial(0.2)
+Score = 0.30*rentabilidad + 0.25*fiabilidad + 0.15*proximidad + 0.10*recencia + 0.10*cobertura + 0.05*certMatch + 0.05*afinidad
 
-Criterios OBLIGATORIOS (sin estos no hay match):
+Filtros DUROS (excluyen candidatos):
 1. Producto coincide
-2. Variedad coincide (o compatible)
-3. Calibres solicitados disponibles en el lote
-4. Fecha entrega compatible con fechaDisponibilidad del lote
-5. Precio del lote <= precio_max del pedido
+2. Variedad compatible
+3. Calibres/precio compatibles
+4. scoreStatus !== 'RESTRICTED'
+5. Al menos un calibre con stock (cantidad_kg > 0)
+
+Componentes:
+- rentabilidad: precio lote / precio máximo pedido (ponderado por kg)
+- fiabilidad: scoreFiabilidad/100 (NEW_USER con <5 tx → 0.75 beneficio de duda)
+- proximidad: Haversine(lote.coordenadas, pedido.destinoLat/Lng) / 800km — Nominatim geocoding
+- recencia: lotes <30 días puntúan más
+- cobertura: kg disponibles / kg solicitados (favorece un solo lote grande)
+- certMatch: 1.0 neutro (pendiente campo pedido)
+- afinidad: historial exitoso entre el par (≥3tx=1.0, 1-2=0.7, 0=0.5, disputa contra=0.0)
+
+Anti-monopolio: si top-5 son del mismo vendedor → intercala otro en posición 3
+Sort by precio: ?sortBy=precio → ordena por precioKg asc en vez de score desc
+Geocoding: Nominatim (OSS, User-Agent: PrimAria/1.0) con caché en memoria 7 días y rate limit 1100ms
+```
+
+### Sistema de Scoring de Fiabilidad (IMPLEMENTADO — scoring module)
+```
+- Score: 0–100, clampado. NULL = NEW_USER (badge gris, sin número)
+- ScoreStatus: NEW_USER → ACTIVE (primera tx) → RESTRICTED (score < 40)
+- Conversión a estrellas: ≥90=5★ | 75-89=4★ | 60-74=3★ | 40-59=2★ | <40=1★
+- Event-sourcing: toda mutación crea ScoreEvent (auditable)
+- Deltas por defecto: PRIMERA_TRANSACCION(+100) | INCIDENCIA_ABIERTA(-2) |
+  DISPUTA_CONTRA(-10...-25) | RATING_RECIBIDO((media-4)*2, solo si ≥3 ratings) |
+  ADMIN_PENALIZACION(configurable -50..0) | ADMIN_INCENTIVO(configurable 0..+25)
+- Visibilidad: pública solo en estrellas; historial detallado solo para admin
+- Influye en matching (fiabilidad 25%) y filtro duro RESTRICTED
+
+Endpoints: GET /api/v1/scoring/:userId/history (admin)
+           POST /api/v1/scoring/:userId/penalty (admin, -50 a 0)
+           POST /api/v1/scoring/:userId/incentivo (admin, 0 a +25)
+```
+
+### Gestión de Incidencias con Chat (IMPLEMENTADO)
+```
+Flujo:
+1. Comprador/vendedor abre disputa (POST /api/v1/disputes/:transaccionId)
+   → form: tipoProblema + descripción + hasta 6 imágenes R2
+   → -2 score al denunciado (provisional)
+2. Otra parte responde con evidencias (POST /api/v1/disputes/:id/respond)
+3. Admin ve incidencia en /admin/incidents → chat tripartito (DisputaMensaje)
+4. Admin resuelve (POST /api/v1/disputes/:id/resolve-admin):
+   - Resolución: FAVOR_COMPRADOR/VENDEDOR/PARCIAL/ACUERDO_PARTES
+   - Penalización score comprador: -50..0
+   - Penalización score vendedor: -50..0
+   - Incentivo score comprador: 0..+25
+   - Incentivo score vendedor: 0..+25
+   - Suscripción gratuita 1 mes a comprador o vendedor
+   - Banear comprador y/o vendedor (BannedEntry + estado=SUSPENDIDO)
+   → Todo en transacción Prisma atómica
+   → Scoring se aplica fuera de la tx (no rollback si falla)
 ```
 
 ### Detección bypass en mensajería (IMPLEMENTADO)
@@ -527,6 +592,18 @@ git add . && git commit -m "..." && git push origin main
 - [x] Custom domains active + SSL
 - [x] Stripe webhook → production URL
 - [x] Git push auto-deploy configured
+
+### ✅ FASE POST-1F — Scoring + Incidencias + Matching v2 (COMPLETADA — 2026-05-06)
+- [x] Score de fiabilidad (event-sourcing, ScoreEvent, 0-100, ScoreStatus)
+- [x] Sistema de valoraciones bidireccional post-transacción (RatingModal, 5 ejes)
+- [x] ScoreBadge component (1-5 estrellas públicas)
+- [x] Matching v2: 7 componentes, fiabilidad 25%, anti-monopolio, sort by price
+- [x] Geocoding Nominatim (gratis, caché 7 días, rate limit 1100ms)
+- [x] Incidencias con imágenes evidencia + chat tripartito (DisputaMensaje)
+- [x] Admin panel /incidents: lista + detalle + resolución multi-acción
+- [x] Resolución admin: penalizar/incentivar score, suscripción gratis 1 mes, ban
+- [x] Prisma migration aplicada en producción (20260506155239_scoring_incidents_matching)
+- [x] Reset password flow (forgot-password + reset-password pages)
 
 ### 🔲 FASE 2 — Iteración y Beta (PRÓXIMA)
 - [ ] Testing funcional end-to-end con usuarios reales (Stripe test keys)
