@@ -173,6 +173,15 @@ export class OrdersService {
       include: { producto: true, variedad: true },
     });
 
+    // Geocode destinoFinal if changed or coordinates missing
+    const destinoChanged = data.destinoFinal && data.destinoFinal !== (updated as { destinoFinal?: string | null }).destinoFinal;
+    const orderWithCoords = updated as { destinoLat?: number | null; destinoLng?: number | null; destinoFinal?: string | null };
+    const missingOrderCoords = !orderWithCoords.destinoLat || !orderWithCoords.destinoLng;
+    const finalDest = data.destinoFinal ?? orderWithCoords.destinoFinal;
+    if ((destinoChanged || missingOrderCoords) && finalDest) {
+      geocodePedidoAsync(updated.id, finalDest);
+    }
+
     // Auto-run matching whenever order is ACTIVO (on create, publish, or any edit)
     const isNowActive = updated.estado === 'ACTIVO';
     if (isNowActive) {

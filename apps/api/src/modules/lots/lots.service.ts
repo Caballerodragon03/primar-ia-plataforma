@@ -2,6 +2,7 @@ import { prisma, type LoteEstado, type MatchEstado } from '@primaria/database';
 import { AppError } from '../../middleware/error.middleware.js';
 import type { CreateLotInput, UpdateLotInput } from './lots.schema.js';
 import { matchingService } from '../matching/matching.service.js';
+import { geocodeLoteAsync } from '../matching/geocoding.service.js';
 
 type CalibreItem = { calibre: string; cantidad_kg: number; precio_min_kg: number };
 
@@ -38,6 +39,9 @@ export class LotsService {
       },
       include: { producto: true, variedad: true },
     });
+
+    // Geocode pickup address (fire-and-forget)
+    geocodeLoteAsync(lote.id, data.direccionRecogida);
 
     // Auto-run matching when lot is published
     if (lote.estado === 'ACTIVO') {
@@ -151,6 +155,13 @@ export class LotsService {
       },
       include: { producto: true, variedad: true },
     });
+
+    // Geocode if address changed or coordinates are missing
+    const addressChanged = data.direccionRecogida && data.direccionRecogida !== lote.direccionRecogida;
+    const missingCoords = !updated.coordenadasLat || !updated.coordenadasLng;
+    if ((addressChanged || missingCoords) && updated.direccionRecogida) {
+      geocodeLoteAsync(updated.id, updated.direccionRecogida);
+    }
 
     // Auto-run matching whenever lot is ACTIVO (on create, publish, or any edit)
     const isNowActive = updated.estado === 'ACTIVO';

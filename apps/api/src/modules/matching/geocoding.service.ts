@@ -111,3 +111,24 @@ export function geocodePedidoAsync(pedidoId: string, destinoFinal: string): void
     }
   })();
 }
+
+/**
+ * Fire-and-forget: geocodes the lote's direccionRecogida and persists
+ * coordenadasLat/coordenadasLng to the database. Does not block the caller.
+ */
+export function geocodeLoteAsync(loteId: string, direccionRecogida: string): void {
+  void (async () => {
+    try {
+      const coords = await geocodeAddress(direccionRecogida);
+      if (coords) {
+        await prisma.lote.update({
+          where: { id: loteId },
+          data: { coordenadasLat: coords.lat, coordenadasLng: coords.lng },
+        });
+        console.log(`[Geocoding] Lote ${loteId} geocoded: ${coords.lat},${coords.lng}`);
+      }
+    } catch (err) {
+      console.error('[Geocoding] Failed to update lote coords:', loteId, err);
+    }
+  })();
+}
