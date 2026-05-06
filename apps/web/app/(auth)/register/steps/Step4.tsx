@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/Button';
 import type { RegisterFormData } from '../types';
@@ -15,9 +16,9 @@ export function Step4({ onBack, isSubmitting }: Step4Props) {
     <div className="flex flex-col gap-5">
       <div className="p-4 rounded-input bg-gray-50 border border-border">
         <p className="text-sm text-gray-600 leading-relaxed">
-          Your application will be sent for manual review after submission.
-          You will be notified of the outcome via email within 1–2 business days.
-          During this time, your access to the platform will be limited.
+          Tu solicitud será enviada para revisión manual tras el envío.
+          Recibirás notificación del resultado por correo electrónico en un plazo de 1–2 días laborables.
+          Mientras tanto, tu acceso a la plataforma será limitado.
         </p>
       </div>
 
@@ -29,10 +30,10 @@ export function Step4({ onBack, isSubmitting }: Step4Props) {
             {...register('acceptedTerms')}
           />
           <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
-            I have read and agree to the{' '}
-            <a href="/terms" target="_blank" className="font-semibold text-gray-900 underline">
-              Terms &amp; Conditions
-            </a>
+            He leído y acepto los{' '}
+            <Link href="/terms" target="_blank" className="font-semibold text-gray-900 underline">
+              Términos y Condiciones
+            </Link>
           </span>
         </label>
         {errors.acceptedTerms && (
@@ -46,10 +47,10 @@ export function Step4({ onBack, isSubmitting }: Step4Props) {
             {...register('acceptedPrivacy')}
           />
           <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
-            I have read and agree to the{' '}
-            <a href="/privacy" target="_blank" className="font-semibold text-gray-900 underline">
-              Privacy Policy
-            </a>
+            He leído y acepto la{' '}
+            <Link href="/privacy" target="_blank" className="font-semibold text-gray-900 underline">
+              Política de Privacidad
+            </Link>
           </span>
         </label>
         {errors.acceptedPrivacy && (
@@ -59,10 +60,10 @@ export function Step4({ onBack, isSubmitting }: Step4Props) {
 
       <div className="flex gap-3 mt-2">
         <Button type="button" variant="outline" size="lg" className="flex-1" onClick={onBack} disabled={isSubmitting}>
-          Back
+          Atrás
         </Button>
         <Button type="submit" variant="primary" size="lg" className="flex-1" loading={isSubmitting}>
-          Finish &amp; Submit for Verification
+          Enviar solicitud de registro
         </Button>
       </div>
     </div>

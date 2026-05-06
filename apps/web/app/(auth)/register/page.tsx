@@ -39,8 +39,8 @@ const step2Schema = z.object({
 });
 
 const fullSchema = step1Schema.merge(step2Schema).extend({
-  acceptedTerms: z.literal(true, { errorMap: () => ({ message: 'You must accept the Terms & Conditions' }) }),
-  acceptedPrivacy: z.literal(true, { errorMap: () => ({ message: 'You must accept the Privacy Policy' }) }),
+  acceptedTerms: z.literal(true, { errorMap: () => ({ message: 'Debes aceptar los Términos y Condiciones' }) }),
+  acceptedPrivacy: z.literal(true, { errorMap: () => ({ message: 'Debes aceptar la Política de Privacidad' }) }),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
