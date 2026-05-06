@@ -81,6 +81,27 @@ export class AuthController {
     }
   }
 
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await authService.forgotPassword(req.body);
+      res.json({
+        success: true,
+        message: 'Si el email existe, recibirás un enlace para restablecer tu contraseña.',
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await authService.resetPassword(req.body);
+      res.json({ success: true, message: 'Contraseña actualizada correctamente.' });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const token = req.cookies?.refreshToken as string | undefined;

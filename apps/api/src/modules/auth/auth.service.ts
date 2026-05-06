@@ -6,7 +6,7 @@ import { prisma } from '@primaria/database';
 import { env } from '../../config/env.js';
 import { AppError } from '../../middleware/error.middleware.js';
 import { adminService } from '../admin/admin.service.js';
-import type { RegisterInput, LoginInput } from './auth.schema.js';
+import type { RegisterInput, LoginInput, ForgotPasswordInput, ResetPasswordInput } from './auth.schema.js';
 import type { JWTPayload } from '@primaria/shared';
 
 const SALT_ROUNDS = 12;
@@ -209,6 +209,57 @@ export class AuthService {
     ]);
 
     return { accessToken, refreshToken: newRefreshToken };
+  }
+
+  async forgotPassword(data: ForgotPasswordInput) {
+    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    if (!user) return;
+
+    await prisma.emailToken.deleteMany({
+      where: { userId: user.id, tipo: 'PASSWORD_RESET', usedAt: null },
+    });
+
+    const token = randomUUID();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1h
+    await prisma.emailToken.create({
+      data: { userId: user.id, token, tipo: 'PASSWORD_RESET', expiresAt },
+    });
+
+    const resetUrl = `${process.env.CORS_ORIGIN ?? 'http://localhost:3000'}/reset-password?token=${token}`;
+    await sendEmail({
+      to: user.email,
+      subject: 'Restablecer contraseña — Primar-IA',
+      html: `<h2>Restablecer contraseña</h2>
+<p>Hola ${user.nombre},</p>
+<p>Hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace (válido 1 hora):</p>
+<a href="${resetUrl}" style="background:#E1C44D;color:#1A1A1A;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Restablecer contraseña</a>
+<p>Si no solicitaste este cambio, ignora este email.</p>`,
+    }).catch((err: Error) => console.error('[AUTH] Password reset email failed:', err.message));
+  }
+
+  async resetPassword(data: ResetPasswordInput) {
+    const emailToken = await prisma.emailToken.findUnique({
+      where: { token: data.token },
+    });
+
+    if (!emailToken) throw new AppError('Token invalido', 400);
+    if (emailToken.usedAt) throw new AppError('Token ya utilizado', 400);
+    if (emailToken.expiresAt < new Date()) throw new AppError('Token expirado', 400);
+    if (emailToken.tipo !== 'PASSWORD_RESET') throw new AppError('Token invalido', 400);
+
+    const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
+
+    await prisma.$transaction([
+      prisma.emailToken.update({
+        where: { id: emailToken.id },
+        data: { usedAt: new Date() },
+      }),
+      prisma.user.update({
+        where: { id: emailToken.userId },
+        data: { passwordHash, loginAttempts: 0, lockedUntil: null },
+      }),
+      prisma.refreshToken.deleteMany({ where: { userId: emailToken.userId } }),
+    ]);
   }
 
   async logout(token: string) {
