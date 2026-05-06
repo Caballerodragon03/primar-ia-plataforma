@@ -9,10 +9,11 @@ import { api } from '@/lib/api';
 import { Users, Clock, Package, DollarSign } from 'lucide-react';
 
 interface AdminStats {
-  totalUsers: number;
-  pendingVerification: number;
-  activeLots: number;
-  platformCommission: number;
+  users: { total: number; byRole: Record<string, number>; byEstado: Record<string, number> };
+  lots: { total: number };
+  orders: { total: number };
+  transactions: { total: number };
+  commissionEarned: number;
 }
 
 interface PendingUser {
@@ -21,7 +22,7 @@ interface PendingUser {
   apellidos: string;
   email: string;
   role: string;
-  empresa: string;
+  empresa: { razonSocial: string; cifNif: string } | null;
   createdAt: string;
 }
 
@@ -41,7 +42,11 @@ const pendingUserColumns: ColumnDef<PendingUser, string>[] = [
   },
   { accessorKey: 'email', header: 'EMAIL' },
   { accessorKey: 'role', header: 'ROLE' },
-  { accessorKey: 'empresa', header: 'COMPANY' },
+  {
+    accessorKey: 'empresa',
+    header: 'COMPANY',
+    cell: ({ row }) => row.original.empresa?.razonSocial ?? '—',
+  },
   {
     accessorKey: 'createdAt',
     header: 'REGISTERED',
@@ -98,23 +103,23 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
           label="Total Users"
-          value={stats ? stats.totalUsers.toLocaleString() : '—'}
+          value={stats ? stats.users.total.toLocaleString() : '—'}
           icon={<Users className="w-4 h-4" />}
         />
         <KPICard
           label="Pending Verification"
-          value={stats ? stats.pendingVerification.toLocaleString() : '—'}
+          value={stats ? (stats.users.byEstado['PENDIENTE_VERIFICACION'] ?? 0).toLocaleString() : '—'}
           sub="Awaiting review"
           icon={<Clock className="w-4 h-4 text-amber-500" />}
         />
         <KPICard
           label="Active Lots"
-          value={stats ? stats.activeLots.toLocaleString() : '—'}
+          value={stats ? stats.lots.total.toLocaleString() : '—'}
           icon={<Package className="w-4 h-4" />}
         />
         <KPICard
           label="Platform Commission"
-          value={stats ? `€${stats.platformCommission.toLocaleString()}` : '—'}
+          value={stats ? `€${stats.commissionEarned.toLocaleString()}` : '—'}
           sub="This month"
           icon={<DollarSign className="w-4 h-4 text-green-500" />}
         />

@@ -15,7 +15,7 @@ interface AdminUser {
   email: string;
   role: 'VENDEDOR' | 'COMPRADOR' | 'ADMIN';
   estado: string;
-  empresa: string;
+  empresa: { razonSocial: string; cifNif: string } | null;
 }
 
 interface UserDetailModalProps {
@@ -41,7 +41,7 @@ function UserDetailModal({ user, onClose, onVerify, onReject }: UserDetailModalP
             ['Name', `${user.nombre} ${user.apellidos}`],
             ['Email', user.email],
             ['Role', user.role],
-            ['Company', user.empresa || '—'],
+            ['Company', user.empresa?.razonSocial || '—'],
             ['Status', ''],
           ].map(([label, value]) =>
             label === 'Status' ? (
@@ -148,7 +148,7 @@ export default function AdminUsersPage() {
     {
       accessorKey: 'empresa',
       header: 'EMPRESA',
-      cell: ({ getValue }) => getValue<string>() || '—',
+      cell: ({ row }) => row.original.empresa?.razonSocial || '—',
     },
     {
       id: 'actions',
