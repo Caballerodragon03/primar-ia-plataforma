@@ -95,6 +95,14 @@ enum MensajeTipo {
   TEXTO
   IMAGEN
   DOCUMENTO
+  OFERTA
+}
+
+enum NegociacionEstado {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+  SUPERADA
 }
 
 enum ValoracionEstado {
@@ -203,6 +211,7 @@ model User {
   valoracionesRecibidas   Valoracion[]   @relation("ValoracionDestinatario")
   disputasAbiertas        Disputa[]      @relation("DisputaAbiertaPor")
   disputasAdmin           Disputa[]      @relation("DisputaAdmin")
+  negociacionesIniciadas  Negociacion[]  @relation("NegociacionIniciador")
   refreshTokens           RefreshToken[]
   emailTokens             EmailToken[]
   suscripcion             Suscripcion?
@@ -418,6 +427,7 @@ model Transaccion {
   mensajes              Mensaje[]
   valoraciones          Valoracion[]
   disputas              Disputa[]
+  negociaciones         Negociacion[]
 
   @@index([vendedorId, estado])
   @@index([compradorId, estado])
@@ -426,22 +436,45 @@ model Transaccion {
 }
 
 model Mensaje {
-  id            String      @id @default(cuid())
-  transaccionId String      @map("transaccion_id")
-  remitenteId   String      @map("remitente_id")
-  contenido     String      @db.VarChar(2000)
-  tipo          MensajeTipo @default(TEXTO)
-  archivoUrl    String?     @map("archivo_url")
-  leido         Boolean     @default(false)
-  intentoBypass Boolean     @default(false) @map("intento_bypass")
-  createdAt     DateTime    @default(now()) @map("created_at")
+  id              String      @id @default(cuid())
+  transaccionId   String      @map("transaccion_id")
+  remitenteId     String      @map("remitente_id")
+  contenido       String      @db.VarChar(2000)
+  tipo            MensajeTipo @default(TEXTO)
+  archivoUrl      String?     @map("archivo_url")
+  leido           Boolean     @default(false)
+  intentoBypass   Boolean     @default(false) @map("intento_bypass")
+  negociacionId   String?     @unique @map("negociacion_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
 
-  transaccion   Transaccion @relation(fields: [transaccionId], references: [id])
-  remitente     User        @relation(fields: [remitenteId], references: [id])
+  transaccion     Transaccion  @relation(fields: [transaccionId], references: [id])
+  remitente       User         @relation(fields: [remitenteId], references: [id])
+  negociacion     Negociacion? @relation(fields: [negociacionId], references: [id])
 
   @@index([transaccionId, createdAt])
   @@index([remitenteId, leido])
   @@map("mensajes")
+}
+
+model Negociacion {
+  id              String             @id @default(cuid())
+  transaccionId   String             @map("transaccion_id")
+  iniciadorId     String             @map("iniciador_id")
+  precioKg        Decimal?           @db.Decimal(10, 4) @map("precio_kg")
+  incoterm        Incoterm?
+  estado          NegociacionEstado  @default(PENDIENTE)
+  parentId        String?            @map("parent_id")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  transaccion     Transaccion        @relation(fields: [transaccionId], references: [id])
+  iniciador       User               @relation("NegociacionIniciador", fields: [iniciadorId], references: [id])
+  parent          Negociacion?       @relation("Contraoferta", fields: [parentId], references: [id])
+  contraofertas   Negociacion[]      @relation("Contraoferta")
+  mensaje         Mensaje?
+
+  @@index([transaccionId])
+  @@map("negociaciones")
 }
 
 model Valoracion {

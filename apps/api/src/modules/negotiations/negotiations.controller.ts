@@ -1,0 +1,39 @@
+import type { Request, Response } from 'express';
+import { negotiationsService } from './negotiations.service.js';
+import type { CreateOfertaInput } from './negotiations.schema.js';
+
+export class NegotiationsController {
+  async create(req: Request, res: Response): Promise<void> {
+    const transaccionId = req.params['transaccionId'] as string;
+    const result = await negotiationsService.createOffer(
+      transaccionId,
+      req.user!.sub,
+      req.body as CreateOfertaInput
+    );
+    res.status(201).json({ data: result });
+  }
+
+  async accept(req: Request, res: Response): Promise<void> {
+    const transaccionId = req.params['transaccionId'] as string;
+    const negociacionId = req.params['negociacionId'] as string;
+    const result = await negotiationsService.acceptOffer(
+      transaccionId,
+      req.user!.sub,
+      negociacionId
+    );
+    res.json({ data: result });
+  }
+
+  async reject(req: Request, res: Response): Promise<void> {
+    const transaccionId = req.params['transaccionId'] as string;
+    const negociacionId = req.params['negociacionId'] as string;
+    const result = await negotiationsService.rejectOffer(
+      transaccionId,
+      req.user!.sub,
+      negociacionId
+    );
+    res.json({ data: result });
+  }
+}
+
+export const negotiationsController = new NegotiationsController();

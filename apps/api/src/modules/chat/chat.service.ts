@@ -94,7 +94,26 @@ export class ChatService {
       orderBy: { createdAt: 'asc' },
       skip,
       take: PAGE_SIZE,
+      include: {
+        negociacion: {
+          select: {
+            id: true,
+            estado: true,
+            precioKg: true,
+            incoterm: true,
+            iniciadorId: true,
+            parentId: true,
+          },
+        },
+      },
     });
+
+    // Get current terms for reference in offer cards
+    const tx = await prisma.transaccion.findUnique({
+      where: { id: transaccionId },
+      select: { match: { select: { precioKg: true, pedido: { select: { incoterm: true } } } } },
+    });
+    const match = tx?.match ?? null;
 
     // Mark messages from the other party as read
     const unreadIds = mensajes
@@ -108,13 +127,25 @@ export class ChatService {
       });
     }
 
-    // Return in the format expected by ChatView
     return mensajes.map((m) => ({
       id: m.id,
       senderId: m.remitenteId,
       content: m.contenido,
+      tipo: m.tipo,
       sentAt: m.createdAt.toISOString(),
       intentoBypass: m.intentoBypass,
+      negociacion: m.negociacion
+        ? {
+            id: m.negociacion.id,
+            estado: m.negociacion.estado,
+            precioKg: m.negociacion.precioKg !== null ? Number(m.negociacion.precioKg) : null,
+            incoterm: m.negociacion.incoterm,
+            iniciadorId: m.negociacion.iniciadorId,
+            parentId: m.negociacion.parentId,
+            currentPrecioKg: match?.precioKg != null ? Number(match.precioKg) : null,
+            currentIncoterm: match?.pedido?.incoterm ?? null,
+          }
+        : null,
     }));
   }
 

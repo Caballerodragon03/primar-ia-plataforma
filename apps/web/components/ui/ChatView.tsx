@@ -1,8 +1,10 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Paperclip, MessageSquare } from 'lucide-react';
+import { Send, Paperclip, MessageSquare, TrendingUp } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { NegotiationCard, type NegotiacionData } from './NegotiationCard';
+import { NegotiationOfferModal } from './NegotiationOfferModal';
 
 interface Conversation {
   transaccionId: string;
@@ -18,8 +20,10 @@ interface Message {
   id: string;
   senderId: string;
   content: string;
+  tipo: string;
   sentAt: string;
   intentoBypass?: boolean;
+  negociacion: NegotiacionData | null;
 }
 
 interface ChatViewProps {
@@ -64,6 +68,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [loadingConvs, setLoadingConvs] = useState(true);
+  const [showOfferModal, setShowOfferModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -138,6 +143,11 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
     }
   };
 
+  // Get current terms from the latest offer card (for the "propose change" modal)
+  const latestOfferMsg = [...messages].reverse().find((m) => m.tipo === 'OFERTA' && m.negociacion);
+  const currentPrecioKg = latestOfferMsg?.negociacion?.currentPrecioKg ?? null;
+  const currentIncoterm = latestOfferMsg?.negociacion?.currentIncoterm ?? null;
+
   const selectedConv = conversations.find((c) => c.transaccionId === selectedId);
 
   return (
@@ -173,13 +183,11 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                   ].join(' ')}
                 >
                   <div className="flex items-start gap-2.5">
-                    {/* Avatar */}
                     <div className="w-8 h-8 rounded-full bg-secondary flex-shrink-0 flex items-center justify-center">
                       <span className="text-white text-[10px] font-semibold">
                         {getInitials(conv.counterpartName)}
                       </span>
                     </div>
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <p className="text-xs font-semibold text-gray-900 truncate">{conv.counterpartName}</p>
@@ -221,7 +229,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                       {getInitials(selectedConv.counterpartName)}
                     </span>
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900">{selectedConv.counterpartName}</p>
                     <p className="text-[10px] text-gray-500">Order #{selectedConv.orderId} · {selectedConv.product}</p>
                   </div>
@@ -236,6 +244,27 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
               ) : (
                 messages.map((msg) => {
                   const isOwn = msg.senderId === user?.id;
+
+                  if (msg.tipo === 'OFERTA' && msg.negociacion) {
+                    return (
+                      <div
+                        key={msg.id}
+                        className={['flex flex-col gap-1', isOwn ? 'items-end' : 'items-start'].join(' ')}
+                      >
+                        <NegotiationCard
+                          transaccionId={selectedId}
+                          negociacion={msg.negociacion}
+                          currentUserId={user?.id ?? ''}
+                          onActionDone={() => {
+                            fetchMessages(selectedId);
+                            fetchConversations();
+                          }}
+                        />
+                        <span className="text-[10px] text-gray-400">{formatTime(msg.sentAt)}</span>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div
                       key={msg.id}
@@ -266,6 +295,17 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
 
             {/* Input bar */}
             <div className="px-4 py-3 border-t border-border flex items-end gap-2">
+              {/* Negotiate button */}
+              <button
+                type="button"
+                onClick={() => setShowOfferModal(true)}
+                className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-button transition-colors flex-shrink-0"
+                aria-label="Proponer cambio de precio o incoterm"
+                title="Proponer cambio"
+              >
+                <TrendingUp className="w-5 h-5" />
+              </button>
+
               <button
                 type="button"
                 disabled
@@ -275,6 +315,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
               >
                 <Paperclip className="w-5 h-5" />
               </button>
+
               <textarea
                 ref={textareaRef}
                 value={text}
@@ -308,6 +349,21 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
           </>
         )}
       </div>
+
+      {/* Offer modal */}
+      {showOfferModal && selectedId && (
+        <NegotiationOfferModal
+          transaccionId={selectedId}
+          currentPrecioKg={currentPrecioKg}
+          currentIncoterm={currentIncoterm}
+          onClose={() => setShowOfferModal(false)}
+          onSuccess={() => {
+            setShowOfferModal(false);
+            fetchMessages(selectedId);
+            fetchConversations();
+          }}
+        />
+      )}
     </div>
   );
 }
