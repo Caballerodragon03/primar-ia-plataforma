@@ -6,7 +6,6 @@ import { z } from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
@@ -14,15 +13,9 @@ import { api } from '@/lib/api';
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
-  role: z.enum(['VENDEDOR', 'COMPRADOR']),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
-
-const ROLE_OPTIONS = [
-  { value: 'COMPRADOR', label: 'Buyer Account' },
-  { value: 'VENDEDOR', label: 'Seller Account' },
-];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,7 +24,7 @@ export default function LoginPage() {
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { role: 'COMPRADOR' },
+    defaultValues: {},
   });
 
   const onSubmit = async (data: LoginForm) => {
@@ -88,14 +81,6 @@ export default function LoginPage() {
               required
               error={errors.password?.message}
               {...register('password')}
-            />
-
-            <Select
-              label="Account Type"
-              options={ROLE_OPTIONS}
-              required
-              error={errors.role?.message}
-              {...register('role')}
             />
 
             <Button

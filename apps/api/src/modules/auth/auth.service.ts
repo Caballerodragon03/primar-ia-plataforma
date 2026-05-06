@@ -87,7 +87,6 @@ export class AuthService {
     });
 
     if (!user) throw new AppError('Credenciales invalidas', 401);
-    if (user.role !== data.role) throw new AppError('Tipo de cuenta incorrecto', 401);
 
     // Check account lock
     if (user.lockedUntil && user.lockedUntil > new Date()) {
