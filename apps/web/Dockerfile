@@ -7,8 +7,10 @@ COPY apps/web/ ./apps/web/
 
 RUN npm ci --workspace=apps/web --workspace=packages/database --workspace=packages/shared --include-workspace-root
 
-# Build Next.js
+# Build Next.js — NEXT_PUBLIC_* vars must be set at build time
 ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_API_URL=https://api.primar-ia.com
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN cd apps/web && npm run build
 
 FROM node:20-alpine AS runner
