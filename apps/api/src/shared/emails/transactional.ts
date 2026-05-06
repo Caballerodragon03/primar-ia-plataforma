@@ -7,11 +7,11 @@ export async function sendMatchProposalEmail(
     pedidoId: string;
     productoNombre: string;
     cantidadKg: number;
-    precioKg: number;
+    precioMaxKg: number;
     compradorEmpresa: string;
   },
 ): Promise<void> {
-  const total = (data.cantidadKg * data.precioKg).toFixed(2);
+  const total = (data.cantidadKg * data.precioMaxKg).toFixed(2);
   await sendEmail({
     to: vendorEmail,
     subject: `Nueva propuesta de match para ${data.productoNombre}`,
@@ -21,8 +21,8 @@ export async function sendMatchProposalEmail(
          del comprador <strong>${data.compradorEmpresa}</strong>.</p>
       <ul>
         <li>Cantidad: <strong>${data.cantidadKg} kg</strong></li>
-        <li>Precio: <strong>€${data.precioKg}/kg</strong></li>
-        <li>Total estimado: <strong>€${total}</strong></li>
+        <li>Precio ofrecido: <strong>hasta €${data.precioMaxKg.toFixed(2)}/kg</strong></li>
+        <li>Valor potencial: <strong>€${total}</strong></li>
       </ul>
       <p>Accede a la plataforma para revisar y aceptar la propuesta.</p>
     `,

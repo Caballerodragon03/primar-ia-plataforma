@@ -75,7 +75,8 @@ function scoreRentabilidad(loteCalibres: LoteCalibre[], pedidoCalibres: PedidoCa
   for (const lc of loteCalibres) {
     const pc = pedidoCalibres.find((p) => p.calibre === lc.calibre);
     if (!pc || pc.precio_max_kg <= 0) continue;
-    const ratio = Math.min(lc.precio_min_kg / pc.precio_max_kg, 1.0);
+    // precio_min_kg === 0 means no price floor → seller accepts buyer's price → perfect price fit
+    const ratio = lc.precio_min_kg === 0 ? 1.0 : Math.min(lc.precio_min_kg / pc.precio_max_kg, 1.0);
     pares.push({ ratio, pesoKg: lc.cantidad_kg });
   }
 
@@ -310,17 +311,16 @@ type ScoredLote = {
 // ─── Default calibres/precio helpers ─────────────────────────────────────────
 
 function computePrecioKgFromContribucion(
-  loteCalibres: LoteCalibre[],
+  pedidoCalibres: PedidoCalibre[],
   contribucion: ContribucionCalibre[]
 ): number {
   let totalKg = 0;
   let totalPrecio = 0;
 
   for (const contrib of contribucion) {
-    const lc = loteCalibres.find((l) => l.calibre === contrib.calibre);
-    if (!lc) continue;
+    const pc = pedidoCalibres.find((p) => p.calibre === contrib.calibre);
     totalKg += contrib.cantidad_kg;
-    totalPrecio += lc.precio_min_kg * contrib.cantidad_kg;
+    totalPrecio += (pc?.precio_max_kg ?? 0) * contrib.cantidad_kg;
   }
 
   if (totalKg === 0) return 0;
@@ -371,10 +371,21 @@ export class MatchingService {
             pedidoCalibres.some((pc) => pc.calibre === lc.calibre && lc.precio_min_kg <= pc.precio_max_kg)
           );
       const cantidadKg = calibresIniciales.reduce((s, c) => s + c.cantidad_kg, 0);
-      const precioKg =
-        cantidadKg > 0
-          ? calibresIniciales.reduce((s, c) => s + c.precio_min_kg * c.cantidad_kg, 0) / cantidadKg
-          : 0;
+      // Use buyer's offered price (precio_max_kg) as the match price
+      let precioKg = 0;
+      if (cantidadKg > 0) {
+        if (isUncalibratedLot(loteCalibres)) {
+          const totalBuyerKg = pedidoCalibres.reduce((s, pc) => s + pc.cantidad_kg, 0);
+          precioKg = totalBuyerKg > 0
+            ? pedidoCalibres.reduce((s, pc) => s + pc.precio_max_kg * pc.cantidad_kg, 0) / totalBuyerKg
+            : 0;
+        } else {
+          precioKg = calibresIniciales.reduce((s, c) => {
+            const pc = pedidoCalibres.find((p) => p.calibre === c.calibre);
+            return s + (pc?.precio_max_kg ?? 0) * c.cantidad_kg;
+          }, 0) / cantidadKg;
+        }
+      }
 
       const match = await prisma.match.upsert({
         where: { loteId_pedidoId: { loteId, pedidoId: pedido.id } },
@@ -420,7 +431,7 @@ export class MatchingService {
                 pedidoId: pedido.id,
                 productoNombre: producto?.nombre ?? lote.productoId,
                 cantidadKg: Number(cantidadKg),
-                precioKg: Number(precioKg),
+                precioMaxKg: Number(precioKg),
                 compradorEmpresa,
               });
             }
@@ -500,10 +511,21 @@ export class MatchingService {
             pedidoCalibres.some((pc) => pc.calibre === lc.calibre && lc.precio_min_kg <= pc.precio_max_kg)
           );
       const cantidadKg = calibresIniciales.reduce((s, c) => s + c.cantidad_kg, 0);
-      const precioKg =
-        cantidadKg > 0
-          ? calibresIniciales.reduce((s, c) => s + c.precio_min_kg * c.cantidad_kg, 0) / cantidadKg
-          : 0;
+      // Use buyer's offered price (precio_max_kg) as the match price
+      let precioKg = 0;
+      if (cantidadKg > 0) {
+        if (isUncalibratedLot(loteCalibres)) {
+          const totalBuyerKg = pedidoCalibres.reduce((s, pc) => s + pc.cantidad_kg, 0);
+          precioKg = totalBuyerKg > 0
+            ? pedidoCalibres.reduce((s, pc) => s + pc.precio_max_kg * pc.cantidad_kg, 0) / totalBuyerKg
+            : 0;
+        } else {
+          precioKg = calibresIniciales.reduce((s, c) => {
+            const pc = pedidoCalibres.find((p) => p.calibre === c.calibre);
+            return s + (pc?.precio_max_kg ?? 0) * c.cantidad_kg;
+          }, 0) / cantidadKg;
+        }
+      }
 
       const match = await prisma.match.upsert({
         where: { loteId_pedidoId: { loteId: lote.id, pedidoId } },
@@ -654,7 +676,7 @@ export class MatchingService {
         }
 
         const cantidadKg = adjustedCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
-        const precioKg = computePrecioKgFromContribucion(loteCalibres, adjustedCalibres);
+        const precioKg = computePrecioKgFromContribucion(pedidoCalibres, adjustedCalibres);
 
         const totalCoveredKg = otrosCommittedKg + cantidadKg;
         const coverage = totalPedidoKg > 0 ? totalCoveredKg / totalPedidoKg : 0;
