@@ -12,6 +12,7 @@ interface RatingModalProps {
   destinatarioId: string;
   tipo: TipoValoracion;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 interface EjeRating {
@@ -79,7 +80,7 @@ function StarPicker({
 
 type RatingValues = Record<string, number>;
 
-export function RatingModal({ transaccionId, destinatarioId, tipo, onClose }: RatingModalProps) {
+export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSuccess }: RatingModalProps) {
   const ejes: EjeRating[] =
     tipo === 'COMPRADOR_A_VENDEDOR' ? EJES_VENDEDOR : EJES_COMPRADOR;
 
@@ -116,7 +117,7 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose }: Ra
       };
       await api.post('/valoraciones', body);
       setSuccess(true);
-      setTimeout(() => onClose(), 1500);
+      setTimeout(() => { onSuccess?.(); onClose(); }, 1500);
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 409) {

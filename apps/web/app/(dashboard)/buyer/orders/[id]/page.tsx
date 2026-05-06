@@ -55,6 +55,7 @@ interface ContractInfo {
   firmaVendedor: string | null;
   qrToken: string | null;
   qrUsado: boolean;
+  hasRated: boolean;
   fotosLoteUrls: string[];
   vendedorId: string;
   compradorId: string;
@@ -527,14 +528,18 @@ export default function OrderDetailPage() {
                         <CheckCircle2 className="w-4 h-4" />
                         <p className="text-sm font-medium">You confirmed delivery. Payment released.</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-1 text-yellow-600 border-yellow-300 hover:bg-yellow-50"
-                        onClick={() => setRatingTx({ transaccionId: m.transaccion!.id, vendedorId: info.vendedorId })}
-                      >
-                        <Star className="w-3.5 h-3.5" /> Rate Seller
-                      </Button>
+                      {info.hasRated ? (
+                        <p className="text-xs text-gray-400">Ya has valorado esta transacción.</p>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-1 text-yellow-600 border-yellow-300 hover:bg-yellow-50"
+                          onClick={() => setRatingTx({ transaccionId: m.transaccion!.id, vendedorId: info.vendedorId })}
+                        >
+                          <Star className="w-3.5 h-3.5" /> Rate Seller
+                        </Button>
+                      )}
                     </div>
                   )}
                   {!info.qrToken && !info.firmaVendedor && (
@@ -599,6 +604,7 @@ export default function OrderDetailPage() {
           destinatarioId={ratingTx.vendedorId}
           tipo="COMPRADOR_A_VENDEDOR"
           onClose={() => setRatingTx(null)}
+          onSuccess={fetchOrder}
         />
       )}
 

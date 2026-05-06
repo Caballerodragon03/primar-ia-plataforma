@@ -25,6 +25,10 @@ export class ContractsService {
       throw new AppError('No autorizado', 403);
     }
 
+    const hasRated = await prisma.valoracion.count({
+      where: { transaccionId, autorId: userId },
+    }).then((n) => n > 0);
+
     const lote = tx.match.lote;
     const pedido = tx.match.pedido;
     return {
@@ -57,6 +61,7 @@ export class ContractsService {
       firmaVendedorFecha: tx.firmaVendedorFecha?.toISOString() ?? null,
       qrToken: tx.qrToken ?? null,
       qrUsado: tx.qrUsado,
+      hasRated,
       fotosLoteUrls: tx.fotosLoteUrls ?? [],
       vendedorId: tx.vendedorId,
       compradorId: tx.compradorId,

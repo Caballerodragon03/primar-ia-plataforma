@@ -20,6 +20,7 @@ interface ContractInfo {
   firmaVendedor: string | null;
   qrToken: string | null;
   qrUsado: boolean;
+  hasRated: boolean;
   fotosLoteUrls: string[];
   vendedorId: string;
   compradorId: string;
@@ -218,14 +219,18 @@ export default function SellerQRPage() {
           <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
             <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto mb-1" />
             <p className="text-xs font-semibold text-green-900">Delivery confirmed by buyer</p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1 text-yellow-600 border-yellow-300 hover:bg-yellow-50 mx-auto"
-              onClick={() => setShowRating(true)}
-            >
-              <Star className="w-3.5 h-3.5" /> Rate Buyer
-            </Button>
+            {contract.hasRated ? (
+              <p className="text-xs text-gray-500 text-center">Ya has valorado esta transacción.</p>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1 text-yellow-600 border-yellow-300 hover:bg-yellow-50 mx-auto"
+                onClick={() => setShowRating(true)}
+              >
+                <Star className="w-3.5 h-3.5" /> Rate Buyer
+              </Button>
+            )}
           </div>
         )}
 
@@ -329,6 +334,7 @@ export default function SellerQRPage() {
           destinatarioId={contract.compradorId}
           tipo="VENDEDOR_A_COMPRADOR"
           onClose={() => setShowRating(false)}
+          onSuccess={() => { setShowRating(false); setContract((c) => c ? { ...c, hasRated: true } : c); }}
         />
       )}
     </div>
