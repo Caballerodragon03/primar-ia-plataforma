@@ -2,6 +2,7 @@ import { prisma } from '@primaria/database';
 import type { User, Certificado } from '@primaria/database';
 import type { UserEstado } from '@primaria/shared';
 import { AppError } from '../../middleware/error.middleware.js';
+import { sendEmail } from '../../shared/email.js';
 
 // ─── Response types ───────────────────────────────────────────────────────────
 
@@ -37,6 +38,8 @@ export interface AdminStats {
 // ─── Valid estado transitions ─────────────────────────────────────────────────
 
 const ALLOWED_TRANSITIONS: Partial<Record<UserEstado, UserEstado[]>> = {
+  EMAIL_NO_VERIFICADO: ['VERIFICADO_ACTIVO', 'RECHAZADO', 'PENDIENTE_VERIFICACION'],
+  EMAIL_VERIFICADO: ['VERIFICADO_ACTIVO', 'RECHAZADO', 'PENDIENTE_VERIFICACION'],
   PENDIENTE_VERIFICACION: ['VERIFICADO_ACTIVO', 'RECHAZADO', 'PENDIENTE_ACLARACION'],
   PENDIENTE_ACLARACION: ['VERIFICADO_ACTIVO', 'RECHAZADO'],
   VERIFICADO_ACTIVO: ['SUSPENDIDO'],
@@ -58,9 +61,17 @@ export class AdminService {
     const page = Math.max(1, filters?.page ?? 1);
     const skip = (page - 1) * PAGE_SIZE;
 
+    const estados = filters?.estado?.includes(',')
+      ? filters.estado.split(',') as User['estado'][]
+      : undefined;
+
     const where = {
       ...(filters?.role ? { role: filters.role as User['role'] } : {}),
-      ...(filters?.estado ? { estado: filters.estado as User['estado'] } : {}),
+      ...(estados
+        ? { estado: { in: estados } }
+        : filters?.estado
+          ? { estado: filters.estado as User['estado'] }
+          : {}),
     };
 
     const [data, total] = await Promise.all([
@@ -152,6 +163,29 @@ export class AdminService {
           : {}),
       },
     });
+
+    const loginUrl = `${process.env.CORS_ORIGIN ?? 'https://app.primar-ia.com'}/login`;
+
+    if (estado === 'VERIFICADO_ACTIVO') {
+      await sendEmail({
+        to: user.email,
+        subject: 'Tu cuenta en Primar-IA ha sido aprobada',
+        html: `<h2>¡Enhorabuena, ${user.nombre}!</h2>
+<p>Tu cuenta en Primar-IA ha sido verificada y aprobada por nuestro equipo.</p>
+<p>Ya puedes acceder a la plataforma con todas las funcionalidades disponibles para tu perfil.</p>
+<a href="${loginUrl}" style="background:#E1C44D;color:#1A1A1A;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Acceder a Primar-IA</a>
+<p>¡Bienvenido al mercado digital del sector primario!</p>`,
+      }).catch((err: Error) => console.error('[ADMIN] Approval email failed:', err.message));
+    } else if (estado === 'RECHAZADO') {
+      await sendEmail({
+        to: user.email,
+        subject: 'Actualización sobre tu cuenta en Primar-IA',
+        html: `<h2>Hola ${user.nombre},</h2>
+<p>Lamentamos informarte de que tu solicitud de cuenta en Primar-IA no ha sido aprobada en este momento.</p>
+${notasAdmin ? `<p><strong>Motivo:</strong> ${notasAdmin}</p>` : ''}
+<p>Si crees que se trata de un error o deseas más información, puedes ponerte en contacto con nosotros respondiendo a este correo.</p>`,
+      }).catch((err: Error) => console.error('[ADMIN] Rejection email failed:', err.message));
+    }
 
     return updated;
   }

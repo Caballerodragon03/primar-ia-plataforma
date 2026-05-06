@@ -158,7 +158,7 @@ export class AuthService {
         data: {
           estado: emailToken.user.role === 'COMPRADOR'
             ? 'VERIFICADO_ACTIVO'
-            : 'EMAIL_VERIFICADO',
+            : 'PENDIENTE_VERIFICACION',
         },
       }),
     ]);

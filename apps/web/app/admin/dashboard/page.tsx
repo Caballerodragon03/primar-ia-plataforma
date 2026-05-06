@@ -80,7 +80,7 @@ export default function AdminDashboardPage() {
       try {
         const [statsRes, usersRes, certsRes] = await Promise.all([
           api.get<{ data: AdminStats }>('/admin/stats'),
-          api.get<{ data: PendingUser[] }>('/admin/users?estado=PENDIENTE_VERIFICACION&limit=5'),
+          api.get<{ data: PendingUser[] }>('/admin/users?estado=EMAIL_NO_VERIFICADO,EMAIL_VERIFICADO,PENDIENTE_VERIFICACION'),
           api.get<{ data: PendingCertificate[] }>('/admin/certificados?estado=PENDIENTE&limit=5'),
         ]);
         setStats(statsRes.data.data);
@@ -108,7 +108,11 @@ export default function AdminDashboardPage() {
         />
         <KPICard
           label="Pending Verification"
-          value={stats ? (stats.users.byEstado['PENDIENTE_VERIFICACION'] ?? 0).toLocaleString() : '—'}
+          value={stats ? (
+            (stats.users.byEstado['EMAIL_NO_VERIFICADO'] ?? 0) +
+            (stats.users.byEstado['EMAIL_VERIFICADO'] ?? 0) +
+            (stats.users.byEstado['PENDIENTE_VERIFICACION'] ?? 0)
+          ).toLocaleString() : '—'}
           sub="Awaiting review"
           icon={<Clock className="w-4 h-4 text-amber-500" />}
         />
