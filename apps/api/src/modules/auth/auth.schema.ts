@@ -8,7 +8,7 @@ export const registerSchema = z.object({
   role: z.enum(['VENDEDOR', 'COMPRADOR']),
   // Company details
   razonSocial: z.string().min(2),
-  cifNif: z.string().regex(/^[A-Z0-9]{9}$/, 'CIF/NIF invalido'),
+  cifNif: z.string().transform((v) => v.toUpperCase().replace(/[^A-Z0-9]/g, '')).pipe(z.string().regex(/^[A-Z0-9]{9}$/, 'CIF/NIF invalido — debe tener exactamente 9 caracteres alfanuméricos')),
   formaJuridica: z.string().optional(),
   direccionFiscal: z.string().min(5),
   ciudad: z.string().optional(),

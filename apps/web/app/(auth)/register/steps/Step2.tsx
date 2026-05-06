@@ -1,4 +1,5 @@
 'use client';
+import type { ChangeEvent } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -51,11 +52,16 @@ export function Step2({ onNext, onBack }: Step2Props) {
             {...register('formaJuridica')}
           />
           <Input
-            label="CIF / VAT Number"
-            placeholder="ESB87961234"
+            label="CIF / NIF"
+            placeholder="B12345678"
             required
+            hint="9 characters — letter + 8 digits (e.g. B12345678)"
             error={errors.cifNif?.message}
-            {...register('cifNif')}
+            {...register('cifNif', {
+              onChange: (e: ChangeEvent<HTMLInputElement>) => {
+                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9);
+              },
+            })}
           />
         </div>
       </div>

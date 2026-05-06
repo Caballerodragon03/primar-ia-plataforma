@@ -26,7 +26,7 @@ const step1Schema = z.object({
 
 const step2Schema = z.object({
   razonSocial: z.string().min(2, 'Required'),
-  cifNif: z.string().min(9, 'Invalid CIF/NIF'),
+  cifNif: z.string().regex(/^[A-Z0-9]{9}$/, 'Must be exactly 9 alphanumeric characters (e.g. B12345678)'),
   formaJuridica: z.string().optional(),
   direccionFiscal: z.string().min(5, 'Required'),
   ciudad: z.string().optional(),
@@ -83,8 +83,22 @@ export default function RegisterPage() {
     setServerError(null);
     try {
       await api.post('/auth/register', {
-        ...data,
+        email: data.email,
+        password: data.password,
+        role: data.role,
+        telefono: data.telefono || undefined,
+        idioma: data.idioma,
+        razonSocial: data.razonSocial,
+        cifNif: data.cifNif.toUpperCase().replace(/[^A-Z0-9]/g, ''),
+        formaJuridica: data.formaJuridica || undefined,
+        direccionFiscal: data.direccionFiscal,
+        ciudad: data.ciudad || undefined,
+        codigoPostal: data.codigoPostal || undefined,
+        pais: data.pais,
+        nombre: data.nombre,
+        apellidos: data.apellidos,
         personaContactoLegal: `${data.nombre} ${data.apellidos}`,
+        cargoContactoLegal: data.cargoContactoLegal,
       });
       setSuccess({ email: data.email });
     } catch (err: unknown) {
