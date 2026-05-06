@@ -51,13 +51,11 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-type Product = { id: string; nombre: string };
-type Variedad = { id: string; nombre: string };
+type Product = { id: string; nombre: string; variedades: { id: string; nombre: string }[] };
 
 export default function CreateOrderPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
-  const [varieties, setVarieties] = useState<Variedad[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [customVariety, setCustomVariety] = useState('');
@@ -88,12 +86,7 @@ export default function CreateOrderPage() {
     api.get('/products').then(({ data }) => setProducts(data.data)).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!selectedProductId) { setVarieties([]); return; }
-    api.get(`/products/${selectedProductId}/varieties`)
-      .then(({ data }) => setVarieties(data.data))
-      .catch(() => setVarieties([]));
-  }, [selectedProductId]);
+  const varieties = products.find((p) => p.id === selectedProductId)?.variedades ?? [];
 
   const onSubmit = async (values: FormValues, publish: boolean) => {
     setIsSubmitting(true);
@@ -188,7 +181,7 @@ export default function CreateOrderPage() {
               <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-xs font-medium text-text-secondary px-1">
                 <span>Caliber</span>
                 <span>Qty (kg)</span>
-                <span>Max Price (€/kg)</span>
+                <span>Selling Price (€/kg)</span>
                 <span />
               </div>
               {fields.map((field, idx) => (

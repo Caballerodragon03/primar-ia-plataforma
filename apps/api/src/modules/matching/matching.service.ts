@@ -59,11 +59,17 @@ function toPedidoCalibre(raw: unknown): PedidoCalibre[] {
   return (raw as PedidoCalibre[]) ?? [];
 }
 
+function isUncalibratedLot(loteCalibres: LoteCalibre[]): boolean {
+  return loteCalibres.length === 1 && loteCalibres[0]?.calibre === 'UNCALIBRATED';
+}
+
 /**
  * Rentabilidad: precio ofrecido por el vendedor vs. precio máximo del comprador.
- * Rango: 0–1. Cuanto más cerca del precio máximo del comprador, mayor puntuación.
+ * Rango: 0–1. Lotes sin calibrar → 0.5 (neutro, aparecen después de los calibrados).
  */
 function scoreRentabilidad(loteCalibres: LoteCalibre[], pedidoCalibres: PedidoCalibre[]): number {
+  if (isUncalibratedLot(loteCalibres)) return 0.5;
+
   const pares: Array<{ ratio: number; pesoKg: number }> = [];
 
   for (const lc of loteCalibres) {
@@ -245,14 +251,16 @@ function meetsHardCriteria(
     return false;
   }
 
-  // 3. Al menos un calibre en común con precio compatible
+  // 3. Calibre y precio compatibles (lotes sin calibrar se saltan esta comprobación)
   const loteCalibres = toLoteCalibre(lote.calibres);
   const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
-  const hasPriceFit = pedidoCalibres.some((pc) => {
-    const lc = loteCalibres.find((l) => l.calibre === pc.calibre);
-    return lc != null && lc.precio_min_kg <= pc.precio_max_kg;
-  });
-  if (!hasPriceFit) return false;
+  if (!isUncalibratedLot(loteCalibres)) {
+    const hasPriceFit = pedidoCalibres.some((pc) => {
+      const lc = loteCalibres.find((l) => l.calibre === pc.calibre);
+      return lc != null && lc.precio_min_kg <= pc.precio_max_kg;
+    });
+    if (!hasPriceFit) return false;
+  }
 
   // 4. Fecha disponibilidad <= fecha entrega deseada
   if (lote.fechaDisponibilidad > pedido.fechaEntregaDeseada) return false;
@@ -357,9 +365,11 @@ export class MatchingService {
       const loteCalibres = toLoteCalibre(lote.calibres);
       const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
 
-      const calibresIniciales = loteCalibres.filter((lc) =>
-        pedidoCalibres.some((pc) => pc.calibre === lc.calibre && lc.precio_min_kg <= pc.precio_max_kg)
-      );
+      const calibresIniciales = isUncalibratedLot(loteCalibres)
+        ? loteCalibres
+        : loteCalibres.filter((lc) =>
+            pedidoCalibres.some((pc) => pc.calibre === lc.calibre && lc.precio_min_kg <= pc.precio_max_kg)
+          );
       const cantidadKg = calibresIniciales.reduce((s, c) => s + c.cantidad_kg, 0);
       const precioKg =
         cantidadKg > 0
@@ -457,15 +467,23 @@ export class MatchingService {
       scored.push({ lote, score });
     }
 
-    // Sort by scoreTotal desc (default) or precio asc
+    // Sort: calibrated lots always before uncalibrated, then by score or price
     if (sortBy === 'precio') {
       scored.sort((a, b) => {
+        const aUncal = isUncalibratedLot(toLoteCalibre(a.lote.calibres)) ? 1 : 0;
+        const bUncal = isUncalibratedLot(toLoteCalibre(b.lote.calibres)) ? 1 : 0;
+        if (aUncal !== bUncal) return aUncal - bUncal;
         const precioA = Math.min(...toLoteCalibre(a.lote.calibres).map((c) => c.precio_min_kg));
         const precioB = Math.min(...toLoteCalibre(b.lote.calibres).map((c) => c.precio_min_kg));
         return precioA - precioB;
       });
     } else {
-      scored.sort((a, b) => b.score.total - a.score.total);
+      scored.sort((a, b) => {
+        const aUncal = isUncalibratedLot(toLoteCalibre(a.lote.calibres)) ? 1 : 0;
+        const bUncal = isUncalibratedLot(toLoteCalibre(b.lote.calibres)) ? 1 : 0;
+        if (aUncal !== bUncal) return aUncal - bUncal;
+        return b.score.total - a.score.total;
+      });
       applyAntiMonopoly(scored);
     }
 
@@ -476,9 +494,11 @@ export class MatchingService {
       const loteCalibres = toLoteCalibre(lote.calibres);
       const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
 
-      const calibresIniciales = loteCalibres.filter((lc) =>
-        pedidoCalibres.some((pc) => pc.calibre === lc.calibre && lc.precio_min_kg <= pc.precio_max_kg)
-      );
+      const calibresIniciales = isUncalibratedLot(loteCalibres)
+        ? loteCalibres
+        : loteCalibres.filter((lc) =>
+            pedidoCalibres.some((pc) => pc.calibre === lc.calibre && lc.precio_min_kg <= pc.precio_max_kg)
+          );
       const cantidadKg = calibresIniciales.reduce((s, c) => s + c.cantidad_kg, 0);
       const precioKg =
         cantidadKg > 0

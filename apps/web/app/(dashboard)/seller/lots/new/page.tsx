@@ -14,7 +14,6 @@ const OTHER_VALUE = '__other__';
 const calibreSchema = z.object({
   calibre: z.string().min(1, 'Requerido'),
   cantidad_kg: z.coerce.number().positive('Debe ser positivo'),
-  precio_min_kg: z.coerce.number().positive('Debe ser positivo'),
 });
 
 const schema = z.object({
@@ -32,15 +31,13 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-type Product = { id: string; nombre: string };
-type Variedad = { id: string; nombre: string };
+type Product = { id: string; nombre: string; variedades: { id: string; nombre: string }[] };
 
 const CERT_OPTIONS = ['Organic', 'GlobalG.A.P.', 'Fair Trade', 'BRC Certified'];
 
 export default function PublishLotPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
-  const [varieties, setVarieties] = useState<Variedad[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [customVariety, setCustomVariety] = useState('');
@@ -76,7 +73,7 @@ export default function PublishLotPage() {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      calibres: [{ calibre: '', cantidad_kg: 0, precio_min_kg: 0 }],
+      calibres: [{ calibre: '', cantidad_kg: 0 }],
       certificaciones: [],
       fotosUrls: [],
       noCalibre: false,
@@ -89,17 +86,13 @@ export default function PublishLotPage() {
   const selectedProductId = watch('productoId');
   const selectedVariedadId = watch('variedadId');
   const selectedCerts = watch('certificaciones');
+  const noCalibre = watch('noCalibre');
 
   useEffect(() => {
     api.get('/products').then(({ data }) => setProducts(data.data)).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!selectedProductId) { setVarieties([]); return; }
-    api.get(`/products/${selectedProductId}/varieties`)
-      .then(({ data }) => setVarieties(data.data))
-      .catch(() => setVarieties([]));
-  }, [selectedProductId]);
+  const varieties = products.find((p) => p.id === selectedProductId)?.variedades ?? [];
 
   const toggleCert = (cert: string) => {
     const current = selectedCerts ?? [];
@@ -114,7 +107,6 @@ export default function PublishLotPage() {
     setIsSubmitting(true);
     setError('');
     try {
-      // If "other" was selected, send the custom text instead of an id
       const variedadId =
         values.variedadId && values.variedadId !== OTHER_VALUE
           ? values.variedadId
@@ -123,8 +115,18 @@ export default function PublishLotPage() {
         values.variedadId === OTHER_VALUE && customVariety.trim()
           ? customVariety.trim()
           : undefined;
+
+      const calibres = values.noCalibre
+        ? [{
+            calibre: 'UNCALIBRATED',
+            cantidad_kg: values.calibres.reduce((s, c) => s + c.cantidad_kg, 0),
+            precio_min_kg: 0,
+          }]
+        : values.calibres.map((c) => ({ ...c, precio_min_kg: 0 }));
+
       const payload = {
         ...values,
+        calibres,
         variedadId,
         variedadCustom,
         publicar: publish,
@@ -182,54 +184,61 @@ export default function PublishLotPage() {
 
           {/* Calibres table */}
           <div className="space-y-2">
-            <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-xs font-medium text-text-secondary px-1">
-              <span>Caliber</span>
-              <span>Quantity (kg)</span>
-              <span>Min Price (€/kg)</span>
-              <span />
-            </div>
-            {fields.map((field, idx) => (
-              <div key={field.id} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-start">
-                <Input
-                  placeholder="e.g. 70/80 mm"
-                  {...register(`calibres.${idx}.calibre`)}
-                  error={errors.calibres?.[idx]?.calibre?.message}
-                />
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="1000"
-                  {...register(`calibres.${idx}.cantidad_kg`)}
-                  error={errors.calibres?.[idx]?.cantidad_kg?.message}
-                />
-                <Input
-                  type="number"
-                  step="0.001"
-                  placeholder="1.50"
-                  {...register(`calibres.${idx}.precio_min_kg`)}
-                  error={errors.calibres?.[idx]?.precio_min_kg?.message}
-                />
-                <button
-                  type="button"
-                  onClick={() => remove(idx)}
-                  disabled={fields.length === 1}
-                  className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 mt-0.5"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => append({ calibre: '', cantidad_kg: 0, precio_min_kg: 0 })}
-              className="text-sm text-primary font-medium hover:underline flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add another caliber
-            </button>
             <label className="flex items-center gap-2 text-sm text-text-secondary">
               <input type="checkbox" {...register('noCalibre')} className="rounded" />
               Non calibrated/weighted Lot
             </label>
+            {noCalibre ? (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-text-secondary px-1">Estimated Quantity (kg)</p>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Total kg available"
+                  {...register('calibres.0.cantidad_kg')}
+                  error={errors.calibres?.[0]?.cantidad_kg?.message}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-text-secondary px-1">
+                  <span>Caliber</span>
+                  <span>Quantity (kg)</span>
+                  <span />
+                </div>
+                {fields.map((field, idx) => (
+                  <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-start">
+                    <Input
+                      placeholder="e.g. 70/80 mm"
+                      {...register(`calibres.${idx}.calibre`)}
+                      error={errors.calibres?.[idx]?.calibre?.message}
+                    />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="1000"
+                      {...register(`calibres.${idx}.cantidad_kg`)}
+                      error={errors.calibres?.[idx]?.cantidad_kg?.message}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => remove(idx)}
+                      disabled={fields.length === 1}
+                      className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 mt-0.5"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => append({ calibre: '', cantidad_kg: 0 })}
+                  className="text-sm text-primary font-medium hover:underline flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add another caliber
+                </button>
+              </>
+            )}
           </div>
         </section>
 

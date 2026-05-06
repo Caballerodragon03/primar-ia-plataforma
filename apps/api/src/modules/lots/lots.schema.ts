@@ -3,7 +3,7 @@ import { z } from 'zod';
 const calibreItemSchema = z.object({
   calibre: z.string().min(1),
   cantidad_kg: z.number().positive(),
-  precio_min_kg: z.number().positive(),
+  precio_min_kg: z.number().min(0).default(0),
 });
 
 export const createLotSchema = z.object({
