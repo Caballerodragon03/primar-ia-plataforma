@@ -13,7 +13,6 @@ import { Button, Input, Select } from '@/components/ui';
 const calibreSchema = z.object({
   calibre: z.string().min(1, 'Requerido'),
   cantidad_kg: z.coerce.number().positive('Debe ser positivo'),
-  precio_min_kg: z.coerce.number().positive('Debe ser positivo'),
 });
 
 const schema = z.object({
@@ -25,7 +24,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-type CalibreItem = { calibre: string; cantidad_kg: number; precio_min_kg: number };
+type CalibreItem = { calibre: string; cantidad_kg: number; precio_min_kg?: number };
 type LotDetail = {
   id: string;
   estado: string;
@@ -53,7 +52,7 @@ export default function EditLotPage() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { calibres: [{ calibre: '', cantidad_kg: 0, precio_min_kg: 0 }] },
+    defaultValues: { calibres: [{ calibre: '', cantidad_kg: 0 }] },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'calibres' });
@@ -68,7 +67,6 @@ export default function EditLotPage() {
           calibres: lot.calibres.map((c) => ({
             calibre: c.calibre,
             cantidad_kg: c.cantidad_kg,
-            precio_min_kg: c.precio_min_kg,
           })),
           direccionRecogida: lot.direccionRecogida,
           fechaDisponibilidad: lot.fechaDisponibilidad
@@ -138,7 +136,7 @@ export default function EditLotPage() {
           )}
           <div className="space-y-3">
             {fields.map((field, i) => (
-              <div key={field.id} className="grid grid-cols-3 gap-3 items-end">
+              <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end">
                 <Input
                   label="Caliber"
                   {...register(`calibres.${i}.calibre`)}
@@ -151,32 +149,21 @@ export default function EditLotPage() {
                   {...register(`calibres.${i}.cantidad_kg`)}
                   error={errors.calibres?.[i]?.cantidad_kg?.message}
                 />
-                <div className="flex gap-2 items-end">
-                  <div className="flex-1">
-                    <Input
-                      label="Min Price (€/kg)"
-                      type="number"
-                      step="0.001"
-                      {...register(`calibres.${i}.precio_min_kg`)}
-                      error={errors.calibres?.[i]?.precio_min_kg?.message}
-                    />
-                  </div>
-                  {fields.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => remove(i)}
-                      className="mb-1 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+                {fields.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => remove(i)}
+                    className="mb-1 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             ))}
           </div>
           <button
             type="button"
-            onClick={() => append({ calibre: '', cantidad_kg: 0, precio_min_kg: 0 })}
+            onClick={() => append({ calibre: '', cantidad_kg: 0 })}
             className="text-sm text-primary hover:underline flex items-center gap-1 font-medium"
           >
             <Plus className="w-3.5 h-3.5" /> Add caliber

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { Star, Filter } from 'lucide-react';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { Star, Filter, TrendingUp } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { MatchCard, type Match } from '@/components/ui/MatchCard';
@@ -98,6 +98,8 @@ export default function SellerMatchesPage() {
   const [incotermPrefs, setIncotermPrefs] = useState<IncotermPrefs | null>(null);
   const [incotermFilter, setIncotermFilter] = useState<Set<string>>(new Set());
   const [showIncotermFilter, setShowIncotermFilter] = useState(false);
+  const [marketDemand, setMarketDemand] = useState<{ productoNombre: string; calibre: string; totalKg: number; orderCount: number }[]>([]);
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function fetchMatches() {
     setLoading(true);
@@ -116,12 +118,26 @@ export default function SellerMatchesPage() {
 
   useEffect(() => {
     fetchMatches();
+    api.get<{ success: boolean; data: typeof marketDemand }>('/matching/seller/market-demand')
+      .then(({ data }) => setMarketDemand(data.data ?? []))
+      .catch(() => {});
     const prefs = loadIncotermPrefs();
     if (prefs?.done) {
       setIncotermPrefs(prefs);
-      // Auto-select recommended incoterms from the wizard
       setIncotermFilter(new Set(prefs.selected));
     }
+
+    // Auto-refresh matches every 30 seconds
+    refreshTimerRef.current = setInterval(() => {
+      fetchMatches();
+      api.get<{ success: boolean; data: typeof marketDemand }>('/matching/seller/market-demand')
+        .then(({ data }) => setMarketDemand(data.data ?? []))
+        .catch(() => {});
+    }, 30_000);
+
+    return () => {
+      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+    };
   }, []);
 
   // Filter matches by incoterm if filter is active
@@ -362,14 +378,44 @@ export default function SellerMatchesPage() {
       )}
 
       {!loading && !error && sorted.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-            <Star className="w-8 h-8 text-gray-300" />
+        <div className="space-y-6">
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+              <Star className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="font-semibold text-text-primary mb-1">No matching orders yet.</p>
+            <p className="text-sm text-text-secondary max-w-sm">
+              No buyers match your current lot calibers. See what buyers are requesting below.
+            </p>
           </div>
-          <p className="font-semibold text-text-primary mb-1">No matching orders found yet.</p>
-          <p className="text-sm text-text-secondary max-w-sm">
-            Make sure your lots are published so buyers can find them.
-          </p>
+
+          {marketDemand.length > 0 && (
+            <div className="bg-surface border border-border rounded-card p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                <h3 className="font-semibold text-text-primary text-sm">What Buyers Are Requesting</h3>
+                <span className="text-xs text-text-secondary">— update your lot calibers to get matched</span>
+              </div>
+              <div className="divide-y divide-border">
+                {marketDemand.map((d) => (
+                  <div key={`${d.productoNombre}:${d.calibre}`} className="flex items-center justify-between py-3">
+                    <div>
+                      <span className="text-sm font-medium text-text-primary">{d.productoNombre}</span>
+                      <span className="ml-2 text-xs bg-gray-100 text-text-secondary px-2 py-0.5 rounded-badge">
+                        Caliber {d.calibre}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-text-primary">
+                        {d.totalKg.toLocaleString('es-ES')} kg
+                      </p>
+                      <p className="text-xs text-text-secondary">{d.orderCount} order{d.orderCount !== 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

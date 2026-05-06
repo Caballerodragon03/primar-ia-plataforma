@@ -33,6 +33,61 @@ matchingRouter.get(
   asyncHandler(listSellerMatches)
 );
 
+// Market demand: calibres buyers are currently requesting for products the seller has lots for
+matchingRouter.get(
+  '/seller/market-demand',
+  requireRole('VENDEDOR'),
+  asyncHandler(async (req, res) => {
+    const { prisma } = await import('@primaria/database');
+    const vendedorId = req.user!.sub;
+
+    const sellerProductIds = await prisma.lote.findMany({
+      where: { vendedorId, estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] } },
+      select: { productoId: true },
+      distinct: ['productoId'],
+    });
+    const productIds = sellerProductIds.map((l: { productoId: string }) => l.productoId);
+
+    if (productIds.length === 0) {
+      res.json({ success: true, data: [] });
+      return;
+    }
+
+    const orders = await prisma.pedido.findMany({
+      where: { productoId: { in: productIds }, estado: 'ACTIVO' },
+      select: {
+        productoId: true,
+        calibresSolicitados: true,
+        producto: { select: { nombre: true } },
+      },
+    });
+
+    type CalEntry = { productoId: string; productoNombre: string; calibre: string; totalKg: number; orderCount: number };
+    const map = new Map<string, CalEntry>();
+    for (const order of orders) {
+      const calibres = (order.calibresSolicitados as { calibre: string; cantidad_kg: number }[]) ?? [];
+      for (const c of calibres) {
+        const key = `${order.productoId}:${c.calibre}`;
+        const existing = map.get(key);
+        if (existing) {
+          existing.totalKg += c.cantidad_kg;
+          existing.orderCount += 1;
+        } else {
+          map.set(key, {
+            productoId: order.productoId,
+            productoNombre: order.producto.nombre,
+            calibre: c.calibre,
+            totalKg: c.cantidad_kg,
+            orderCount: 1,
+          });
+        }
+      }
+    }
+
+    res.json({ success: true, data: Array.from(map.values()).sort((a, b) => b.totalKg - a.totalKg) });
+  })
+);
+
 // List matches for a specific lot
 matchingRouter.get(
   '/lots/:loteId/matches',

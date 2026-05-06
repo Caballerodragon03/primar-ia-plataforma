@@ -152,9 +152,9 @@ export class LotsService {
       include: { producto: true, variedad: true },
     });
 
-    // Auto-run matching when lot becomes ACTIVO (either freshly published or already active and updated)
+    // Auto-run matching whenever lot is ACTIVO (on create, publish, or any edit)
     const isNowActive = updated.estado === 'ACTIVO';
-    if (isNowActive && (!wasActive || data.publicar === true)) {
+    if (isNowActive) {
       void matchingService.runMatchingForLot(updated.id).catch((err: unknown) =>
         console.error('[Matching] Auto-run failed for lot', updated.id, err)
       );

@@ -173,9 +173,9 @@ export class OrdersService {
       include: { producto: true, variedad: true },
     });
 
-    // Auto-run matching when order becomes ACTIVO
+    // Auto-run matching whenever order is ACTIVO (on create, publish, or any edit)
     const isNowActive = updated.estado === 'ACTIVO';
-    if (isNowActive && (!wasActive || data.publicar === true)) {
+    if (isNowActive) {
       void matchingService.runMatchingForOrder(updated.id).catch((err: unknown) =>
         console.error('[Matching] Auto-run failed for order', updated.id, err)
       );
