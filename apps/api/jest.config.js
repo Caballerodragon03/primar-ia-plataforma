@@ -18,6 +18,7 @@ const config = {
       },
     }],
   },
+  setupFiles: ['<rootDir>/tests/jest.setup.ts'],
   testMatch: ['**/tests/**/*.test.ts'],
   collectCoverageFrom: ['src/**/*.ts', '!src/index.ts'],
   coverageThreshold: { global: { lines: 60 } },

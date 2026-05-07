@@ -2,26 +2,21 @@
 
 jest.mock('@primaria/database', () => ({
   prisma: {
-    lote: {
-      findUnique: jest.fn(),
-    },
-    pedido: {
-      findMany: jest.fn(),
-    },
-    match: {
-      upsert: jest.fn(),
-    },
-    user: {
-      findUnique: jest.fn(),
-    },
-    empresa: {
-      findUnique: jest.fn(),
-    },
-    produto: {
-      findUnique: jest.fn(),
-    },
-    produto_findUnique: jest.fn(),
-    produto_search: jest.fn(),
+    lote: { findUnique: jest.fn() },
+    pedido: { findMany: jest.fn() },
+    match: { upsert: jest.fn() },
+    user: { findUnique: jest.fn() },
+    empresa: { findUnique: jest.fn() },
+    disputa: { findFirst: jest.fn().mockResolvedValue(null) },
+    transaccion: { count: jest.fn().mockResolvedValue(0) },
+    suscripcion: { findUnique: jest.fn().mockResolvedValue(null) },
+    mensaje: { create: jest.fn() },
+    producto: { findUnique: jest.fn() },
+    $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn({
+      match: { update: jest.fn().mockResolvedValue({}) },
+      lote: { update: jest.fn() },
+      pedido: { update: jest.fn() },
+    })),
   },
 }));
 
@@ -50,6 +45,12 @@ function makeLote(overrides: Record<string, unknown> = {}) {
     coordenadasLng: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    vendedor: {
+      scoreFiabilidad: { toNumber: () => 85 },
+      scoreStatus: 'OK',
+      transaccionesOk: 5,
+      transaccionesIncid: 0,
+    },
     ...overrides,
   };
 }

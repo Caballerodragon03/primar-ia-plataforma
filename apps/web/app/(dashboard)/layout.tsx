@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -9,12 +9,20 @@ import { DashboardHeader } from '@/components/layout/DashboardHeader';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, _hydrated } = useAuthStore();
   const router = useRouter();
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    if (_hydrated && !user) router.replace('/login');
-  }, [_hydrated, user, router]);
+    const timer = setTimeout(() => setTimedOut(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
-  if (!_hydrated) {
+  const ready = _hydrated || timedOut;
+
+  useEffect(() => {
+    if (ready && !user) router.replace('/login');
+  }, [ready, user, router]);
+
+  if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-[#E1C44D] border-t-transparent rounded-full animate-spin" />

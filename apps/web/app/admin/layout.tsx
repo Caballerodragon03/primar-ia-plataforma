@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
@@ -10,12 +10,20 @@ import { LogOut, ShieldCheck, AlertTriangle, Receipt } from 'lucide-react';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { clearAuth, user, _hydrated } = useAuthStore();
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    if (_hydrated && (!user || user.role !== 'ADMIN')) router.replace('/login');
-  }, [user, _hydrated, router]);
+    const timer = setTimeout(() => setTimedOut(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
-  if (!_hydrated) {
+  const ready = _hydrated || timedOut;
+
+  useEffect(() => {
+    if (ready && (!user || user.role !== 'ADMIN')) router.replace('/login');
+  }, [user, ready, router]);
+
+  if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8F8F6]">
         <div className="w-8 h-8 border-4 border-[#E1C44D] border-t-transparent rounded-full animate-spin" />
