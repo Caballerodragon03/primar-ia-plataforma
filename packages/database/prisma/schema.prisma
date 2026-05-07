@@ -150,6 +150,7 @@ enum SuscripcionEstado {
   CANCELADA
   PAUSADA
   TRIAL
+  PENDIENTE
 }
 
 enum PlanVendedor {

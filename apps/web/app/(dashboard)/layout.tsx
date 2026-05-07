@@ -1,21 +1,41 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
+import { api } from '@/lib/api';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, _hydrated } = useAuthStore();
+  const { user, _hydrated, setAuth, clearAuth } = useAuthStore();
   const router = useRouter();
-  const isAuthenticated = user !== null;
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (_hydrated && !isAuthenticated) router.replace('/login');
-  }, [isAuthenticated, _hydrated, router]);
+    if (!_hydrated) return;
 
-  if (!_hydrated) {
+    if (!user) {
+      router.replace('/login');
+      return;
+    }
+
+    // Proactive token refresh on mount to ensure a fresh access token
+    api.post('/auth/refresh')
+      .then((res) => {
+        const newToken = res.data?.data?.accessToken;
+        if (newToken) {
+          setAuth(user, newToken);
+        }
+        setReady(true);
+      })
+      .catch(() => {
+        clearAuth();
+        router.replace('/login');
+      });
+  }, [_hydrated, user, router, setAuth, clearAuth]);
+
+  if (!_hydrated || !ready) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-[#E1C44D] border-t-transparent rounded-full animate-spin" />
@@ -23,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  if (!isAuthenticated) return null;
+  if (!user) return null;
 
   return (
     <div className="flex min-h-screen bg-background">

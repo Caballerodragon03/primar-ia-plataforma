@@ -38,7 +38,13 @@ export default function SellerSubscriptionPage() {
           hasActiveSubscription: currentRes.data.data.hasActiveSubscription,
         });
       } catch {
-        // fallback
+        setData({
+          plan: 'COSECHA',
+          badge: null,
+          lotesActivos: 0,
+          maxLotes: 3,
+          hasActiveSubscription: false,
+        });
       } finally {
         setLoading(false);
       }

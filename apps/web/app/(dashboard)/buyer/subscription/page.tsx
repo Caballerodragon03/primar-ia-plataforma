@@ -38,7 +38,13 @@ export default function BuyerSubscriptionPage() {
           hasActiveSubscription: currentRes.data.data.hasActiveSubscription,
         });
       } catch {
-        // fallback
+        setData({
+          plan: 'MERCADO',
+          badge: null,
+          pedidosActivos: 0,
+          maxPedidos: 5,
+          hasActiveSubscription: false,
+        });
       } finally {
         setLoading(false);
       }

@@ -116,17 +116,13 @@ export class SubscriptionService {
       });
       stripeCustomerId = customer.id;
 
-      // Upsert suscripcion to store customer ID early
       await prisma.suscripcion.upsert({
         where: { userId: user.id },
         create: {
           userId: user.id,
           stripeCustomerId,
-          estado: 'ACTIVA',
+          estado: 'PENDIENTE',
           fechaInicio: new Date(),
-          ...(user.role === 'VENDEDOR'
-            ? { planVendedor: plan as VendedorPlan }
-            : { planComprador: plan as CompradorPlan }),
         },
         update: { stripeCustomerId },
       });

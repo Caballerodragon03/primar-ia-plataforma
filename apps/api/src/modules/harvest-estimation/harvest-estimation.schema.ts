@@ -18,3 +18,8 @@ export const calculateEstimationSchema = z.object({
 });
 
 export type CalculateEstimationInput = z.infer<typeof calculateEstimationSchema>;
+
+export const excelUploadSchema = z.object({
+  productoId: z.string().min(1),
+  variedadId: z.string().optional(),
+});
