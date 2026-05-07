@@ -16,6 +16,7 @@ export const createLotSchema = z.object({
   coordenadasLat: z.number().optional(),
   coordenadasLng: z.number().optional(),
   fechaDisponibilidad: z.string().datetime(),
+  fechaFinDisponibilidad: z.string().datetime().optional(),
   certificaciones: z.array(z.string()).optional(),
   fotosUrls: z.array(z.string().url()).optional(),
   comentariosAdicionales: z.string().max(1000).optional(),

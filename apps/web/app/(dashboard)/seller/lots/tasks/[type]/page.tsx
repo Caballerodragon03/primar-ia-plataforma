@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, FileText, Camera, Sparkles, CheckCircle2, Loader2, QrCode } from 'lucide-react';
+import { ArrowLeft, FileText, Camera, Sparkles, CheckCircle2, Loader2, QrCode, Clock } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface ContractTask {
@@ -32,16 +32,26 @@ interface MatchTask {
   precioKg: number;
 }
 
+interface ExpiryTask {
+  lotId: string;
+  producto: string;
+  fechaFin: string;
+  coverage: number;
+  totalKg: number;
+}
+
 interface TasksData {
   contracts: ContractTask[];
   photos: PhotoTask[];
   matches: MatchTask[];
+  expiredLots: ExpiryTask[];
 }
 
 const TYPE_CONFIG: Record<string, { title: string; icon: React.ReactNode; color: string }> = {
   contracts: { title: 'Contracts to Countersign', icon: <FileText className="w-5 h-5" />, color: 'amber' },
   photos:    { title: 'Shipment Prep & QR Code', icon: <QrCode className="w-5 h-5" />, color: 'blue' },
   matches:   { title: 'Offers to Review', icon: <Sparkles className="w-5 h-5" />, color: 'green' },
+  expiry:    { title: 'Lots Past Availability Date', icon: <Clock className="w-5 h-5" />, color: 'red' },
 };
 
 function shortLotId(id: string) {
@@ -53,6 +63,8 @@ export default function SellerTaskListPage() {
   const [tasks, setTasks] = useState<TasksData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [extendDate, setExtendDate] = useState<Record<string, string>>({});
 
   useEffect(() => {
     api.get<{ data: TasksData }>('/matching/notifications/tasks')
@@ -64,6 +76,26 @@ export default function SellerTaskListPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleExtendLot = async (lotId: string) => {
+    const newDate = extendDate[lotId];
+    if (!newDate) return;
+    setActionLoading(lotId);
+    try {
+      await api.post(`/matching/lots/${lotId}/extend`, { newDate: new Date(newDate).toISOString() });
+      setTasks((prev) => prev ? { ...prev, expiredLots: prev.expiredLots.filter((l) => l.lotId !== lotId) } : prev);
+    } catch { /* ignore */ }
+    setActionLoading(null);
+  };
+
+  const handleCloseLot = async (lotId: string) => {
+    setActionLoading(lotId);
+    try {
+      await api.post(`/matching/lots/${lotId}/close`);
+      setTasks((prev) => prev ? { ...prev, expiredLots: prev.expiredLots.filter((l) => l.lotId !== lotId) } : prev);
+    } catch { /* ignore */ }
+    setActionLoading(null);
+  };
 
   const config = TYPE_CONFIG[type] ?? TYPE_CONFIG['contracts']!;
 
@@ -77,6 +109,7 @@ export default function SellerTaskListPage() {
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
           config.color === 'amber' ? 'bg-amber-100 text-amber-600' :
           config.color === 'blue'  ? 'bg-blue-100 text-blue-600' :
+          config.color === 'red'   ? 'bg-red-100 text-red-600' :
           'bg-green-100 text-green-600'
         }`}>
           {config.icon}
@@ -165,6 +198,56 @@ export default function SellerTaskListPage() {
                 <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-badge">Review →</span>
               </div>
             </Link>
+          )}
+        />
+      ) : type === 'expiry' ? (
+        <TaskList
+          items={tasks.expiredLots ?? []}
+          emptyMsg="No lots past their availability date."
+          emptyCta={{ label: 'Publish a New Lot', href: '/seller/lots/new' }}
+          renderItem={(item) => (
+            <div
+              key={item.lotId}
+              className="p-4 bg-white rounded-card border border-border space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Lot {shortLotId(item.lotId)} — {item.producto}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Ended: {new Date(item.fechaFin).toLocaleDateString('es-ES')} · Sold: {item.coverage}% · {item.totalKg.toLocaleString('es-ES')} kg
+                  </p>
+                </div>
+                <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-badge">Expired</span>
+              </div>
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <label className="text-xs text-gray-500 block mb-1">Extend to new date</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-1.5 border border-border rounded-input text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    value={extendDate[item.lotId] ?? ''}
+                    onChange={(e) => setExtendDate((prev) => ({ ...prev, [item.lotId]: e.target.value }))}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <button
+                  onClick={() => handleExtendLot(item.lotId)}
+                  disabled={!extendDate[item.lotId] || actionLoading === item.lotId}
+                  className="px-4 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-40 transition-colors"
+                >
+                  {actionLoading === item.lotId ? 'Saving...' : 'Extend'}
+                </button>
+                <button
+                  onClick={() => handleCloseLot(item.lotId)}
+                  disabled={actionLoading === item.lotId}
+                  className="px-4 py-1.5 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-40 transition-colors"
+                >
+                  Close Lot
+                </button>
+              </div>
+            </div>
           )}
         />
       ) : (

@@ -803,6 +803,8 @@ export class MatchingService {
     pendingContracts: number;
     pendingPhotos: number;
     pendingDeliveries: number;
+    expiredOrders: number;
+    expiredLots: number;
     firstPendingOfferOrderId?: string;
     firstPendingContractOrderId?: string;
     firstPendingContractTxId?: string;
@@ -871,7 +873,8 @@ export class MatchingService {
         }),
       ]);
 
-      const [pendingOffers, pendingContracts, pendingDeliveries] = await Promise.all([
+      const now = new Date();
+      const [pendingOffers, pendingContracts, pendingDeliveries, expiredOrders] = await Promise.all([
         prisma.match.count({ where: unauthorizedOfferWhere }),
         prisma.transaccion.count({
           where: {
@@ -888,6 +891,13 @@ export class MatchingService {
             firmaVendedor: { not: null },
           },
         }),
+        prisma.pedido.count({
+          where: {
+            compradorId: userId,
+            estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO', 'TOTALMENTE_CUBIERTO'] },
+            fechaEntregaDeseada: { lt: now },
+          },
+        }),
       ]);
 
       return {
@@ -897,6 +907,8 @@ export class MatchingService {
         pendingContracts,
         pendingPhotos: 0,
         pendingDeliveries,
+        expiredOrders,
+        expiredLots: 0,
         firstPendingOfferOrderId: firstOffer?.pedidoId,
         firstPendingContractOrderId: firstContract?.match?.pedidoId,
         firstPendingContractTxId: firstContract?.id,
@@ -933,13 +945,23 @@ export class MatchingService {
       }),
     ]);
 
-    const pendingContracts = await prisma.transaccion.count({
-      where: {
-        vendedorId: userId,
-        firmaComprador: { not: null },
-        firmaVendedor: null,
-      },
-    });
+    const now = new Date();
+    const [pendingContracts, expiredLots] = await Promise.all([
+      prisma.transaccion.count({
+        where: {
+          vendedorId: userId,
+          firmaComprador: { not: null },
+          firmaVendedor: null,
+        },
+      }),
+      prisma.lote.count({
+        where: {
+          vendedorId: userId,
+          estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] },
+          fechaFinDisponibilidad: { not: null, lt: now },
+        },
+      }),
+    ]);
 
     const pendingPhotosTxs = signedTxsWithPhotos.filter((tx) => {
       const urls = tx.fotosLoteUrls as string[] | null;
@@ -955,6 +977,8 @@ export class MatchingService {
       pendingContracts,
       pendingPhotos,
       pendingDeliveries: 0,
+      expiredOrders: 0,
+      expiredLots,
       firstPendingContractLotId: firstContract?.match?.loteId,
       firstPendingContractSellerTxId: firstContract?.id,
       firstPendingPhotosLotId: firstPhotoPending?.match?.loteId,
@@ -1004,10 +1028,26 @@ export class MatchingService {
       cantidadKg: number;
       precioKg: number;
     }>;
+    expiredOrders: Array<{
+      orderId: string;
+      producto: string;
+      fechaEntrega: string;
+      coverage: number;
+      totalKg: number;
+    }>;
+    expiredLots: Array<{
+      lotId: string;
+      producto: string;
+      fechaFin: string;
+      coverage: number;
+      totalKg: number;
+    }>;
   }> {
     console.log(`[getPendingTasksList] userId=${userId} role=${role}`);
+    const now = new Date();
+
     if (role === 'COMPRADOR') {
-      const [pendingContracts, pendingOffers, pendingDeliveries] = await Promise.all([
+      const [pendingContracts, pendingOffers, pendingDeliveries, expiredOrdersRaw] = await Promise.all([
         prisma.transaccion.findMany({
           where: {
             compradorId: userId,
@@ -1073,11 +1113,33 @@ export class MatchingService {
             vendedor: { select: { nombre: true, apellidos: true } },
           },
         }),
+        prisma.pedido.findMany({
+          where: {
+            compradorId: userId,
+            estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO', 'TOTALMENTE_CUBIERTO'] },
+            fechaEntregaDeseada: { lt: now },
+          },
+          include: {
+            producto: { select: { nombre: true } },
+            matches: {
+              where: { estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] } },
+              select: { cantidadKg: true },
+            },
+          },
+        }),
       ]);
 
       console.log(
-        `[getPendingTasksList] COMPRADOR: ${pendingContracts.length} contracts, ${pendingOffers.length} offers, ${pendingDeliveries.length} deliveries`
+        `[getPendingTasksList] COMPRADOR: ${pendingContracts.length} contracts, ${pendingOffers.length} offers, ${pendingDeliveries.length} deliveries, ${expiredOrdersRaw.length} expired orders`
       );
+
+      type CalibreItem = { calibre: string; cantidad_kg: number };
+      const computeCov = (calibres: unknown, committedKg: number) => {
+        const items = (calibres as CalibreItem[]) ?? [];
+        const totalKg = items.reduce((s, c) => s + (c.cantidad_kg ?? 0), 0);
+        return { totalKg, coverage: totalKg > 0 ? Math.round((committedKg / totalKg) * 100) : 0 };
+      };
+
       return {
         contracts: pendingContracts.map((tx) => ({
           txId: tx.id,
@@ -1111,11 +1173,23 @@ export class MatchingService {
         })),
         photos: [],
         matches: [],
+        expiredOrders: expiredOrdersRaw.map((o) => {
+          const committedKg = o.matches.reduce((s, m) => s + Number(m.cantidadKg), 0);
+          const { totalKg, coverage } = computeCov(o.calibresSolicitados, committedKg);
+          return {
+            orderId: o.id,
+            producto: o.producto?.nombre ?? 'N/D',
+            fechaEntrega: o.fechaEntregaDeseada.toISOString(),
+            coverage,
+            totalKg,
+          };
+        }),
+        expiredLots: [],
       };
     }
 
     // VENDEDOR
-    const [pendingContracts, pendingPhotos, pendingMatchOffers] = await Promise.all([
+    const [pendingContracts, pendingPhotos, pendingMatchOffers, expiredLotsRaw] = await Promise.all([
       prisma.transaccion.findMany({
         where: {
           vendedorId: userId,
@@ -1164,12 +1238,33 @@ export class MatchingService {
           },
         },
       }),
+      prisma.lote.findMany({
+        where: {
+          vendedorId: userId,
+          estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] },
+          fechaFinDisponibilidad: { not: null, lt: now },
+        },
+        include: {
+          producto: { select: { nombre: true } },
+          matches: {
+            where: { estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] } },
+            select: { cantidadKg: true },
+          },
+        },
+      }),
     ]);
 
     const photoPending = pendingPhotos.filter((tx) => {
       const urls = tx.fotosLoteUrls as string[] | null;
       return !urls || urls.length === 0;
     });
+
+    type CalibreItem = { calibre: string; cantidad_kg: number };
+    const computeCov = (calibres: unknown, committedKg: number) => {
+      const items = (calibres as CalibreItem[]) ?? [];
+      const totalKg = items.reduce((s, c) => s + (c.cantidad_kg ?? 0), 0);
+      return { totalKg, coverage: totalKg > 0 ? Math.round((committedKg / totalKg) * 100) : 0 };
+    };
 
     return {
       contracts: pendingContracts.map((tx) => ({
@@ -1198,7 +1293,59 @@ export class MatchingService {
         cantidadKg: Number(m.cantidadKg),
         precioKg: Number(m.precioKg),
       })),
+      expiredOrders: [],
+      expiredLots: expiredLotsRaw.map((l) => {
+        const committedKg = l.matches.reduce((s, m) => s + Number(m.cantidadKg), 0);
+        const { totalKg, coverage } = computeCov(l.calibres, committedKg);
+        return {
+          lotId: l.id,
+          producto: l.producto?.nombre ?? 'N/D',
+          fechaFin: l.fechaFinDisponibilidad!.toISOString(),
+          coverage,
+          totalKg,
+        };
+      }),
     };
+  }
+
+  async extendOrderDeadline(orderId: string, userId: string, newDate: string) {
+    const order = await prisma.pedido.findUnique({ where: { id: orderId } });
+    if (!order) throw new AppError('Pedido no encontrado', 404);
+    if (order.compradorId !== userId) throw new AppError('No autorizado', 403);
+    return prisma.pedido.update({
+      where: { id: orderId },
+      data: { fechaEntregaDeseada: new Date(newDate) },
+    });
+  }
+
+  async closeOrder(orderId: string, userId: string) {
+    const order = await prisma.pedido.findUnique({ where: { id: orderId } });
+    if (!order) throw new AppError('Pedido no encontrado', 404);
+    if (order.compradorId !== userId) throw new AppError('No autorizado', 403);
+    return prisma.pedido.update({
+      where: { id: orderId },
+      data: { estado: 'CANCELADO' },
+    });
+  }
+
+  async extendLotDeadline(lotId: string, userId: string, newDate: string) {
+    const lot = await prisma.lote.findUnique({ where: { id: lotId } });
+    if (!lot) throw new AppError('Lote no encontrado', 404);
+    if (lot.vendedorId !== userId) throw new AppError('No autorizado', 403);
+    return prisma.lote.update({
+      where: { id: lotId },
+      data: { fechaFinDisponibilidad: new Date(newDate) },
+    });
+  }
+
+  async closeLot(lotId: string, userId: string) {
+    const lot = await prisma.lote.findUnique({ where: { id: lotId } });
+    if (!lot) throw new AppError('Lote no encontrado', 404);
+    if (lot.vendedorId !== userId) throw new AppError('No autorizado', 403);
+    return prisma.lote.update({
+      where: { id: lotId },
+      data: { estado: 'CANCELADO' },
+    });
   }
 }
 

@@ -38,6 +38,7 @@ interface SellerNotifSummary {
   pendingMatches: number;
   pendingContracts: number;
   pendingPhotos: number;
+  expiredLots: number;
   unreadMessages: number;
   firstPendingContractLotId?: string;
   firstPendingContractSellerTxId?: string;
@@ -108,6 +109,13 @@ export default function SellerDashboard() {
       desc: 'New buyers matched to your lots. Review and accept.',
       href: n.pendingMatches === 1 ? '/seller/matches' : '/seller/lots/tasks/matches',
       color: 'green',
+    },
+    n && n.expiredLots > 0 && {
+      icon: '⏰',
+      label: `${n.expiredLots} lot${n.expiredLots > 1 ? 's' : ''} past availability date`,
+      desc: 'Extend the period or close the lot with the current sales.',
+      href: '/seller/lots/tasks/expiry',
+      color: 'red',
     },
     n && n.unreadMessages > 0 && {
       icon: '💬',
@@ -182,6 +190,7 @@ export default function SellerDashboard() {
                   item.color === 'amber' ? 'border-amber-200 bg-amber-50 hover:border-amber-300' :
                   item.color === 'blue'  ? 'border-blue-200 bg-blue-50 hover:border-blue-300' :
                   item.color === 'green' ? 'border-green-200 bg-green-50 hover:border-green-300' :
+                  item.color === 'red'   ? 'border-red-200 bg-red-50 hover:border-red-300' :
                   'border-purple-200 bg-purple-50 hover:border-purple-300'
                 }`}>
                   <span className="text-2xl">{item.icon}</span>

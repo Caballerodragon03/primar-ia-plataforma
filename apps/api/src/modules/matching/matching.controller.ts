@@ -112,3 +112,39 @@ export async function contributeToOrder(req: Request, res: Response): Promise<vo
   const match = await matchingService.contributeToOrder(vendedorId, matchId, calibresContribucion);
   res.json({ success: true, data: match });
 }
+
+export async function extendOrderDeadline(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const orderId = req.params['orderId'] as string;
+    const { newDate } = req.body as { newDate: string };
+    if (!newDate) throw new AppError('newDate is required', 400);
+    const updated = await matchingService.extendOrderDeadline(orderId, req.user!.sub, newDate);
+    res.json({ success: true, data: updated });
+  } catch (e) { next(e); }
+}
+
+export async function closeOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const orderId = req.params['orderId'] as string;
+    const updated = await matchingService.closeOrder(orderId, req.user!.sub);
+    res.json({ success: true, data: updated });
+  } catch (e) { next(e); }
+}
+
+export async function extendLotDeadline(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const lotId = req.params['lotId'] as string;
+    const { newDate } = req.body as { newDate: string };
+    if (!newDate) throw new AppError('newDate is required', 400);
+    const updated = await matchingService.extendLotDeadline(lotId, req.user!.sub, newDate);
+    res.json({ success: true, data: updated });
+  } catch (e) { next(e); }
+}
+
+export async function closeLot(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const lotId = req.params['lotId'] as string;
+    const updated = await matchingService.closeLot(lotId, req.user!.sub);
+    res.json({ success: true, data: updated });
+  } catch (e) { next(e); }
+}

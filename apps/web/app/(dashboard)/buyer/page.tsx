@@ -30,6 +30,7 @@ interface NotifSummary {
   pendingOffers: number;
   pendingContracts: number;
   pendingDeliveries: number;
+  expiredOrders: number;
   unreadMessages: number;
   firstPendingOfferOrderId?: string;
   firstPendingContractOrderId?: string;
@@ -112,6 +113,13 @@ export default function BuyerDashboard() {
         : '/buyer/orders/tasks/deliveries',
       color: 'green',
     },
+    n && n.expiredOrders > 0 && {
+      icon: '⏰',
+      label: `${n.expiredOrders} order${n.expiredOrders > 1 ? 's' : ''} past delivery date`,
+      desc: 'Extend the deadline or close the order with the current coverage.',
+      href: '/buyer/orders/tasks/expiry',
+      color: 'red',
+    },
     n && n.unreadMessages > 0 && {
       icon: '💬',
       label: `${n.unreadMessages} unread message${n.unreadMessages > 1 ? 's' : ''}`,
@@ -185,6 +193,7 @@ export default function BuyerDashboard() {
                   item.color === 'amber' ? 'border-amber-200 bg-amber-50 hover:border-amber-300' :
                   item.color === 'blue'  ? 'border-blue-200 bg-blue-50 hover:border-blue-300' :
                   item.color === 'green' ? 'border-green-200 bg-green-50 hover:border-green-300' :
+                  item.color === 'red'   ? 'border-red-200 bg-red-50 hover:border-red-300' :
                   'border-purple-200 bg-purple-50 hover:border-purple-300'
                 }`}>
                   <span className="text-2xl">{item.icon}</span>

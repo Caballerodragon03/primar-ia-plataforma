@@ -10,6 +10,10 @@ import {
   contributeToOrder,
   getNotificationsSummary,
   getPendingTasksList,
+  extendOrderDeadline,
+  closeOrder,
+  extendLotDeadline,
+  closeLot,
 } from './matching.controller.js';
 import { asyncHandler } from '../../shared/async-handler.js';
 
@@ -107,6 +111,12 @@ matchingRouter.post(
 // Notification summary for both buyers and sellers
 matchingRouter.get('/notifications/summary', asyncHandler(getNotificationsSummary));
 matchingRouter.get('/notifications/tasks', asyncHandler(getPendingTasksList));
+
+// ── Expiry extend/close routes ───────────────────────────────────────────────
+matchingRouter.post('/orders/:orderId/extend', requireRole('COMPRADOR'), asyncHandler(extendOrderDeadline));
+matchingRouter.post('/orders/:orderId/close', requireRole('COMPRADOR'), asyncHandler(closeOrder));
+matchingRouter.post('/lots/:lotId/extend', requireRole('VENDEDOR'), asyncHandler(extendLotDeadline));
+matchingRouter.post('/lots/:lotId/close', requireRole('VENDEDOR'), asyncHandler(closeLot));
 
 // ── Buyer routes ──────────────────────────────────────────────────────────────
 // Trigger matching for an order the buyer owns

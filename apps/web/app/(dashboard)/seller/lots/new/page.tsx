@@ -23,6 +23,7 @@ const schema = z.object({
   noCalibre: z.boolean().default(false),
   direccionRecogida: z.string().min(5, 'Introduce la dirección'),
   fechaDisponibilidad: z.string().min(1, 'Selecciona una fecha'),
+  fechaFinDisponibilidad: z.string().optional(),
   certificaciones: z.array(z.string()).default([]),
   fotosUrls: z.array(z.string()).default([]),
   comentariosAdicionales: z.string().max(1000).optional(),
@@ -131,6 +132,7 @@ export default function PublishLotPage() {
         variedadCustom,
         publicar: publish,
         fechaDisponibilidad: new Date(values.fechaDisponibilidad).toISOString(),
+        ...(values.fechaFinDisponibilidad && { fechaFinDisponibilidad: new Date(values.fechaFinDisponibilidad).toISOString() }),
       };
       await api.post('/lots', payload);
       router.push('/seller/lots');
@@ -257,13 +259,21 @@ export default function PublishLotPage() {
               <p className="mt-1 text-xs text-red-500">{errors.direccionRecogida.message}</p>
             )}
           </div>
-          <Input
-            type="date"
-            label="Available for Pickup From"
-            required
-            {...register('fechaDisponibilidad')}
-            error={errors.fechaDisponibilidad?.message}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              type="date"
+              label="Available From"
+              required
+              {...register('fechaDisponibilidad')}
+              error={errors.fechaDisponibilidad?.message}
+            />
+            <Input
+              type="date"
+              label="Available Until (optional)"
+              {...register('fechaFinDisponibilidad')}
+              error={errors.fechaFinDisponibilidad?.message}
+            />
+          </div>
         </section>
 
         {/* Supporting Info */}

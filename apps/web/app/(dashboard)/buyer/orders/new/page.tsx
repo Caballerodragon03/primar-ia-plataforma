@@ -71,6 +71,7 @@ export default function CreateOrderPage() {
     defaultValues: {
       calibresSolicitados: [{ calibre: '', cantidad_kg: 0, precio_max_kg: 0 }],
       incoterm: 'FOB',
+      frecuencia: 'One-time',
       transporte: 'own',
       noCalibre: false,
       publicar: false,

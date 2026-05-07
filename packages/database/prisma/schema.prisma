@@ -339,6 +339,7 @@ model Lote {
   coordenadasLat         Float?     @map("coordenadas_lat")
   coordenadasLng         Float?     @map("coordenadas_lng")
   fechaDisponibilidad    DateTime   @map("fecha_disponibilidad")
+  fechaFinDisponibilidad DateTime?  @map("fecha_fin_disponibilidad")
   certificaciones        Json?
   fotosUrls              Json?      @map("fotos_urls")
   comentariosAdicionales String?    @map("comentarios_adicionales")

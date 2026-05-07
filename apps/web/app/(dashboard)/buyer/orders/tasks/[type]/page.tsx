@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, FileText, CreditCard, Package, Loader2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, FileText, CreditCard, Package, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface ContractTask {
@@ -31,16 +31,26 @@ interface DeliveryTask {
   cantidadKg: number;
 }
 
+interface ExpiryTask {
+  orderId: string;
+  producto: string;
+  fechaEntrega: string;
+  coverage: number;
+  totalKg: number;
+}
+
 interface TasksData {
   contracts: ContractTask[];
   offers: OfferTask[];
   deliveries: DeliveryTask[];
+  expiredOrders: ExpiryTask[];
 }
 
 const TYPE_CONFIG: Record<string, { title: string; icon: React.ReactNode; color: string }> = {
   contracts: { title: 'Contracts to Sign', icon: <FileText className="w-5 h-5" />, color: 'amber' },
   offers: { title: 'Offers to Authorize', icon: <CreditCard className="w-5 h-5" />, color: 'blue' },
   deliveries: { title: 'Deliveries to Confirm', icon: <Package className="w-5 h-5" />, color: 'green' },
+  expiry: { title: 'Orders Past Delivery Date', icon: <Clock className="w-5 h-5" />, color: 'red' },
 };
 
 function shortId(id: string) {
@@ -52,6 +62,8 @@ export default function BuyerTaskListPage() {
   const [tasks, setTasks] = useState<TasksData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [extendDate, setExtendDate] = useState<Record<string, string>>({});
 
   useEffect(() => {
     api.get<{ data: TasksData }>('/matching/notifications/tasks')
@@ -63,6 +75,26 @@ export default function BuyerTaskListPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleExtendOrder = async (orderId: string) => {
+    const newDate = extendDate[orderId];
+    if (!newDate) return;
+    setActionLoading(orderId);
+    try {
+      await api.post(`/matching/orders/${orderId}/extend`, { newDate: new Date(newDate).toISOString() });
+      setTasks((prev) => prev ? { ...prev, expiredOrders: prev.expiredOrders.filter((o) => o.orderId !== orderId) } : prev);
+    } catch { /* ignore */ }
+    setActionLoading(null);
+  };
+
+  const handleCloseOrder = async (orderId: string) => {
+    setActionLoading(orderId);
+    try {
+      await api.post(`/matching/orders/${orderId}/close`);
+      setTasks((prev) => prev ? { ...prev, expiredOrders: prev.expiredOrders.filter((o) => o.orderId !== orderId) } : prev);
+    } catch { /* ignore */ }
+    setActionLoading(null);
+  };
 
   const config = TYPE_CONFIG[type] ?? TYPE_CONFIG['contracts']!;
 
@@ -76,6 +108,7 @@ export default function BuyerTaskListPage() {
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
           config.color === 'amber' ? 'bg-amber-100 text-amber-600' :
           config.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+          config.color === 'red' ? 'bg-red-100 text-red-600' :
           'bg-green-100 text-green-600'
         }`}>
           {config.icon}
@@ -164,6 +197,56 @@ export default function BuyerTaskListPage() {
                 <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-badge">Confirm →</span>
               </div>
             </Link>
+          )}
+        />
+      ) : type === 'expiry' ? (
+        <TaskList
+          items={tasks.expiredOrders ?? []}
+          emptyMsg="No orders past their delivery date."
+          emptyCta={{ label: 'Create a New Order', href: '/buyer/orders/new' }}
+          renderItem={(item) => (
+            <div
+              key={item.orderId}
+              className="p-4 bg-white rounded-card border border-border space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {shortId(item.orderId)} — {item.producto}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Due: {new Date(item.fechaEntrega).toLocaleDateString('es-ES')} · Coverage: {item.coverage}% · {item.totalKg.toLocaleString('es-ES')} kg
+                  </p>
+                </div>
+                <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-badge">Expired</span>
+              </div>
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <label className="text-xs text-gray-500 block mb-1">Extend to new date</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-1.5 border border-border rounded-input text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    value={extendDate[item.orderId] ?? ''}
+                    onChange={(e) => setExtendDate((prev) => ({ ...prev, [item.orderId]: e.target.value }))}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <button
+                  onClick={() => handleExtendOrder(item.orderId)}
+                  disabled={!extendDate[item.orderId] || actionLoading === item.orderId}
+                  className="px-4 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-40 transition-colors"
+                >
+                  {actionLoading === item.orderId ? 'Saving...' : 'Extend'}
+                </button>
+                <button
+                  onClick={() => handleCloseOrder(item.orderId)}
+                  disabled={actionLoading === item.orderId}
+                  className="px-4 py-1.5 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-40 transition-colors"
+                >
+                  Close Order
+                </button>
+              </div>
+            </div>
           )}
         />
       ) : (
