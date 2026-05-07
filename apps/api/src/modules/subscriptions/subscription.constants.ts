@@ -1,10 +1,12 @@
+import { env } from '../../config/env.js';
+
 export const PLAN_LIMITS = {
   // ─── Vendedores (sellers) ──────────────────────────────────────────────────
   COSECHA: {
     maxLotesActivos: 3,
     maxFotosPorLote: 3,
     maxCertificados: 3,
-    matchDelay: 15 * 60 * 1000, // 15 min ms
+    matchDelay: 15 * 60 * 1000,
     analyticsRango: 30,
     analyticsTendencias: false,
     exportCsv: false,
@@ -12,7 +14,7 @@ export const PLAN_LIMITS = {
     estimacionCosecha: false,
     badge: null as string | null,
     precio: 0,
-    stripePriceId: process.env.STRIPE_PRICE_COSECHA ?? null,
+    get stripePriceId(): string | null { return null; },
   },
   CAMPO: {
     maxLotesActivos: 15,
@@ -26,7 +28,7 @@ export const PLAN_LIMITS = {
     estimacionCosecha: true,
     badge: 'Vendedor Activo' as string | null,
     precio: 1900,
-    stripePriceId: process.env.STRIPE_PRICE_CAMPO ?? null,
+    get stripePriceId(): string | null { return env.STRIPE_PRICE_CAMPO || null; },
   },
   FINCA: {
     maxLotesActivos: Infinity,
@@ -40,7 +42,7 @@ export const PLAN_LIMITS = {
     estimacionCosecha: true,
     badge: 'Vendedor Pro' as string | null,
     precio: 4900,
-    stripePriceId: process.env.STRIPE_PRICE_FINCA ?? null,
+    get stripePriceId(): string | null { return env.STRIPE_PRICE_FINCA || null; },
   },
 
   // ─── Compradores (buyers) ──────────────────────────────────────────────────
@@ -52,7 +54,7 @@ export const PLAN_LIMITS = {
     exportEstadisticas: false,
     badge: null as string | null,
     precio: 0,
-    stripePriceId: null as string | null,
+    get stripePriceId(): string | null { return null; },
   },
   LONJA: {
     maxPedidosActivos: 20,
@@ -62,7 +64,7 @@ export const PLAN_LIMITS = {
     exportEstadisticas: false,
     badge: 'Comprador Verificado' as string | null,
     precio: 2900,
-    stripePriceId: process.env.STRIPE_PRICE_LONJA ?? null,
+    get stripePriceId(): string | null { return env.STRIPE_PRICE_LONJA || null; },
   },
   CENTRAL: {
     maxPedidosActivos: Infinity,
@@ -72,9 +74,9 @@ export const PLAN_LIMITS = {
     exportEstadisticas: true,
     badge: 'Comprador Premium' as string | null,
     precio: 8900,
-    stripePriceId: process.env.STRIPE_PRICE_CENTRAL ?? null,
+    get stripePriceId(): string | null { return env.STRIPE_PRICE_CENTRAL || null; },
   },
-} as const;
+};
 
 export type VendedorPlan = 'COSECHA' | 'CAMPO' | 'FINCA';
 export type CompradorPlan = 'MERCADO' | 'LONJA' | 'CENTRAL';

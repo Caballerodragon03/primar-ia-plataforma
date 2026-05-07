@@ -20,6 +20,10 @@ const envSchema = z.object({
   R2_BUCKET_NAME: z.string().default('primaria-uploads'),
   R2_PUBLIC_URL: z.string().url().default('https://uploads.primar-ia.com'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
+  STRIPE_PRICE_CAMPO: z.string().default(''),
+  STRIPE_PRICE_FINCA: z.string().default(''),
+  STRIPE_PRICE_LONJA: z.string().default(''),
+  STRIPE_PRICE_CENTRAL: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);

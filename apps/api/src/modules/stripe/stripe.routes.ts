@@ -5,7 +5,7 @@ import {
   startOnboarding,
   getStatus,
   stripeWebhook,
-  createPaymentIntent,
+  createPaymentCheckout,
   capturePayment,
   generateQR,
   verifyQR,
@@ -21,7 +21,7 @@ stripeRouter.post('/connect/onboard', requireAuth, requireRole('VENDEDOR'), star
 stripeRouter.post('/webhook', apiRateLimiter, raw({ type: 'application/json' }), stripeWebhook);
 
 // ── Payment Intent (buyer creates pre-auth) ──────────────────────────────────
-stripeRouter.post('/payment-intent', requireAuth, requireRole('COMPRADOR'), createPaymentIntent);
+stripeRouter.post('/payment-checkout', requireAuth, requireRole('COMPRADOR'), createPaymentCheckout);
 
 // ── Capture (buyer triggers after delivery confirmed) ────────────────────────
 stripeRouter.post('/capture/:transaccionId', requireAuth, requireRole('COMPRADOR'), capturePayment);

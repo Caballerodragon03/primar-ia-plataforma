@@ -430,9 +430,19 @@ export default function OrderDetailPage() {
                         </td>
                         <td className="px-4 py-2.5">
                           {order.estado === 'CERRADO' ? (
-                            <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Completed
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+                              </span>
+                              {m.transaccion?.id && (
+                                <button
+                                  onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/invoices/buyer/${m.transaccion!.id}/html`, '_blank')}
+                                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
+                                >
+                                  <Download className="w-3 h-3" /> Factura
+                                </button>
+                              )}
+                            </div>
                           ) : (
                             <div className="flex items-center gap-1 flex-wrap">
                               {canPayThis && (

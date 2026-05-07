@@ -23,8 +23,8 @@ export async function stripeWebhook(req: Request, res: Response): Promise<void> 
   res.json({ received: true });
 }
 
-export async function createPaymentIntent(req: Request, res: Response): Promise<void> {
-  const compradorId = req.user!.sub;
+export async function createPaymentCheckout(req: Request, res: Response): Promise<void> {
+  const compradorId = req.user!.sub as string;
   const { matchId, metodoPago } = req.body as {
     matchId: string;
     metodoPago: 'card' | 'sepa_debit';
@@ -33,7 +33,7 @@ export async function createPaymentIntent(req: Request, res: Response): Promise<
   if (!metodoPago || !['card', 'sepa_debit'].includes(metodoPago)) {
     throw new AppError('metodoPago debe ser "card" o "sepa_debit"', 400);
   }
-  const result = await stripeService.createPaymentIntent(compradorId, matchId, metodoPago);
+  const result = await stripeService.createPaymentCheckout(compradorId, matchId, metodoPago);
   res.status(201).json({ success: true, data: result });
 }
 

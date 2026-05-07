@@ -21,6 +21,7 @@ import { valoracionesRouter } from './modules/valoraciones/valoraciones.routes.j
 import { negotiationsRouter } from './modules/negotiations/negotiations.routes.js';
 import { subscriptionRouter } from './modules/subscriptions/subscription.routes.js';
 import { harvestEstimationRouter } from './modules/harvest-estimation/harvest-estimation.routes.js';
+import { invoiceRouter } from './modules/invoices/invoice.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { apiRateLimiter } from './middleware/rateLimiter.middleware.js';
 import { requestId, noCache } from './middleware/security.middleware.js';
@@ -81,6 +82,7 @@ app.use('/api/v1/valoraciones', valoracionesRouter);
 app.use('/api/v1/chat/:transaccionId/offers', negotiationsRouter);
 app.use('/api/v1/subscriptions', subscriptionRouter);
 app.use('/api/v1/harvest-estimation', harvestEstimationRouter);
+app.use('/api/v1/invoices', invoiceRouter);
 
 // 404
 app.use((_req, res) => {

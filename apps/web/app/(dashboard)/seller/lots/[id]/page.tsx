@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   FileText,
   QrCode,
+  Download,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button, StatusBadge, CoverageBar } from '@/components/ui';
@@ -322,6 +323,14 @@ export default function LotDetailPage() {
                             >
                               <AlertTriangle className="w-3.5 h-3.5" /> Claim
                             </Button>
+                          )}
+                          {m.transaccion?.id && m.estado === 'CONFIRMADO' && (
+                            <button
+                              onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/invoices/seller/${m.transaccion!.id}/html`, '_blank')}
+                              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <Download className="w-3 h-3" /> Factura
+                            </button>
                           )}
                         </div>
                       </td>
