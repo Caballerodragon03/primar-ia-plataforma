@@ -4,6 +4,7 @@ import { AppError } from '../../middleware/error.middleware.js';
 import type { ContributeInput } from './matching.schema.js';
 import { sendMatchProposalEmail } from '../../shared/emails/transactional.js';
 import { calcularComision } from '@primaria/shared';
+import { PLAN_LIMITS } from '../subscriptions/subscription.constants.js';
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -201,6 +202,22 @@ async function scoreAfinidad(vendedorId: string, compradorId: string): Promise<n
 }
 
 /**
+ * Returns the match visibility delay (in ms) for a seller based on their plan.
+ * Free-tier (COSECHA) sellers get a 15-minute delay; paid plans see matches immediately.
+ */
+async function getMatchDelayMs(vendedorId: string): Promise<number> {
+  const sub = await prisma.suscripcion.findUnique({
+    where: { userId: vendedorId },
+    select: { planVendedor: true, estado: true },
+  });
+  if (!sub || sub.estado !== 'ACTIVA' || !sub.planVendedor) {
+    return PLAN_LIMITS.COSECHA.matchDelay; // 15 min for free plan
+  }
+  const plan = sub.planVendedor as keyof typeof PLAN_LIMITS;
+  return (PLAN_LIMITS[plan] as { matchDelay: number }).matchDelay ?? 0;
+}
+
+/**
  * Score compuesto con los 7 componentes ponderados.
  */
 async function computeScore(
@@ -387,6 +404,9 @@ export class MatchingService {
         }
       }
 
+      const delay = await getMatchDelayMs(lote.vendedorId);
+      const visibleDesde = new Date(Date.now() + delay);
+
       const match = await prisma.match.upsert({
         where: { loteId_pedidoId: { loteId, pedidoId: pedido.id } },
         create: {
@@ -398,6 +418,7 @@ export class MatchingService {
           estado: 'PROPUESTO',
           scoreMatching: total,
           scoreDetalle: detalle,
+          visibleDesde,
         },
         update: {
           cantidadKg,
@@ -406,6 +427,7 @@ export class MatchingService {
           scoreMatching: total,
           scoreDetalle: detalle,
           estado: 'PROPUESTO',
+          visibleDesde,
         },
       });
 
@@ -530,6 +552,9 @@ export class MatchingService {
         }
       }
 
+      const delay = await getMatchDelayMs(lote.vendedorId);
+      const visibleDesde = new Date(Date.now() + delay);
+
       const match = await prisma.match.upsert({
         where: { loteId_pedidoId: { loteId: lote.id, pedidoId } },
         create: {
@@ -541,6 +566,7 @@ export class MatchingService {
           estado: 'PROPUESTO',
           scoreMatching: total,
           scoreDetalle: detalle,
+          visibleDesde,
         },
         update: {
           cantidadKg,
@@ -549,6 +575,7 @@ export class MatchingService {
           scoreMatching: total,
           scoreDetalle: detalle,
           estado: 'PROPUESTO',
+          visibleDesde,
         },
       });
 
@@ -571,6 +598,7 @@ export class MatchingService {
       where: {
         lote: { vendedorId, estado: { not: 'VENDIDO' } },
         pedido: { estado: { notIn: ['TOTALMENTE_CUBIERTO', 'CANCELADO', 'CERRADO'] } },
+        visibleDesde: { lte: new Date() },
         ...(loteId ? { loteId } : {}),
       },
       include: {

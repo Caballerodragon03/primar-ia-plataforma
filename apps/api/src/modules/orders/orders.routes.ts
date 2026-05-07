@@ -4,6 +4,7 @@ import { validateBody } from '../../middleware/validate.middleware.js';
 import { createOrderSchema, updateOrderSchema } from './orders.schema.js';
 import { createOrder, listOrders, getOrder, updateOrder, cancelOrder, getBuyerAnalytics } from './orders.controller.js';
 import { asyncHandler } from '../../shared/async-handler.js';
+import { requirePlanLimit } from '../../middleware/requirePlanLimit.js';
 
 export const ordersRouter = Router();
 
@@ -11,7 +12,7 @@ ordersRouter.use(requireAuth, requireRole('COMPRADOR'), requireEstado('VERIFICAD
 
 ordersRouter.get('/analytics', asyncHandler(getBuyerAnalytics));
 ordersRouter.get('/', asyncHandler(listOrders));
-ordersRouter.post('/', validateBody(createOrderSchema), asyncHandler(createOrder));
+ordersRouter.post('/', requirePlanLimit('order'), validateBody(createOrderSchema), asyncHandler(createOrder));
 ordersRouter.get('/:id', asyncHandler(getOrder));
 ordersRouter.put('/:id', validateBody(updateOrderSchema), asyncHandler(updateOrder));
 ordersRouter.delete('/:id', asyncHandler(cancelOrder));

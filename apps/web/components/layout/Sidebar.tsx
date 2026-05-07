@@ -11,6 +11,8 @@ import {
   LogOut,
   Zap,
   UserCircle,
+  CreditCard,
+  Sprout,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
@@ -46,6 +48,7 @@ const BUYER_NAV: NavItem[] = [
     badgeKeys: ['unreadMessages'],
   },
   { label: 'Analytics', href: '/buyer/analytics', icon: BarChart3 },
+  { label: 'Suscripción', href: '/buyer/subscription', icon: CreditCard },
   { label: 'Profile', href: '/buyer/profile', icon: UserCircle },
 ];
 
@@ -70,6 +73,8 @@ const SELLER_NAV: NavItem[] = [
     badgeKeys: ['unreadMessages'],
   },
   { label: 'Analytics', href: '/seller/analytics', icon: BarChart3 },
+  { label: 'Cosecha', href: '/seller/harvest-estimation', icon: Sprout },
+  { label: 'Suscripción', href: '/seller/subscription', icon: CreditCard },
   { label: 'Profile', href: '/seller/profile', icon: UserCircle },
 ];
 
@@ -92,6 +97,8 @@ export function Sidebar() {
   const [notifications, setNotifications] =
     useState<NotificationSummary>(EMPTY_NOTIFICATIONS);
 
+  const [planInfo, setPlanInfo] = useState<{ plan: string; badge: string | null } | null>(null);
+
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await api.get<{ success: boolean; data: NotificationSummary }>(
@@ -105,16 +112,46 @@ export function Sidebar() {
     }
   }, []);
 
+  const fetchPlanInfo = useCallback(async () => {
+    try {
+      const res = await api.get<{ success: boolean; data: { plan: string; badge?: string | null } }>(
+        '/subscriptions/current'
+      );
+      if (res.data?.data) {
+        setPlanInfo({
+          plan: res.data.data.plan,
+          badge: res.data.data.badge ?? null,
+        });
+      }
+    } catch {
+      // silently ignore — plan info is non-critical
+    }
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     fetchNotifications();
+    fetchPlanInfo();
     const interval = setInterval(fetchNotifications, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [user, pathname, fetchNotifications]); // re-fetch immediately when user navigates
+  }, [user, pathname, fetchNotifications, fetchPlanInfo]); // re-fetch immediately when user navigates
 
   const getBadgeCount = (keys?: Array<keyof NotificationSummary>): number => {
     if (!keys) return 0;
     return keys.reduce((sum, k) => sum + (notifications[k] ?? 0), 0);
+  };
+
+  const getPlanBadgeStyle = (plan: string): string => {
+    const p = plan.toUpperCase();
+    // Seller plans
+    if (p === 'FINCA') return 'bg-green-100 text-green-700';
+    if (p === 'CAMPO') return 'bg-yellow-100 text-yellow-700';
+    if (p === 'COSECHA') return 'bg-gray-100 text-gray-600';
+    // Buyer plans
+    if (p === 'CENTRAL') return 'bg-green-100 text-green-700';
+    if (p === 'LONJA') return 'bg-yellow-100 text-yellow-700';
+    if (p === 'MERCADO') return 'bg-gray-100 text-gray-600';
+    return 'bg-gray-100 text-gray-600';
   };
 
   const navItems = user?.role === 'COMPRADOR' ? BUYER_NAV : SELLER_NAV;
@@ -140,6 +177,13 @@ export function Sidebar() {
           <p className="text-[10px] text-secondary mt-0.5 truncate">
             {user.nombre} {user.apellidos}
           </p>
+        )}
+        {planInfo && (
+          <span
+            className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-medium ${getPlanBadgeStyle(planInfo.plan)}`}
+          >
+            {planInfo.plan}
+          </span>
         )}
       </div>
 

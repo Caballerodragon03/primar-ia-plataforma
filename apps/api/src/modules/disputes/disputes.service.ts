@@ -262,7 +262,7 @@ export class DisputasService {
           where: { userId: data.suscripcionGratisUserId },
           create: {
             userId: data.suscripcionGratisUserId,
-            plan: 'COMPENSACION',
+            planComprador: 'CENTRAL',
             estado: 'ACTIVA',
             fechaInicio: now,
             fechaFin: oneMonthLater,
@@ -270,7 +270,7 @@ export class DisputasService {
             compensacionMeses: 1,
           },
           update: {
-            plan: 'COMPENSACION',
+            planComprador: 'CENTRAL',
             estado: 'ACTIVA',
             fechaInicio: now,
             fechaFin: oneMonthLater,

@@ -152,6 +152,18 @@ enum SuscripcionEstado {
   TRIAL
 }
 
+enum PlanVendedor {
+  COSECHA
+  CAMPO
+  FINCA
+}
+
+enum PlanComprador {
+  MERCADO
+  LONJA
+  CENTRAL
+}
+
 enum Idioma {
   ES
   EN
@@ -220,6 +232,7 @@ model User {
   scoreEventsUser         ScoreEvent[]   @relation("ScoreEventUser")
   scoreEventsAdmin        ScoreEvent[]   @relation("ScoreEventAdmin")
   disputaMensajes         DisputaMensaje[]
+  historialCosechas       HistorialCosecha[]
 
   @@index([email])
   @@index([username])
@@ -288,10 +301,11 @@ model Producto {
   activo      Boolean    @default(true)
   createdAt   DateTime   @default(now()) @map("created_at")
 
-  variedades  Variedad[]
-  lotes       Lote[]
-  pedidos     Pedido[]
-  datosMercado DatosMercado[]
+  variedades        Variedad[]
+  lotes             Lote[]
+  pedidos           Pedido[]
+  datosMercado      DatosMercado[]
+  historialCosechas HistorialCosecha[]
 
   @@map("productos")
 }
@@ -302,10 +316,11 @@ model Variedad {
   nombre     String
   createdAt  DateTime @default(now()) @map("created_at")
 
-  producto   Producto @relation(fields: [productoId], references: [id])
-  lotes      Lote[]
-  pedidos    Pedido[]
-  datosMercado DatosMercado[]
+  producto          Producto @relation(fields: [productoId], references: [id])
+  lotes             Lote[]
+  pedidos           Pedido[]
+  datosMercado      DatosMercado[]
+  historialCosechas HistorialCosecha[]
 
   @@unique([productoId, nombre])
   @@map("variedades")
@@ -382,6 +397,7 @@ model Match {
   estado        MatchEstado @default(PROPUESTO)
   scoreMatching Float?      @map("score_matching")
   scoreDetalle  Json?       @map("score_detalle")
+  visibleDesde  DateTime    @default(now()) @map("visible_desde")
   createdAt     DateTime    @default(now()) @map("created_at")
 
   lote          Lote        @relation(fields: [loteId], references: [id])
@@ -556,12 +572,16 @@ model DatosMercado {
 model Suscripcion {
   id                   String            @id @default(cuid())
   userId               String            @unique @map("user_id")
-  plan                 String
+  planVendedor         PlanVendedor?     @map("plan_vendedor")
+  planComprador        PlanComprador?    @map("plan_comprador")
   stripeSubscriptionId String?           @unique @map("stripe_subscription_id")
   stripeCustomerId     String?           @map("stripe_customer_id")
+  stripePriceId        String?           @map("stripe_price_id")
   estado               SuscripcionEstado @default(ACTIVA)
   fechaInicio          DateTime          @map("fecha_inicio")
   fechaFin             DateTime?         @map("fecha_fin")
+  trialEndsAt          DateTime?         @map("trial_ends_at")
+  cancelledAt          DateTime?         @map("cancelled_at")
   comoCompensacion     Boolean           @default(false) @map("como_compensacion")
   compensacionMeses    Int?              @map("compensacion_meses")
   createdAt            DateTime          @default(now()) @map("created_at")
@@ -570,6 +590,26 @@ model Suscripcion {
   user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("suscripciones")
+}
+
+model HistorialCosecha {
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
+  productoId        String   @map("producto_id")
+  variedadId        String?  @map("variedad_id")
+  temporada         String
+  calibres          Json
+  archivoExcelUrl   String?  @map("archivo_excel_url")
+  estimacionProxima Json?    @map("estimacion_proxima")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  producto          Producto @relation(fields: [productoId], references: [id])
+  variedad          Variedad? @relation(fields: [variedadId], references: [id])
+
+  @@index([userId, productoId])
+  @@map("historial_cosechas")
 }
 
 model RefreshToken {

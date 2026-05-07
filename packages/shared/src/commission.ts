@@ -12,7 +12,8 @@
  */
 export function calcularComision(
   importeBase: number,
-  metodoPago: 'card' | 'sepa_debit' = 'card'
+  metodoPago: 'card' | 'sepa_debit' = 'card',
+  descuentoPlan: number = 0
 ): {
   importe: number;
   porcentaje: number;
@@ -32,6 +33,10 @@ export function calcularComision(
 
   if (metodoPago === 'sepa_debit') {
     pct = Math.max(0, pct - 0.004);
+  }
+
+  if (descuentoPlan > 0) {
+    pct = Math.max(0, pct - descuentoPlan);
   }
 
   let comision = importeBase * pct;

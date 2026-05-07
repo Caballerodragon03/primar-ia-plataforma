@@ -316,8 +316,16 @@ export class StripeService {
         break;
       }
 
+      case 'checkout.session.completed':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+      case 'invoice.payment_failed': {
+        const { subscriptionService } = await import('../subscriptions/subscription.service.js');
+        await subscriptionService.handleSubscriptionWebhook(event);
+        break;
+      }
+
       default:
-        // Unhandled event types — no action needed
         break;
     }
   }
