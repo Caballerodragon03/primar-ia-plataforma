@@ -123,7 +123,7 @@ export class AuthService {
       estado: user.estado,
       empresa_id: user.empresa?.id ?? null,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 15 * 60, // 15m
+      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1h
     };
 
     // exp is already set in payload — do NOT pass expiresIn in options (causes conflict)
@@ -190,7 +190,7 @@ export class AuthService {
       estado: user.estado,
       empresa_id: user.empresa?.id ?? null,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 15 * 60,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1h
     };
 
     const accessToken = jwt.sign(payload, env.JWT_SECRET);

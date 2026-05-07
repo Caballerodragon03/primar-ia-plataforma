@@ -14,7 +14,9 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('accessToken');
+    const token =
+      useAuthStore.getState().accessToken ??
+      localStorage.getItem('accessToken');
     if (token && config.headers) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -40,13 +42,16 @@ api.interceptors.response.use(
             .then((res) => {
               const newToken = res.data?.data?.accessToken as string;
               localStorage.setItem('accessToken', newToken);
+              const currentUser = useAuthStore.getState().user;
+              if (currentUser) {
+                useAuthStore.getState().setAuth(currentUser, newToken);
+              }
               return newToken;
             })
             .catch((err) => {
-              localStorage.removeItem('accessToken');
-              useAuthStore.getState().clearAuth();
               if (!isRedirecting) {
                 isRedirecting = true;
+                useAuthStore.getState().clearAuth();
                 window.location.replace('/login');
               }
               throw err;
