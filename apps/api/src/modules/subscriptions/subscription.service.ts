@@ -38,6 +38,11 @@ export class SubscriptionService {
     return { plan, limits: PLAN_LIMITS[plan] };
   }
 
+  async hasActiveSubscription(userId: string): Promise<boolean> {
+    const sub = await prisma.suscripcion.findUnique({ where: { userId } });
+    return !!sub && (sub.estado === 'ACTIVA' || sub.estado === 'TRIAL') && !!sub.stripeSubscriptionId;
+  }
+
   // ─── Quota checks ────────────────────────────────────────────────────────
 
   async checkCanCreateLot(userId: string): Promise<void> {

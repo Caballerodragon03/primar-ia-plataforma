@@ -18,6 +18,7 @@ export default function BuyerSubscriptionPage() {
   const [data, setData] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const success = searchParams.get('success');
   const cancelled = searchParams.get('cancelled');
@@ -53,8 +54,9 @@ export default function BuyerSubscriptionPage() {
       if (res.data.data.url) {
         window.location.href = res.data.data.url;
       }
-    } catch {
-      // handle error
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Error al iniciar el pago';
+      setError(msg);
     } finally {
       setCheckoutLoading(false);
     }
@@ -103,6 +105,12 @@ export default function BuyerSubscriptionPage() {
       {cancelled === 'true' && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-[8px] text-sm text-yellow-800">
           El proceso de pago fue cancelado. Puedes intentarlo de nuevo cuando quieras.
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-[8px] text-sm text-red-800">
+          {error}
         </div>
       )}
 

@@ -21,11 +21,11 @@ export class SubscriptionController {
 
   async getCurrent(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user!.sub;
+      const userId = req.user!.sub as string;
       const { plan, limits } = await subscriptionService.getLimitsForUser(userId);
-      const usage = await subscriptionService.getUsage(userId);
+      const hasActiveSubscription = await subscriptionService.hasActiveSubscription(userId);
 
-      res.json({ success: true, data: { plan, limits, usage } });
+      res.json({ success: true, data: { plan, badge: limits.badge, hasActiveSubscription } });
     } catch (err) {
       next(err);
     }
