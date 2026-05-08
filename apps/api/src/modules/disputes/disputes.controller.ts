@@ -11,6 +11,7 @@ import {
 export async function createDisputa(req: Request, res: Response): Promise<void> {
   const transaccionId = req.body.transaccionId as string;
   const data = createDisputaSchema.parse(req.body);
+  console.log('[Disputes] Creating dispute:', { transaccionId, tipoProblema: data.tipoProblema, userId: req.user!.sub });
   const disputa = await disputasService.createDisputa(req.user!.sub, transaccionId, data);
   res.status(201).json({ success: true, data: disputa });
 }

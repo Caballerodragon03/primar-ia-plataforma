@@ -9,10 +9,11 @@ export function validateBody(schema: ZodSchema) {
       next();
     } catch (err) {
       if (err instanceof ZodError) {
-        throw new AppError(
+        next(new AppError(
           err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
           422
-        );
+        ));
+        return;
       }
       next(err);
     }
