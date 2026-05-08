@@ -57,8 +57,14 @@ export default function AdminInvoicesPage() {
     fetchInvoices(1);
   }, [fetchInvoices]);
 
-  const openInvoice = (txId: string) => {
-    window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/invoices/admin/${txId}/html`, '_blank');
+  const openInvoice = async (txId: string) => {
+    try {
+      const res = await api.get(`/invoices/admin/${txId}/html`, { responseType: 'text' });
+      const blob = new Blob([res.data], { type: 'text/html' });
+      window.open(URL.createObjectURL(blob), '_blank');
+    } catch {
+      alert('Error al abrir la factura');
+    }
   };
 
   if (loading) {

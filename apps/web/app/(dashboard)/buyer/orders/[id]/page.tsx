@@ -436,7 +436,7 @@ export default function OrderDetailPage() {
                               </span>
                               {m.transaccion?.id && (
                                 <button
-                                  onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/invoices/buyer/${m.transaccion!.id}/html`, '_blank')}
+                                  onClick={async () => { try { const r = await api.get(`/invoices/buyer/${m.transaccion!.id}/html`, { responseType: 'text' }); window.open(URL.createObjectURL(new Blob([r.data], { type: 'text/html' })), '_blank'); } catch { /* ignore */ } }}
                                   className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
                                 >
                                   <Download className="w-3 h-3" /> Factura

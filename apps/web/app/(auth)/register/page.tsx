@@ -102,7 +102,10 @@ export default function RegisterPage() {
       });
       setSuccess({ email: data.email });
     } catch (err: unknown) {
-      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Registration failed. Please try again.';
+      const axiosErr = err as { response?: { data?: { error?: string }; status?: number }; message?: string; code?: string };
+      const message = axiosErr?.response?.data?.error
+        ?? (axiosErr?.code === 'ECONNABORTED' ? 'Connection timed out. Please try again.' : null)
+        ?? (axiosErr?.message ? `Error: ${axiosErr.message}` : 'Registration failed. Please try again.');
       setServerError(message);
     }
   };
