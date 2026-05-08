@@ -29,6 +29,10 @@ import { requestId, noCache } from './middleware/security.middleware.js';
 
 export const app = express();
 
+// Trust the first proxy (Railway / reverse proxy) so express-rate-limit
+// reads the real client IP from X-Forwarded-For instead of throwing.
+app.set('trust proxy', 1);
+
 // Security
 app.use(helmet());
 app.use(requestId);
