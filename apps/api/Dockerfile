@@ -28,4 +28,4 @@ COPY --from=builder /app/apps/api/dist/ ./apps/api/dist/
 COPY --from=builder /app/apps/api/package.json ./apps/api/
 
 EXPOSE 3001
-CMD ["node", "apps/api/dist/index.js"]
+CMD ["sh", "-c", "cd packages/database && npx prisma migrate deploy && cd /app && node apps/api/dist/index.js"]
