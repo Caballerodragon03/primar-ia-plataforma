@@ -60,7 +60,7 @@ export function errorHandler(
     return;
   }
 
-  console.error('Unhandled error:', err);
+  console.error('Unhandled error:', err.constructor?.name, err.message, err.stack);
   res.status(500).json({
     success: false,
     error: 'Internal server error',
