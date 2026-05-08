@@ -20,7 +20,7 @@ export class DisputasService {
     if (transaccion.compradorId !== userId && transaccion.vendedorId !== userId) {
       throw new AppError('No eres parte de esta transaccion', 403);
     }
-    const DISPUTABLE_STATES = ['PENDIENTE_PAGO', 'PAGO_CAPTURADO', 'EN_TRANSITO', 'ENTREGADO', 'EN_DISPUTA'];
+    const DISPUTABLE_STATES = ['PENDIENTE_PAGO', 'PAGO_CAPTURADO', 'EN_TRANSITO', 'ENTREGADO', 'COMPLETADO', 'EN_DISPUTA'];
     if (!DISPUTABLE_STATES.includes(transaccion.estado)) {
       throw new AppError('No puedes abrir una disputa en esta transacción', 400);
     }

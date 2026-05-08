@@ -47,7 +47,20 @@ export class AdminController {
       const estado = typeof req.query['estado'] === 'string' ? req.query['estado'] : undefined;
       const userId = typeof req.query['userId'] === 'string' ? req.query['userId'] : undefined;
       const certs = await adminService.listCertificados({ estado, userId });
-      res.json({ success: true, data: certs });
+      // Map to frontend-expected shape
+      const mapped = certs.map((c: Record<string, unknown>) => {
+        const user = c.user as { nombre?: string; apellidos?: string; email?: string } | null;
+        return {
+          id: c.id,
+          userName: user ? `${user.nombre ?? ''} ${user.apellidos ?? ''}`.trim() : '—',
+          userEmail: user?.email ?? '—',
+          certType: c.numeroCertificado,
+          estado: c.estado,
+          expiry: c.fechaCaducidad,
+          fileUrl: c.archivoUrl,
+        };
+      });
+      res.json({ success: true, data: mapped });
     } catch (err) {
       next(err);
     }
@@ -57,10 +70,11 @@ export class AdminController {
   async verifyCertificado(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const adminId = req.user!.sub;
-      const { action, notas } = req.body as {
-        action: 'VERIFICADO' | 'RECHAZADO';
-        notas?: string;
-      };
+      const rawAction = req.body?.action as string | undefined;
+      // Map frontend values: 'reject' → RECHAZADO, 'verify'/undefined → VERIFICADO
+      const action: 'VERIFICADO' | 'RECHAZADO' =
+        rawAction === 'reject' || rawAction === 'RECHAZADO' ? 'RECHAZADO' : 'VERIFICADO';
+      const notas = req.body?.notas as string | undefined;
       const cert = await adminService.verifyCertificado(req.params['id'] as string, adminId, action, notas);
       res.json({ success: true, data: cert });
     } catch (err) {
