@@ -55,8 +55,9 @@ app.use(cookieParser());
 app.use('/api', apiRateLimiter);
 app.use('/api', noCache);
 
-// Serve local uploads in dev (when R2 is not configured)
-if (env.R2_ACCOUNT_ID === 'placeholder') {
+// Serve local uploads (when R2 is not configured)
+const r2NotConfigured = !env.R2_ACCOUNT_ID || env.R2_ACCOUNT_ID === 'placeholder' || env.R2_ACCOUNT_ID === '...';
+if (r2NotConfigured) {
   app.use('/local-uploads', express.static('uploads'));
 }
 

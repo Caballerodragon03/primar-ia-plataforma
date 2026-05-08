@@ -11,10 +11,17 @@ const ALLOWED_MIME = new Set(['application/pdf', 'image/jpeg', 'image/jpg', 'ima
 const MAX_BYTES = 10 * 1024 * 1024;
 
 function isR2Configured(): boolean {
-  return env.R2_ACCOUNT_ID !== 'placeholder' && env.R2_ACCESS_KEY_ID !== 'placeholder';
+  return (
+    !!env.R2_ACCOUNT_ID &&
+    env.R2_ACCOUNT_ID !== 'placeholder' &&
+    env.R2_ACCOUNT_ID !== '...' &&
+    !!env.R2_ACCESS_KEY_ID &&
+    env.R2_ACCESS_KEY_ID !== 'placeholder' &&
+    env.R2_ACCESS_KEY_ID !== '...'
+  );
 }
 
-export async function uploadFile(req: Request, res: Response): Promise<void> {
+export async function uploadFile(req: Request, res: Response, _next: import('express').NextFunction): Promise<void> {
   const file = req.file;
   if (!file) throw new AppError('No se recibió ningún archivo', 400);
   if (!ALLOWED_MIME.has(file.mimetype)) throw new AppError('Tipo no permitido. Usa PDF, JPG o PNG.', 400);
@@ -39,7 +46,11 @@ export async function uploadFile(req: Request, res: Response): Promise<void> {
     await fs.mkdir(localDir, { recursive: true });
     const localPath = path.join(localDir, `${randomUUID()}${ext}`);
     await fs.writeFile(localPath, file.buffer);
-    const url = `/local-uploads/${path.relative('uploads', localPath)}`;
+    const relativePath = path.relative('uploads', localPath);
+    // Build absolute URL so it works from any frontend domain
+    const protocol = req.protocol;
+    const host = req.get('host') ?? 'localhost:3001';
+    const url = `${protocol}://${host}/local-uploads/${relativePath}`;
     res.json({ success: true, data: { url, key } });
   }
 }
