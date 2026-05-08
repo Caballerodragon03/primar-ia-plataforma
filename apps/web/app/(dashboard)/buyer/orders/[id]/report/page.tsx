@@ -33,7 +33,9 @@ export default function ReportIssuePage() {
   const [tipoProblema, setTipoProblema] = useState<IssueType>('CALIDAD');
   const [descripcion, setDescripcion] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const descriptionError =
@@ -46,16 +48,29 @@ export default function ReportIssuePage() {
     descripcion.length >= MIN_DESCRIPTION &&
     !submitting;
 
-  const handleFileSelect = (file: File | null) => {
-    if (!file) return;
-    setFiles((prev) => {
-      if (prev.length >= 6) return prev;
-      return [...prev, file];
-    });
+  const handleFileSelect = async (file: File | null) => {
+    if (!file || files.length >= 6) return;
+    setFiles((prev) => [...prev, file]);
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'disputes');
+      const res = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setEvidenceUrls((prev) => [...prev, res.data.data.url]);
+    } catch {
+      setError('Failed to upload file.');
+      setFiles((prev) => prev.slice(0, -1));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
+    setEvidenceUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,12 +80,11 @@ export default function ReportIssuePage() {
     setSubmitting(true);
 
     try {
-      // In MVP, evidence files are placeholder URLs (no real upload)
       await api.post('/disputes', {
         transaccionId: id,
         tipoProblema,
         descripcion,
-        evidenciasUrls: [] as string[],
+        evidenciasUrls: evidenceUrls,
       });
       router.push(`/buyer/orders/${id}`);
     } catch (err: unknown) {

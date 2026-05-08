@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { X, AlertTriangle, Camera, CheckCircle2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { X, AlertTriangle, Upload, CheckCircle2, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from './Button';
 
@@ -58,8 +58,11 @@ export function DisputeModal({
   const [step, setStep] = useState<Step>('select');
   const [selectedType, setSelectedType] = useState<string>('');
   const [description, setDescription] = useState('');
+  const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -70,8 +73,29 @@ export function DisputeModal({
     setStep('select');
     setSelectedType('');
     setDescription('');
+    setEvidenceUrls([]);
     setError(null);
     onClose();
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || evidenceUrls.length >= 6) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'disputes');
+      const res = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setEvidenceUrls((prev) => [...prev, res.data.data.url]);
+    } catch {
+      setError('Failed to upload file.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmit = async () => {
@@ -83,7 +107,7 @@ export function DisputeModal({
         transaccionId,
         tipoProblema: selectedType,
         descripcion: description.trim(),
-        evidenciasUrls: [],
+        evidenciasUrls: evidenceUrls,
       });
       setStep('success');
       setTimeout(() => {
@@ -205,9 +229,45 @@ export function DisputeModal({
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl opacity-60 cursor-not-allowed">
-                <Camera className="w-4 h-4 text-gray-400" />
-                <p className="text-xs text-gray-500">Photo/video evidence — coming soon</p>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-gray-600">Evidence (up to 6 files)</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                {evidenceUrls.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {evidenceUrls.map((url, i) => (
+                      <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={`Evidence ${i + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setEvidenceUrls((prev) => prev.filter((_, j) => j !== i))}
+                          className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {evidenceUrls.length < 6 && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex items-center gap-2 w-full p-3 bg-gray-50 rounded-xl border border-dashed border-gray-300 hover:border-gray-400 transition-colors text-left"
+                  >
+                    <Upload className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs text-gray-500">
+                      {uploading ? 'Uploading…' : `Add photo or PDF (${evidenceUrls.length}/6)`}
+                    </span>
+                  </button>
+                )}
               </div>
 
               {error && (

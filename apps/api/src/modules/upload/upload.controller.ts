@@ -2,12 +2,17 @@ import { Request, Response } from 'express';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import path from 'path';
+import fs from 'fs/promises';
 import { getR2 } from '../../shared/r2.js';
 import { env } from '../../config/env.js';
 import { AppError } from '../../middleware/error.middleware.js';
 
 const ALLOWED_MIME = new Set(['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']);
 const MAX_BYTES = 10 * 1024 * 1024;
+
+function isR2Configured(): boolean {
+  return env.R2_ACCOUNT_ID !== 'placeholder' && env.R2_ACCESS_KEY_ID !== 'placeholder';
+}
 
 export async function uploadFile(req: Request, res: Response): Promise<void> {
   const file = req.file;
@@ -20,13 +25,21 @@ export async function uploadFile(req: Request, res: Response): Promise<void> {
   const ext = path.extname(file.originalname).toLowerCase();
   const key = `${safeFolder}/${randomUUID()}${ext}`;
 
-  await getR2().send(new PutObjectCommand({
-    Bucket: env.R2_BUCKET_NAME,
-    Key: key,
-    Body: file.buffer,
-    ContentType: file.mimetype,
-  }));
-
-  const url = `${env.R2_PUBLIC_URL}/${key}`;
-  res.json({ success: true, data: { url, key } });
+  if (isR2Configured()) {
+    await getR2().send(new PutObjectCommand({
+      Bucket: env.R2_BUCKET_NAME,
+      Key: key,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    }));
+    const url = `${env.R2_PUBLIC_URL}/${key}`;
+    res.json({ success: true, data: { url, key } });
+  } else {
+    const localDir = path.resolve('uploads', safeFolder);
+    await fs.mkdir(localDir, { recursive: true });
+    const localPath = path.join(localDir, `${randomUUID()}${ext}`);
+    await fs.writeFile(localPath, file.buffer);
+    const url = `/local-uploads/${path.relative('uploads', localPath)}`;
+    res.json({ success: true, data: { url, key } });
+  }
 }

@@ -50,11 +50,10 @@ disputesRouter.get(
   asyncHandler(getDisputa)
 );
 
-// POST /api/v1/disputes/:id/respond — vendor responds (VENDEDOR + VERIFICADO_ACTIVO)
+// POST /api/v1/disputes/:id/respond — counterparty responds (VERIFICADO_ACTIVO)
 disputesRouter.post(
   '/:id/respond',
   requireAuth,
-  requireRole('VENDEDOR'),
   requireEstado('VERIFICADO_ACTIVO'),
   validateBody(respuestaVendedorSchema),
   asyncHandler(responderDisputa)

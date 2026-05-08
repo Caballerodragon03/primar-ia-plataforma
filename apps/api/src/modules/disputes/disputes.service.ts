@@ -81,17 +81,21 @@ export class DisputasService {
     return disputa;
   }
 
-  async responderDisputa(disputaId: string, vendedorId: string, data: RespuestaVendedorInput) {
+  async responderDisputa(disputaId: string, userId: string, data: RespuestaVendedorInput) {
     const disputa = await prisma.disputa.findUnique({
       where: { id: disputaId },
       include: {
-        transaccion: { select: { vendedorId: true } },
+        transaccion: { select: { vendedorId: true, compradorId: true } },
       },
     });
 
     if (!disputa) throw new AppError('Disputa no encontrada', 404);
-    if (disputa.transaccion.vendedorId !== vendedorId) {
-      throw new AppError('No eres el vendedor de esta transaccion', 403);
+    const isParty = disputa.transaccion.vendedorId === userId || disputa.transaccion.compradorId === userId;
+    if (!isParty) {
+      throw new AppError('No eres parte de esta transacción', 403);
+    }
+    if (disputa.abiertaPorId === userId) {
+      throw new AppError('No puedes responder a tu propia disputa', 400);
     }
     if (disputa.estado !== 'ABIERTA') {
       throw new AppError('Solo puedes responder a disputas en estado ABIERTA', 400);
@@ -258,11 +262,18 @@ export class DisputasService {
       }
 
       if (data.suscripcionGratisUserId) {
+        const SELLER_PLANS = ['COSECHA', 'CAMPO', 'FINCA'];
+        const plan = data.suscripcionGratisPlan ?? 'CENTRAL';
+        const isSeller = SELLER_PLANS.includes(plan);
+        const planData = isSeller
+          ? { planVendedor: plan as 'COSECHA' | 'CAMPO' | 'FINCA', planComprador: null }
+          : { planComprador: plan as 'MERCADO' | 'LONJA' | 'CENTRAL', planVendedor: null };
+
         await tx.suscripcion.upsert({
           where: { userId: data.suscripcionGratisUserId },
           create: {
             userId: data.suscripcionGratisUserId,
-            planComprador: 'CENTRAL',
+            ...planData,
             estado: 'ACTIVA',
             fechaInicio: now,
             fechaFin: oneMonthLater,
@@ -270,7 +281,7 @@ export class DisputasService {
             compensacionMeses: 1,
           },
           update: {
-            planComprador: 'CENTRAL',
+            ...planData,
             estado: 'ACTIVA',
             fechaInicio: now,
             fechaFin: oneMonthLater,

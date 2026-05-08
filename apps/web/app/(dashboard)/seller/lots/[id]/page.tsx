@@ -230,7 +230,7 @@ export default function LotDetailPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50">
-                  {['CALIBER', 'QUANTITY (kg)', 'MIN PRICE (€/kg)', '% OF LOT'].map((h) => (
+                  {['CALIBER', 'QUANTITY (kg)', '% OF LOT'].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-text-secondary uppercase tracking-wider">
                       {h}
                     </th>
@@ -240,7 +240,7 @@ export default function LotDetailPage() {
               <tbody className="divide-y divide-border">
                 {calibres.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-xs text-text-muted">
+                    <td colSpan={3} className="px-4 py-6 text-center text-xs text-text-muted">
                       No calibers defined
                     </td>
                   </tr>
@@ -249,7 +249,6 @@ export default function LotDetailPage() {
                     <tr key={i} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-2.5 font-medium text-text-primary">{c.calibre || '—'}</td>
                       <td className="px-4 py-2.5">{Number(c.cantidad_kg).toLocaleString('es-ES')}</td>
-                      <td className="px-4 py-2.5">€{Number(c.precio_min_kg).toFixed(3)}</td>
                       <td className="px-4 py-2.5 text-text-secondary">
                         {totalKg > 0 ? `${Math.round((c.cantidad_kg / totalKg) * 100)}%` : '—'}
                       </td>

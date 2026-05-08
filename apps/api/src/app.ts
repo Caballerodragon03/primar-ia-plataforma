@@ -20,6 +20,7 @@ import { scoringRouter } from './modules/scoring/scoring.routes.js';
 import { valoracionesRouter } from './modules/valoraciones/valoraciones.routes.js';
 import { negotiationsRouter } from './modules/negotiations/negotiations.routes.js';
 import { subscriptionRouter } from './modules/subscriptions/subscription.routes.js';
+import { certificatesRouter } from './modules/certificates/certificates.routes.js';
 import { harvestEstimationRouter } from './modules/harvest-estimation/harvest-estimation.routes.js';
 import { invoiceRouter } from './modules/invoices/invoice.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
@@ -54,6 +55,11 @@ app.use(cookieParser());
 app.use('/api', apiRateLimiter);
 app.use('/api', noCache);
 
+// Serve local uploads in dev (when R2 is not configured)
+if (env.R2_ACCOUNT_ID === 'placeholder') {
+  app.use('/local-uploads', express.static('uploads'));
+}
+
 // Health check
 app.get('/health', async (_req, res) => {
   try {
@@ -81,6 +87,7 @@ app.use('/api/v1/scoring', scoringRouter);
 app.use('/api/v1/valoraciones', valoracionesRouter);
 app.use('/api/v1/chat/:transaccionId/offers', negotiationsRouter);
 app.use('/api/v1/subscriptions', subscriptionRouter);
+app.use('/api/v1/certificates', certificatesRouter);
 app.use('/api/v1/harvest-estimation', harvestEstimationRouter);
 app.use('/api/v1/invoices', invoiceRouter);
 

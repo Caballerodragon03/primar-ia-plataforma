@@ -3,6 +3,9 @@ import { AppError } from '../../middleware/error.middleware.js';
 import type { CreateLotInput, UpdateLotInput } from './lots.schema.js';
 import { matchingService } from '../matching/matching.service.js';
 import { geocodeLoteAsync } from '../matching/geocoding.service.js';
+import { SubscriptionService } from '../subscriptions/subscription.service.js';
+
+const subscriptionService = new SubscriptionService();
 
 type CalibreItem = { calibre: string; cantidad_kg: number; precio_min_kg: number };
 
@@ -20,6 +23,10 @@ const ACTIVE_MATCH_ESTADOS: MatchEstado[] = ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAG
 
 export class LotsService {
   async create(vendedorId: string, data: CreateLotInput) {
+    if (data.publicar) {
+      await subscriptionService.checkCanCreateLot(vendedorId);
+    }
+
     const lote = await prisma.lote.create({
       data: {
         vendedorId,
@@ -138,6 +145,11 @@ export class LotsService {
     }
 
     const wasActive = lote.estado === 'ACTIVO';
+    const becomingActive = !wasActive && data.publicar === true;
+    if (becomingActive) {
+      await subscriptionService.checkCanCreateLot(vendedorId);
+    }
+
     const updated = await prisma.lote.update({
       where: { id },
       data: {

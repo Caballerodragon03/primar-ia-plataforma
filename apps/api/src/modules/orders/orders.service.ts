@@ -3,6 +3,9 @@ import { AppError } from '../../middleware/error.middleware.js';
 import type { CreateOrderInput, UpdateOrderInput } from './orders.schema.js';
 import { matchingService } from '../matching/matching.service.js';
 import { geocodePedidoAsync } from '../matching/geocoding.service.js';
+import { SubscriptionService } from '../subscriptions/subscription.service.js';
+
+const subscriptionService = new SubscriptionService();
 
 type CalibreSolicitado = { calibre: string; cantidad_kg: number; precio_max_kg: number };
 
@@ -20,6 +23,10 @@ const ACTIVE_MATCH_ESTADOS: MatchEstado[] = ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAG
 
 export class OrdersService {
   async create(compradorId: string, data: CreateOrderInput) {
+    if (data.publicar) {
+      await subscriptionService.checkCanCreateOrder(compradorId);
+    }
+
     const pedido = await prisma.pedido.create({
       data: {
         compradorId,
@@ -155,6 +162,11 @@ export class OrdersService {
     }
 
     const wasActive = order.estado === 'ACTIVO';
+    const becomingActive = !wasActive && data.publicar === true;
+    if (becomingActive) {
+      await subscriptionService.checkCanCreateOrder(compradorId);
+    }
+
     const updated = await prisma.pedido.update({
       where: { id },
       data: {

@@ -32,6 +32,7 @@ interface ResolucionAplicada {
   incentivoComprador: number;
   incentivoVendedor: number;
   suscripcionGratuita: string;
+  suscripcionGratisPlan?: string;
   banComprador: boolean;
   banVendedor: boolean;
 }
@@ -192,7 +193,7 @@ function ResolucionDisplay({ res }: { res: ResolucionAplicada }) {
     { label: 'Penalización vendedor', value: res.penalizacionVendedor !== 0 ? `${res.penalizacionVendedor} pts` : '—' },
     { label: 'Incentivo comprador', value: res.incentivoComprador !== 0 ? `+${res.incentivoComprador} pts` : '—' },
     { label: 'Incentivo vendedor', value: res.incentivoVendedor !== 0 ? `+${res.incentivoVendedor} pts` : '—' },
-    { label: 'Suscripción gratuita', value: res.suscripcionGratuita !== 'NINGUNO' ? res.suscripcionGratuita : '—' },
+    { label: 'Suscripción gratuita', value: res.suscripcionGratuita !== 'NINGUNO' ? `${res.suscripcionGratuita}${res.suscripcionGratisPlan ? ` — ${res.suscripcionGratisPlan}` : ''}` : '—' },
     { label: 'Ban comprador', value: res.banComprador ? 'Sí' : 'No' },
     { label: 'Ban vendedor', value: res.banVendedor ? 'Sí' : 'No' },
   ];
@@ -232,10 +233,22 @@ const RESOLUCION_OPTIONS = [
   { value: 'ACUERDO_PARTES', label: 'Acuerdo entre partes' },
 ];
 
-const SUSCRIPCION_OPTIONS = [
+const SUSCRIPCION_TARGET_OPTIONS = [
   { value: 'NINGUNO', label: 'Ninguno' },
   { value: 'COMPRADOR', label: 'Comprador' },
   { value: 'VENDEDOR', label: 'Vendedor' },
+];
+
+const BUYER_PLAN_OPTIONS = [
+  { value: 'MERCADO', label: 'Mercado (Free)' },
+  { value: 'LONJA', label: 'Lonja (29€)' },
+  { value: 'CENTRAL', label: 'Central (89€)' },
+];
+
+const SELLER_PLAN_OPTIONS = [
+  { value: 'COSECHA', label: 'Cosecha (Free)' },
+  { value: 'CAMPO', label: 'Campo (19€)' },
+  { value: 'FINCA', label: 'Finca (49€)' },
 ];
 
 interface ResolveFormState {
@@ -246,16 +259,21 @@ interface ResolveFormState {
   penalizacionVendedor: number;
   incentivoComprador: number;
   incentivoVendedor: number;
-  suscripcionGratuita: string;
+  suscripcionTarget: string;
+  suscripcionPlan: string;
   banComprador: boolean;
   banVendedor: boolean;
 }
 
 function ResolutionForm({
   disputeId,
+  compradorId,
+  vendedorId,
   onResolved,
 }: {
   disputeId: string;
+  compradorId: string;
+  vendedorId: string;
   onResolved: () => void;
 }) {
   const [form, setForm] = useState<ResolveFormState>({
@@ -266,7 +284,8 @@ function ResolutionForm({
     penalizacionVendedor: 0,
     incentivoComprador: 0,
     incentivoVendedor: 0,
-    suscripcionGratuita: 'NINGUNO',
+    suscripcionTarget: 'NINGUNO',
+    suscripcionPlan: '',
     banComprador: false,
     banVendedor: false,
   });
@@ -281,7 +300,26 @@ function ResolutionForm({
     setSubmitting(true);
     setError(null);
     try {
-      await api.post(`/disputes/${disputeId}/resolve-admin`, form);
+      const suscripcionGratisUserId =
+        form.suscripcionTarget === 'COMPRADOR' ? compradorId
+          : form.suscripcionTarget === 'VENDEDOR' ? vendedorId
+            : undefined;
+      const suscripcionGratisPlan =
+        suscripcionGratisUserId && form.suscripcionPlan ? form.suscripcionPlan : undefined;
+
+      await api.post(`/disputes/${disputeId}/resolve-admin`, {
+        resolucion: form.tipo,
+        porcentajeComprador: form.porcentajeComprador,
+        notasAdmin: form.notasAdmin || undefined,
+        penalizacionComprador: form.penalizacionComprador || undefined,
+        penalizacionVendedor: form.penalizacionVendedor || undefined,
+        incentivoComprador: form.incentivoComprador || undefined,
+        incentivoVendedor: form.incentivoVendedor || undefined,
+        suscripcionGratisUserId,
+        suscripcionGratisPlan,
+        banearComprador: form.banComprador || undefined,
+        banearVendedor: form.banVendedor || undefined,
+      });
       onResolved();
     } catch {
       setError('Error al resolver la incidencia. Inténtalo de nuevo.');
@@ -379,13 +417,24 @@ function ResolutionForm({
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end flex-wrap">
         <Select
           label="Suscripción gratuita 1 mes para:"
-          value={form.suscripcionGratuita}
-          onChange={(e) => setField('suscripcionGratuita', e.target.value)}
-          options={SUSCRIPCION_OPTIONS}
+          value={form.suscripcionTarget}
+          onChange={(e) => {
+            setField('suscripcionTarget', e.target.value);
+            setField('suscripcionPlan', '');
+          }}
+          options={SUSCRIPCION_TARGET_OPTIONS}
         />
+        {form.suscripcionTarget !== 'NINGUNO' && (
+          <Select
+            label="Plan a otorgar:"
+            value={form.suscripcionPlan}
+            onChange={(e) => setField('suscripcionPlan', e.target.value)}
+            options={form.suscripcionTarget === 'VENDEDOR' ? SELLER_PLAN_OPTIONS : BUYER_PLAN_OPTIONS}
+          />
+        )}
         <div className="flex items-center gap-6 pb-1">
           <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
             <input
@@ -649,7 +698,12 @@ export default function AdminIncidentDetailPage() {
       {isResuelta && dispute.resolucion ? (
         <ResolucionDisplay res={dispute.resolucion} />
       ) : !isResuelta ? (
-        <ResolutionForm disputeId={disputeId} onResolved={loadData} />
+        <ResolutionForm
+          disputeId={disputeId}
+          compradorId={comprador?.id ?? ''}
+          vendedorId={vendedor?.id ?? ''}
+          onResolved={loadData}
+        />
       ) : null}
     </div>
   );
