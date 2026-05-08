@@ -1,0 +1,338 @@
+'use client';
+
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import { ArrowLeft, Send, X, Upload } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+
+interface Dispute {
+  id: string;
+  tipoProblema: string;
+  estado: string;
+  descripcion: string;
+  evidenciasUrls: string[];
+  respuestaVendedor?: string | null;
+  evidenciasVendedorUrls?: string[];
+  createdAt: string;
+  transaccion: {
+    compradorId: string;
+    vendedorId: string;
+    cantidadKg: number;
+    precioTotal: number;
+    comprador?: { nombre: string; apellidos: string };
+    vendedor?: { nombre: string; apellidos: string };
+    match?: { pedido?: { producto?: { nombre: string } } };
+  };
+}
+
+interface Message {
+  id: string;
+  contenido: string;
+  createdAt: string;
+  autor: { nombre: string; apellidos: string; role: string };
+}
+
+const ESTADO_COLORS: Record<string, string> = {
+  ABIERTA: 'bg-red-100 text-red-700',
+  RESPUESTA_VENDEDOR: 'bg-amber-100 text-amber-700',
+  EN_REVISION: 'bg-blue-100 text-blue-700',
+  RESUELTA: 'bg-green-100 text-green-700',
+};
+
+const ESTADO_LABELS: Record<string, string> = {
+  ABIERTA: 'Open',
+  RESPUESTA_VENDEDOR: 'Seller responded',
+  EN_REVISION: 'Under review',
+  RESUELTA: 'Resolved',
+};
+
+export default function SellerDisputeDetailPage() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const disputeId = params.id;
+
+  const [dispute, setDispute] = useState<Dispute | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  // Response form
+  const [showRespondForm, setShowRespondForm] = useState(false);
+  const [respuesta, setRespuesta] = useState('');
+  const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [responding, setResponding] = useState(false);
+  const [respondError, setRespondError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const loadData = useCallback(async () => {
+    try {
+      const [dRes, mRes] = await Promise.all([
+        api.get<{ data: Dispute }>(`/disputes/${disputeId}`),
+        api.get<{ data: Message[] }>(`/disputes/${disputeId}/messages`),
+      ]);
+      setDispute(dRes.data.data);
+      setMessages(mRes.data.data);
+    } catch {}
+    setLoading(false);
+  }, [disputeId]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const handleSend = async () => {
+    if (!text.trim()) return;
+    setSending(true);
+    try {
+      await api.post(`/disputes/${disputeId}/messages`, { contenido: text.trim() });
+      setText('');
+      const mRes = await api.get<{ data: Message[] }>(`/disputes/${disputeId}/messages`);
+      setMessages(mRes.data.data);
+    } catch {}
+    setSending(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || evidenceUrls.length >= 6) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'disputes');
+      const res = await api.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setEvidenceUrls((prev) => [...prev, res.data.data.url]);
+    } catch {}
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleRespond = async () => {
+    if (respuesta.trim().length < 10) return;
+    setResponding(true);
+    setRespondError(null);
+    try {
+      await api.post(`/disputes/${disputeId}/respond`, {
+        respuesta: respuesta.trim(),
+        evidenciasUrls: evidenceUrls.length > 0 ? evidenceUrls : undefined,
+      });
+      setShowRespondForm(false);
+      await loadData();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to submit response.';
+      setRespondError(msg);
+    }
+    setResponding(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-4 p-6">
+        {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-xl" />)}
+      </div>
+    );
+  }
+
+  if (!dispute) {
+    return (
+      <div className="max-w-3xl mx-auto text-center py-16">
+        <p className="text-gray-500">Dispute not found.</p>
+      </div>
+    );
+  }
+
+  const comprador = dispute.transaccion?.comprador;
+  const producto = dispute.transaccion?.match?.pedido?.producto?.nombre;
+  const badgeClass = ESTADO_COLORS[dispute.estado] ?? 'bg-gray-100 text-gray-600';
+  const badgeLabel = ESTADO_LABELS[dispute.estado] ?? dispute.estado;
+  const canRespond = dispute.estado === 'ABIERTA' && !dispute.respuestaVendedor;
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-5">
+      <button onClick={() => router.push('/seller/disputes')} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors cursor-pointer">
+        <ArrowLeft className="w-4 h-4" /> Back to disputes
+      </button>
+
+      {/* Header */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-lg font-bold text-gray-900">{dispute.tipoProblema.replace(/_/g, ' ')}</h1>
+            <p className="text-xs text-gray-400">
+              Opened {new Date(dispute.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {producto && ` · ${producto}`}
+              {comprador && ` · Buyer: ${comprador.nombre} ${comprador.apellidos}`}
+            </p>
+          </div>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${badgeClass}`}>
+            {badgeLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* Buyer's claim */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900">Buyer&apos;s claim</h3>
+        <p className="text-sm text-gray-700 leading-relaxed">{dispute.descripcion}</p>
+        {dispute.evidenciasUrls.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Evidence</p>
+            <div className="grid grid-cols-3 gap-2">
+              {dispute.evidenciasUrls.map((url, i) => (
+                <button key={i} onClick={() => setLightbox(url)} className="aspect-square rounded-lg overflow-hidden border border-gray-200 hover:opacity-80 transition-opacity cursor-pointer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`Evidence ${i + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Seller response (already submitted) */}
+      {dispute.respuestaVendedor && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+          <h3 className="text-sm font-semibold text-gray-900">Your response</h3>
+          <p className="text-sm text-gray-700 leading-relaxed">{dispute.respuestaVendedor}</p>
+          {dispute.evidenciasVendedorUrls && dispute.evidenciasVendedorUrls.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Your evidence</p>
+              <div className="grid grid-cols-3 gap-2">
+                {dispute.evidenciasVendedorUrls.map((url, i) => (
+                  <button key={i} onClick={() => setLightbox(url)} className="aspect-square rounded-lg overflow-hidden border border-gray-200 hover:opacity-80 transition-opacity cursor-pointer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Your evidence ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Respond form */}
+      {canRespond && !showRespondForm && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-center justify-between">
+          <p className="text-sm text-amber-800">A buyer has filed a claim against this transaction. You can submit your response.</p>
+          <Button variant="primary" size="sm" onClick={() => setShowRespondForm(true)} className="bg-amber-500 hover:bg-amber-600 border-amber-500">
+            Respond
+          </Button>
+        </div>
+      )}
+
+      {canRespond && showRespondForm && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900">Submit your response</h3>
+          <textarea
+            value={respuesta}
+            onChange={(e) => setRespuesta(e.target.value)}
+            rows={5}
+            maxLength={2000}
+            placeholder="Explain your side. Include any relevant context, dates, and details..."
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
+          />
+          <p className="text-xs text-gray-400 text-right">{respuesta.length}/2000</p>
+
+          <input ref={fileInputRef} type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
+          {evidenceUrls.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {evidenceUrls.map((url, i) => (
+                <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`Evidence ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setEvidenceUrls((prev) => prev.filter((_, j) => j !== i))}
+                    className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {evidenceUrls.length < 6 && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-2 w-full p-3 bg-gray-50 rounded-xl border border-dashed border-gray-300 hover:border-gray-400 transition-colors text-left cursor-pointer"
+            >
+              <Upload className="w-4 h-4 text-gray-400" />
+              <span className="text-xs text-gray-500">{uploading ? 'Uploading...' : `Add photo or PDF (${evidenceUrls.length}/6)`}</span>
+            </button>
+          )}
+
+          {respondError && <p className="text-sm text-red-500">{respondError}</p>}
+
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setShowRespondForm(false)} className="text-sm text-gray-500 hover:text-gray-700 font-medium cursor-pointer">Cancel</button>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={responding}
+              disabled={respuesta.trim().length < 10}
+              onClick={handleRespond}
+              className="bg-[#E1C44D] hover:bg-[#c9ad40] border-[#E1C44D]"
+            >
+              Submit Response
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Chat */}
+      <div className="bg-white rounded-xl border border-gray-200 flex flex-col" style={{ minHeight: '300px' }}>
+        <div className="px-5 py-3 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900">Messages</h3>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3" style={{ maxHeight: '360px' }}>
+          {messages.length === 0 && <p className="text-sm text-gray-400 text-center py-6">No messages yet.</p>}
+          {messages.map((msg) => (
+            <div key={msg.id} className="space-y-0.5">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xs font-semibold text-gray-700">{msg.autor.nombre} {msg.autor.apellidos}</span>
+                <span className="text-xs text-gray-400">{msg.autor.role === 'ADMIN' ? 'Admin' : msg.autor.role === 'COMPRADOR' ? 'Buyer' : 'Seller'}</span>
+                <span className="text-xs text-gray-300 ml-auto">
+                  {new Date(msg.createdAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <p className="text-sm text-gray-800 bg-gray-50 rounded-lg px-3 py-2">{msg.contenido}</p>
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+        <div className="px-5 py-3 border-t border-gray-200 flex gap-2">
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            placeholder="Write a message..."
+            className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
+          />
+          <button onClick={handleSend} disabled={sending || !text.trim()} className="p-2.5 bg-[#E1C44D] text-gray-900 rounded-lg hover:bg-[#c9ad40] transition-colors disabled:opacity-50 cursor-pointer">
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setLightbox(null)}>
+          <div className="relative max-w-3xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setLightbox(null)} className="absolute -top-8 right-0 text-white hover:text-gray-300 transition-colors cursor-pointer">
+              <X className="w-5 h-5" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={lightbox} alt="Evidence" className="w-full rounded-lg object-contain max-h-[80vh]" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

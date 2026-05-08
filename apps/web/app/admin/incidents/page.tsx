@@ -13,7 +13,11 @@ interface Dispute {
   tipoProblema: string;
   estado: 'ABIERTA' | 'RESPUESTA_VENDEDOR' | 'EN_REVISION' | 'RESUELTA';
   createdAt: string;
-  lote?: { titulo: string } | null;
+  transaccion?: {
+    comprador?: { nombre: string; apellidos: string };
+    vendedor?: { nombre: string; apellidos: string };
+    match?: { pedido?: { producto?: { nombre: string } } };
+  };
 }
 
 const ESTADO_COLORS: Record<string, string> = {
@@ -99,9 +103,25 @@ export default function AdminIncidentsPage() {
       cell: ({ getValue }) => new Date(getValue<string>()).toLocaleDateString('es-ES'),
     },
     {
+      id: 'comprador',
+      header: 'COMPRADOR',
+      cell: ({ row }) => {
+        const c = row.original.transaccion?.comprador;
+        return c ? `${c.nombre} ${c.apellidos}` : '—';
+      },
+    },
+    {
+      id: 'vendedor',
+      header: 'VENDEDOR',
+      cell: ({ row }) => {
+        const v = row.original.transaccion?.vendedor;
+        return v ? `${v.nombre} ${v.apellidos}` : '—';
+      },
+    },
+    {
       id: 'producto',
       header: 'PRODUCTO',
-      cell: ({ row }) => row.original.lote?.titulo ?? '—',
+      cell: ({ row }) => row.original.transaccion?.match?.pedido?.producto?.nombre ?? '—',
     },
     {
       id: 'actions',

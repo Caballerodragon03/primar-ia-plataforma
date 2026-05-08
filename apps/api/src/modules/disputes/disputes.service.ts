@@ -57,6 +57,8 @@ export class DisputasService {
             compradorId: true,
             cantidadKg: true,
             precioTotal: true,
+            comprador: { select: { nombre: true, apellidos: true } },
+            vendedor: { select: { nombre: true, apellidos: true } },
             match: {
               select: {
                 pedido: { select: { producto: { select: { nombre: true } } } }
@@ -148,10 +150,26 @@ export class DisputasService {
     return updatedDisputa;
   }
 
+  private readonly listInclude = {
+    transaccion: {
+      select: {
+        vendedorId: true,
+        compradorId: true,
+        comprador: { select: { nombre: true, apellidos: true } },
+        vendedor: { select: { nombre: true, apellidos: true } },
+        match: {
+          select: {
+            pedido: { select: { producto: { select: { nombre: true } } } },
+          },
+        },
+      },
+    },
+  } as const;
+
   async listDisputas(userId: string, role: string) {
     if (role === 'ADMIN') {
       return prisma.disputa.findMany({
-        include: { transaccion: { select: { vendedorId: true, compradorId: true } } },
+        include: this.listInclude,
         orderBy: { createdAt: 'desc' },
       });
     }
@@ -159,15 +177,14 @@ export class DisputasService {
     if (role === 'VENDEDOR') {
       return prisma.disputa.findMany({
         where: { transaccion: { vendedorId: userId } },
-        include: { transaccion: { select: { vendedorId: true, compradorId: true } } },
+        include: this.listInclude,
         orderBy: { createdAt: 'desc' },
       });
     }
 
-    // COMPRADOR or default
     return prisma.disputa.findMany({
       where: { transaccion: { compradorId: userId } },
-      include: { transaccion: { select: { vendedorId: true, compradorId: true } } },
+      include: this.listInclude,
       orderBy: { createdAt: 'desc' },
     });
   }

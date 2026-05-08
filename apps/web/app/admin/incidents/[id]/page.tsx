@@ -14,12 +14,14 @@ interface Dispute {
   estado: 'ABIERTA' | 'RESPUESTA_VENDEDOR' | 'EN_REVISION' | 'RESUELTA';
   createdAt: string;
   descripcion: string;
-  evidencias: string[];
+  evidenciasUrls: string[];
   respuestaVendedor?: string | null;
-  evidenciasVendedor?: string[];
-  compradorId: string;
-  vendedorId: string;
-  lote?: { titulo: string } | null;
+  evidenciasVendedorUrls?: string[];
+  transaccion: {
+    compradorId: string;
+    vendedorId: string;
+    match?: { pedido?: { producto?: { nombre: string } } };
+  };
   resolucion?: ResolucionAplicada | null;
 }
 
@@ -41,8 +43,7 @@ interface DisputeMessage {
   id: string;
   contenido: string;
   autorId: string;
-  autorNombre: string;
-  autorRol: string;
+  autor: { nombre: string; apellidos: string; role: string };
   createdAt: string;
 }
 
@@ -541,8 +542,8 @@ function DisputeChat({ disputeId }: { disputeId: string }) {
         {messages.map((msg) => (
           <div key={msg.id} className="space-y-0.5">
             <div className="flex items-baseline gap-2">
-              <span className="text-xs font-semibold text-gray-700">{msg.autorNombre}</span>
-              <span className="text-xs text-gray-400">{msg.autorRol}</span>
+              <span className="text-xs font-semibold text-gray-700">{msg.autor.nombre} {msg.autor.apellidos}</span>
+              <span className="text-xs text-gray-400">{msg.autor.role}</span>
               <span className="text-xs text-gray-300 ml-auto">
                 {new Date(msg.createdAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
               </span>
@@ -594,8 +595,8 @@ export default function AdminIncidentDetailPage() {
       setDispute(d);
 
       const [cRes, vRes] = await Promise.all([
-        api.get<{ data: UserInfo }>(`/admin/users/${d.compradorId}`),
-        api.get<{ data: UserInfo }>(`/admin/users/${d.vendedorId}`),
+        api.get<{ data: UserInfo }>(`/admin/users/${d.transaccion.compradorId}`),
+        api.get<{ data: UserInfo }>(`/admin/users/${d.transaccion.vendedorId}`),
       ]);
       setComprador(cRes.data.data);
       setVendedor(vRes.data.data);
@@ -652,7 +653,7 @@ export default function AdminIncidentDetailPage() {
             <h1 className="text-lg font-bold text-gray-900">{dispute.tipoProblema}</h1>
             <p className="text-xs text-gray-400">
               Abierta el {new Date(dispute.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-              {dispute.lote && ` · Producto: ${dispute.lote.titulo}`}
+              {dispute.transaccion?.match?.pedido?.producto?.nombre && ` · Producto: ${dispute.transaccion.match.pedido.producto.nombre}`}
             </p>
           </div>
           <DisputeBadge estado={dispute.estado} />
@@ -671,21 +672,21 @@ export default function AdminIncidentDetailPage() {
         <p className="text-sm text-gray-700 leading-relaxed">{dispute.descripcion}</p>
         <div>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Evidencias</p>
-          <EvidenceGallery urls={dispute.evidencias} />
+          <EvidenceGallery urls={dispute.evidenciasUrls} />
         </div>
       </div>
 
       {/* Respuesta del demandado */}
-      {(dispute.respuestaVendedor || (dispute.evidenciasVendedor && dispute.evidenciasVendedor.length > 0)) && (
+      {(dispute.respuestaVendedor || (dispute.evidenciasVendedorUrls && dispute.evidenciasVendedorUrls.length > 0)) && (
         <div className="bg-white rounded-[12px] border border-[#E5E7EB] p-5 space-y-3">
           <h3 className="text-sm font-semibold text-gray-900">Respuesta del demandado</h3>
           {dispute.respuestaVendedor && (
             <p className="text-sm text-gray-700 leading-relaxed">{dispute.respuestaVendedor}</p>
           )}
-          {dispute.evidenciasVendedor && dispute.evidenciasVendedor.length > 0 && (
+          {dispute.evidenciasVendedorUrls && dispute.evidenciasVendedorUrls.length > 0 && (
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Evidencias</p>
-              <EvidenceGallery urls={dispute.evidenciasVendedor} />
+              <EvidenceGallery urls={dispute.evidenciasVendedorUrls} />
             </div>
           )}
         </div>
@@ -700,8 +701,8 @@ export default function AdminIncidentDetailPage() {
       ) : !isResuelta ? (
         <ResolutionForm
           disputeId={disputeId}
-          compradorId={comprador?.id ?? ''}
-          vendedorId={vendedor?.id ?? ''}
+          compradorId={dispute.transaccion.compradorId}
+          vendedorId={dispute.transaccion.vendedorId}
           onResolved={loadData}
         />
       ) : null}
