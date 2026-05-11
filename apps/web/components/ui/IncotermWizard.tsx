@@ -92,12 +92,11 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [pending, setPending] = useState<string>('');
-  const [selected, setSelected] = useState<Set<string>>(
-    new Set(INCOTERMS.map((i) => i.code))
-  );
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [recommendedCode, setRecommendedCode] = useState<string | null>(null);
 
   const currentQuestion = step >= 1 && step <= 5 ? QUESTIONS[step - 1] : null;
-  const recommended = step === 6 ? getRecommendation(answers) : null;
+  const recommended = step === 6 ? recommendedCode : null;
 
   const handleOptionSelect = (value: string) => {
     setPending(value);
@@ -109,9 +108,17 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
       return;
     }
     if (currentQuestion && pending) {
-      setAnswers((prev) => ({ ...prev, [currentQuestion.id]: pending }));
+      const newAnswers = { ...answers, [currentQuestion.id]: pending };
+      setAnswers(newAnswers);
       setPending('');
-      setStep((s) => s + 1);
+      const nextStep = step + 1;
+      if (nextStep === 6) {
+        // Compute recommendation and only auto-select that one
+        const rec = getRecommendation(newAnswers);
+        setRecommendedCode(rec);
+        setSelected(new Set([rec]));
+      }
+      setStep(nextStep);
     }
   };
 
@@ -128,10 +135,9 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
   };
 
   const handleConfirm = () => {
-    const rec = getRecommendation(answers);
     localStorage.setItem(
       'primaria_incoterms',
-      JSON.stringify({ recommended: rec, selected: [...selected], done: true })
+      JSON.stringify({ recommended: recommendedCode, selected: [...selected], done: true })
     );
     onComplete();
   };
@@ -257,7 +263,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
             {/* All incoterms as toggleable chips */}
             <div className="space-y-2">
               <p className="text-sm font-medium text-text-secondary">
-                Todos los Incoterms disponibles — deselecciona los que no quieras usar:
+                Selecciona otros Incoterms que también quieras usar:
               </p>
               <div className="flex flex-wrap gap-2">
                 {INCOTERMS.map((inc) => {
@@ -290,6 +296,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
                 type="button"
                 onClick={() => {
                   setPending('');
+                  setRecommendedCode(null);
                   setStep(5);
                 }}
                 className="text-sm text-text-secondary hover:text-text-primary transition-colors"

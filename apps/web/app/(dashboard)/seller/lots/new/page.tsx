@@ -34,11 +34,12 @@ type FormValues = z.infer<typeof schema>;
 
 type Product = { id: string; nombre: string; variedades: { id: string; nombre: string }[] };
 
-const CERT_OPTIONS = ['Organic', 'GlobalG.A.P.', 'Fair Trade', 'BRC Certified'];
+type Certificate = { id: string; numeroCertificado: string; estado: string; fechaCaducidad: string };
 
 export default function PublishLotPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
+  const [approvedCerts, setApprovedCerts] = useState<Certificate[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [customVariety, setCustomVariety] = useState('');
@@ -91,6 +92,10 @@ export default function PublishLotPage() {
 
   useEffect(() => {
     api.get('/products').then(({ data }) => setProducts(data.data)).catch(() => {});
+    api.get('/certificates').then(({ data }) => {
+      const certs: Certificate[] = data.data ?? [];
+      setApprovedCerts(certs.filter((c) => c.estado === 'VERIFICADO'));
+    }).catch(() => {});
   }, []);
 
   const varieties = products.find((p) => p.id === selectedProductId)?.variedades ?? [];
@@ -282,26 +287,32 @@ export default function PublishLotPage() {
 
           <div>
             <p className="text-sm font-medium text-text-secondary mb-2">Associated Certificates</p>
-            <div className="flex flex-wrap gap-2">
-              {CERT_OPTIONS.map((cert) => {
-                const active = selectedCerts?.includes(cert);
-                return (
-                  <button
-                    key={cert}
-                    type="button"
-                    onClick={() => toggleCert(cert)}
-                    className={[
-                      'px-3 py-1 rounded-badge text-sm font-medium border transition-colors',
-                      active
-                        ? 'bg-primary/10 border-primary text-secondary'
-                        : 'bg-white border-border text-text-secondary hover:border-primary',
-                    ].join(' ')}
-                  >
-                    {active && '✓ '}{cert}
-                  </button>
-                );
-              })}
-            </div>
+            {approvedCerts.length === 0 ? (
+              <p className="text-xs text-text-muted italic">
+                No tienes certificados aprobados. Sube tus certificados en tu perfil y espera la verificación del administrador.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {approvedCerts.map((cert) => {
+                  const active = selectedCerts?.includes(cert.numeroCertificado);
+                  return (
+                    <button
+                      key={cert.id}
+                      type="button"
+                      onClick={() => toggleCert(cert.numeroCertificado)}
+                      className={[
+                        'px-3 py-1 rounded-badge text-sm font-medium border transition-colors',
+                        active
+                          ? 'bg-primary/10 border-primary text-secondary'
+                          : 'bg-white border-border text-text-secondary hover:border-primary',
+                      ].join(' ')}
+                    >
+                      {active && '✓ '}{cert.numeroCertificado}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div>
