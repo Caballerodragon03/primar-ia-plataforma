@@ -5,7 +5,7 @@ interface UsageMeterProps {
 }
 
 export function UsageMeter({ current, max, label }: UsageMeterProps) {
-  const isUnlimited = !isFinite(max);
+  const isUnlimited = max < 0 || !isFinite(max);
   const pct = isUnlimited ? 0 : max > 0 ? Math.min((current / max) * 100, 100) : 0;
   const atLimit = !isUnlimited && current >= max;
   const nearLimit = !isUnlimited && pct >= 80;

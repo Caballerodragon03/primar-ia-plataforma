@@ -302,7 +302,7 @@ export class SubscriptionService {
         plan,
         badge: vendedorLimits.badge,
         lotesActivos,
-        maxLotes: vendedorLimits.maxLotesActivos,
+        maxLotes: vendedorLimits.maxLotesActivos === Infinity ? -1 : vendedorLimits.maxLotesActivos,
         pedidosActivos: null,
         maxPedidos: null,
       };
@@ -318,7 +318,7 @@ export class SubscriptionService {
       lotesActivos: null,
       maxLotes: null,
       pedidosActivos,
-      maxPedidos: compradorLimits.maxPedidosActivos,
+      maxPedidos: compradorLimits.maxPedidosActivos === Infinity ? -1 : compradorLimits.maxPedidosActivos,
     };
   }
 

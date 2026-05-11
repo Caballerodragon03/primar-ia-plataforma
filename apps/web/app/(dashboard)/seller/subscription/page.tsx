@@ -34,7 +34,7 @@ export default function SellerSubscriptionPage() {
           plan: currentRes.data.data.plan,
           badge: currentRes.data.data.badge,
           lotesActivos: usageRes.data.data.lotesActivos ?? 0,
-          maxLotes: usageRes.data.data.maxLotes ?? 3,
+          maxLotes: usageRes.data.data.maxLotes ?? -1,
           hasActiveSubscription: currentRes.data.data.hasActiveSubscription,
         });
       } catch {

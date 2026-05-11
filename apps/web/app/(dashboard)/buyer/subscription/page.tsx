@@ -34,7 +34,7 @@ export default function BuyerSubscriptionPage() {
           plan: currentRes.data.data.plan,
           badge: currentRes.data.data.badge,
           pedidosActivos: usageRes.data.data.pedidosActivos ?? 0,
-          maxPedidos: usageRes.data.data.maxPedidos ?? 5,
+          maxPedidos: usageRes.data.data.maxPedidos ?? -1,
           hasActiveSubscription: currentRes.data.data.hasActiveSubscription,
         });
       } catch {
