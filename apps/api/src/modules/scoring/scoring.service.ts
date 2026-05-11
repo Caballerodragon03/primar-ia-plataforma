@@ -317,7 +317,7 @@ export class ScoringService {
     });
 
     if (count >= 3) {
-      const delta = (avg - 4) * 2;
+      const delta = (avg - 3) * 10;
       await this.applyEvent(destinatarioId, 'RATING_RECIBIDO', delta, {
         referenciaTipo: 'Valoracion',
         referenciaId: valoracionId,
