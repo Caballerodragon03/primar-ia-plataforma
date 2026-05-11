@@ -23,7 +23,7 @@ const schema = z.object({
   noCalibre: z.boolean().default(false),
   direccionRecogida: z.string().min(5, 'Introduce la dirección'),
   fechaDisponibilidad: z.string().min(1, 'Selecciona una fecha'),
-  fechaFinDisponibilidad: z.string().optional(),
+  fechaFinDisponibilidad: z.string().min(1, 'Selecciona una fecha'),
   certificaciones: z.array(z.string()).default([]),
   fotosUrls: z.array(z.string()).default([]),
   comentariosAdicionales: z.string().max(1000).optional(),
@@ -139,7 +139,7 @@ export default function PublishLotPage() {
         variedadCustom,
         publicar: publish,
         fechaDisponibilidad: new Date(values.fechaDisponibilidad).toISOString(),
-        ...(values.fechaFinDisponibilidad && { fechaFinDisponibilidad: new Date(values.fechaFinDisponibilidad).toISOString() }),
+        fechaFinDisponibilidad: new Date(values.fechaFinDisponibilidad).toISOString(),
       };
       await api.post('/lots', payload);
       router.push('/seller/lots');
@@ -289,7 +289,8 @@ export default function PublishLotPage() {
             />
             <Input
               type="date"
-              label="Available Until (optional)"
+              label="Available Until"
+              required
               {...register('fechaFinDisponibilidad')}
               error={errors.fechaFinDisponibilidad?.message}
             />
