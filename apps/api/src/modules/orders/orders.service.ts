@@ -194,8 +194,8 @@ export class OrdersService {
       geocodePedidoAsync(updated.id, finalDest);
     }
 
-    // Auto-run matching whenever order is ACTIVO (on create, publish, or any edit)
-    const isNowActive = updated.estado === 'ACTIVO';
+    // Auto-run matching whenever order is ACTIVO or PARCIALMENTE_CUBIERTO
+    const isNowActive = updated.estado === 'ACTIVO' || updated.estado === 'PARCIALMENTE_CUBIERTO';
     if (isNowActive) {
       void matchingService.runMatchingForOrder(updated.id).catch((err: unknown) =>
         console.error('[Matching] Auto-run failed for order', updated.id, err)

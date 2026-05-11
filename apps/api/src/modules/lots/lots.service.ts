@@ -177,8 +177,8 @@ export class LotsService {
       geocodeLoteAsync(updated.id, updated.direccionRecogida);
     }
 
-    // Auto-run matching whenever lot is ACTIVO (on create, publish, or any edit)
-    const isNowActive = updated.estado === 'ACTIVO';
+    // Auto-run matching whenever lot is ACTIVO or PARCIALMENTE_VENDIDO
+    const isNowActive = updated.estado === 'ACTIVO' || updated.estado === 'PARCIALMENTE_VENDIDO';
     if (isNowActive) {
       void matchingService.runMatchingForLot(updated.id).catch((err: unknown) =>
         console.error('[Matching] Auto-run failed for lot', updated.id, err)

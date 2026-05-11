@@ -366,10 +366,12 @@ export class MatchingService {
       },
     });
     if (!lote) throw new AppError('Lote no encontrado', 404);
-    if (lote.estado !== 'ACTIVO') throw new AppError('El lote debe estar ACTIVO para ejecutar matching', 400);
+    if (!['ACTIVO', 'PARCIALMENTE_VENDIDO'].includes(lote.estado)) {
+      throw new AppError('El lote debe estar ACTIVO o PARCIALMENTE_VENDIDO para ejecutar matching', 400);
+    }
 
     const pedidos = await prisma.pedido.findMany({
-      where: { estado: 'ACTIVO' },
+      where: { estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] } },
     });
 
     const matches: Match[] = [];
@@ -479,10 +481,12 @@ export class MatchingService {
   async runMatchingForOrder(pedidoId: string, sortBy?: string): Promise<Match[]> {
     const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
     if (!pedido) throw new AppError('Pedido no encontrado', 404);
-    if (pedido.estado !== 'ACTIVO') throw new AppError('El pedido debe estar ACTIVO para ejecutar matching', 400);
+    if (!['ACTIVO', 'PARCIALMENTE_CUBIERTO'].includes(pedido.estado)) {
+      throw new AppError('El pedido debe estar ACTIVO o PARCIALMENTE_CUBIERTO para ejecutar matching', 400);
+    }
 
     const lotes = await prisma.lote.findMany({
-      where: { estado: 'ACTIVO' },
+      where: { estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] } },
       include: {
         vendedor: {
           select: {
