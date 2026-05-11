@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { authController } from './auth.controller.js';
 import { validateBody } from '../../middleware/validate.middleware.js';
 import { authRateLimiter } from '../../middleware/rateLimiter.middleware.js';
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema.js';
+import { requireAuth } from '../../middleware/auth.middleware.js';
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, updateProfileSchema } from './auth.schema.js';
 
 export const authRouter = Router();
 
@@ -13,3 +14,7 @@ authRouter.post('/forgot-password', authRateLimiter, validateBody(forgotPassword
 authRouter.post('/reset-password', authRateLimiter, validateBody(resetPasswordSchema), (req, res, next) => authController.resetPassword(req, res, next));
 authRouter.post('/refresh', authRateLimiter, (req, res, next) => authController.refresh(req, res, next));
 authRouter.post('/logout', (req, res, next) => authController.logout(req, res, next));
+
+// Profile endpoints (require auth)
+authRouter.get('/profile', requireAuth, (req, res, next) => authController.getProfile(req, res, next));
+authRouter.patch('/profile', requireAuth, validateBody(updateProfileSchema), (req, res, next) => authController.updateProfile(req, res, next));

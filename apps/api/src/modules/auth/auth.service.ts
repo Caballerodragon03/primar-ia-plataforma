@@ -6,7 +6,7 @@ import { prisma } from '@primaria/database';
 import { env } from '../../config/env.js';
 import { AppError } from '../../middleware/error.middleware.js';
 import { adminService } from '../admin/admin.service.js';
-import type { RegisterInput, LoginInput, ForgotPasswordInput, ResetPasswordInput } from './auth.schema.js';
+import type { RegisterInput, LoginInput, ForgotPasswordInput, ResetPasswordInput, UpdateProfileInput } from './auth.schema.js';
 import type { JWTPayload } from '@primaria/shared';
 
 const SALT_ROUNDS = 12;
@@ -264,6 +264,51 @@ export class AuthService {
 
   async logout(token: string) {
     await prisma.refreshToken.deleteMany({ where: { token } });
+  }
+
+  async updateProfile(userId: string, data: UpdateProfileInput) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new AppError('Usuario no encontrado', 404);
+
+    // Handle password change
+    if (data.currentPassword && data.newPassword) {
+      const valid = await bcrypt.compare(data.currentPassword, user.passwordHash);
+      if (!valid) throw new AppError('Contraseña actual incorrecta', 400);
+      const passwordHash = await bcrypt.hash(data.newPassword, SALT_ROUNDS);
+      await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    }
+
+    // Handle profile field updates
+    const updateData: Record<string, unknown> = {};
+    if (data.telefono !== undefined) updateData.telefono = data.telefono;
+    if (data.idiomaPreferido !== undefined) updateData.idioma = data.idiomaPreferido;
+    if (data.preferenciasIncoterm !== undefined) updateData.preferenciasIncoterm = data.preferenciasIncoterm;
+
+    if (Object.keys(updateData).length > 0) {
+      await prisma.user.update({ where: { id: userId }, data: updateData });
+    }
+
+    return { success: true };
+  }
+
+  async getProfile(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        nombre: true,
+        apellidos: true,
+        telefono: true,
+        idioma: true,
+        role: true,
+        estado: true,
+        preferenciasIncoterm: true,
+        preferenciasNotif: true,
+      },
+    });
+    if (!user) throw new AppError('Usuario no encontrado', 404);
+    return user;
   }
 }
 

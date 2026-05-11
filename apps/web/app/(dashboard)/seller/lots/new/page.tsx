@@ -46,23 +46,33 @@ export default function PublishLotPage() {
   const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('primaria_incoterms');
-    if (stored && JSON.parse(stored).done) return;
-    // Only show wizard if the seller has never published a lot before
-    api.get('/lots?tab=all')
+    // Check DB first for incoterm preferences, then localStorage
+    api.get('/auth/profile')
       .then(({ data }) => {
-        const lots = data.data ?? [];
-        if (lots.length > 0) {
-          // Seller already has lots — skip wizard, mark as done
-          localStorage.setItem(
-            'primaria_incoterms',
-            JSON.stringify({ recommended: '', selected: [], done: true })
-          );
-        } else {
-          setShowWizard(true);
+        const prefs = data.data?.preferenciasIncoterm;
+        if (prefs && prefs.selected?.length > 0) {
+          // Already configured in DB — sync to localStorage and skip wizard
+          localStorage.setItem('primaria_incoterms', JSON.stringify({ ...prefs, done: true }));
+          return;
         }
+        // Check localStorage
+        const stored = localStorage.getItem('primaria_incoterms');
+        if (stored && JSON.parse(stored).done) return;
+        // Check if seller already has lots
+        return api.get('/lots?tab=all').then(({ data: lotsData }) => {
+          const lots = lotsData.data ?? [];
+          if (lots.length > 0) {
+            localStorage.setItem('primaria_incoterms', JSON.stringify({ recommended: '', selected: [], done: true }));
+          } else {
+            setShowWizard(true);
+          }
+        });
       })
-      .catch(() => setShowWizard(true));
+      .catch(() => {
+        const stored = localStorage.getItem('primaria_incoterms');
+        if (stored && JSON.parse(stored).done) return;
+        setShowWizard(true);
+      });
   }, []);
 
   const {
@@ -151,7 +161,17 @@ export default function PublishLotPage() {
     }
   };
 
-  if (showWizard) return <IncotermWizard onComplete={() => setShowWizard(false)} />;
+  if (showWizard) return <IncotermWizard onComplete={() => {
+    setShowWizard(false);
+    // Persist wizard results to DB
+    try {
+      const raw = localStorage.getItem('primaria_incoterms');
+      if (raw) {
+        const stored = JSON.parse(raw);
+        api.patch('/auth/profile', { preferenciasIncoterm: stored }).catch(() => {});
+      }
+    } catch { /* ignore */ }
+  }} />;
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">

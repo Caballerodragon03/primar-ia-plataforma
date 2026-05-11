@@ -209,6 +209,7 @@ model User {
   fotoPerfil              String?    @map("foto_perfil_url")
   idioma                  Idioma     @default(ES)
   preferenciasNotif       Json?      @map("preferencias_notificaciones")
+  preferenciasIncoterm   Json?      @map("preferencias_incoterm")
   loginAttempts           Int        @default(0) @map("login_attempts")
   lockedUntil             DateTime?  @map("locked_until")
   scoreFiabilidad         Decimal?   @map("score_fiabilidad") @db.Decimal(5, 2)

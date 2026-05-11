@@ -106,20 +106,44 @@ export default function SellerProfilePage() {
       fetchCertificates();
     }
     if (activeTab === 'contracts') {
-      try {
-        const raw = localStorage.getItem('primaria_incoterms');
-        if (raw) {
-          const stored: { recommended: string; selected: string[] } = JSON.parse(raw);
-          setIncotermData(stored);
-          setSelectedIncoterms(stored.selected ?? []);
-        } else {
-          setIncotermData(null);
-          setSelectedIncoterms([]);
-        }
-      } catch {
-        setIncotermData(null);
-        setSelectedIncoterms([]);
-      }
+      // Load from API first, fallback to localStorage
+      api.get('/auth/profile')
+        .then(({ data }) => {
+          const prefs = data.data?.preferenciasIncoterm as { recommended: string; selected: string[] } | null;
+          if (prefs && prefs.selected?.length > 0) {
+            setIncotermData(prefs);
+            setSelectedIncoterms(prefs.selected ?? []);
+            // Sync to localStorage
+            localStorage.setItem('primaria_incoterms', JSON.stringify({ ...prefs, done: true }));
+          } else {
+            // Fallback to localStorage (e.g. wizard just completed, not yet saved to DB)
+            try {
+              const raw = localStorage.getItem('primaria_incoterms');
+              if (raw) {
+                const stored: { recommended: string; selected: string[] } = JSON.parse(raw);
+                setIncotermData(stored);
+                setSelectedIncoterms(stored.selected ?? []);
+              } else {
+                setIncotermData(null);
+                setSelectedIncoterms([]);
+              }
+            } catch {
+              setIncotermData(null);
+              setSelectedIncoterms([]);
+            }
+          }
+        })
+        .catch(() => {
+          // Fallback to localStorage if API fails
+          try {
+            const raw = localStorage.getItem('primaria_incoterms');
+            if (raw) {
+              const stored: { recommended: string; selected: string[] } = JSON.parse(raw);
+              setIncotermData(stored);
+              setSelectedIncoterms(stored.selected ?? []);
+            }
+          } catch { /* ignore */ }
+        });
     }
   }, [activeTab, fetchCertificates]);
 
@@ -207,9 +231,20 @@ export default function SellerProfilePage() {
     }
   };
 
-  const handleSaveContracts = () => {
+  const handleSaveContracts = async () => {
     setSavingContracts(true);
     try {
+      const current = incotermData ?? { recommended: '', selected: [] };
+      const updated = { ...current, selected: selectedIncoterms };
+      // Save to DB via API
+      await api.patch('/auth/profile', { preferenciasIncoterm: updated });
+      // Also sync to localStorage
+      localStorage.setItem('primaria_incoterms', JSON.stringify({ ...updated, done: true }));
+      setIncotermData(updated);
+      setContractsSaved(true);
+      setTimeout(() => setContractsSaved(false), 3000);
+    } catch {
+      // Fallback: at least save to localStorage
       const current = incotermData ?? { recommended: '', selected: [] };
       const updated = { ...current, selected: selectedIncoterms };
       localStorage.setItem('primaria_incoterms', JSON.stringify(updated));
@@ -405,6 +440,8 @@ export default function SellerProfilePage() {
                     const stored: { recommended: string; selected: string[] } = JSON.parse(raw);
                     setIncotermData(stored);
                     setSelectedIncoterms(stored.selected ?? []);
+                    // Persist to DB immediately
+                    api.patch('/auth/profile', { preferenciasIncoterm: stored }).catch(() => {});
                   }
                 } catch { /* ignore */ }
               }} />
@@ -489,6 +526,7 @@ export default function SellerProfilePage() {
                 type="button"
                 onClick={() => {
                   localStorage.removeItem('primaria_incoterms');
+                  api.patch('/auth/profile', { preferenciasIncoterm: null }).catch(() => {});
                   setShowWizard(true);
                   setIncotermData(null);
                   setSelectedIncoterms([]);

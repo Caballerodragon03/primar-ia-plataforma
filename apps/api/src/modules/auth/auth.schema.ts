@@ -38,7 +38,20 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(12, 'Minimo 12 caracteres'),
 });
 
+export const updateProfileSchema = z.object({
+  telefono: z.string().optional(),
+  idiomaPreferido: z.enum(['ES', 'EN']).optional(),
+  currentPassword: z.string().optional(),
+  newPassword: z.string().min(12, 'Minimo 12 caracteres').optional(),
+  preferenciasIncoterm: z.object({
+    recommended: z.string(),
+    selected: z.array(z.string()),
+    done: z.boolean().optional(),
+  }).optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

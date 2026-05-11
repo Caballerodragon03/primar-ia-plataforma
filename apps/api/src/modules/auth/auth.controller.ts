@@ -112,6 +112,26 @@ export class AuthController {
       next(err);
     }
   }
+
+  async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.sub;
+      const result = await authService.updateProfile(userId, req.body);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.sub;
+      const profile = await authService.getProfile(userId);
+      res.json({ success: true, data: profile });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const authController = new AuthController();
