@@ -1,12 +1,40 @@
 {
   "Naranja": [
-    "0 – 13 (≈ 92 → 60 mm de Ø)"
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13"
   ],
   "Mandarina": [
-    "1 – 10"
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
   ],
   "Limón": [
-    "1 – 7"
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7"
   ],
   "Pomelo": [
     "0 > 170 mm",
@@ -94,7 +122,11 @@
     "75/80 mm"
   ],
   "Membrillo": [
-    "Sin calibrado estándar"
+    "50-60 mm",
+    "60-70 mm",
+    "70-80 mm",
+    "80-90 mm",
+    ">90 mm"
   ],
   "Uva de mesa": [
     "Pequeña (<14 mm)",
@@ -133,7 +165,11 @@
     "L (>18 mm)"
   ],
   "Mora": [
-    "Por peso; preferencia >8 g"
+    "S (<4 g)",
+    "M (4-6 g)",
+    "L (6-8 g)",
+    "XL (8-10 g)",
+    "XXL (>10 g)"
   ],
   "Aguacate": [
     "12",
@@ -186,10 +222,22 @@
     "II"
   ],
   "Kiwi": [
-    "Nº frutas en 3 kg: 25 (≈120 g) … 46 (≈65 g)"
+    "25",
+    "27",
+    "30",
+    "33",
+    "36",
+    "39",
+    "42",
+    "46"
   ],
   "Granada": [
-    "5 (≥95 mm) a 10 (≈65 mm)"
+    "5 (≥95 mm)",
+    "6 (85-95 mm)",
+    "7 (75-85 mm)",
+    "8 (70-75 mm)",
+    "9 (65-70 mm)",
+    "10 (≈65 mm)"
   ],
   "Caqui (Persimón)": [
     "18/20",
@@ -225,10 +273,17 @@
     "GGG (>82 mm)"
   ],
   "Tomate cherry": [
-    "<35 mm (a veces 25 mm / 25-35 mm)"
+    "15-20 mm",
+    "20-25 mm",
+    "25-30 mm",
+    "30-35 mm",
+    "35-40 mm"
   ],
   "Tomate para industria": [
-    "Por peso y contenido sólidos solubles"
+    "< 4.5 Brix",
+    "4.5-5.0 Brix",
+    "5.0-5.5 Brix",
+    "> 5.5 Brix"
   ],
   "Pepino": [
     "Corto (<15 cm)",
@@ -274,10 +329,18 @@
     "G (>500 g)"
   ],
   "Acelga": [
-    "Por peso del manojo"
+    "Manojo ~400 g",
+    "Manojo ~750 g",
+    "Manojo ~1 kg",
+    "Hoja suelta (kg)"
   ],
   "Espinaca": [
-    "Por peso del manojo"
+    "Baby (<10 cm)",
+    "Mediana (10-20 cm)",
+    "Grande (>20 cm)",
+    "Manojo ~300 g",
+    "Manojo ~500 g",
+    "A granel (kg)"
   ],
   "Brócoli": [
     "Por diámetro de pella: S (<150 g)",
