@@ -34,7 +34,7 @@ type FormValues = z.infer<typeof schema>;
 
 type Product = { id: string; nombre: string; variedades: { id: string; nombre: string }[] };
 
-type Certificate = { id: string; numeroCertificado: string; estado: string; fechaCaducidad: string };
+type Certificate = { id: string; tipo: string; estado: string; fechaExpiracion: string | null };
 
 export default function PublishLotPage() {
   const router = useRouter();
@@ -294,12 +294,12 @@ export default function PublishLotPage() {
             ) : (
               <div className="flex flex-wrap gap-2">
                 {approvedCerts.map((cert) => {
-                  const active = selectedCerts?.includes(cert.numeroCertificado);
+                  const active = selectedCerts?.includes(cert.tipo);
                   return (
                     <button
                       key={cert.id}
                       type="button"
-                      onClick={() => toggleCert(cert.numeroCertificado)}
+                      onClick={() => toggleCert(cert.tipo)}
                       className={[
                         'px-3 py-1 rounded-badge text-sm font-medium border transition-colors',
                         active
@@ -307,7 +307,7 @@ export default function PublishLotPage() {
                           : 'bg-white border-border text-text-secondary hover:border-primary',
                       ].join(' ')}
                     >
-                      {active && '✓ '}{cert.numeroCertificado}
+                      {active && '✓ '}{cert.tipo}
                     </button>
                   );
                 })}
