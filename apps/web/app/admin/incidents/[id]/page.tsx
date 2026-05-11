@@ -47,13 +47,19 @@ interface DisputeMessage {
   createdAt: string;
 }
 
+interface UserDetailResponse {
+  user: UserInfo;
+  certificados: unknown[];
+  stats: { totalLotes: number; totalPedidos: number; totalTransacciones: number };
+}
+
 interface UserInfo {
   id: string;
   nombre: string;
   apellidos: string;
   email: string;
   role: string;
-  score: number | null;
+  scoreFiabilidad: string | number | null;
   empresa?: { razonSocial: string } | null;
 }
 
@@ -73,8 +79,10 @@ const ESTADO_LABELS: Record<string, string> = {
   RESUELTA: 'Resuelta',
 };
 
-function scoreToStars(score: number | null): { stars: number; label: string } {
-  if (score === null) return { stars: 0, label: 'Nuevo' };
+function scoreToStars(raw: string | number | null): { stars: number; label: string } {
+  if (raw === null || raw === undefined) return { stars: 0, label: 'Nuevo' };
+  const score = typeof raw === 'string' ? parseFloat(raw) : raw;
+  if (isNaN(score)) return { stars: 0, label: 'Nuevo' };
   if (score >= 90) return { stars: 5, label: '5★' };
   if (score >= 75) return { stars: 4, label: '4★' };
   if (score >= 60) return { stars: 3, label: '3★' };
@@ -82,9 +90,9 @@ function scoreToStars(score: number | null): { stars: number; label: string } {
   return { stars: 1, label: '1★' };
 }
 
-function StarRating({ score }: { score: number | null }) {
+function StarRating({ score }: { score: string | number | null }) {
   const { stars, label } = scoreToStars(score);
-  if (score === null) {
+  if (score === null || score === undefined) {
     return <span className="text-xs text-gray-400 italic">Nuevo Usuario</span>;
   }
   return (
@@ -179,7 +187,7 @@ function UserCard({ user, label }: { user: UserInfo | null; label: string }) {
         <p className="text-xs text-gray-500">{user.empresa.razonSocial}</p>
       )}
       <p className="text-xs text-gray-400">{user.email}</p>
-      <StarRating score={user.score} />
+      <StarRating score={user.scoreFiabilidad} />
     </div>
   );
 }
@@ -595,11 +603,11 @@ export default function AdminIncidentDetailPage() {
       setDispute(d);
 
       const [cRes, vRes] = await Promise.all([
-        api.get<{ data: UserInfo }>(`/admin/users/${d.transaccion.compradorId}`),
-        api.get<{ data: UserInfo }>(`/admin/users/${d.transaccion.vendedorId}`),
+        api.get<{ data: UserDetailResponse }>(`/admin/users/${d.transaccion.compradorId}`),
+        api.get<{ data: UserDetailResponse }>(`/admin/users/${d.transaccion.vendedorId}`),
       ]);
-      setComprador(cRes.data.data);
-      setVendedor(vRes.data.data);
+      setComprador(cRes.data.data.user);
+      setVendedor(vRes.data.data.user);
     } catch {
       // keep whatever loaded
     } finally {
