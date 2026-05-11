@@ -51,7 +51,7 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-type Product = { id: string; nombre: string; variedades: { id: string; nombre: string }[] };
+type Product = { id: string; nombre: string; variedades: { id: string; nombre: string }[]; calibresDisponibles: string[] };
 
 export default function CreateOrderPage() {
   const router = useRouter();
@@ -87,7 +87,9 @@ export default function CreateOrderPage() {
     api.get('/products').then(({ data }) => setProducts(data.data)).catch(() => {});
   }, []);
 
-  const varieties = products.find((p) => p.id === selectedProductId)?.variedades ?? [];
+  const selectedProduct = products.find((p) => p.id === selectedProductId);
+  const varieties = selectedProduct?.variedades ?? [];
+  const calibreOptions = selectedProduct?.calibresDisponibles ?? [];
 
   const onSubmit = async (values: FormValues, publish: boolean) => {
     setIsSubmitting(true);
@@ -187,11 +189,24 @@ export default function CreateOrderPage() {
               </div>
               {fields.map((field, idx) => (
                 <div key={field.id} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-start">
-                  <Input
-                    placeholder="Caliber 20"
-                    {...register(`calibresSolicitados.${idx}.calibre`)}
-                    error={errors.calibresSolicitados?.[idx]?.calibre?.message}
-                  />
+                  {calibreOptions.length > 1 ? (
+                    <Select
+                      label=""
+                      {...register(`calibresSolicitados.${idx}.calibre`)}
+                      error={errors.calibresSolicitados?.[idx]?.calibre?.message}
+                    >
+                      <option value="">Select caliber...</option>
+                      {calibreOptions.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </Select>
+                  ) : (
+                    <Input
+                      placeholder="Caliber"
+                      {...register(`calibresSolicitados.${idx}.calibre`)}
+                      error={errors.calibresSolicitados?.[idx]?.calibre?.message}
+                    />
+                  )}
                   <Input
                     type="number"
                     step="0.01"

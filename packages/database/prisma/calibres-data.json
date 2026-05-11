@@ -1,0 +1,349 @@
+{
+  "Naranja": [
+    "0 – 13 (≈ 92 → 60 mm de Ø)"
+  ],
+  "Mandarina": [
+    "1 – 10"
+  ],
+  "Limón": [
+    "1 – 7"
+  ],
+  "Pomelo": [
+    "0 > 170 mm",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7"
+  ],
+  "Lima": [
+    "36",
+    "42",
+    "48",
+    "54",
+    "60",
+    "63"
+  ],
+  "Melocotón": [
+    "D (51-56 mm)",
+    "C (56-61)",
+    "B (61-67)",
+    "A (67-73)",
+    "AA (73-80)",
+    "AAA (80-90)",
+    "AAAA (>90)"
+  ],
+  "Nectarina": [
+    "D (51-56 mm)",
+    "C (56-61)",
+    "B (61-67)",
+    "A (67-73)",
+    "AA (73-80)",
+    "AAA (80-90)",
+    "AAAA (>90)"
+  ],
+  "Albaricoque": [
+    "AAAA ≥ 55 mm",
+    "AAA 50-55 mm",
+    "AA 45-50 mm",
+    "A 40-45 mm",
+    "B 35-40 mm",
+    "C 30-35 mm"
+  ],
+  "Ciruela": [
+    "A (<35 mm)",
+    "B (35-40)",
+    "C (40-45)",
+    "D (45-50)",
+    "E (>50 mm)"
+  ],
+  "Cereza": [
+    "20",
+    "22",
+    "24",
+    "26",
+    "28",
+    "30 mm"
+  ],
+  "Paraguayo / Platerina": [
+    "AAAA > 90 mm",
+    "AAA 80-90 mm",
+    "AA 73-80 mm",
+    "A 67-73 mm",
+    "B 61-67 mm",
+    "C 56-61 mm",
+    "D 51-56 mm"
+  ],
+  "Manzana": [
+    "60/65",
+    "65/70",
+    "70/75",
+    "75/80",
+    "80/85",
+    "85/90",
+    "90+ mm"
+  ],
+  "Pera": [
+    "50/55",
+    "55/60",
+    "60/65",
+    "65/70",
+    "70/75",
+    "75/80 mm"
+  ],
+  "Membrillo": [
+    "Sin calibrado estándar"
+  ],
+  "Uva de mesa": [
+    "Pequeña (<14 mm)",
+    "Media (14-18 mm)",
+    "Grande (>18 mm)"
+  ],
+  "Melón Piel de Sapo": [
+    "P (<2,5 kg)",
+    "M (2,5-3,5 kg)",
+    "G (3,5-4,5 kg)",
+    "GG (>4,5 kg)"
+  ],
+  "Sandía": [
+    "Mini (<3 kg)",
+    "Estándar (3-6 kg)",
+    "Grande (>6 kg)"
+  ],
+  "Fresa": [
+    "25",
+    "30",
+    "35",
+    "38",
+    "40",
+    "45",
+    "50",
+    "55 mm"
+  ],
+  "Frambuesa": [
+    "S (≤3 g)",
+    "M (3-6 g)",
+    "XL (≥6 g)"
+  ],
+  "Arándano": [
+    "S (<14 mm)",
+    "M (14-18 mm)",
+    "L (>18 mm)"
+  ],
+  "Mora": [
+    "Por peso; preferencia >8 g"
+  ],
+  "Aguacate": [
+    "12",
+    "14",
+    "16",
+    "18",
+    "20",
+    "22",
+    "24",
+    "26",
+    "28",
+    "30",
+    "32"
+  ],
+  "Mango": [
+    "A (200-350 g)",
+    "B (351-550 g)",
+    "C (551-800 g)"
+  ],
+  "Papaya": [
+    "A (200-300 g)",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "J (≥2001 g)"
+  ],
+  "Piña": [
+    "5 (2000-2400 g)",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10 (1100-1200 g)"
+  ],
+  "Chirimoya": [
+    "M (200-300 g)",
+    "G (>300 g)"
+  ],
+  "Pitaya (fruta del dragón)": [
+    "Roja 400-500 g",
+    "Amarilla 150-250 g",
+    "Mini <300 g"
+  ],
+  "Plátano": [
+    "Extra (>22 cm, >32 mm Ø)",
+    "I (≥14 cm, ≥27 mm)",
+    "II"
+  ],
+  "Kiwi": [
+    "Nº frutas en 3 kg: 25 (≈120 g) … 46 (≈65 g)"
+  ],
+  "Granada": [
+    "5 (≥95 mm) a 10 (≈65 mm)"
+  ],
+  "Caqui (Persimón)": [
+    "18/20",
+    "20/22",
+    "22/24",
+    "24/26"
+  ],
+  "Níspero": [
+    "GGG ≥53 mm",
+    "GG 46-53 mm",
+    "G 39-46 mm",
+    "M 32-39 mm",
+    "P 25-32 mm"
+  ],
+  "Higo / Breva": [
+    "S (<40 mm)",
+    "M (40-50 mm)",
+    "L (50-55 mm)",
+    "XL (>55 mm)"
+  ],
+  "Castaña": [
+    "XS (<60/kg)",
+    "S (60-70)",
+    "M (70-90)",
+    "L (>90)"
+  ],
+  "Tomate redondo": [
+    "P (35-40 mm)",
+    "MM (40-47)",
+    "M (47-57)",
+    "G (57-67)",
+    "GG (67-82)",
+    "GGG (>82 mm)"
+  ],
+  "Tomate cherry": [
+    "<35 mm (a veces 25 mm / 25-35 mm)"
+  ],
+  "Tomate para industria": [
+    "Por peso y contenido sólidos solubles"
+  ],
+  "Pepino": [
+    "Corto (<15 cm)",
+    "Medio (15-18 cm)",
+    "Largo (18-21 cm)",
+    "Extra (>21 cm)"
+  ],
+  "Pimiento verde": [
+    "P (<150 g)",
+    "M (150-250 g)",
+    "G (>250 g)"
+  ],
+  "Berenjena": [
+    "Pequeña (<200 g)",
+    "Mediana (200-300 g)",
+    "Grande (>300 g)"
+  ],
+  "Calabacín": [
+    "S (<150 g)",
+    "M (150-250 g)",
+    "G (>250 g)"
+  ],
+  "Calabaza": [
+    "Por peso: P (<1,5 kg)",
+    "M (1,5-3 kg)",
+    "G (3-5 kg)",
+    "GG (>5 kg)"
+  ],
+  "Zanahoria": [
+    "S (<20 mm Ø)",
+    "M (20-30)",
+    "L (30-40)",
+    "XL (>40 mm)"
+  ],
+  "Lechuga": [
+    "Baby (<400 g)",
+    "Normal (400-600 g)",
+    "XL (>600 g)"
+  ],
+  "Escarola": [
+    "Baby (<300 g)",
+    "M (300-500 g)",
+    "G (>500 g)"
+  ],
+  "Acelga": [
+    "Por peso del manojo"
+  ],
+  "Espinaca": [
+    "Por peso del manojo"
+  ],
+  "Brócoli": [
+    "Por diámetro de pella: S (<150 g)",
+    "M (150-300 g)",
+    "G (>300 g)"
+  ],
+  "Coliflor": [
+    "S (<500 g)",
+    "M (500-800 g)",
+    "G (800-1200 g)",
+    "XL (>1200 g)"
+  ],
+  "Repollo / Col": [
+    "P (<800 g)",
+    "M (800-1500 g)",
+    "G (>1500 g)"
+  ],
+  "Cebolla": [
+    "S (<60 mm)",
+    "M (60-80 mm)",
+    "G (80-100 mm)",
+    "XL (>100 mm)"
+  ],
+  "Ajo": [
+    "S (30-40 mm)",
+    "M (40-50 mm)",
+    "G (50-60 mm)",
+    "XL (>60 mm)"
+  ],
+  "Puerro": [
+    "Por diámetro: S (<12 mm)",
+    "M (12-16 mm)",
+    "G (>16 mm)"
+  ],
+  "Patata": [
+    "S (<35 mm)",
+    "M (35-55 mm)",
+    "G (55-75 mm)",
+    "XL (>75 mm)"
+  ],
+  "Boniato": [
+    "Por peso: P (<300 g)",
+    "M (300-600 g)",
+    "G (>600 g)"
+  ],
+  "Espárrago verde": [
+    "Fino (<6 mm)",
+    "M (6-10 mm)",
+    "G (10-16 mm)",
+    "Extra (>16 mm)"
+  ],
+  "Alcachofa": [
+    "S (<250 g)",
+    "M (250-350 g)",
+    "G (350-500 g)",
+    "XL (>500 g)"
+  ],
+  "Judía verde": [
+    "Fina (<6 mm)",
+    "Media (6-9 mm)",
+    "Gruesa (>9 mm)"
+  ],
+  "Setas / Champiñón": [
+    "S (<35 mm)",
+    "M (35-50 mm)",
+    "G (50-65 mm)",
+    "XL (>65 mm)"
+  ]
+}

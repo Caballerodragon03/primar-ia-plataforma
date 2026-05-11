@@ -32,7 +32,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-type Product = { id: string; nombre: string; variedades: { id: string; nombre: string }[] };
+type Product = { id: string; nombre: string; variedades: { id: string; nombre: string }[]; calibresDisponibles: string[] };
 
 type Certificate = { id: string; tipo: string; estado: string; fechaExpiracion: string | null };
 
@@ -98,7 +98,9 @@ export default function PublishLotPage() {
     }).catch(() => {});
   }, []);
 
-  const varieties = products.find((p) => p.id === selectedProductId)?.variedades ?? [];
+  const selectedProduct = products.find((p) => p.id === selectedProductId);
+  const varieties = selectedProduct?.variedades ?? [];
+  const calibreOptions = selectedProduct?.calibresDisponibles ?? [];
 
   const toggleCert = (cert: string) => {
     const current = selectedCerts ?? [];
@@ -215,11 +217,24 @@ export default function PublishLotPage() {
                 </div>
                 {fields.map((field, idx) => (
                   <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-start">
-                    <Input
-                      placeholder="e.g. 70/80 mm"
-                      {...register(`calibres.${idx}.calibre`)}
-                      error={errors.calibres?.[idx]?.calibre?.message}
-                    />
+                    {calibreOptions.length > 1 ? (
+                      <Select
+                        label=""
+                        {...register(`calibres.${idx}.calibre`)}
+                        error={errors.calibres?.[idx]?.calibre?.message}
+                      >
+                        <option value="">Select caliber...</option>
+                        {calibreOptions.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </Select>
+                    ) : (
+                      <Input
+                        placeholder="e.g. 70/80 mm"
+                        {...register(`calibres.${idx}.calibre`)}
+                        error={errors.calibres?.[idx]?.calibre?.message}
+                      />
+                    )}
                     <Input
                       type="number"
                       step="0.01"

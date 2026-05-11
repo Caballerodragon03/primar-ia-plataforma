@@ -5,13 +5,32 @@ import path from 'path';
 
 export const productsRouter = Router();
 
+// Load calibres data once at startup
+let calibresMap: Record<string, string[]> = {};
+(() => {
+  const candidates = [
+    path.resolve(process.cwd(), '../../packages/database/prisma/calibres-data.json'),
+    path.resolve(process.cwd(), 'packages/database/prisma/calibres-data.json'),
+    path.resolve(__dirname, '../../../../../packages/database/prisma/calibres-data.json'),
+    path.resolve(__dirname, '../../../../packages/database/prisma/calibres-data.json'),
+  ];
+  const filePath = candidates.find((p) => fs.existsSync(p));
+  if (filePath) {
+    calibresMap = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  }
+})();
+
 productsRouter.get('/', async (_req, res) => {
   const products = await prisma.producto.findMany({
     where: { activo: true },
     include: { variedades: true },
     orderBy: { nombre: 'asc' },
   });
-  res.json({ success: true, data: products });
+  const data = products.map((p) => ({
+    ...p,
+    calibresDisponibles: calibresMap[p.nombre] ?? [],
+  }));
+  res.json({ success: true, data });
 });
 
 productsRouter.get('/calendar', (_req, res) => {
