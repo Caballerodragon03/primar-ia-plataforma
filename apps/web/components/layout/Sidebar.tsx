@@ -14,6 +14,7 @@ import {
   CreditCard,
   Sprout,
   AlertTriangle,
+  LineChart,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
@@ -50,6 +51,7 @@ const BUYER_NAV: NavItem[] = [
   },
   { label: 'Disputes', href: '/buyer/disputes', icon: AlertTriangle },
   { label: 'Analytics', href: '/buyer/analytics', icon: BarChart3 },
+  { label: 'Mercado', href: '/buyer/mercado', icon: LineChart },
   { label: 'Suscripción', href: '/buyer/subscription', icon: CreditCard },
   { label: 'Profile', href: '/buyer/profile', icon: UserCircle },
 ];
@@ -76,6 +78,7 @@ const SELLER_NAV: NavItem[] = [
   },
   { label: 'Disputes', href: '/seller/disputes', icon: AlertTriangle },
   { label: 'Analytics', href: '/seller/analytics', icon: BarChart3 },
+  { label: 'Mercado', href: '/seller/mercado', icon: LineChart },
   { label: 'Cosecha', href: '/seller/harvest-estimation', icon: Sprout },
   { label: 'Suscripción', href: '/seller/subscription', icon: CreditCard },
   { label: 'Profile', href: '/seller/profile', icon: UserCircle },
