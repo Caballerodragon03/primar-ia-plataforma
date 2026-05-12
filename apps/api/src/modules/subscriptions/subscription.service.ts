@@ -285,6 +285,23 @@ export class SubscriptionService {
     });
   }
 
+  // ─── Match visibility unhide ─────────────────────────────────────────────
+
+  /**
+   * Recompute match `visibleDesde` for a user after they upgrade to a paid
+   * plan. Dynamically imports matching.service to avoid a circular dep.
+   * Logs failures but never throws (this is a side-effect of subscription
+   * change and shouldn't break the main flow).
+   */
+  async unhideMatchesForUser(userId: string): Promise<void> {
+    try {
+      const { matchingService } = await import('../matching/matching.service.js');
+      await matchingService.recomputeMatchVisibilityForUser(userId);
+    } catch (err) {
+      console.error('[subscription] unhideMatchesForUser failed:', err);
+    }
+  }
+
   // ─── Webhook handler ─────────────────────────────────────────────────────
 
   async handleSubscriptionWebhook(event: Stripe.Event): Promise<void> {
@@ -327,6 +344,11 @@ export class SubscriptionService {
               : { planComprador: plan as CompradorPlan, planVendedor: null }),
           },
         });
+
+        // User just upgraded to a paid plan → unhide any previously-delayed
+        // matches where they were the bottleneck (fire-and-forget; failures
+        // don't roll back the upgrade).
+        void this.unhideMatchesForUser(userId);
         break;
       }
 
@@ -343,6 +365,9 @@ export class SubscriptionService {
           : sub.status === 'paused' ? 'PAUSADA'
           : 'ACTIVA';
 
+        const wasInactive = dbSub.estado !== 'ACTIVA' && dbSub.estado !== 'TRIAL';
+        const nowActive = estado === 'ACTIVA' || estado === 'TRIAL';
+
         await prisma.suscripcion.update({
           where: { stripeSubscriptionId: sub.id },
           data: {
@@ -351,6 +376,11 @@ export class SubscriptionService {
             fechaFin: sub.current_period_end ? new Date(sub.current_period_end * 1000) : null,
           },
         });
+
+        // Transitioned to ACTIVA/TRIAL → unhide their delayed matches
+        if (wasInactive && nowActive) {
+          void this.unhideMatchesForUser(dbSub.userId);
+        }
         break;
       }
 

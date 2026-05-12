@@ -1,5 +1,5 @@
 import { prisma } from '@primaria/database';
-import type { Lote, Pedido, Match, LoteEstado, TransaccionEstado } from '@primaria/database';
+import type { Lote, Pedido, Match, LoteEstado, TransaccionEstado, MatchEstado } from '@primaria/database';
 import { AppError } from '../../middleware/error.middleware.js';
 import type { ContributeInput } from './matching.schema.js';
 import { sendMatchProposalEmail } from '../../shared/emails/transactional.js';
@@ -235,6 +235,110 @@ async function getMatchDelayMs(vendedorId: string, compradorId: string): Promise
 }
 
 /**
+ * Returns capacity-holding match states. These are matches that have already
+ * "reserved" inventory and must be subtracted from available stock when
+ * proposing new matches.
+ */
+const CAPACITY_HOLDING_ESTADOS: MatchEstado[] = ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'];
+
+interface MatchCalibresJsonEntry {
+  calibre: string;
+  cantidad_kg: number;
+  precio_kg?: number;
+  precio_min_kg?: number;
+}
+
+function sumCommittedPerCalibre(rawMatches: Array<{ calibresJson: unknown }>): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const m of rawMatches) {
+    const arr = (m.calibresJson as MatchCalibresJsonEntry[]) ?? [];
+    for (const c of arr) {
+      out.set(c.calibre, (out.get(c.calibre) ?? 0) + Number(c.cantidad_kg ?? 0));
+    }
+  }
+  return out;
+}
+
+/**
+ * Clamps the proposed match calibres to what's actually available on BOTH sides:
+ *   matched_kg(calibre) = min(
+ *     lote_calibre_kg  - already_committed_from_lote(calibre),
+ *     pedido_calibre_kg - already_committed_from_pedido(calibre),
+ *   )
+ *
+ * Returns the clamped list (calibres with 0 kg removed) and the resulting
+ * total. Excludes the current (loteId, pedidoId) pair from commitment sums
+ * so re-runs don't double-count the match being upserted.
+ */
+async function computeClampedMatchCalibres(
+  loteId: string,
+  loteCalibres: ReturnType<typeof toLoteCalibre>,
+  pedidoId: string,
+  pedidoCalibres: ReturnType<typeof toPedidoCalibre>,
+): Promise<{ calibres: ReturnType<typeof toLoteCalibre>; total: number }> {
+  // What this lote has already promised in other active matches
+  const loteCommittedMatches = await prisma.match.findMany({
+    where: {
+      loteId,
+      pedidoId: { not: pedidoId },
+      estado: { in: CAPACITY_HOLDING_ESTADOS },
+    },
+    select: { calibresJson: true },
+  });
+  const loteCommitted = sumCommittedPerCalibre(loteCommittedMatches);
+
+  // What this pedido has already covered from other active matches
+  const pedidoCommittedMatches = await prisma.match.findMany({
+    where: {
+      pedidoId,
+      loteId: { not: loteId },
+      estado: { in: CAPACITY_HOLDING_ESTADOS },
+    },
+    select: { calibresJson: true },
+  });
+  const pedidoCommitted = sumCommittedPerCalibre(pedidoCommittedMatches);
+
+  // Uncalibrated: treat the lot as a single bucket, clamp to total buyer
+  // remaining capacity across all calibres.
+  if (isUncalibratedLot(loteCalibres)) {
+    const loteTotal = loteCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
+    const loteUsed = Array.from(loteCommitted.values()).reduce((s, v) => s + v, 0);
+    const loteRemaining = Math.max(0, loteTotal - loteUsed);
+
+    const pedidoTotal = pedidoCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
+    const pedidoUsed = Array.from(pedidoCommitted.values()).reduce((s, v) => s + v, 0);
+    const pedidoRemaining = Math.max(0, pedidoTotal - pedidoUsed);
+
+    const matched = Math.min(loteRemaining, pedidoRemaining);
+    if (matched <= 0) return { calibres: [], total: 0 };
+    const first = loteCalibres[0];
+    if (!first) return { calibres: [], total: 0 };
+    return {
+      calibres: [{ ...first, cantidad_kg: matched }],
+      total: matched,
+    };
+  }
+
+  // Calibrated: per-calibre clamping
+  const clamped: ReturnType<typeof toLoteCalibre> = [];
+  for (const lc of loteCalibres) {
+    const pc = pedidoCalibres.find((p) => p.calibre === lc.calibre);
+    if (!pc) continue;
+    if (lc.precio_min_kg > pc.precio_max_kg) continue; // price doesn't fit
+
+    const loteRem = Math.max(0, lc.cantidad_kg - (loteCommitted.get(lc.calibre) ?? 0));
+    const pedidoRem = Math.max(0, pc.cantidad_kg - (pedidoCommitted.get(lc.calibre) ?? 0));
+    const matched = Math.min(loteRem, pedidoRem);
+    if (matched <= 0) continue;
+
+    clamped.push({ ...lc, cantidad_kg: matched });
+  }
+
+  const total = clamped.reduce((s, c) => s + c.cantidad_kg, 0);
+  return { calibres: clamped, total };
+}
+
+/**
  * Score compuesto con los 7 componentes ponderados.
  */
 async function computeScore(
@@ -401,12 +505,19 @@ export class MatchingService {
       const loteCalibres = toLoteCalibre(lote.calibres);
       const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
 
-      const calibresIniciales = isUncalibratedLot(loteCalibres)
-        ? loteCalibres
-        : loteCalibres.filter((lc) =>
-            pedidoCalibres.some((pc) => pc.calibre === lc.calibre && lc.precio_min_kg <= pc.precio_max_kg)
-          );
-      const cantidadKg = calibresIniciales.reduce((s, c) => s + c.cantidad_kg, 0);
+      // Clamp to the actual remaining capacity on both sides (subtract
+      // existing active matches so we don't oversell the lot or over-cover
+      // the pedido). If nothing is left to match, skip this pair entirely.
+      const clamped = await computeClampedMatchCalibres(
+        loteId,
+        loteCalibres,
+        pedido.id,
+        pedidoCalibres,
+      );
+      const calibresIniciales = clamped.calibres;
+      const cantidadKg = clamped.total;
+      if (cantidadKg <= 0) continue;
+
       // Use buyer's offered price (precio_max_kg) as the match price
       let precioKg = 0;
       if (cantidadKg > 0) {
@@ -551,12 +662,17 @@ export class MatchingService {
       const loteCalibres = toLoteCalibre(lote.calibres);
       const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
 
-      const calibresIniciales = isUncalibratedLot(loteCalibres)
-        ? loteCalibres
-        : loteCalibres.filter((lc) =>
-            pedidoCalibres.some((pc) => pc.calibre === lc.calibre && lc.precio_min_kg <= pc.precio_max_kg)
-          );
-      const cantidadKg = calibresIniciales.reduce((s, c) => s + c.cantidad_kg, 0);
+      // Clamp to actual remaining capacity (see helper for details)
+      const clamped = await computeClampedMatchCalibres(
+        lote.id,
+        loteCalibres,
+        pedidoId,
+        pedidoCalibres,
+      );
+      const calibresIniciales = clamped.calibres;
+      const cantidadKg = clamped.total;
+      if (cantidadKg <= 0) continue;
+
       // Use buyer's offered price (precio_max_kg) as the match price
       let precioKg = 0;
       if (cantidadKg > 0) {
@@ -1367,6 +1483,289 @@ export class MatchingService {
       where: { id: lotId },
       data: { estado: 'CANCELADO' },
     });
+  }
+
+  /**
+   * Recomputes `visibleDesde` for every active match where the user is either
+   * the seller (lote.vendedorId) or the buyer (pedido.compradorId).
+   *
+   * Called after a subscription estado/plan change so that:
+   *   - Free → Paid: matches that were delayed 24h become visible immediately
+   *     IF the counterparty is also paid (max-of-both rule still applies).
+   *   - Paid → Free: existing matches keep their original visibleDesde (we
+   *     don't retro-delay matches that were already shown — that would be
+   *     a worse UX than instantly hiding them).
+   *
+   * Idempotent: only writes when the new visibleDesde differs from the
+   * stored one.
+   */
+  async recomputeMatchVisibilityForUser(userId: string): Promise<{ updated: number }> {
+    // Pull all active matches touching this user, in both directions.
+    const matches = await prisma.match.findMany({
+      where: {
+        estado: { in: ['PROPUESTO', 'ENVIADO_VENDEDOR', 'ACEPTADO_VENDEDOR'] },
+        OR: [
+          { lote: { vendedorId: userId } },
+          { pedido: { compradorId: userId } },
+        ],
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        visibleDesde: true,
+        lote: { select: { vendedorId: true } },
+        pedido: { select: { compradorId: true } },
+      },
+    });
+
+    if (matches.length === 0) return { updated: 0 };
+
+    // Group by (vendedorId, compradorId) so we minimize delay lookups
+    // (one delay calc per unique pair, not per match).
+    const delayCache = new Map<string, number>();
+    let updated = 0;
+
+    for (const m of matches) {
+      const key = `${m.lote.vendedorId}|${m.pedido.compradorId}`;
+      let delay = delayCache.get(key);
+      if (delay === undefined) {
+        delay = await getMatchDelayMs(m.lote.vendedorId, m.pedido.compradorId);
+        delayCache.set(key, delay);
+      }
+
+      const newVisibleDesde = new Date(m.createdAt.getTime() + delay);
+
+      // Only retro-update if the new visibility is EARLIER than the stored one.
+      // (We never retro-hide a match that was already visible.)
+      if (newVisibleDesde.getTime() < m.visibleDesde.getTime()) {
+        await prisma.match.update({
+          where: { id: m.id },
+          data: { visibleDesde: newVisibleDesde },
+        });
+        updated++;
+      }
+    }
+
+    if (updated > 0) {
+      console.log(`[matching] Recomputed visibility for user ${userId}: ${updated} match(es) now visible earlier`);
+    }
+    return { updated };
+  }
+
+  /**
+   * Auto-distribute preview for a seller.
+   *
+   * Returns a per-lot greedy allocation of pending PROPUESTO/ENVIADO_VENDEDOR
+   * matches, ranked by total order revenue (highest first), respecting:
+   *   - Remaining lot capacity per calibre (subtracts existing ACEPTADO/
+   *     PENDIENTE/CONFIRMADO matches that already hold inventory)
+   *   - Each order's remaining demand per calibre (subtracts what the
+   *     order has already covered from other matches)
+   *   - Price fit (lote.precio_min_kg <= pedido.precio_max_kg)
+   *
+   * The frontend renders this as an editable preview. On confirm, the
+   * client fires individual /contribute calls — this endpoint only
+   * computes; it doesn't mutate.
+   */
+  async getAutoDistributePreview(vendedorId: string): Promise<{
+    lots: Array<{
+      loteId: string;
+      productoNombre: string;
+      totalLoteKg: number;
+      remainingKg: number;
+      allocations: Array<{
+        matchId: string;
+        pedidoId: string;
+        pedidoIdShort: string;
+        compradorNombre: string;
+        compradorEmpresa: string | null;
+        calibres: Array<{ calibre: string; cantidad_kg: number; precio_kg: number; max_kg: number }>;
+        totalKg: number;
+        totalRevenue: number;
+        avgPrecioKg: number;
+      }>;
+    }>;
+  }> {
+    // 1) Pull all pending matches for this seller's lots
+    const pending = await prisma.match.findMany({
+      where: {
+        lote: { vendedorId, estado: { not: 'VENDIDO' } },
+        pedido: { estado: { notIn: ['TOTALMENTE_CUBIERTO', 'CANCELADO', 'CERRADO'] } },
+        estado: { in: ['PROPUESTO', 'ENVIADO_VENDEDOR'] },
+        visibleDesde: { lte: new Date() },
+      },
+      include: {
+        lote: {
+          select: {
+            id: true,
+            calibres: true,
+            producto: { select: { nombre: true } },
+          },
+        },
+        pedido: {
+          select: {
+            id: true,
+            calibresSolicitados: true,
+            comprador: {
+              select: {
+                nombre: true,
+                apellidos: true,
+                empresa: { select: { razonSocial: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (pending.length === 0) return { lots: [] };
+
+    // 2) Pre-compute per-lot committed (other active matches not in the pending set)
+    //    and per-pedido covered, so we know remaining capacity.
+    const loteIds = [...new Set(pending.map((m) => m.lote.id))];
+    const pedidoIds = [...new Set(pending.map((m) => m.pedido.id))];
+
+    const lotCommitments = await prisma.match.findMany({
+      where: {
+        loteId: { in: loteIds },
+        estado: { in: CAPACITY_HOLDING_ESTADOS },
+      },
+      select: { loteId: true, calibresJson: true },
+    });
+    const lotCommittedByCalibre = new Map<string, Map<string, number>>();
+    for (const m of lotCommitments) {
+      const map = lotCommittedByCalibre.get(m.loteId) ?? new Map<string, number>();
+      const arr = (m.calibresJson as unknown as MatchCalibresJsonEntry[]) ?? [];
+      for (const c of arr) {
+        map.set(c.calibre, (map.get(c.calibre) ?? 0) + Number(c.cantidad_kg ?? 0));
+      }
+      lotCommittedByCalibre.set(m.loteId, map);
+    }
+
+    const pedidoCommitments = await prisma.match.findMany({
+      where: {
+        pedidoId: { in: pedidoIds },
+        estado: { in: CAPACITY_HOLDING_ESTADOS },
+      },
+      select: { pedidoId: true, calibresJson: true },
+    });
+    const pedidoCommittedByCalibre = new Map<string, Map<string, number>>();
+    for (const m of pedidoCommitments) {
+      const map = pedidoCommittedByCalibre.get(m.pedidoId) ?? new Map<string, number>();
+      const arr = (m.calibresJson as unknown as MatchCalibresJsonEntry[]) ?? [];
+      for (const c of arr) {
+        map.set(c.calibre, (map.get(c.calibre) ?? 0) + Number(c.cantidad_kg ?? 0));
+      }
+      pedidoCommittedByCalibre.set(m.pedidoId, map);
+    }
+
+    // 3) Group pending matches by lote
+    const byLote = new Map<string, typeof pending>();
+    for (const m of pending) {
+      const arr = byLote.get(m.lote.id) ?? [];
+      arr.push(m);
+      byLote.set(m.lote.id, arr);
+    }
+
+    const result: Awaited<ReturnType<MatchingService['getAutoDistributePreview']>>['lots'] = [];
+
+    for (const [loteId, lotMatches] of byLote) {
+      const firstMatch = lotMatches[0];
+      if (!firstMatch) continue;
+      const loteCalibres = toLoteCalibre(firstMatch.lote.calibres);
+      const loteCommitted = lotCommittedByCalibre.get(loteId) ?? new Map();
+      const remainingByCalibre = new Map<string, number>();
+      let totalLoteKg = 0;
+      for (const lc of loteCalibres) {
+        totalLoteKg += lc.cantidad_kg;
+        remainingByCalibre.set(lc.calibre, Math.max(0, lc.cantidad_kg - (loteCommitted.get(lc.calibre) ?? 0)));
+      }
+
+      // 4) Score each candidate match by its potential revenue
+      const candidates = lotMatches.map((m) => {
+        const pedidoCalibres = toPedidoCalibre(m.pedido.calibresSolicitados);
+        const pedidoCommitted = pedidoCommittedByCalibre.get(m.pedido.id) ?? new Map();
+        // For each compatible calibre, what kg COULD this match take and what's the revenue?
+        const lines: Array<{ calibre: string; max_kg: number; precio_kg: number }> = [];
+        let potentialRevenue = 0;
+        for (const lc of loteCalibres) {
+          const pc = pedidoCalibres.find((p) => p.calibre === lc.calibre);
+          if (!pc) continue;
+          if (lc.precio_min_kg > pc.precio_max_kg) continue; // price doesn't fit
+          const lotRem = remainingByCalibre.get(lc.calibre) ?? 0;
+          const pedidoRem = Math.max(0, pc.cantidad_kg - (pedidoCommitted.get(lc.calibre) ?? 0));
+          const max_kg = Math.min(lotRem, pedidoRem);
+          if (max_kg <= 0) continue;
+          lines.push({ calibre: lc.calibre, max_kg, precio_kg: pc.precio_max_kg });
+          potentialRevenue += max_kg * pc.precio_max_kg;
+        }
+        return { match: m, lines, potentialRevenue };
+      })
+      .filter((c) => c.lines.length > 0)
+      .sort((a, b) => b.potentialRevenue - a.potentialRevenue);
+
+      // 5) Greedy allocate top-down, decrementing remainingByCalibre as we go
+      const allocations: Array<{
+        matchId: string;
+        pedidoId: string;
+        pedidoIdShort: string;
+        compradorNombre: string;
+        compradorEmpresa: string | null;
+        calibres: Array<{ calibre: string; cantidad_kg: number; precio_kg: number; max_kg: number }>;
+        totalKg: number;
+        totalRevenue: number;
+        avgPrecioKg: number;
+      }> = [];
+
+      for (const c of candidates) {
+        const allocCalibres: Array<{ calibre: string; cantidad_kg: number; precio_kg: number; max_kg: number }> = [];
+        let allocTotalKg = 0;
+        let allocRevenue = 0;
+        for (const line of c.lines) {
+          const lotRem = remainingByCalibre.get(line.calibre) ?? 0;
+          if (lotRem <= 0) continue;
+          const take = Math.min(line.max_kg, lotRem);
+          if (take <= 0) continue;
+          allocCalibres.push({
+            calibre: line.calibre,
+            cantidad_kg: Math.round(take * 100) / 100,
+            precio_kg: line.precio_kg,
+            max_kg: line.max_kg,
+          });
+          allocTotalKg += take;
+          allocRevenue += take * line.precio_kg;
+          remainingByCalibre.set(line.calibre, lotRem - take);
+        }
+        if (allocCalibres.length === 0) continue;
+
+        const comp = c.match.pedido.comprador;
+        allocations.push({
+          matchId: c.match.id,
+          pedidoId: c.match.pedido.id,
+          pedidoIdShort: c.match.pedido.id.slice(-5).toUpperCase(),
+          compradorNombre: `${comp.nombre} ${comp.apellidos}`.trim(),
+          compradorEmpresa: comp.empresa?.razonSocial ?? null,
+          calibres: allocCalibres,
+          totalKg: Math.round(allocTotalKg * 100) / 100,
+          totalRevenue: Math.round(allocRevenue * 100) / 100,
+          avgPrecioKg: allocTotalKg > 0 ? Math.round((allocRevenue / allocTotalKg) * 1000) / 1000 : 0,
+        });
+      }
+
+      if (allocations.length === 0) continue;
+
+      const remainingKg = Array.from(remainingByCalibre.values()).reduce((s, v) => s + v, 0);
+
+      result.push({
+        loteId,
+        productoNombre: firstMatch.lote.producto?.nombre ?? '—',
+        totalLoteKg: Math.round(totalLoteKg * 100) / 100,
+        remainingKg: Math.round(remainingKg * 100) / 100,
+        allocations,
+      });
+    }
+
+    return { lots: result };
   }
 }
 

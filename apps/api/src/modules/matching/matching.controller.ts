@@ -72,6 +72,18 @@ export async function listLotMatches(req: Request, res: Response): Promise<void>
 }
 
 /**
+ * GET /api/v1/matching/seller/auto-distribute-preview
+ * Returns the greedy-by-revenue allocation preview for all pending matches
+ * across the seller's lots. Read-only; the actual accept happens client-side
+ * via /matches/:matchId/contribute.
+ */
+export async function getAutoDistributePreview(req: Request, res: Response): Promise<void> {
+  const vendedorId = req.user!.sub;
+  const preview = await matchingService.getAutoDistributePreview(vendedorId);
+  res.json({ success: true, data: preview });
+}
+
+/**
  * GET /api/v1/matching/notifications/summary
  * Returns notification counts for the logged-in user (buyer or seller).
  */

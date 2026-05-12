@@ -8,6 +8,7 @@ import {
   listSellerMatches,
   listLotMatches,
   contributeToOrder,
+  getAutoDistributePreview,
   getNotificationsSummary,
   getPendingTasksList,
   extendOrderDeadline,
@@ -35,6 +36,13 @@ matchingRouter.get(
   '/seller/matches',
   requireRole('VENDEDOR'),
   asyncHandler(listSellerMatches)
+);
+
+// Auto-distribute preview (greedy by revenue, per-calibre capacity-aware)
+matchingRouter.get(
+  '/seller/auto-distribute-preview',
+  requireRole('VENDEDOR'),
+  asyncHandler(getAutoDistributePreview)
 );
 
 // Market demand: calibres buyers are currently requesting for products the seller has lots for

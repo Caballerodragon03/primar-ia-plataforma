@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { MatchCard, type Match } from '@/components/ui/MatchCard';
 import { ContributeModal } from '@/components/ui/ContributeModal';
+import { AutoDistributeModal } from '@/components/ui/AutoDistributeModal';
 
 type Tab = 'best' | 'price' | 'distance' | 'newest';
 
@@ -95,6 +96,7 @@ export default function SellerMatchesPage() {
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [reservingAll, setReservingAll] = useState(false);
+  const [autoDistOpen, setAutoDistOpen] = useState(false);
   const [incotermPrefs, setIncotermPrefs] = useState<IncotermPrefs | null>(null);
   const [incotermFilter, setIncotermFilter] = useState<Set<string>>(new Set());
   const [showIncotermFilter, setShowIncotermFilter] = useState(false);
@@ -330,10 +332,9 @@ export default function SellerMatchesPage() {
           <Button
             variant="primary"
             size="sm"
-            onClick={handleReserveAll}
-            disabled={reservingAll}
+            onClick={() => setAutoDistOpen(true)}
           >
-            {reservingAll ? 'Reserving...' : 'Review & Reserve All'}
+            Revisar y aceptar
           </Button>
         </div>
       )}
@@ -433,6 +434,13 @@ export default function SellerMatchesPage() {
         isOpen={modalOpen}
         onClose={handleModalClose}
         onSuccess={handleModalSuccess}
+      />
+
+      {/* Auto-distribute modal */}
+      <AutoDistributeModal
+        open={autoDistOpen}
+        onClose={() => setAutoDistOpen(false)}
+        onSuccess={() => fetchMatches()}
       />
     </div>
   );
