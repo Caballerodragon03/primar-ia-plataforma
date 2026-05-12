@@ -17,6 +17,7 @@ interface PriceAgg {
   maxPrice: number;
   totalKg: number;
   numTransacciones: number;
+  deltaPct: number | null;
 }
 
 export class MarketService {
@@ -24,6 +25,8 @@ export class MarketService {
 
   async getAveragePrices(daysWindow = 30): Promise<PriceAgg[]> {
     const since = new Date(Date.now() - daysWindow * 24 * 60 * 60 * 1000);
+    // For % delta: compare last 7 days vs prior baseline within the window
+    const recentCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     // Aggregate from confirmed transactions only (best signal of real market price)
     const rows = await prisma.$queryRaw<
@@ -35,6 +38,8 @@ export class MarketService {
         max_price: number;
         total_kg: number;
         num_transacciones: bigint;
+        avg_recent: number | null;
+        avg_prior: number | null;
       }>
     >`
       SELECT
@@ -44,7 +49,9 @@ export class MarketService {
         MIN(m.precio_kg)::float  AS min_price,
         MAX(m.precio_kg)::float  AS max_price,
         SUM(m.cantidad_kg)::float AS total_kg,
-        COUNT(*)                 AS num_transacciones
+        COUNT(*)                 AS num_transacciones,
+        AVG(CASE WHEN m.created_at >= ${recentCutoff} THEN m.precio_kg END)::float AS avg_recent,
+        AVG(CASE WHEN m.created_at <  ${recentCutoff} THEN m.precio_kg END)::float AS avg_prior
       FROM matches m
       JOIN lotes l ON l.id = m.lote_id
       JOIN productos p ON p.id = l.producto_id
@@ -54,15 +61,23 @@ export class MarketService {
       ORDER BY total_kg DESC
     `;
 
-    return rows.map((r) => ({
-      productoId: r.producto_id,
-      producto: r.producto,
-      avgPrice: Number(r.avg_price ?? 0),
-      minPrice: Number(r.min_price ?? 0),
-      maxPrice: Number(r.max_price ?? 0),
-      totalKg: Number(r.total_kg ?? 0),
-      numTransacciones: Number(r.num_transacciones ?? 0),
-    }));
+    return rows.map((r) => {
+      const recent = r.avg_recent !== null ? Number(r.avg_recent) : null;
+      const prior = r.avg_prior !== null ? Number(r.avg_prior) : null;
+      const deltaPct = recent !== null && prior !== null && prior > 0
+        ? ((recent - prior) / prior) * 100
+        : null;
+      return {
+        productoId: r.producto_id,
+        producto: r.producto,
+        avgPrice: Number(r.avg_price ?? 0),
+        minPrice: Number(r.min_price ?? 0),
+        maxPrice: Number(r.max_price ?? 0),
+        totalKg: Number(r.total_kg ?? 0),
+        numTransacciones: Number(r.num_transacciones ?? 0),
+        deltaPct,
+      };
+    });
   }
 
   // ─── Latest sentiment report (public) ────────────────────────────────────
