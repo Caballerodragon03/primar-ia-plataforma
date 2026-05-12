@@ -24,6 +24,8 @@ const envSchema = z.object({
   STRIPE_PRICE_FINCA: z.string().default(''),
   STRIPE_PRICE_LONJA: z.string().default(''),
   STRIPE_PRICE_CENTRAL: z.string().default(''),
+  GEMINI_API_KEY: z.string().default('placeholder'),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash-lite'),
 });
 
 const parsed = envSchema.safeParse(process.env);

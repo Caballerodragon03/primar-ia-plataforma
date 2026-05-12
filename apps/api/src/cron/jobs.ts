@@ -118,8 +118,11 @@ async function cleanExpiredTokens(): Promise<void> {
 
 // ─── Job 3: Market data stub — weekly on Monday at 06:00 ─────────────────────
 
-function runMarketDataJob(): void {
-  console.log('[CRON] Market data job running — placeholder for Phase 2 data aggregation');
+async function runMarketDataJob(): Promise<void> {
+  console.log('[CRON] Weekly market report — generating from mapa.gob.es boletín…');
+  const { marketService } = await import('../modules/market/market.service.js');
+  const result = await marketService.generateWeeklyReport();
+  console.log('[CRON] Market report job result:', result);
 }
 
 // ─── Register all cron jobs ───────────────────────────────────────────────────
@@ -135,10 +138,10 @@ export function startCronJobs(): void {
     void cleanExpiredTokens();
   });
 
-  // Weekly on Monday at 06:00 — market data stub
-  cron.schedule('0 6 * * 1', () => {
-    runMarketDataJob();
-  });
+  // Weekly on Monday at 07:00 Madrid time — generate market sentiment report
+  cron.schedule('0 7 * * 1', () => {
+    void runMarketDataJob();
+  }, { timezone: 'Europe/Madrid' });
 
   console.log('[CRON] All cron jobs registered');
 }

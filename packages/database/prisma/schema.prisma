@@ -722,3 +722,18 @@ model BannedEntry {
   @@unique([cifNif])
   @@map("banned_entries")
 }
+
+// Weekly auto-generated market report from mapa.gob.es boletín semanal
+model MarketReport {
+  id          String   @id @default(cuid())
+  semana      String   @unique // e.g. "2026-W18"
+  periodo     String   // e.g. "27 abril - 3 mayo"
+  resumen     String   @db.Text // Gemini-generated summary
+  highlights  Json?    // { alza: string[], baja: string[], sentimiento: string }
+  fuenteUrl   String   @map("fuente_url")
+  pdfText     String?  @db.Text @map("pdf_text") // raw extracted text for re-summarization
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("market_reports")
+}
