@@ -202,19 +202,36 @@ async function scoreAfinidad(vendedorId: string, compradorId: string): Promise<n
 }
 
 /**
- * Returns the match visibility delay (in ms) for a seller based on their plan.
- * Free-tier (COSECHA) sellers get a 15-minute delay; paid plans see matches immediately.
+ * Returns the match visibility delay (in ms) for a single user based on their plan.
+ * Free-tier users get a 24h delay; paid plans see matches immediately.
  */
-async function getMatchDelayMs(vendedorId: string): Promise<number> {
+async function getUserMatchDelayMs(userId: string): Promise<number> {
   const sub = await prisma.suscripcion.findUnique({
-    where: { userId: vendedorId },
-    select: { planVendedor: true, estado: true },
+    where: { userId },
+    select: { planVendedor: true, planComprador: true, estado: true },
   });
-  if (!sub || sub.estado !== 'ACTIVA' || !sub.planVendedor) {
-    return PLAN_LIMITS.COSECHA.matchDelay; // 15 min for free plan
+  const isActive = sub && (sub.estado === 'ACTIVA' || sub.estado === 'TRIAL');
+  if (!isActive) {
+    // Need user role to pick the right free-tier delay
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (user?.role === 'VENDEDOR') return PLAN_LIMITS.COSECHA.matchDelay;
+    return (PLAN_LIMITS.MERCADO as { matchDelay: number }).matchDelay ?? 0;
   }
-  const plan = sub.planVendedor as keyof typeof PLAN_LIMITS;
-  return (PLAN_LIMITS[plan] as { matchDelay: number }).matchDelay ?? 0;
+  const planKey = (sub.planVendedor ?? sub.planComprador) as keyof typeof PLAN_LIMITS | null;
+  if (!planKey) return PLAN_LIMITS.COSECHA.matchDelay;
+  return (PLAN_LIMITS[planKey] as { matchDelay?: number }).matchDelay ?? 0;
+}
+
+/**
+ * Returns the match visibility delay (in ms) for a match based on BOTH seller and buyer plans.
+ * Uses the MAX of both — if either side is free-tier, the match is delayed.
+ */
+async function getMatchDelayMs(vendedorId: string, compradorId: string): Promise<number> {
+  const [vDelay, cDelay] = await Promise.all([
+    getUserMatchDelayMs(vendedorId),
+    getUserMatchDelayMs(compradorId),
+  ]);
+  return Math.max(vDelay, cDelay);
 }
 
 /**
@@ -406,7 +423,7 @@ export class MatchingService {
         }
       }
 
-      const delay = await getMatchDelayMs(lote.vendedorId);
+      const delay = await getMatchDelayMs(lote.vendedorId, pedido.compradorId);
       const visibleDesde = new Date(Date.now() + delay);
 
       const match = await prisma.match.upsert({
@@ -556,7 +573,7 @@ export class MatchingService {
         }
       }
 
-      const delay = await getMatchDelayMs(lote.vendedorId);
+      const delay = await getMatchDelayMs(lote.vendedorId, pedido.compradorId);
       const visibleDesde = new Date(Date.now() + delay);
 
       const match = await prisma.match.upsert({

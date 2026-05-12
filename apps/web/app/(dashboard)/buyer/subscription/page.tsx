@@ -4,6 +4,14 @@ import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { PlanComparison } from '@/components/subscriptions/PlanComparison';
 import { UsageMeter } from '@/components/subscriptions/UsageMeter';
+import { CreationCreditsCard } from '@/components/subscriptions/CreationCreditsCard';
+
+interface Credits {
+  available: number;
+  max: number;
+  nextRegenAt: string | null;
+  isFreeTier: boolean;
+}
 
 interface SubscriptionData {
   plan: string;
@@ -11,6 +19,7 @@ interface SubscriptionData {
   pedidosActivos: number;
   maxPedidos: number;
   hasActiveSubscription: boolean;
+  credits: Credits | null;
 }
 
 export default function BuyerSubscriptionPage() {
@@ -28,7 +37,7 @@ export default function BuyerSubscriptionPage() {
       try {
         const [currentRes, usageRes] = await Promise.all([
           api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean } }>('/subscriptions/current'),
-          api.get<{ success: boolean; data: { pedidosActivos: number; maxPedidos: number } }>('/subscriptions/usage'),
+          api.get<{ success: boolean; data: { pedidosActivos: number; maxPedidos: number; credits: Credits } }>('/subscriptions/usage'),
         ]);
         setData({
           plan: currentRes.data.data.plan,
@@ -36,6 +45,7 @@ export default function BuyerSubscriptionPage() {
           pedidosActivos: usageRes.data.data.pedidosActivos ?? 0,
           maxPedidos: usageRes.data.data.maxPedidos ?? -1,
           hasActiveSubscription: currentRes.data.data.hasActiveSubscription,
+          credits: usageRes.data.data.credits ?? null,
         });
       } catch {
         setData({
@@ -44,6 +54,7 @@ export default function BuyerSubscriptionPage() {
           pedidosActivos: 0,
           maxPedidos: 5,
           hasActiveSubscription: false,
+          credits: null,
         });
       } finally {
         setLoading(false);
@@ -147,6 +158,7 @@ export default function BuyerSubscriptionPage() {
               max={data.maxPedidos}
               label="Pedidos activos"
             />
+            <CreationCreditsCard credits={data.credits} itemLabel="pedido" />
           </div>
 
           <PlanComparison

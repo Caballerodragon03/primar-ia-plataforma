@@ -111,6 +111,7 @@ export class OrdersService {
             estado: {
               in: ['PROPUESTO', 'ENVIADO_VENDEDOR', ...ACTIVE_MATCH_ESTADOS],
             },
+            visibleDesde: { lte: new Date() },
           },
           include: {
             lote: {

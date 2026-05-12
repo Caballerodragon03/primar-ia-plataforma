@@ -68,9 +68,22 @@ export class SubscriptionController {
   async getUsage(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user!.sub;
-      const usage = await subscriptionService.getUsage(userId);
+      const [usage, credits] = await Promise.all([
+        subscriptionService.getUsage(userId),
+        subscriptionService.getCredits(userId),
+      ]);
 
-      res.json({ success: true, data: usage });
+      res.json({ success: true, data: { ...usage, credits } });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getCredits(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.sub;
+      const credits = await subscriptionService.getCredits(userId);
+      res.json({ success: true, data: credits });
     } catch (err) {
       next(err);
     }

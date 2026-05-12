@@ -210,6 +210,8 @@ model User {
   idioma                  Idioma     @default(ES)
   preferenciasNotif       Json?      @map("preferencias_notificaciones")
   preferenciasIncoterm   Json?      @map("preferencias_incoterm")
+  creditosCreacion        Int        @default(3) @map("creditos_creacion")
+  proximaRegeneracionCredito DateTime? @map("proxima_regeneracion_credito")
   loginAttempts           Int        @default(0) @map("login_attempts")
   lockedUntil             DateTime?  @map("locked_until")
   scoreFiabilidad         Decimal?   @map("score_fiabilidad") @db.Decimal(5, 2)

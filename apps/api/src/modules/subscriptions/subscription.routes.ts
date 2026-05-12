@@ -15,3 +15,4 @@ subscriptionRouter.post('/checkout', validateBody(checkoutSchema), (req, res, ne
 subscriptionRouter.post('/portal', (req, res, next) => subscriptionController.portal(req, res, next));
 subscriptionRouter.post('/cancel', (req, res, next) => subscriptionController.cancel(req, res, next));
 subscriptionRouter.get('/usage', (req, res, next) => subscriptionController.getUsage(req, res, next));
+subscriptionRouter.get('/credits', (req, res, next) => subscriptionController.getCredits(req, res, next));

@@ -4,6 +4,14 @@ import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { PlanComparison } from '@/components/subscriptions/PlanComparison';
 import { UsageMeter } from '@/components/subscriptions/UsageMeter';
+import { CreationCreditsCard } from '@/components/subscriptions/CreationCreditsCard';
+
+interface Credits {
+  available: number;
+  max: number;
+  nextRegenAt: string | null;
+  isFreeTier: boolean;
+}
 
 interface SubscriptionData {
   plan: string;
@@ -11,6 +19,7 @@ interface SubscriptionData {
   lotesActivos: number;
   maxLotes: number;
   hasActiveSubscription: boolean;
+  credits: Credits | null;
 }
 
 export default function SellerSubscriptionPage() {
@@ -28,7 +37,7 @@ export default function SellerSubscriptionPage() {
       try {
         const [currentRes, usageRes] = await Promise.all([
           api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean } }>('/subscriptions/current'),
-          api.get<{ success: boolean; data: { lotesActivos: number; maxLotes: number } }>('/subscriptions/usage'),
+          api.get<{ success: boolean; data: { lotesActivos: number; maxLotes: number; credits: Credits } }>('/subscriptions/usage'),
         ]);
         setData({
           plan: currentRes.data.data.plan,
@@ -36,6 +45,7 @@ export default function SellerSubscriptionPage() {
           lotesActivos: usageRes.data.data.lotesActivos ?? 0,
           maxLotes: usageRes.data.data.maxLotes ?? -1,
           hasActiveSubscription: currentRes.data.data.hasActiveSubscription,
+          credits: usageRes.data.data.credits ?? null,
         });
       } catch {
         setData({
@@ -44,6 +54,7 @@ export default function SellerSubscriptionPage() {
           lotesActivos: 0,
           maxLotes: 3,
           hasActiveSubscription: false,
+          credits: null,
         });
       } finally {
         setLoading(false);
@@ -147,6 +158,7 @@ export default function SellerSubscriptionPage() {
               max={data.maxLotes}
               label="Lotes activos"
             />
+            <CreationCreditsCard credits={data.credits} itemLabel="lote" />
           </div>
 
           <PlanComparison

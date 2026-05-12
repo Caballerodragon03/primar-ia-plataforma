@@ -6,7 +6,7 @@ export const PLAN_LIMITS = {
     maxLotesActivos: 3,
     maxFotosPorLote: 3,
     maxCertificados: 3,
-    matchDelay: 15 * 60 * 1000,
+    matchDelay: 24 * 60 * 60 * 1000, // 24h delay for free plan
     analyticsRango: 30,
     analyticsTendencias: false,
     exportCsv: false,
@@ -49,6 +49,7 @@ export const PLAN_LIMITS = {
   MERCADO: {
     maxPedidosActivos: 5,
     descuentoComision: 0,
+    matchDelay: 24 * 60 * 60 * 1000, // 24h delay for free plan
     analyticsRango: 30,
     analyticsTendencias: false,
     exportEstadisticas: false,
@@ -59,6 +60,7 @@ export const PLAN_LIMITS = {
   LONJA: {
     maxPedidosActivos: 20,
     descuentoComision: 0,
+    matchDelay: 0,
     analyticsRango: 365,
     analyticsTendencias: false,
     exportEstadisticas: false,
@@ -69,6 +71,7 @@ export const PLAN_LIMITS = {
   CENTRAL: {
     maxPedidosActivos: Infinity,
     descuentoComision: 0.004,
+    matchDelay: 0,
     analyticsRango: Infinity,
     analyticsTendencias: true,
     exportEstadisticas: true,

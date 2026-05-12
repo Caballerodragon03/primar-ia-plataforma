@@ -43,6 +43,105 @@ export class SubscriptionService {
     return !!sub && (sub.estado === 'ACTIVA' || sub.estado === 'TRIAL') && !!sub.stripeSubscriptionId;
   }
 
+  // ─── Free-tier creation credits (token bucket) ───────────────────────────
+  // Free users get 3 creation credits. After using one, 1 credit regenerates per
+  // week (up to a max of 3). Paid users bypass this check entirely.
+
+  static readonly CREDITS_MAX = 3;
+  static readonly CREDITS_REGEN_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
+
+  /**
+   * Lazily regenerates credits based on time elapsed since proximaRegeneracion.
+   * Returns the updated credit state.
+   */
+  private async regenerateCreditsIfDue(userId: string): Promise<{ creditos: number; proxima: Date | null }> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { creditosCreacion: true, proximaRegeneracionCredito: true },
+    });
+    if (!user) throw new AppError('Usuario no encontrado', 404);
+
+    let creditos = user.creditosCreacion;
+    let proxima = user.proximaRegeneracionCredito;
+    const now = new Date();
+
+    // Regenerate credits while past the regen tick and below cap
+    while (proxima && now >= proxima && creditos < SubscriptionService.CREDITS_MAX) {
+      creditos += 1;
+      if (creditos >= SubscriptionService.CREDITS_MAX) {
+        proxima = null; // At cap, stop the clock
+      } else {
+        proxima = new Date(proxima.getTime() + SubscriptionService.CREDITS_REGEN_MS);
+      }
+    }
+
+    if (creditos !== user.creditosCreacion || proxima !== user.proximaRegeneracionCredito) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { creditosCreacion: creditos, proximaRegeneracionCredito: proxima },
+      });
+    }
+
+    return { creditos, proxima };
+  }
+
+  /**
+   * Returns the current credit state (after lazy regen). Used by the UI for countdown.
+   */
+  async getCredits(userId: string): Promise<{ available: number; max: number; nextRegenAt: Date | null; isFreeTier: boolean }> {
+    const plan = await this.getPlanForUser(userId);
+    const isFreeTier = plan === 'COSECHA' || plan === 'MERCADO';
+    const { creditos, proxima } = await this.regenerateCreditsIfDue(userId);
+    return {
+      available: creditos,
+      max: SubscriptionService.CREDITS_MAX,
+      nextRegenAt: proxima,
+      isFreeTier,
+    };
+  }
+
+  /**
+   * Consumes 1 credit for a free-tier user. Throws if no credits available.
+   * No-op for paid users.
+   */
+  private async consumeCredit(userId: string): Promise<void> {
+    const plan = await this.getPlanForUser(userId);
+    if (plan !== 'COSECHA' && plan !== 'MERCADO') return; // Paid users bypass
+
+    const { creditos } = await this.regenerateCreditsIfDue(userId);
+    if (creditos <= 0) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { proximaRegeneracionCredito: true },
+      });
+      const next = user?.proximaRegeneracionCredito;
+      const hoursLeft = next ? Math.ceil((next.getTime() - Date.now()) / (60 * 60 * 1000)) : 0;
+      throw new AppError(
+        `No tienes créditos de creación disponibles. El próximo crédito se desbloquea en ~${hoursLeft}h. Mejora tu plan para crear sin límites.`,
+        403,
+      );
+    }
+
+    // Decrement and start the regen clock if we just dropped below cap
+    const newCreditos = creditos - 1;
+    const newProxima = newCreditos < SubscriptionService.CREDITS_MAX
+      ? new Date(Date.now() + SubscriptionService.CREDITS_REGEN_MS)
+      : null;
+
+    // Only set proxima if it wasn't already set (i.e. we were at cap)
+    const current = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { proximaRegeneracionCredito: true },
+    });
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        creditosCreacion: newCreditos,
+        proximaRegeneracionCredito: current?.proximaRegeneracionCredito ?? newProxima,
+      },
+    });
+  }
+
   // ─── Quota checks ────────────────────────────────────────────────────────
 
   async checkCanCreateLot(userId: string): Promise<void> {
@@ -64,6 +163,9 @@ export class SubscriptionService {
         403,
       );
     }
+
+    // Free-tier creation credits (weekly token bucket)
+    await this.consumeCredit(userId);
   }
 
   async checkCanCreateOrder(userId: string): Promise<void> {
@@ -85,6 +187,9 @@ export class SubscriptionService {
         403,
       );
     }
+
+    // Free-tier creation credits (weekly token bucket)
+    await this.consumeCredit(userId);
   }
 
   // ─── Stripe Checkout ─────────────────────────────────────────────────────
