@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Plus, Trash2, MapPin } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button, Input, Select, FileDropzone, IncotermWizard } from '@/components/ui';
+import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
 
 const OTHER_VALUE = '__other__';
 
@@ -176,6 +177,8 @@ export default function PublishLotPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-text-primary">Publish a New Lot</h1>
+
+      <FreeTierMatchingNotice itemKind="lote" subscriptionHref="/seller/subscription" />
 
       <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
         {/* Product Details */}

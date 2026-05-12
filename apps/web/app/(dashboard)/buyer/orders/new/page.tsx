@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Plus, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button, Input, Select } from '@/components/ui';
+import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
 
 const OTHER_VALUE = '__other__';
 
@@ -121,6 +122,8 @@ export default function CreateOrderPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-text-primary">Create New Order</h1>
+
+      <FreeTierMatchingNotice itemKind="pedido" subscriptionHref="/buyer/subscription" />
 
       <form className="grid grid-cols-1 lg:grid-cols-2 gap-6" onSubmit={(e) => e.preventDefault()}>
         {/* Left: Commercial Details */}
