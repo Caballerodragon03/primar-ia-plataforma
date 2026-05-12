@@ -1,0 +1,11 @@
+import 'dotenv/config';
+import { prisma } from '@primaria/database';
+const r = await prisma.marketReport.findFirst({ orderBy: { createdAt: 'desc' } });
+console.log('Semana:', r.semana);
+console.log('Periodo:', r.periodo);
+console.log('Fuente:', r.fuenteUrl);
+console.log('\n--- RESUMEN ---\n');
+console.log(r.resumen);
+console.log('\n--- HIGHLIGHTS ---');
+console.log(JSON.stringify(r.highlights, null, 2));
+await prisma.$disconnect();

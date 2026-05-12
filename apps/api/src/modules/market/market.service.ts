@@ -1,8 +1,7 @@
 import { prisma } from '@primaria/database';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { PDFParse } from 'pdf-parse';
 import { env } from '../../config/env.js';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const pdfParse: (data: Buffer) => Promise<{ text: string }> = require('pdf-parse');
 
 const MAPA_BOLETIN_URL =
   'https://www.mapa.gob.es/es/agricultura/temas/producciones-agricolas/frutas-y-hortalizas/boletin_semanal_precios/boletines_2026/';
@@ -149,8 +148,10 @@ export class MarketService {
       }
       const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
 
-      // 5. Extract text
-      const parsed = await pdfParse(pdfBuffer);
+      // 5. Extract text (pdf-parse v2 API)
+      const parser = new PDFParse({ data: new Uint8Array(pdfBuffer) });
+      const parsed = await parser.getText();
+      await parser.destroy();
       const rawText = parsed.text.trim();
       if (rawText.length < 200) {
         return { generated: false, reason: 'PDF text too short' };
