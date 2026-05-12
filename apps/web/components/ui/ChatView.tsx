@@ -69,6 +69,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
   const [sending, setSending] = useState(false);
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [showOfferModal, setShowOfferModal] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -81,8 +82,8 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
     try {
       const res = await api.get<{ data: Conversation[] }>('/chat/conversations');
       setConversations(res.data.data ?? []);
-    } catch {
-      // silently fail
+    } catch (err) {
+      console.error('[chat] fetchConversations failed:', err);
     } finally {
       setLoadingConvs(false);
     }
@@ -93,8 +94,8 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
       const res = await api.get<{ data: Message[] }>(`/chat/${transaccionId}/messages`);
       setMessages(res.data.data ?? []);
       scrollToBottom();
-    } catch {
-      // silently fail
+    } catch (err) {
+      console.error('[chat] fetchMessages failed:', err);
     }
   }, [scrollToBottom]);
 
@@ -124,20 +125,28 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
   const handleSend = async () => {
     if (!selectedId || !text.trim() || sending) return;
     setSending(true);
+    setSendError(null);
     try {
       await api.post(`/chat/${selectedId}/messages`, { contenido: text.trim() });
       setText('');
       await fetchMessages(selectedId);
       await fetchConversations();
-    } catch {
-      // silently fail
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      const apiMsg =
+        (err as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.error ??
+        (err as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.message;
+      const msg = apiMsg ?? (status ? `Error ${status}` : 'No se pudo enviar el mensaje');
+      console.error('[chat] sendMessage failed:', err);
+      setSendError(msg);
     } finally {
       setSending(false);
     }
   };
 
+  // Enter sends, Shift+Enter inserts newline (standard chat UX)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && e.ctrlKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       handleSend();
     }
@@ -293,6 +302,20 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Error banner */}
+            {sendError && (
+              <div className="px-4 py-2 bg-red-50 border-t border-red-200 text-xs text-red-700 flex items-center justify-between">
+                <span>⚠ {sendError}</span>
+                <button
+                  onClick={() => setSendError(null)}
+                  className="text-red-500 hover:text-red-700 font-medium ml-2"
+                  aria-label="Cerrar"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
             {/* Input bar */}
             <div className="px-4 py-3 border-t border-border flex items-end gap-2">
               {/* Negotiate button */}
@@ -321,7 +344,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a message… (Ctrl+Enter to send)"
+                placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
                 rows={1}
                 className="flex-1 resize-none px-3 py-2.5 rounded-input border border-border text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors min-h-[44px] max-h-[120px] overflow-y-auto"
                 style={{ height: 'auto' }}
