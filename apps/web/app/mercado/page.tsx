@@ -32,12 +32,12 @@ interface Report {
 }
 
 // Server component — runs on every request, no client-side fetch needed
-export const revalidate = 1800; // 30 min
+export const revalidate = 120; // 2 min
 
 async function getPrices(): Promise<{ prices: PriceRow[]; windowDays: number } | null> {
   try {
     const res = await fetch(`${API_URL}/api/v1/market/prices?days=30`, {
-      next: { revalidate: 1800 },
+      next: { revalidate: 120 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -50,7 +50,7 @@ async function getPrices(): Promise<{ prices: PriceRow[]; windowDays: number } |
 async function getSentiment(): Promise<{ report: Report | null; sources: { boletinSemanal: string; powerBiNacional: string } } | null> {
   try {
     const res = await fetch(`${API_URL}/api/v1/market/sentiment`, {
-      next: { revalidate: 1800 },
+      next: { revalidate: 120 },
     });
     if (!res.ok) return null;
     const json = await res.json();
