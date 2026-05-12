@@ -27,6 +27,7 @@ type FormValues = z.infer<typeof schema>;
 type CalibreItem = { calibre: string; cantidad_kg: number; precio_min_kg?: number };
 type LotDetail = {
   id: string;
+  productoId: string;
   estado: string;
   calibres: CalibreItem[];
   direccionRecogida: string;
@@ -36,10 +37,13 @@ type LotDetail = {
   coverage: number;
 };
 
+type Product = { id: string; nombre: string; calibresDisponibles: string[] };
+
 export default function EditLotPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [committedKg, setCommittedKg] = useState(0);
+  const [calibreOptions, setCalibreOptions] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -58,9 +62,15 @@ export default function EditLotPage() {
   const { fields, append, remove } = useFieldArray({ control, name: 'calibres' });
 
   useEffect(() => {
-    api.get<{ data: LotDetail }>(`/lots/${id}`)
-      .then(({ data }) => {
-        const lot = data.data;
+    Promise.all([
+      api.get<{ data: LotDetail }>(`/lots/${id}`),
+      api.get<{ data: Product[] }>('/products'),
+    ])
+      .then(([lotRes, productsRes]) => {
+        const lot = lotRes.data.data;
+        const products = productsRes.data.data ?? [];
+        const product = products.find((p) => p.id === lot.productoId);
+        setCalibreOptions(product?.calibresDisponibles ?? []);
         const committed = Math.round((lot.coverage / 100) * lot.totalKg);
         setCommittedKg(committed);
         reset({
@@ -137,11 +147,24 @@ export default function EditLotPage() {
           <div className="space-y-3">
             {fields.map((field, i) => (
               <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end">
-                <Input
-                  label="Caliber"
-                  {...register(`calibres.${i}.calibre`)}
-                  error={errors.calibres?.[i]?.calibre?.message}
-                />
+                {calibreOptions.length > 1 ? (
+                  <Select
+                    label="Caliber"
+                    {...register(`calibres.${i}.calibre`)}
+                    error={errors.calibres?.[i]?.calibre?.message}
+                  >
+                    <option value="">Select caliber...</option>
+                    {calibreOptions.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </Select>
+                ) : (
+                  <Input
+                    label="Caliber"
+                    {...register(`calibres.${i}.calibre`)}
+                    error={errors.calibres?.[i]?.calibre?.message}
+                  />
+                )}
                 <Input
                   label="Qty (kg)"
                   type="number"

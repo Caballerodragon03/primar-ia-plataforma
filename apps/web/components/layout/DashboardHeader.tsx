@@ -1,5 +1,5 @@
 'use client';
-import { Bell, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -22,12 +22,6 @@ export function DashboardHeader({ breadcrumb }: DashboardHeaderProps) {
         )}
       </div>
       <div className="flex items-center gap-3">
-        <button
-          className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-          aria-label="Notifications"
-        >
-          <Bell className="w-5 h-5" />
-        </button>
         <Link
           href={user?.role === 'COMPRADOR' ? '/buyer/profile' : '/seller/profile'}
           className="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"

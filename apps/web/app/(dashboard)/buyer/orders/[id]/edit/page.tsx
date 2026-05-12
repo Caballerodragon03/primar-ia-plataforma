@@ -32,6 +32,7 @@ type FormValues = z.infer<typeof schema>;
 type CalibreItem = { calibre: string; cantidad_kg: number; precio_max_kg: number };
 type OrderDetail = {
   estado: string;
+  productoId: string;
   calibresSolicitados: CalibreItem[];
   incoterm: string;
   destinoFinal?: string;
@@ -42,10 +43,13 @@ type OrderDetail = {
   coverage: number;
 };
 
+type Product = { id: string; nombre: string; calibresDisponibles: string[] };
+
 export default function EditOrderPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [committedKg, setCommittedKg] = useState(0);
+  const [calibreOptions, setCalibreOptions] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -64,9 +68,15 @@ export default function EditOrderPage() {
   const { fields, append, remove } = useFieldArray({ control, name: 'calibresSolicitados' });
 
   useEffect(() => {
-    api.get<{ data: OrderDetail }>(`/orders/${id}`)
-      .then(({ data }) => {
-        const order = data.data;
+    Promise.all([
+      api.get<{ data: OrderDetail }>(`/orders/${id}`),
+      api.get<{ data: Product[] }>('/products'),
+    ])
+      .then(([orderRes, productsRes]) => {
+        const order = orderRes.data.data;
+        const products = productsRes.data.data ?? [];
+        const product = products.find((p) => p.id === order.productoId);
+        setCalibreOptions(product?.calibresDisponibles ?? []);
         const committed = Math.round((order.coverage / 100) * order.totalKg);
         setCommittedKg(committed);
         reset({
@@ -141,11 +151,24 @@ export default function EditOrderPage() {
           <div className="space-y-3">
             {fields.map((field, i) => (
               <div key={field.id} className="grid grid-cols-3 gap-3 items-end">
-                <Input
-                  label="Caliber"
-                  {...register(`calibresSolicitados.${i}.calibre`)}
-                  error={errors.calibresSolicitados?.[i]?.calibre?.message}
-                />
+                {calibreOptions.length > 1 ? (
+                  <Select
+                    label="Caliber"
+                    {...register(`calibresSolicitados.${i}.calibre`)}
+                    error={errors.calibresSolicitados?.[i]?.calibre?.message}
+                  >
+                    <option value="">Select caliber...</option>
+                    {calibreOptions.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </Select>
+                ) : (
+                  <Input
+                    label="Caliber"
+                    {...register(`calibresSolicitados.${i}.calibre`)}
+                    error={errors.calibresSolicitados?.[i]?.calibre?.message}
+                  />
+                )}
                 <Input
                   label="Qty (kg)"
                   type="number"
