@@ -1,10 +1,59 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Paperclip, MessageSquare, TrendingUp } from 'lucide-react';
+import { Send, Paperclip, MessageSquare, TrendingUp, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { NegotiationCard, type NegotiacionData } from './NegotiationCard';
 import { NegotiationOfferModal } from './NegotiationOfferModal';
+
+type TxEstado =
+  | 'PENDIENTE_PAGO'
+  | 'PAGO_CAPTURADO'
+  | 'EN_TRANSITO'
+  | 'ENTREGADO'
+  | 'EN_DISPUTA'
+  | 'COMPLETADO'
+  | 'CANCELADO'
+  | 'REEMBOLSADO';
+
+const CLOSED_ESTADOS: readonly TxEstado[] = ['COMPLETADO', 'CANCELADO', 'REEMBOLSADO'];
+
+function isClosed(estado: TxEstado | undefined): boolean {
+  return !!estado && CLOSED_ESTADOS.includes(estado);
+}
+
+function estadoLabel(estado: TxEstado): { label: string; icon: typeof CheckCircle2; classes: string; banner: string } {
+  switch (estado) {
+    case 'COMPLETADO':
+      return {
+        label: 'Completado',
+        icon: CheckCircle2,
+        classes: 'bg-green-100 text-green-800 border-green-200',
+        banner: 'Esta transacción está completada — la conversación es solo lectura.',
+      };
+    case 'CANCELADO':
+      return {
+        label: 'Cancelado',
+        icon: XCircle,
+        classes: 'bg-red-100 text-red-800 border-red-200',
+        banner: 'Esta transacción fue cancelada — la conversación es solo lectura.',
+      };
+    case 'REEMBOLSADO':
+      return {
+        label: 'Reembolsado',
+        icon: RotateCcw,
+        classes: 'bg-gray-200 text-gray-700 border-gray-300',
+        banner: 'Esta transacción fue reembolsada — la conversación es solo lectura.',
+      };
+    default:
+      return {
+        label: estado,
+        icon: CheckCircle2,
+        classes: 'bg-gray-100 text-gray-700 border-gray-200',
+        banner: '',
+      };
+  }
+}
 
 interface Conversation {
   transaccionId: string;
@@ -14,6 +63,7 @@ interface Conversation {
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;
+  estado: TxEstado;
 }
 
 interface Message {
@@ -182,26 +232,35 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
           ) : (
             conversations.map((conv) => {
               const isSelected = conv.transaccionId === selectedId;
+              const closed = isClosed(conv.estado);
+              const meta = closed ? estadoLabel(conv.estado) : null;
               return (
                 <button
                   key={conv.transaccionId}
                   onClick={() => setSelectedId(conv.transaccionId)}
                   className={[
                     'w-full text-left px-3 py-3 border-b border-border transition-colors duration-150 cursor-pointer',
-                    isSelected ? 'bg-yellow-50' : 'hover:bg-gray-50',
+                    isSelected ? 'bg-yellow-50' : closed ? 'bg-gray-50 hover:bg-gray-100' : 'hover:bg-gray-50',
+                    closed ? 'opacity-70' : '',
                   ].join(' ')}
                 >
                   <div className="flex items-start gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-secondary flex-shrink-0 flex items-center justify-center">
+                    <div className={[
+                      'w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center',
+                      closed ? 'bg-gray-400' : 'bg-secondary',
+                    ].join(' ')}>
                       <span className="text-white text-[10px] font-semibold">
                         {getInitials(conv.counterpartName)}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <p className="text-xs font-semibold text-gray-900 truncate">{conv.counterpartName}</p>
+                        <p className={[
+                          'text-xs font-semibold truncate',
+                          closed ? 'text-gray-500' : 'text-gray-900',
+                        ].join(' ')}>{conv.counterpartName}</p>
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          {conv.unreadCount > 0 && (
+                          {conv.unreadCount > 0 && !closed && (
                             <span className="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[9px] font-bold text-gray-900">
                               {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
                             </span>
@@ -209,8 +268,21 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                           <span className="text-[9px] text-gray-400">{formatConvTime(conv.lastMessageAt)}</span>
                         </div>
                       </div>
-                      <p className="text-[10px] text-gray-500 truncate">#{conv.orderId} · {conv.product}</p>
-                      <p className="text-[10px] text-gray-400 truncate mt-0.5">{conv.lastMessage}</p>
+                      <p className={[
+                        'text-[10px] truncate',
+                        closed ? 'text-gray-400' : 'text-gray-500',
+                      ].join(' ')}>#{conv.orderId} · {conv.product}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {meta && (
+                          <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${meta.classes}`}>
+                            {meta.label}
+                          </span>
+                        )}
+                        <p className={[
+                          'text-[10px] truncate flex-1',
+                          closed ? 'text-gray-300 italic' : 'text-gray-400',
+                        ].join(' ')}>{conv.lastMessage}</p>
+                      </div>
                     </div>
                   </div>
                 </button>
@@ -231,19 +303,38 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
           <>
             {/* Header */}
             <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-              {selectedConv && (
-                <>
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-[10px] font-semibold">
-                      {getInitials(selectedConv.counterpartName)}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900">{selectedConv.counterpartName}</p>
-                    <p className="text-[10px] text-gray-500">Order #{selectedConv.orderId} · {selectedConv.product}</p>
-                  </div>
-                </>
-              )}
+              {selectedConv && (() => {
+                const closed = isClosed(selectedConv.estado);
+                const meta = closed ? estadoLabel(selectedConv.estado) : null;
+                const Icon = meta?.icon;
+                return (
+                  <>
+                    <div className={[
+                      'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+                      closed ? 'bg-gray-400' : 'bg-secondary',
+                    ].join(' ')}>
+                      <span className="text-white text-[10px] font-semibold">
+                        {getInitials(selectedConv.counterpartName)}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={[
+                          'text-sm font-semibold',
+                          closed ? 'text-gray-600' : 'text-gray-900',
+                        ].join(' ')}>{selectedConv.counterpartName}</p>
+                        {meta && Icon && (
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${meta.classes}`}>
+                            <Icon className="w-3 h-3" />
+                            {meta.label}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-gray-500">Order #{selectedConv.orderId} · {selectedConv.product}</p>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             {/* Messages */}
@@ -316,59 +407,72 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
               </div>
             )}
 
-            {/* Input bar */}
-            <div className="px-4 py-3 border-t border-border flex items-end gap-2">
-              {/* Negotiate button */}
-              <button
-                type="button"
-                onClick={() => setShowOfferModal(true)}
-                className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-button transition-colors flex-shrink-0"
-                aria-label="Proponer cambio de precio o incoterm"
-                title="Proponer cambio"
-              >
-                <TrendingUp className="w-5 h-5" />
-              </button>
+            {/* Input bar OR closed-state banner */}
+            {selectedConv && isClosed(selectedConv.estado) ? (
+              (() => {
+                const meta = estadoLabel(selectedConv.estado);
+                const Icon = meta.icon;
+                return (
+                  <div className="px-4 py-4 border-t border-border bg-gray-50 flex items-center gap-2 text-xs text-gray-600 justify-center">
+                    <Icon className="w-4 h-4" />
+                    <span>{meta.banner}</span>
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="px-4 py-3 border-t border-border flex items-end gap-2">
+                {/* Negotiate button */}
+                <button
+                  type="button"
+                  onClick={() => setShowOfferModal(true)}
+                  className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-button transition-colors flex-shrink-0"
+                  aria-label="Proponer cambio de precio o incoterm"
+                  title="Proponer cambio"
+                >
+                  <TrendingUp className="w-5 h-5" />
+                </button>
 
-              <button
-                type="button"
-                disabled
-                className="p-2 text-gray-300 cursor-not-allowed flex-shrink-0"
-                aria-label="Attach file (coming soon)"
-                title="Attachments coming soon"
-              >
-                <Paperclip className="w-5 h-5" />
-              </button>
+                <button
+                  type="button"
+                  disabled
+                  className="p-2 text-gray-300 cursor-not-allowed flex-shrink-0"
+                  aria-label="Attach file (coming soon)"
+                  title="Attachments coming soon"
+                >
+                  <Paperclip className="w-5 h-5" />
+                </button>
 
-              <textarea
-                ref={textareaRef}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
-                rows={1}
-                className="flex-1 resize-none px-3 py-2.5 rounded-input border border-border text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors min-h-[44px] max-h-[120px] overflow-y-auto"
-                style={{ height: 'auto' }}
-                onInput={(e) => {
-                  const el = e.currentTarget;
-                  el.style.height = 'auto';
-                  el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-                }}
-              />
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={!text.trim() || sending}
-                className={[
-                  'p-2.5 rounded-button flex-shrink-0 transition-colors duration-150',
-                  text.trim() && !sending
-                    ? 'bg-primary text-gray-900 hover:opacity-90 cursor-pointer'
-                    : 'bg-gray-100 text-gray-300 cursor-not-allowed',
-                ].join(' ')}
-                aria-label="Send message"
-              >
-                <Send className="w-5 h-5" />
-              </button>
-            </div>
+                <textarea
+                  ref={textareaRef}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
+                  rows={1}
+                  className="flex-1 resize-none px-3 py-2.5 rounded-input border border-border text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors min-h-[44px] max-h-[120px] overflow-y-auto"
+                  style={{ height: 'auto' }}
+                  onInput={(e) => {
+                    const el = e.currentTarget;
+                    el.style.height = 'auto';
+                    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={!text.trim() || sending}
+                  className={[
+                    'p-2.5 rounded-button flex-shrink-0 transition-colors duration-150',
+                    text.trim() && !sending
+                      ? 'bg-primary text-gray-900 hover:opacity-90 cursor-pointer'
+                      : 'bg-gray-100 text-gray-300 cursor-not-allowed',
+                  ].join(' ')}
+                  aria-label="Send message"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>

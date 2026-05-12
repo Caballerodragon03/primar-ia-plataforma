@@ -73,6 +73,7 @@ export class ChatService {
           lastMessage: lastMessage?.contenido ?? '',
           lastMessageAt: lastMessage?.createdAt?.toISOString() ?? tx.createdAt.toISOString(),
           unreadCount,
+          estado: tx.estado,
         };
       })
     );
