@@ -68,7 +68,11 @@ export default function BuyerDashboard() {
   useEffect(() => { fetchData(); }, []);
 
   const ordersInProgress = orders.filter((o) => IN_PROGRESS_STATES.includes(o.estado)).length;
-  const pendingDeliveries = orders.filter((o) => o.estado === 'TOTALMENTE_CUBIERTO').length;
+  // pendingDeliveries comes from the notifications endpoint which counts actual
+  // transactions waiting on buyer confirmation (EN_TRANSITO / ENTREGADO_PENDIENTE_PAGO).
+  // The previous filter counted orders in TOTALMENTE_CUBIERTO which meant "fully
+  // matched" — that's NOT the same as "delivery pending".
+  const pendingDeliveries = notifs?.pendingDeliveries ?? 0;
   const totalValue = orders.reduce((sum, o) => {
     const matchValue = o.matches
       .filter((m) => PAID_STATES.includes(m.estado))
@@ -233,7 +237,7 @@ export default function BuyerDashboard() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50">
-                {['ORDER ID', 'PRODUCT', 'COVERAGE', 'STATUS'].map((h) => (
+                {['ORDER ID', 'PRODUCT', 'QUANTITY', 'COVERAGE', 'STATUS'].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-2.5 text-left text-[10px] font-semibold text-secondary uppercase tracking-wider"
@@ -246,13 +250,13 @@ export default function BuyerDashboard() {
             <tbody className="divide-y divide-border">
               {loading ? (
                 <>
-                  <SkeletonRow cols={4} />
-                  <SkeletonRow cols={4} />
-                  <SkeletonRow cols={4} />
+                  <SkeletonRow cols={5} />
+                  <SkeletonRow cols={5} />
+                  <SkeletonRow cols={5} />
                 </>
               ) : topOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-sm text-secondary">
+                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-secondary">
                     No active orders.{' '}
                     <Link href="/buyer/orders/new" className="text-primary underline">Create one</Link>
                   </td>
@@ -262,6 +266,7 @@ export default function BuyerDashboard() {
                   const hasOffer = order.matches.some((m) => m.estado === 'ACEPTADO_VENDEDOR');
                   const orderId = `ORD${order.id.slice(-5).toUpperCase()}`;
                   const coveragePct = Math.min(100, Math.round(Number(order.coverage) || 0));
+                  const totalKg = Number(order.totalKg ?? 0);
                   return (
                     <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 font-mono text-xs text-secondary">
@@ -278,7 +283,20 @@ export default function BuyerDashboard() {
                           <span className="text-secondary"> / {order.variedad.nombre}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-700">{coveragePct}%</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {totalKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium w-9 tabular-nums">{coveragePct}%</span>
+                          <div className="flex-1 h-1.5 max-w-[80px] bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${coveragePct >= 100 ? 'bg-green-500' : coveragePct > 0 ? 'bg-primary' : 'bg-gray-300'}`}
+                              style={{ width: `${coveragePct}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={order.estado} />
                       </td>

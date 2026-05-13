@@ -20,6 +20,8 @@ interface Lote {
   estado: string;
   producto: { nombre: string };
   calibres: LoteCalibre[];
+  totalKg: number;
+  coverage: number;
 }
 
 interface Match {
@@ -33,6 +35,8 @@ interface Match {
   };
   createdAt: string;
 }
+
+const CLOSED_LOT_STATES = ['VENDIDO', 'PARCIALMENTE_VENDIDO'];
 
 interface SellerNotifSummary {
   pendingMatches: number;
@@ -78,7 +82,7 @@ export default function SellerDashboard() {
   const pendingMatches = matches.filter((m) =>
     ['PROPUESTO', 'ENVIADO_VENDEDOR'].includes(m.estado)
   ).length;
-  const completedSales = lots.filter((l) => l.estado === 'VENDIDO').length;
+  const completedSales = lots.filter((l) => CLOSED_LOT_STATES.includes(l.estado)).length;
 
   const topActiveLots = lots.filter((l) => ['ACTIVO', 'PARCIALMENTE_VENDIDO'].includes(l.estado)).slice(0, 5);
   const recentMatches = matches.slice(0, 3);
@@ -157,7 +161,7 @@ export default function SellerDashboard() {
           icon={<GitMerge className="w-4 h-4" />}
         />
         <KPICard
-          label="Completed Sales"
+          label="Lots Closed"
           value={loading ? '—' : String(completedSales)}
           sub={loading ? 'Loading...' : 'Sold or partially sold'}
           icon={<CheckCircle2 className="w-4 h-4" />}
@@ -230,7 +234,7 @@ export default function SellerDashboard() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50">
-                {['LOT ID', 'PRODUCT', 'QUANTITY', 'STATUS'].map((h) => (
+                {['LOT ID', 'PRODUCT', 'QUANTITY', 'COVERAGE', 'STATUS'].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-2.5 text-left text-[10px] font-semibold text-secondary uppercase tracking-wider"
@@ -243,26 +247,41 @@ export default function SellerDashboard() {
             <tbody className="divide-y divide-border">
               {loading ? (
                 <>
-                  <SkeletonRow cols={4} />
-                  <SkeletonRow cols={4} />
-                  <SkeletonRow cols={4} />
+                  <SkeletonRow cols={5} />
+                  <SkeletonRow cols={5} />
+                  <SkeletonRow cols={5} />
                 </>
               ) : topActiveLots.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-sm text-secondary">
+                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-secondary">
                     No active lots. <Link href="/seller/lots/new" className="text-primary underline">Publish one</Link>
                   </td>
                 </tr>
               ) : (
                 topActiveLots.map((lot) => {
-                  const totalKg = lot.calibres.reduce((s, c) => s + c.cantidad_kg, 0);
+                  // Prefer API-computed totals; fall back to client sum for legacy responses
+                  const totalKg = Number(lot.totalKg ?? lot.calibres?.reduce((s, c) => s + c.cantidad_kg, 0) ?? 0);
+                  const coveragePct = Math.min(100, Math.round(Number(lot.coverage ?? 0)));
                   return (
                     <tr key={lot.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 font-mono text-xs text-secondary">
                         {lot.id.slice(-5).toUpperCase()}
                       </td>
                       <td className="px-4 py-3 text-gray-900">{lot.producto?.nombre ?? '—'}</td>
-                      <td className="px-4 py-3 text-gray-700">{totalKg.toLocaleString()} kg</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {totalKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium w-9 tabular-nums">{coveragePct}%</span>
+                          <div className="flex-1 h-1.5 max-w-[80px] bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${coveragePct >= 100 ? 'bg-green-500' : coveragePct > 0 ? 'bg-primary' : 'bg-gray-300'}`}
+                              style={{ width: `${coveragePct}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={lot.estado} />
                       </td>
@@ -289,22 +308,30 @@ export default function SellerDashboard() {
             ) : recentMatches.length === 0 ? (
               <p className="text-xs text-secondary text-center mt-2">No recent matches yet</p>
             ) : (
-              recentMatches.map((match) => (
-                <div
-                  key={match.id}
-                  className="flex items-start justify-between p-3 bg-gray-50 rounded-input"
-                >
-                  <div>
-                    <p className="text-xs font-medium text-gray-900">
-                      {match.pedido?.producto?.nombre ?? 'Product'}
-                    </p>
-                    <p className="text-[10px] text-secondary mt-0.5">
-                      {Number(match.cantidadKg).toLocaleString()} kg — score {Math.round((match.scoreMatching ?? 0) * 100)}%
-                    </p>
+              recentMatches.map((match) => {
+                const qty = Number(match.cantidadKg);
+                const price = Number(match.precioKg);
+                const total = qty * price;
+                return (
+                  <div
+                    key={match.id}
+                    className="flex items-start justify-between p-3 bg-gray-50 rounded-input"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-gray-900 truncate">
+                        {match.pedido?.producto?.nombre ?? 'Product'}
+                      </p>
+                      <p className="text-[10px] text-secondary mt-0.5">
+                        {qty.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg · {price.toFixed(2)} €/kg
+                      </p>
+                      <p className="text-[10px] font-semibold text-secondary mt-0.5">
+                        {total.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €
+                      </p>
+                    </div>
+                    <StatusBadge status={match.estado} />
                   </div>
-                  <StatusBadge status={match.estado} />
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
