@@ -109,19 +109,36 @@ export class SubscriptionService {
    * concurrent calls cannot both pass the guard with the same stale value.
    */
   private async consumeCredit(userId: string): Promise<void> {
-    const plan = await this.getPlanForUser(userId);
-    if (plan !== 'COSECHA' && plan !== 'MERCADO') return; // Paid users bypass
-
-    const wasAtCap = await prisma.$transaction(async (tx) => {
-      // 1) Lazy regen inside the transaction
-      const user = await tx.user.findUnique({
+    // All reads (plan + credit state) and writes (regen + decrement + clock
+    // bump) happen inside one Serializable transaction so:
+    //   - a plan upgrade between the plan read and the decrement can't cause
+    //     a spurious deduction on a now-paid account;
+    //   - the regen-clock bump is atomic with the decrement (no post-commit
+    //     bare write that could be overwritten by a concurrent spend).
+    await prisma.$transaction(async (tx) => {
+      const userWithSub = await tx.user.findUnique({
         where: { id: userId },
-        select: { creditosCreacion: true, proximaRegeneracionCredito: true },
+        select: {
+          creditosCreacion: true,
+          proximaRegeneracionCredito: true,
+          role: true,
+          suscripcion: { select: { planVendedor: true, planComprador: true, estado: true } },
+        },
       });
-      if (!user) throw new AppError('Usuario no encontrado', 404);
+      if (!userWithSub) throw new AppError('Usuario no encontrado', 404);
 
-      let creditos = user.creditosCreacion;
-      let proxima = user.proximaRegeneracionCredito;
+      // Paid-user bypass (inlined plan lookup so we never touch a stale plan)
+      const sub = userWithSub.suscripcion;
+      const isActiveSub = sub && (sub.estado === 'ACTIVA' || sub.estado === 'TRIAL');
+      if (isActiveSub) {
+        const planKey =
+          userWithSub.role === 'VENDEDOR' ? sub.planVendedor : sub.planComprador;
+        if (planKey && planKey !== 'COSECHA' && planKey !== 'MERCADO') return;
+      }
+
+      // 1) Lazy regen
+      let creditos = userWithSub.creditosCreacion;
+      let proxima = userWithSub.proximaRegeneracionCredito;
       const now = new Date();
 
       while (proxima && now >= proxima && creditos < SubscriptionService.CREDITS_MAX) {
@@ -135,7 +152,7 @@ export class SubscriptionService {
 
       const atCapBeforeSpend = creditos >= SubscriptionService.CREDITS_MAX;
 
-      if (creditos !== user.creditosCreacion || proxima !== user.proximaRegeneracionCredito) {
+      if (creditos !== userWithSub.creditosCreacion || proxima !== userWithSub.proximaRegeneracionCredito) {
         await tx.user.update({
           where: { id: userId },
           data: { creditosCreacion: creditos, proximaRegeneracionCredito: proxima },
@@ -162,19 +179,17 @@ export class SubscriptionService {
         );
       }
 
-      return atCapBeforeSpend;
-    });
-
-    // If we just dropped below cap (from cap → cap-1), start the regen clock.
-    // Otherwise leave proxima as-is (it was already counting down from a prior spend).
-    if (wasAtCap) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          proximaRegeneracionCredito: new Date(Date.now() + SubscriptionService.CREDITS_REGEN_MS),
-        },
-      });
-    }
+      // 3) If we just dropped from cap → cap-1, start the regen clock here
+      //    (inside the tx so no concurrent spend can overwrite it).
+      if (atCapBeforeSpend) {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            proximaRegeneracionCredito: new Date(Date.now() + SubscriptionService.CREDITS_REGEN_MS),
+          },
+        });
+      }
+    }, { isolationLevel: 'Serializable' });
   }
 
   // ─── Quota checks ────────────────────────────────────────────────────────

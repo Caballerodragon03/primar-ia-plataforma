@@ -3,6 +3,7 @@ import type { User, Certificado } from '@primaria/database';
 import type { UserEstado } from '@primaria/shared';
 import { AppError } from '../../middleware/error.middleware.js';
 import { sendEmail } from '../../shared/email.js';
+import { env } from '../../config/env.js';
 
 /** Minimal HTML escape for interpolating admin-entered strings into email bodies. */
 function escapeHtml(s: string): string {
@@ -71,17 +72,32 @@ export class AdminService {
     const page = Math.max(1, filters?.page ?? 1);
     const skip = (page - 1) * PAGE_SIZE;
 
-    const estados = filters?.estado?.includes(',')
-      ? filters.estado.split(',') as User['estado'][]
-      : undefined;
+    // Allowlist-validate role and estado before they reach Prisma.
+    const ALLOWED_ROLES: ReadonlyArray<User['role']> = ['VENDEDOR', 'COMPRADOR', 'ADMIN'];
+    const ALLOWED_ESTADOS: ReadonlyArray<User['estado']> = [
+      'EMAIL_NO_VERIFICADO',
+      'EMAIL_VERIFICADO',
+      'PENDIENTE_VERIFICACION',
+      'VERIFICADO_ACTIVO',
+      'PENDIENTE_ACLARACION',
+      'SUSPENDIDO',
+      'RECHAZADO',
+    ];
+
+    const role =
+      filters?.role && (ALLOWED_ROLES as string[]).includes(filters.role)
+        ? (filters.role as User['role'])
+        : undefined;
+
+    const rawEstados = filters?.estado?.split(',') ?? [];
+    const estados = rawEstados.filter((e): e is User['estado'] =>
+      (ALLOWED_ESTADOS as string[]).includes(e),
+    );
 
     const where = {
-      ...(filters?.role ? { role: filters.role as User['role'] } : {}),
-      ...(estados
-        ? { estado: { in: estados } }
-        : filters?.estado
-          ? { estado: filters.estado as User['estado'] }
-          : {}),
+      ...(role ? { role } : {}),
+      ...(estados.length > 1 ? { estado: { in: estados } } : {}),
+      ...(estados.length === 1 ? { estado: estados[0] } : {}),
     };
 
     const [data, total] = await Promise.all([
@@ -174,7 +190,7 @@ export class AdminService {
       },
     });
 
-    const loginUrl = `${process.env.CORS_ORIGIN ?? 'https://app.primar-ia.com'}/login`;
+    const loginUrl = `${env.CORS_ORIGIN}/login`;
 
     if (estado === 'VERIFICADO_ACTIVO') {
       await sendEmail({
@@ -226,7 +242,7 @@ ${notasAdmin ? `<p><strong>Motivo:</strong> ${escapeHtml(notasAdmin)}</p>` : ''}
       subject: 'Tu cuenta en Primar-IA ha sido cancelada',
       html: `<h2>Hola ${user.nombre},</h2>
 <p>Tu cuenta en Primar-IA ha sido cancelada de forma permanente por incumplimiento de nuestros Términos y Condiciones.</p>
-${reason ? `<p><strong>Motivo:</strong> ${reason}</p>` : ''}
+${reason ? `<p><strong>Motivo:</strong> ${escapeHtml(reason)}</p>` : ''}
 <p>Si consideras que se trata de un error, puedes ponerte en contacto con nosotros en info@primar-ia.com.</p>`,
     }).catch((err: Error) => console.error('[ADMIN] Ban email failed:', err.message));
   }

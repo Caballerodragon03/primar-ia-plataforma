@@ -64,6 +64,10 @@ export async function uploadFile(req: Request, res: Response, _next: import('exp
       Key: key,
       Body: file.buffer,
       ContentType: file.mimetype,
+      // Force the browser to never inline-execute uploaded files. Defense
+      // in depth against polyglot files that pass the magic-byte check but
+      // also carry HTML/script payloads downstream.
+      ContentDisposition: 'attachment',
     }));
     const url = `${env.R2_PUBLIC_URL}/${key}`;
     res.json({ success: true, data: { url, key } });

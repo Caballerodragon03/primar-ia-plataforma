@@ -154,6 +154,18 @@ export class MarketService {
         : `Semana ${latest.week}`;
       const pdfUrl = MAPA_BASE + latest.href;
 
+      // Defense in depth: even if a regex bug or compromised listing page
+      // injects a different href, refuse to fetch anything outside the
+      // expected MAPA host. Blocks SSRF to internal Railway metadata.
+      try {
+        const u = new URL(pdfUrl);
+        if (u.hostname !== 'www.mapa.gob.es' || !u.pathname.startsWith('/dam/mapa/')) {
+          return { generated: false, reason: `Refusing PDF URL outside MAPA: ${u.hostname}${u.pathname}` };
+        }
+      } catch {
+        return { generated: false, reason: 'PDF URL malformed' };
+      }
+
       // 4. Download PDF
       const pdfRes = await fetch(pdfUrl, {
         headers: { 'User-Agent': 'Primar-IA Bot/1.0 (+https://primar-ia.com)' },
@@ -185,7 +197,15 @@ export class MarketService {
       // inside it has weaker positional leverage. Also strip any literal
       // delimiter sequences from the user content so it can't fake an exit.
       const DELIM = '<<<MAPA_DOCUMENT>>>';
-      const safeText = truncated.split(DELIM).join('[delim]');
+      // Normalize Unicode (NFKC folds e.g. fullwidth/lookalike characters to
+      // their ASCII forms) and strip invisible/control characters before the
+      // delimiter substitution, so a malicious PDF cannot smuggle a fake
+      // delimiter using zero-width or look-alike brackets.
+      const safeText = truncated
+        .normalize('NFKC')
+        .replace(/[​-‍­﻿⁠]/g, '')
+        .split(DELIM)
+        .join('[delim]');
 
       const prompt = `Eres un analista experto en mercados agrícolas españoles. Vas a procesar el boletín semanal oficial de precios de frutas y hortalizas del MAPA (Ministerio de Agricultura) correspondiente a la semana ${latest.week} de 2026 (${periodo}).
 

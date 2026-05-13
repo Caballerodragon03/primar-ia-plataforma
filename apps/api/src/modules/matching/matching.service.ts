@@ -241,6 +241,54 @@ async function getMatchDelayMs(vendedorId: string, compradorId: string): Promise
  */
 const CAPACITY_HOLDING_ESTADOS: MatchEstado[] = ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'];
 
+/**
+ * Run a transaction with retries on serialization conflicts. Postgres raises
+ * SQLSTATE 40001 (serialization_failure) under SERIALIZABLE isolation when
+ * two transactions conflict; Prisma surfaces this as P2034 (or a wrapped
+ * error containing 40001). Without a retry, concurrent matching runs would
+ * surface a 500 to the user instead of just succeeding on the second try.
+ */
+/**
+ * Validate and parse a future ISO date string for deadline-extend endpoints.
+ * Rejects invalid dates and dates that are not strictly in the future.
+ */
+function parseFutureDate(raw: string): Date {
+  if (typeof raw !== 'string' || raw.length === 0) {
+    throw new AppError('Fecha requerida', 400);
+  }
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) {
+    throw new AppError('Fecha no válida', 400);
+  }
+  if (d.getTime() <= Date.now()) {
+    throw new AppError('La nueva fecha debe ser futura', 400);
+  }
+  return d;
+}
+
+async function txWithRetry<T>(
+  fn: (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => Promise<T>,
+  opts: { maxRetries?: number; baseDelayMs?: number } = {},
+): Promise<T> {
+  const maxRetries = opts.maxRetries ?? 3;
+  const baseDelayMs = opts.baseDelayMs ?? 25;
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await prisma.$transaction(fn, { isolationLevel: 'Serializable' });
+    } catch (err: unknown) {
+      lastErr = err;
+      const e = err as { code?: string; message?: string };
+      const retryable =
+        e?.code === 'P2034' ||
+        (typeof e?.message === 'string' && /40001|could not serialize/i.test(e.message));
+      if (!retryable || attempt === maxRetries - 1) throw err;
+      await new Promise((r) => setTimeout(r, baseDelayMs * Math.pow(2, attempt) + Math.random() * 25));
+    }
+  }
+  throw lastErr;
+}
+
 interface MatchCalibresJsonEntry {
   calibre: string;
   cantidad_kg: number;
@@ -511,11 +559,13 @@ export class MatchingService {
       // Capacity clamping + upsert inside a single transaction so concurrent
       // match runs cannot read the same "remaining" and double-allocate.
       // Also guards against overwriting a match the seller has already
-      // accepted (estado past PROPUESTO/ENVIADO_VENDEDOR).
-      const delay = await getMatchDelayMs(lote.vendedorId, pedido.compradorId);
-      const visibleDesde = new Date(Date.now() + delay);
+      // accepted (estado past PROPUESTO/ENVIADO_VENDEDOR). visibleDesde is
+      // computed inside the callback so retries recompute it freshly.
 
-      const match = await prisma.$transaction(async (tx) => {
+      const match = await txWithRetry(async (tx) => {
+        const delay = await getMatchDelayMs(lote.vendedorId, pedido.compradorId);
+        const visibleDesde = new Date(Date.now() + delay);
+
         // Skip entirely if an existing match has already been accepted
         const existing = await tx.match.findUnique({
           where: { loteId_pedidoId: { loteId, pedidoId: pedido.id } },
@@ -571,7 +621,7 @@ export class MatchingService {
             visibleDesde,
           },
         });
-      }, { isolationLevel: 'Serializable' });
+      });
 
       if (!match) continue;
 
@@ -683,12 +733,13 @@ export class MatchingService {
       const loteCalibres = toLoteCalibre(lote.calibres);
       const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
 
-      const delay = await getMatchDelayMs(lote.vendedorId, pedido.compradorId);
-      const visibleDesde = new Date(Date.now() + delay);
-
       // Capacity clamp + upsert inside a transaction (see runMatchingForLot
       // for rationale). Also guard against overwriting accepted matches.
-      const match = await prisma.$transaction(async (tx) => {
+      // visibleDesde computed inside so retries see a fresh timestamp.
+      const match = await txWithRetry(async (tx) => {
+        const delay = await getMatchDelayMs(lote.vendedorId, pedido.compradorId);
+        const visibleDesde = new Date(Date.now() + delay);
+
         const existing = await tx.match.findUnique({
           where: { loteId_pedidoId: { loteId: lote.id, pedidoId } },
           select: { id: true, estado: true },
@@ -742,7 +793,7 @@ export class MatchingService {
             visibleDesde,
           },
         });
-      }, { isolationLevel: 'Serializable' });
+      });
 
       if (match) matches.push(match);
     }
@@ -813,7 +864,7 @@ export class MatchingService {
     matchId: string,
     calibresContribucion: ContributeInput['calibresContribucion']
   ): Promise<Match> {
-    const updatedMatch = await prisma.$transaction(
+    const updatedMatch = await txWithRetry(
       async (tx) => {
         const match = await tx.match.findUnique({
           where: { id: matchId },
@@ -951,8 +1002,7 @@ export class MatchingService {
         }
 
         return result;
-      },
-      { isolationLevel: 'Serializable' }
+      }
     );
 
     return updatedMatch;
@@ -1208,7 +1258,6 @@ export class MatchingService {
       totalKg: number;
     }>;
   }> {
-    console.log(`[getPendingTasksList] userId=${userId} role=${role}`);
     const now = new Date();
 
     if (role === 'COMPRADOR') {
@@ -1293,10 +1342,6 @@ export class MatchingService {
           },
         }),
       ]);
-
-      console.log(
-        `[getPendingTasksList] COMPRADOR: ${pendingContracts.length} contracts, ${pendingOffers.length} offers, ${pendingDeliveries.length} deliveries, ${expiredOrdersRaw.length} expired orders`
-      );
 
       type CalibreItem = { calibre: string; cantidad_kg: number };
       const computeCov = (calibres: unknown, committedKg: number) => {
@@ -1477,9 +1522,10 @@ export class MatchingService {
     const order = await prisma.pedido.findUnique({ where: { id: orderId } });
     if (!order) throw new AppError('Pedido no encontrado', 404);
     if (order.compradorId !== userId) throw new AppError('No autorizado', 403);
+    const parsed = parseFutureDate(newDate);
     return prisma.pedido.update({
       where: { id: orderId },
-      data: { fechaEntregaDeseada: new Date(newDate) },
+      data: { fechaEntregaDeseada: parsed },
     });
   }
 
@@ -1497,9 +1543,10 @@ export class MatchingService {
     const lot = await prisma.lote.findUnique({ where: { id: lotId } });
     if (!lot) throw new AppError('Lote no encontrado', 404);
     if (lot.vendedorId !== userId) throw new AppError('No autorizado', 403);
+    const parsed = parseFutureDate(newDate);
     return prisma.lote.update({
       where: { id: lotId },
-      data: { fechaFinDisponibilidad: new Date(newDate) },
+      data: { fechaFinDisponibilidad: parsed },
     });
   }
 
