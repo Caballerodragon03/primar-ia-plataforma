@@ -249,6 +249,64 @@ const CAPACITY_HOLDING_ESTADOS: MatchEstado[] = ['ACEPTADO_VENDEDOR', 'PENDIENTE
  * surface a 500 to the user instead of just succeeding on the second try.
  */
 /**
+ * Recompute the lot's estado based on its capacity-holding matches AND the
+ * underlying transaction state. The semantic contract:
+ *
+ *   - ACTIVO              : no capacity-holding matches (or only BORRADOR)
+ *   - PARCIALMENTE_VENDIDO: at least one capacity-holding match exists, but
+ *                           not all of those matches have a COMPLETADO
+ *                           transaccion (i.e. delivery + payment isn't done)
+ *   - VENDIDO             : ALL capacity-holding matches have a COMPLETADO
+ *                           transaccion AND coverage == 100%
+ *
+ * Idempotent and safe to call from any flow that touches match/transaccion
+ * state (contributeToOrder, capturePayment, dispute resolve).
+ *
+ * Does NOT disturb terminal CANCELADO state — once cancelled, always cancelled.
+ */
+export async function recomputeLotState(
+  loteId: string,
+  client: typeof prisma | Parameters<Parameters<typeof prisma.$transaction>[0]>[0] = prisma,
+): Promise<void> {
+  const lote = await client.lote.findUnique({
+    where: { id: loteId },
+    select: {
+      id: true,
+      estado: true,
+      calibres: true,
+      matches: {
+        where: { estado: { in: CAPACITY_HOLDING_ESTADOS } },
+        select: {
+          cantidadKg: true,
+          transaccion: { select: { estado: true } },
+        },
+      },
+    },
+  });
+  if (!lote) return;
+  if (lote.estado === 'CANCELADO') return; // terminal — don't disturb
+
+  const committedKg = lote.matches.reduce((s, m) => s + Number(m.cantidadKg), 0);
+  const totalKg = ((lote.calibres as unknown) as Array<{ cantidad_kg?: number }>)
+    .reduce((s, c) => s + Number(c.cantidad_kg ?? 0), 0);
+
+  let nuevoEstado: LoteEstado;
+  if (committedKg <= 0) {
+    // Never overwrite BORRADOR (drafts) — only nudge from ACTIVO / PARCIALMENTE
+    nuevoEstado = lote.estado === 'BORRADOR' ? 'BORRADOR' : 'ACTIVO';
+  } else {
+    const fullyMatched = totalKg > 0 && committedKg >= totalKg;
+    const allDelivered = lote.matches.length > 0 &&
+      lote.matches.every((m) => m.transaccion?.estado === 'COMPLETADO');
+    nuevoEstado = (fullyMatched && allDelivered) ? 'VENDIDO' : 'PARCIALMENTE_VENDIDO';
+  }
+
+  if (nuevoEstado !== lote.estado) {
+    await client.lote.update({ where: { id: loteId }, data: { estado: nuevoEstado } });
+  }
+}
+
+/**
  * Validate and parse a future ISO date string for deadline-extend endpoints.
  * Rejects invalid dates and dates that are not strictly in the future.
  */
@@ -956,32 +1014,13 @@ export class MatchingService {
           });
         }
 
-        const loteMatchesAgg = await tx.match.aggregate({
-          where: {
-            loteId: match.loteId,
-            estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] },
-            id: { not: matchId },
-          },
-          _sum: { cantidadKg: true },
-        });
-        const loteOtherKg = Number(loteMatchesAgg._sum.cantidadKg ?? 0);
-        const loteTotalCommittedKg = loteOtherKg + cantidadKg;
-        const loteTotalKg = loteCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
-        const loteCoverage = loteTotalKg > 0 ? loteTotalCommittedKg / loteTotalKg : 0;
-
-        const nuevaLoteEstado: LoteEstado =
-          loteCoverage >= 1
-            ? 'VENDIDO'
-            : loteCoverage > 0
-              ? 'PARCIALMENTE_VENDIDO'
-              : (match.lote.estado as LoteEstado);
-
-        if (nuevaLoteEstado !== match.lote.estado) {
-          await tx.lote.update({
-            where: { id: match.loteId },
-            data: { estado: nuevaLoteEstado },
-          });
-        }
+        // Recompute the lot's estado from the source of truth (matches +
+        // their transactions). Will NEVER flip to VENDIDO at this point
+        // because the transaction was just created with PENDIENTE_PAGO —
+        // VENDIDO requires every transaction to be COMPLETADO.
+        // capturePayment + dispute resolution call recomputeLotState too,
+        // so the lot eventually transitions when fulfillment is real.
+        await recomputeLotState(match.loteId, tx);
 
         const existingTx = await tx.transaccion.findUnique({ where: { matchId } });
         if (!existingTx) {

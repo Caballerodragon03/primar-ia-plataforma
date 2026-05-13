@@ -129,7 +129,7 @@ export class DisputasService {
     const nuevoEstadoTransaccion: 'REEMBOLSADO' | 'COMPLETADO' =
       data.resolucion === 'FAVOR_COMPRADOR' ? 'REEMBOLSADO' : 'COMPLETADO';
 
-    const [updatedDisputa] = await prisma.$transaction([
+    const [updatedDisputa, updatedTx] = await prisma.$transaction([
       prisma.disputa.update({
         where: { id: disputaId },
         data: {
@@ -144,8 +144,18 @@ export class DisputasService {
       prisma.transaccion.update({
         where: { id: disputa.transaccionId },
         data: { estado: nuevoEstadoTransaccion },
+        include: { match: { select: { loteId: true } } },
       }),
     ]);
+
+    // Resolving the dispute can move the underlying transaccion to COMPLETADO
+    // or REEMBOLSADO — either way recompute the lot state so a fully-delivered
+    // lot flips to VENDIDO (and a refunded one falls back to PARCIALMENTE).
+    // Dynamic import to avoid a circular dep with matching.service.
+    if (updatedTx.match?.loteId) {
+      const { recomputeLotState } = await import('../matching/matching.service.js');
+      await recomputeLotState(updatedTx.match.loteId);
+    }
 
     return updatedDisputa;
   }

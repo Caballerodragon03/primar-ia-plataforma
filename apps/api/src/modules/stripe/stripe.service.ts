@@ -248,6 +248,12 @@ export class StripeService {
       });
     }
 
+    // Recompute the lot's estado — if this completes the last pending tx on
+    // the lot AND coverage is 100%, the lot will now flip to VENDIDO.
+    // Dynamic import avoids the circular dep between stripe and matching.
+    const { recomputeLotState } = await import('../matching/matching.service.js');
+    await recomputeLotState(transaccion.match.loteId);
+
     return updated;
   }
 
