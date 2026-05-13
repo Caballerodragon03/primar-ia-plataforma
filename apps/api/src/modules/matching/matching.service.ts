@@ -654,13 +654,17 @@ export class MatchingService {
 
     // Sort: calibrated lots always before uncalibrated, then by score or price
     if (sortBy === 'precio') {
+      // Guard against empty arrays — Math.min() with no args returns Infinity
+      // which would silently push the lot to the top instead of the bottom.
+      const minPrice = (cals: ReturnType<typeof toLoteCalibre>): number => {
+        if (cals.length === 0) return Number.POSITIVE_INFINITY;
+        return cals.reduce((m, c) => Math.min(m, c.precio_min_kg), Number.POSITIVE_INFINITY);
+      };
       scored.sort((a, b) => {
         const aUncal = isUncalibratedLot(toLoteCalibre(a.lote.calibres)) ? 1 : 0;
         const bUncal = isUncalibratedLot(toLoteCalibre(b.lote.calibres)) ? 1 : 0;
         if (aUncal !== bUncal) return aUncal - bUncal;
-        const precioA = Math.min(...toLoteCalibre(a.lote.calibres).map((c) => c.precio_min_kg));
-        const precioB = Math.min(...toLoteCalibre(b.lote.calibres).map((c) => c.precio_min_kg));
-        return precioA - precioB;
+        return minPrice(toLoteCalibre(a.lote.calibres)) - minPrice(toLoteCalibre(b.lote.calibres));
       });
     } else {
       scored.sort((a, b) => {

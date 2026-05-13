@@ -182,12 +182,18 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
       onClose();
     } else {
       setErrors(newErrors);
-      // Refresh preview so user can retry
+      // Refresh preview so user can retry — surface if the refresh itself fails
       try {
         const res = await api.get<{ data: { lots: LotGroup[] } }>('/matching/seller/auto-distribute-preview');
         setLots(res.data.data.lots ?? []);
         setEdits({});
-      } catch { /* ignore */ }
+      } catch (refreshErr) {
+        console.error('[auto-distribute] preview refresh failed:', refreshErr);
+        setErrors([
+          ...newErrors,
+          'No se pudo recargar la propuesta. Cierra y vuelve a abrir el panel para actualizar.',
+        ]);
+      }
     }
   };
 

@@ -157,16 +157,31 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
 
   useEffect(() => {
     if (!selectedId) return;
-    fetchMessages(selectedId);
+    // Cancellation flag: if the user switches conversation (or unmounts)
+    // mid-fetch, the in-flight response should not call setMessages on the
+    // now-unmounted/stale effect.
+    let cancelled = false;
+    const safeFetch = async (id: string) => {
+      try {
+        const res = await api.get<{ data: Message[] }>(`/chat/${id}/messages`);
+        if (cancelled) return;
+        setMessages(res.data.data ?? []);
+        scrollToBottom();
+      } catch (err) {
+        if (!cancelled) console.error('[chat] fetchMessages failed:', err);
+      }
+    };
+    safeFetch(selectedId);
 
     pollRef.current = setInterval(() => {
-      fetchMessages(selectedId);
+      safeFetch(selectedId);
     }, 5000);
 
     return () => {
+      cancelled = true;
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [selectedId, fetchMessages]);
+  }, [selectedId, scrollToBottom]);
 
   useEffect(() => {
     scrollToBottom();
