@@ -17,8 +17,10 @@ export class BugReportsService {
   }
 
   async listForAdmin(estado?: string) {
+    const allowed = ['NUEVO', 'EN_PROGRESO', 'RESUELTO', 'DESCARTADO'] as const;
+    const safe = (allowed as readonly string[]).includes(estado ?? '') ? (estado as typeof allowed[number]) : undefined;
     return prisma.bugReport.findMany({
-      where: estado ? { estado: estado as 'NUEVO' | 'EN_PROGRESO' | 'RESUELTO' | 'DESCARTADO' } : undefined,
+      where: safe ? { estado: safe } : undefined,
       orderBy: [{ estado: 'asc' }, { createdAt: 'desc' }],
     });
   }

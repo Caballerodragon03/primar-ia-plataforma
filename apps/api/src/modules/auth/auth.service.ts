@@ -71,7 +71,7 @@ export class AuthService {
     });
 
     // Send verification email (skips if RESEND_API_KEY is placeholder)
-    const verifyUrl = `${process.env.CORS_ORIGIN ?? 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+    const verifyUrl = `${env.CORS_ORIGIN}/verify-email?token=${verificationToken}`;
     await sendEmail({
       to: user.email,
       subject: 'Verifica tu cuenta en Primar-IA',
@@ -225,7 +225,7 @@ export class AuthService {
       data: { userId: user.id, token, tipo: 'PASSWORD_RESET', expiresAt },
     });
 
-    const resetUrl = `${process.env.CORS_ORIGIN ?? 'http://localhost:3000'}/reset-password?token=${token}`;
+    const resetUrl = `${env.CORS_ORIGIN}/reset-password?token=${token}`;
     await sendEmail({
       to: user.email,
       subject: 'Restablecer contraseña — Primar-IA',

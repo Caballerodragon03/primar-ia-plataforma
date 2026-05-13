@@ -4,6 +4,16 @@ import type { UserEstado } from '@primaria/shared';
 import { AppError } from '../../middleware/error.middleware.js';
 import { sendEmail } from '../../shared/email.js';
 
+/** Minimal HTML escape for interpolating admin-entered strings into email bodies. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ─── Response types ───────────────────────────────────────────────────────────
 
 export interface PaginatedResponse {
@@ -182,7 +192,7 @@ export class AdminService {
         subject: 'Actualización sobre tu cuenta en Primar-IA',
         html: `<h2>Hola ${user.nombre},</h2>
 <p>Lamentamos informarte de que tu solicitud de cuenta en Primar-IA no ha sido aprobada en este momento.</p>
-${notasAdmin ? `<p><strong>Motivo:</strong> ${notasAdmin}</p>` : ''}
+${notasAdmin ? `<p><strong>Motivo:</strong> ${escapeHtml(notasAdmin)}</p>` : ''}
 <p>Si crees que se trata de un error o deseas más información, puedes ponerte en contacto con nosotros respondiendo a este correo.</p>`,
       }).catch((err: Error) => console.error('[ADMIN] Rejection email failed:', err.message));
     }

@@ -2,11 +2,34 @@ import { Request, Response } from 'express';
 import { stripeService } from './stripe.service.js';
 import { qrService } from './qr.service.js';
 import { AppError } from '../../middleware/error.middleware.js';
+import { env } from '../../config/env.js';
+
+/**
+ * Allowed redirect origins for Stripe onboarding return/refresh URLs.
+ * Prevents an authenticated seller from supplying an attacker-controlled
+ * URL that Stripe would then redirect their browser to.
+ */
+function assertSafeRedirectUrl(label: string, raw: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new AppError(`${label} no es una URL válida`, 400);
+  }
+  const allowedOrigin = (() => {
+    try { return new URL(env.CORS_ORIGIN).origin; } catch { return null; }
+  })();
+  if (!allowedOrigin || parsed.origin !== allowedOrigin) {
+    throw new AppError(`${label} debe pertenecer al dominio de la plataforma`, 400);
+  }
+}
 
 export async function startOnboarding(req: Request, res: Response): Promise<void> {
   const userId = req.user!.sub;
   const { returnUrl, refreshUrl } = req.body as { returnUrl: string; refreshUrl: string };
   if (!returnUrl || !refreshUrl) throw new AppError('returnUrl y refreshUrl son requeridos', 400);
+  assertSafeRedirectUrl('returnUrl', returnUrl);
+  assertSafeRedirectUrl('refreshUrl', refreshUrl);
   const result = await stripeService.createOnboardingLink(userId, returnUrl, refreshUrl);
   res.json({ success: true, data: result });
 }
