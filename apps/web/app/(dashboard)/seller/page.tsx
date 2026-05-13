@@ -36,7 +36,13 @@ interface Match {
   createdAt: string;
 }
 
-const CLOSED_LOT_STATES = ['VENDIDO', 'PARCIALMENTE_VENDIDO'];
+// "Closed" = the deal is over either way. PARCIALMENTE_VENDIDO is NOT closed —
+// the seller can still match the remaining kg to new buyers.
+const CLOSED_LOT_STATES = ['VENDIDO', 'CANCELADO'];
+// "Active / in progress" = everything except the closed set above.
+// Includes BORRADOR (draft), ACTIVO, PARCIALMENTE_VENDIDO, and EXPIRADO so
+// sellers can see lots that need to be extended or republished.
+const ACTIVE_LOT_STATES = ['BORRADOR', 'ACTIVO', 'PARCIALMENTE_VENDIDO', 'EXPIRADO'];
 
 interface SellerNotifSummary {
   pendingMatches: number;
@@ -78,13 +84,13 @@ export default function SellerDashboard() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const activeLots = lots.filter((l) => ['ACTIVO', 'PARCIALMENTE_VENDIDO'].includes(l.estado)).length;
+  const activeLots = lots.filter((l) => ACTIVE_LOT_STATES.includes(l.estado)).length;
   const pendingMatches = matches.filter((m) =>
     ['PROPUESTO', 'ENVIADO_VENDEDOR'].includes(m.estado)
   ).length;
   const completedSales = lots.filter((l) => CLOSED_LOT_STATES.includes(l.estado)).length;
 
-  const topActiveLots = lots.filter((l) => ['ACTIVO', 'PARCIALMENTE_VENDIDO'].includes(l.estado)).slice(0, 5);
+  const topActiveLots = lots.filter((l) => ACTIVE_LOT_STATES.includes(l.estado)).slice(0, 5);
   const recentMatches = matches.slice(0, 3);
 
   const n = notifs;
@@ -163,7 +169,7 @@ export default function SellerDashboard() {
         <KPICard
           label="Lots Closed"
           value={loading ? '—' : String(completedSales)}
-          sub={loading ? 'Loading...' : 'Sold or partially sold'}
+          sub={loading ? 'Loading...' : 'Fully sold or cancelled'}
           icon={<CheckCircle2 className="w-4 h-4" />}
         />
       </div>
