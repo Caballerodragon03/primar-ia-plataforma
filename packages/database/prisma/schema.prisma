@@ -248,6 +248,7 @@ model User {
   @@index([email])
   @@index([username])
   @@index([role, estado])
+  @@index([proximaRegeneracionCredito])
   @@map("users")
 }
 
@@ -419,6 +420,8 @@ model Match {
   @@unique([loteId, pedidoId])
   @@index([loteId, estado])
   @@index([pedidoId, estado])
+  // Used by the market analytics queries (estado='CONFIRMADO' + date range)
+  @@index([estado, createdAt])
   @@map("matches")
 }
 
@@ -601,6 +604,8 @@ model Suscripcion {
 
   user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Used by the Stripe customer portal lookup
+  @@index([stripeCustomerId])
   @@map("suscripciones")
 }
 

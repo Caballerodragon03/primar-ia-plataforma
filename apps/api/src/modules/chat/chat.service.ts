@@ -47,38 +47,42 @@ export class ChatService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    // For each transaccion, get unread count (messages from the other party that are unread)
-    const results = await Promise.all(
-      transacciones.map(async (tx) => {
-        const unreadCount = await prisma.mensaje.count({
-          where: {
-            transaccionId: tx.id,
-            remitenteId: { not: userId },
-            leido: false,
-          },
-        });
+    if (transacciones.length === 0) return [];
 
-        const isVendedor = tx.vendedorId === userId;
-        const counterpart = isVendedor ? tx.comprador : tx.vendedor;
-        const lastMessage = tx.mensajes[0] ?? null;
-        const productoNombre = tx.match?.lote?.producto?.nombre ?? 'Producto';
-        const orderId = tx.match?.pedido?.id?.slice(-5).toUpperCase() ?? '';
+    // Get unread counts for all conversations in a single grouped query
+    // (was previously N+1: one count() per transaccion).
+    const unreadCounts = await prisma.mensaje.groupBy({
+      by: ['transaccionId'],
+      where: {
+        transaccionId: { in: transacciones.map((t) => t.id) },
+        remitenteId: { not: userId },
+        leido: false,
+      },
+      _count: { _all: true },
+    });
+    const unreadByTx = new Map<string, number>();
+    for (const row of unreadCounts) {
+      unreadByTx.set(row.transaccionId, row._count._all);
+    }
 
-        // Return in the format expected by ChatView
-        return {
-          transaccionId: tx.id,
-          counterpartName: `${counterpart.nombre} ${counterpart.apellidos}`.trim(),
-          orderId,
-          product: productoNombre,
-          lastMessage: lastMessage?.contenido ?? '',
-          lastMessageAt: lastMessage?.createdAt?.toISOString() ?? tx.createdAt.toISOString(),
-          unreadCount,
-          estado: tx.estado,
-        };
-      })
-    );
+    return transacciones.map((tx) => {
+      const isVendedor = tx.vendedorId === userId;
+      const counterpart = isVendedor ? tx.comprador : tx.vendedor;
+      const lastMessage = tx.mensajes[0] ?? null;
+      const productoNombre = tx.match?.lote?.producto?.nombre ?? 'Producto';
+      const orderId = tx.match?.pedido?.id?.slice(-5).toUpperCase() ?? '';
 
-    return results;
+      return {
+        transaccionId: tx.id,
+        counterpartName: `${counterpart.nombre} ${counterpart.apellidos}`.trim(),
+        orderId,
+        product: productoNombre,
+        lastMessage: lastMessage?.contenido ?? '',
+        lastMessageAt: lastMessage?.createdAt?.toISOString() ?? tx.createdAt.toISOString(),
+        unreadCount: unreadByTx.get(tx.id) ?? 0,
+        estado: tx.estado,
+      };
+    });
   }
 
   /**
