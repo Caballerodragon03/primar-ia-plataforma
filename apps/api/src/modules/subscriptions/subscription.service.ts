@@ -103,43 +103,78 @@ export class SubscriptionService {
   /**
    * Consumes 1 credit for a free-tier user. Throws if no credits available.
    * No-op for paid users.
+   *
+   * Race-safe: regen + decrement happen inside a single transaction with an
+   * atomic `updateMany({ where: creditosCreacion > 0, decrement })` so two
+   * concurrent calls cannot both pass the guard with the same stale value.
    */
   private async consumeCredit(userId: string): Promise<void> {
     const plan = await this.getPlanForUser(userId);
     if (plan !== 'COSECHA' && plan !== 'MERCADO') return; // Paid users bypass
 
-    const { creditos } = await this.regenerateCreditsIfDue(userId);
-    if (creditos <= 0) {
-      const user = await prisma.user.findUnique({
+    const wasAtCap = await prisma.$transaction(async (tx) => {
+      // 1) Lazy regen inside the transaction
+      const user = await tx.user.findUnique({
         where: { id: userId },
-        select: { proximaRegeneracionCredito: true },
+        select: { creditosCreacion: true, proximaRegeneracionCredito: true },
       });
-      const next = user?.proximaRegeneracionCredito;
-      const hoursLeft = next ? Math.ceil((next.getTime() - Date.now()) / (60 * 60 * 1000)) : 0;
-      throw new AppError(
-        `No tienes créditos de creación disponibles. El próximo crédito se desbloquea en ~${hoursLeft}h. Mejora tu plan para crear sin límites.`,
-        403,
-      );
+      if (!user) throw new AppError('Usuario no encontrado', 404);
+
+      let creditos = user.creditosCreacion;
+      let proxima = user.proximaRegeneracionCredito;
+      const now = new Date();
+
+      while (proxima && now >= proxima && creditos < SubscriptionService.CREDITS_MAX) {
+        creditos += 1;
+        if (creditos >= SubscriptionService.CREDITS_MAX) {
+          proxima = null;
+        } else {
+          proxima = new Date(proxima.getTime() + SubscriptionService.CREDITS_REGEN_MS);
+        }
+      }
+
+      const atCapBeforeSpend = creditos >= SubscriptionService.CREDITS_MAX;
+
+      if (creditos !== user.creditosCreacion || proxima !== user.proximaRegeneracionCredito) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { creditosCreacion: creditos, proximaRegeneracionCredito: proxima },
+        });
+      }
+
+      // 2) Atomic decrement guarded by `creditosCreacion > 0`
+      const result = await tx.user.updateMany({
+        where: { id: userId, creditosCreacion: { gt: 0 } },
+        data: { creditosCreacion: { decrement: 1 } },
+      });
+
+      if (result.count === 0) {
+        // No credit available — surface the next regen time
+        const nextUser = await tx.user.findUnique({
+          where: { id: userId },
+          select: { proximaRegeneracionCredito: true },
+        });
+        const next = nextUser?.proximaRegeneracionCredito;
+        const hoursLeft = next ? Math.ceil((next.getTime() - Date.now()) / (60 * 60 * 1000)) : 0;
+        throw new AppError(
+          `No tienes créditos de creación disponibles. El próximo crédito se desbloquea en ~${hoursLeft}h. Mejora tu plan para crear sin límites.`,
+          403,
+        );
+      }
+
+      return atCapBeforeSpend;
+    });
+
+    // If we just dropped below cap (from cap → cap-1), start the regen clock.
+    // Otherwise leave proxima as-is (it was already counting down from a prior spend).
+    if (wasAtCap) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          proximaRegeneracionCredito: new Date(Date.now() + SubscriptionService.CREDITS_REGEN_MS),
+        },
+      });
     }
-
-    // Decrement and start the regen clock if we just dropped below cap
-    const newCreditos = creditos - 1;
-    const newProxima = newCreditos < SubscriptionService.CREDITS_MAX
-      ? new Date(Date.now() + SubscriptionService.CREDITS_REGEN_MS)
-      : null;
-
-    // Only set proxima if it wasn't already set (i.e. we were at cap)
-    const current = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { proximaRegeneracionCredito: true },
-    });
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        creditosCreacion: newCreditos,
-        proximaRegeneracionCredito: current?.proximaRegeneracionCredito ?? newProxima,
-      },
-    });
   }
 
   // ─── Quota checks ────────────────────────────────────────────────────────
@@ -359,11 +394,19 @@ export class SubscriptionService {
         });
         if (!dbSub) return;
 
-        const estado = sub.status === 'active' ? 'ACTIVA'
+        // Map every Stripe status explicitly. Previously the default fell
+        // through to 'ACTIVA' which silently granted access to past_due /
+        // unpaid users (revenue leak). All non-paying states map to PAUSADA.
+        const estado =
+          sub.status === 'active' ? 'ACTIVA'
           : sub.status === 'trialing' ? 'TRIAL'
           : sub.status === 'canceled' ? 'CANCELADA'
           : sub.status === 'paused' ? 'PAUSADA'
-          : 'ACTIVA';
+          : sub.status === 'past_due' ? 'PAUSADA'
+          : sub.status === 'unpaid' ? 'PAUSADA'
+          : sub.status === 'incomplete' ? 'PAUSADA'
+          : sub.status === 'incomplete_expired' ? 'CANCELADA'
+          : 'PAUSADA'; // safe default — unknown status = no access
 
         const wasInactive = dbSub.estado !== 'ACTIVA' && dbSub.estado !== 'TRIAL';
         const nowActive = estado === 'ACTIVA' || estado === 'TRIAL';
