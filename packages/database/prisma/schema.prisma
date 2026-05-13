@@ -723,6 +723,31 @@ model BannedEntry {
   @@map("banned_entries")
 }
 
+enum BugReportEstado {
+  NUEVO
+  EN_PROGRESO
+  RESUELTO
+  DESCARTADO
+}
+
+model BugReport {
+  id            String          @id @default(cuid())
+  userId        String?         @map("user_id") // nullable: allow logged-out reports if added later
+  url           String?         @db.Text
+  descripcion   String          @db.Text
+  capturaUrl    String?         @map("captura_url") @db.Text
+  userAgent     String?         @map("user_agent")
+  estado        BugReportEstado @default(NUEVO)
+  adminNotas    String?         @map("admin_notas") @db.Text
+  resolvedAt    DateTime?       @map("resolved_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  @@index([estado])
+  @@index([createdAt])
+  @@map("bug_reports")
+}
+
 // Weekly auto-generated market report from mapa.gob.es boletín semanal
 model MarketReport {
   id          String   @id @default(cuid())

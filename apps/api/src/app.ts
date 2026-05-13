@@ -24,6 +24,7 @@ import { certificatesRouter } from './modules/certificates/certificates.routes.j
 import { harvestEstimationRouter } from './modules/harvest-estimation/harvest-estimation.routes.js';
 import { invoiceRouter } from './modules/invoices/invoice.routes.js';
 import { marketPublicRouter, marketPremiumRouter, marketAdminRouter } from './modules/market/market.routes.js';
+import { bugReportsRouter, bugReportsAdminRouter } from './modules/bug-reports/bug-reports.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { apiRateLimiter } from './middleware/rateLimiter.middleware.js';
 import { requestId, noCache } from './middleware/security.middleware.js';
@@ -98,6 +99,8 @@ app.use('/api/v1/invoices', invoiceRouter);
 app.use('/api/v1/market', marketPublicRouter);
 app.use('/api/v1/market/premium', marketPremiumRouter);
 app.use('/api/v1/admin/market', marketAdminRouter);
+app.use('/api/v1/bug-reports', bugReportsRouter);
+app.use('/api/v1/admin/bug-reports', bugReportsAdminRouter);
 
 // 404
 app.use((_req, res) => {
