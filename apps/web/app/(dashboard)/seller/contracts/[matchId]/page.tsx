@@ -23,8 +23,11 @@ import {
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 
+interface CalibreItem { calibre: string; cantidad_kg: number; precio_min_kg?: number }
+
 interface MatchContractInfo {
   matchId: string;
+  transaccionId: string | null;
   contratoEstado:
     | 'BORRADOR'
     | 'PENDIENTE_FIRMA_VENDEDOR'
@@ -36,6 +39,19 @@ interface MatchContractInfo {
   contratoPdfUrl: string | null;
   comisionEstimada: number | null;
   comisionPorcentaje: number | null;
+  // Product / price details (Phase 4 fix)
+  producto: string | null;
+  variedad: string | null;
+  cantidadKg: number;
+  precioKg: number;
+  precioTotalMercancia: number;
+  calibres: CalibreItem[] | null;
+  incoterm: string | null;
+  logistica: string | null;
+  terminoPago: string | null;
+  destinoFinal: string | null;
+  direccionRecogida: string | null;
+  // Signatures
   firmaVendedorDeadline: string | null;
   firmaVendedor: string | null;
   firmaVendedorFecha: string | null;
@@ -54,6 +70,15 @@ function formatEur(n: number | null): string {
 function formatDateTime(iso: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+const TERMINO_PAGO_LABELS: Record<string, string> = {
+  INMEDIATO: 'Inmediato',
+  DIAS_30: '30 días',
+  DIAS_60: '60 días',
+};
+function formatTerminoPago(value: string): string {
+  return TERMINO_PAGO_LABELS[value] ?? value;
 }
 
 function estadoBadge(estado: MatchContractInfo['contratoEstado']) {
@@ -224,8 +249,59 @@ export default function SellerMatchContractPage() {
         {estadoBadge(info.contratoEstado)}
       </div>
 
-      {/* Commission summary */}
+      {/* Operation summary — what's being signed */}
       <div className="bg-card border border-border rounded-card divide-y divide-border shadow-soft">
+        <div className="p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-3">Resumen de la operación</h2>
+          <dl className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
+            {info.producto && (
+              <>
+                <dt className="text-text-secondary">Producto</dt>
+                <dd className="font-medium text-right">{info.producto}{info.variedad ? ` — ${info.variedad}` : ''}</dd>
+              </>
+            )}
+            <dt className="text-text-secondary">Cantidad</dt>
+            <dd className="font-medium text-right">{info.cantidadKg.toLocaleString('es-ES')} kg</dd>
+            <dt className="text-text-secondary">Precio/kg acordado</dt>
+            <dd className="font-medium text-right">{formatEur(info.precioKg)}</dd>
+            <dt className="text-text-secondary">Importe total mercancía</dt>
+            <dd className="font-semibold text-right text-green-700">{formatEur(info.precioTotalMercancia)}</dd>
+            {info.incoterm && (
+              <>
+                <dt className="text-text-secondary">Incoterm</dt>
+                <dd className="font-medium text-right">{info.incoterm}</dd>
+              </>
+            )}
+            {info.terminoPago && (
+              <>
+                <dt className="text-text-secondary">Condiciones de pago</dt>
+                <dd className="font-medium text-right">{formatTerminoPago(info.terminoPago)}</dd>
+              </>
+            )}
+            {info.destinoFinal && (
+              <>
+                <dt className="text-text-secondary">Destino</dt>
+                <dd className="font-medium text-right">{info.destinoFinal}</dd>
+              </>
+            )}
+          </dl>
+          {info.calibres && info.calibres.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <p className="text-xs text-text-secondary mb-2">Calibres</p>
+              <div className="flex flex-wrap gap-1.5">
+                {info.calibres.map((c) => (
+                  <span key={c.calibre} className="text-xs bg-muted text-text-secondary px-2 py-0.5 rounded-badge">
+                    {c.calibre}: {c.cantidad_kg.toLocaleString('es-ES')} kg
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-text-secondary mt-3">
+            Recibirás el importe total directamente del comprador por transferencia según las condiciones de pago acordadas.
+          </p>
+        </div>
+
         <div className="p-5">
           <h2 className="text-sm font-semibold text-foreground mb-3">Comisión Primar-IA</h2>
           <div className="grid grid-cols-2 gap-y-2 text-sm">
@@ -329,7 +405,7 @@ export default function SellerMatchContractPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => router.push('/seller/messages')}
+                onClick={() => router.push(info.transaccionId ? `/seller/messages?tx=${info.transaccionId}` : '/seller/messages')}
               >
                 Modificar condiciones (chat)
               </Button>

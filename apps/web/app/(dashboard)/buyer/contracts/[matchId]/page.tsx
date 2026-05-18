@@ -25,7 +25,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, FileText, Download, CheckCircle2, Loader2, AlertTriangle, Clock, ShieldAlert,
@@ -33,8 +33,11 @@ import {
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 
+interface CalibreItem { calibre: string; cantidad_kg: number; precio_max_kg?: number }
+
 interface MatchContractInfo {
   matchId: string;
+  transaccionId: string | null;
   contratoEstado:
     | 'BORRADOR'
     | 'PENDIENTE_FIRMA_VENDEDOR'
@@ -46,6 +49,17 @@ interface MatchContractInfo {
   contratoPdfUrl: string | null;
   comisionEstimada: number | null;
   comisionPorcentaje: number | null;
+  producto: string | null;
+  variedad: string | null;
+  cantidadKg: number;
+  precioKg: number;
+  precioTotalMercancia: number;
+  calibres: CalibreItem[] | null;
+  incoterm: string | null;
+  logistica: string | null;
+  terminoPago: string | null;
+  destinoFinal: string | null;
+  direccionRecogida: string | null;
   firmaVendedorDeadline: string | null;
   firmaVendedor: string | null;
   firmaVendedorFecha: string | null;
@@ -65,14 +79,27 @@ function formatDateTime(iso: string | null): string {
   return new Date(iso).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+const TERMINO_PAGO_LABELS: Record<string, string> = {
+  INMEDIATO: 'Inmediato',
+  DIAS_30: '30 días',
+  DIAS_60: '60 días',
+};
+function formatTerminoPago(value: string): string {
+  return TERMINO_PAGO_LABELS[value] ?? value;
+}
+
 export default function BuyerMatchContractPage() {
   const { matchId } = useParams<{ matchId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paidFlag = searchParams.get('paid') === '1';
+  const cancelledFlag = searchParams.get('cancelled') === '1';
 
   const [info, setInfo] = useState<MatchContractInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [pollingForWebhook, setPollingForWebhook] = useState(paidFlag);
 
   // Modal state
   const [showSignModal, setShowSignModal] = useState(false);
@@ -105,6 +132,37 @@ export default function BuyerMatchContractPage() {
       router.replace(`/seller/contracts/${matchId}`);
     }
   }, [info, matchId, router]);
+
+  // After Stripe redirects back with ?paid=1 the webhook may not have fired
+  // yet. Poll the info endpoint every 2s for up to 20s waiting for
+  // contratoEstado=FIRMADO. Stop as soon as we see it (or when the user
+  // navigates away — useEffect cleanup).
+  useEffect(() => {
+    if (!paidFlag) return;
+    if (info?.contratoEstado === 'FIRMADO') {
+      setPollingForWebhook(false);
+      return;
+    }
+    setPollingForWebhook(true);
+    const start = Date.now();
+    const interval = setInterval(async () => {
+      if (Date.now() - start > 20_000) {
+        clearInterval(interval);
+        setPollingForWebhook(false);
+        return;
+      }
+      try {
+        const { data } = await api.get(`/contracts/match/${matchId}/info`);
+        setInfo(data.data);
+        if (data.data?.contratoEstado === 'FIRMADO') {
+          clearInterval(interval);
+          setPollingForWebhook(false);
+        }
+      } catch { /* silent */ }
+    }, 2000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paidFlag, info?.contratoEstado, matchId]);
 
   async function handleDownload() {
     setDownloading(true);
@@ -189,8 +247,20 @@ export default function BuyerMatchContractPage() {
   }
 
   const sellerSigned = !!info.firmaVendedor;
+  const deadlineExpired = info.firmaVendedorDeadline
+    ? new Date(info.firmaVendedorDeadline).getTime() < Date.now()
+    : false;
+  // Anti double-charge: if Stripe redirected us back with ?paid=1, NEVER
+  // re-show the "Firmar y pagar" button — even if the webhook hasn't fired
+  // yet and the state still says PENDIENTE_PAGO_COMPRADOR. The user already
+  // paid; clicking again would create a second Checkout Session.
+  // The backend has its own protection (reuses the same session) but defense
+  // in depth: also block here.
+  const paymentInFlight = paidFlag && info.contratoEstado !== 'FIRMADO';
   const canSignAndPay = info.isBuyer && sellerSigned && !info.firmaComprador
-    && info.contratoEstado === 'PENDIENTE_PAGO_COMPRADOR';
+    && info.contratoEstado === 'PENDIENTE_PAGO_COMPRADOR'
+    && !deadlineExpired
+    && !paymentInFlight;
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
@@ -206,8 +276,96 @@ export default function BuyerMatchContractPage() {
         <h1 className="text-xl font-bold text-foreground">Contrato — Firma y pago</h1>
       </div>
 
-      {/* Commission */}
+      {/* Post-Stripe redirect banners */}
+      {paymentInFlight && pollingForWebhook && (
+        <div className="bg-blue-50 border border-blue-200 rounded-card p-4 flex items-center gap-3">
+          <Loader2 className="w-5 h-5 text-blue-600 animate-spin flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-blue-900">Procesando tu pago…</p>
+            <p className="text-xs text-blue-800">
+              Stripe ha confirmado el pago. Estamos finalizando la firma y el contrato. Esto suele tardar unos segundos.
+            </p>
+          </div>
+        </div>
+      )}
+      {paymentInFlight && !pollingForWebhook && (
+        <div className="bg-amber-50 border border-amber-200 rounded-card p-4 flex items-start gap-3">
+          <Loader2 className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-900">El pago se está finalizando</p>
+            <p className="text-xs text-amber-800 mt-1">
+              Tu pago se ha enviado a Stripe pero aún no hemos recibido la confirmación final. No vuelvas a pulsar «Firmar y pagar» — ya está en curso. Refresca esta página en un minuto.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => window.location.reload()}
+            >
+              Refrescar
+            </Button>
+          </div>
+        </div>
+      )}
+      {cancelledFlag && info.contratoEstado === 'PENDIENTE_PAGO_COMPRADOR' && !paymentInFlight && (
+        <div className="bg-amber-50 border border-amber-200 rounded-card p-4">
+          <p className="text-sm font-semibold text-amber-900">Pago cancelado</p>
+          <p className="text-xs text-amber-800 mt-1">
+            Cancelaste el pago en Stripe. Puedes reintentar cuando quieras, siempre que el vendedor no haya caducado su firma.
+          </p>
+        </div>
+      )}
+
+      {/* Operation summary — what you're signing */}
       <div className="bg-card border border-border rounded-card divide-y divide-border shadow-soft">
+        <div className="p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-3">Resumen de la operación</h2>
+          <dl className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
+            {info.producto && (
+              <>
+                <dt className="text-text-secondary">Producto</dt>
+                <dd className="font-medium text-right">{info.producto}{info.variedad ? ` — ${info.variedad}` : ''}</dd>
+              </>
+            )}
+            <dt className="text-text-secondary">Cantidad</dt>
+            <dd className="font-medium text-right">{info.cantidadKg.toLocaleString('es-ES')} kg</dd>
+            <dt className="text-text-secondary">Precio/kg acordado</dt>
+            <dd className="font-medium text-right">{formatEur(info.precioKg)}</dd>
+            <dt className="text-text-secondary">Importe a pagar al vendedor</dt>
+            <dd className="font-semibold text-right">{formatEur(info.precioTotalMercancia)}</dd>
+            {info.incoterm && (
+              <>
+                <dt className="text-text-secondary">Incoterm</dt>
+                <dd className="font-medium text-right">{info.incoterm}</dd>
+              </>
+            )}
+            {info.terminoPago && (
+              <>
+                <dt className="text-text-secondary">Condiciones de pago</dt>
+                <dd className="font-medium text-right">{formatTerminoPago(info.terminoPago)}</dd>
+              </>
+            )}
+            {info.destinoFinal && (
+              <>
+                <dt className="text-text-secondary">Destino</dt>
+                <dd className="font-medium text-right">{info.destinoFinal}</dd>
+              </>
+            )}
+          </dl>
+          {info.calibres && info.calibres.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <p className="text-xs text-text-secondary mb-2">Calibres</p>
+              <div className="flex flex-wrap gap-1.5">
+                {info.calibres.map((c) => (
+                  <span key={c.calibre} className="text-xs bg-muted text-text-secondary px-2 py-0.5 rounded-badge">
+                    {c.calibre}: {c.cantidad_kg.toLocaleString('es-ES')} kg
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="p-5">
           <h2 className="text-sm font-semibold text-foreground mb-3">Comisión Primar-IA</h2>
           <div className="grid grid-cols-2 gap-y-2 text-sm">
@@ -317,8 +475,30 @@ export default function BuyerMatchContractPage() {
             <Button variant="primary" onClick={openSignModal} className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" /> Firmar y pagar comisión
             </Button>
-            <Button variant="outline" onClick={() => router.push('/buyer/messages')}>
+            <Button variant="outline" onClick={() => router.push(info.transaccionId ? `/buyer/messages?tx=${info.transaccionId}` : '/buyer/messages')}>
               Modificar condiciones (chat)
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Deadline expired but cron hasn't moved it to CADUCADO yet — show
+          inert state so the user doesn't get a confusing 410 on click. */}
+      {sellerSigned && !info.firmaComprador
+        && info.contratoEstado === 'PENDIENTE_PAGO_COMPRADOR'
+        && deadlineExpired && (
+        <div className="bg-red-50 border border-red-200 rounded-card p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle className="w-4 h-4 text-red-700" />
+            <p className="text-sm font-semibold text-red-900">Plazo de firma vencido</p>
+          </div>
+          <p className="text-xs text-red-800">
+            El plazo de 48 horas hábiles expiró el {formatDateTime(info.firmaVendedorDeadline)}.
+            El contrato pasará a caducado en breve. Habla con el vendedor por chat si quieres reabrir la operación.
+          </p>
+          <div className="mt-3">
+            <Button variant="outline" size="sm" onClick={() => router.push(info.transaccionId ? `/buyer/messages?tx=${info.transaccionId}` : '/buyer/messages')}>
+              Abrir chat con el vendedor
             </Button>
           </div>
         </div>
@@ -333,6 +513,11 @@ export default function BuyerMatchContractPage() {
           <p className="text-xs text-red-800">
             El plazo de 48 horas hábiles para firmar y pagar ha vencido. Habla con el vendedor por chat si quieres iniciar de nuevo.
           </p>
+          <div className="mt-3">
+            <Button variant="outline" size="sm" onClick={() => router.push(info.transaccionId ? `/buyer/messages?tx=${info.transaccionId}` : '/buyer/messages')}>
+              Abrir chat con el vendedor
+            </Button>
+          </div>
         </div>
       )}
 

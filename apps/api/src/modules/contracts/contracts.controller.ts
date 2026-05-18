@@ -72,8 +72,28 @@ export async function getMatchContractInfo(req: Request, res: Response): Promise
       comisionEstimada: true,
       comisionPorcentaje: true,
       firmaVendedorDeadline: true,
-      lote: { select: { vendedorId: true } },
-      pedido: { select: { compradorId: true } },
+      cantidadKg: true,
+      precioKg: true,
+      precioKgFinal: true,
+      incotermFinal: true,
+      logisticaFinal: true,
+      terminoPagoFinal: true,
+      calibresJson: true,
+      lote: {
+        select: {
+          vendedorId: true,
+          producto: { select: { nombre: true } },
+          variedad: { select: { nombre: true } },
+          direccionRecogida: true,
+        },
+      },
+      pedido: {
+        select: {
+          compradorId: true,
+          destinoFinal: true,
+          incoterm: true,
+        },
+      },
       transaccion: {
         select: {
           id: true,
@@ -91,15 +111,40 @@ export async function getMatchContractInfo(req: Request, res: Response): Promise
   if (match.lote.vendedorId !== userId && match.pedido.compradorId !== userId) {
     throw new AppError('No autorizado', 403);
   }
+  // precioKgFinal is what was agreed; fallback to match.precioKg if negotiation
+  // hasn't happened yet.
+  const effectivePrice = match.precioKgFinal !== null
+    ? Number(match.precioKgFinal)
+    : Number(match.precioKg);
+  const cantidadKg = Number(match.cantidadKg);
+  const precioTotalMercancia = effectivePrice * cantidadKg;
   res.json({
     success: true,
     data: {
       matchId: match.id,
+      // The chat (Mensaje table) is keyed by transaccionId, not matchId — so
+      // the contract page links to /messages?tx=... using this value.
+      transaccionId: match.transaccion?.id ?? null,
       contratoEstado: match.contratoEstado,
       contratoBorradorUrl: match.contratoBorradorUrl,
       contratoPdfUrl: match.transaccion?.contratoPdfUrl ?? null,
+      // Commission
       comisionEstimada: match.comisionEstimada !== null ? Number(match.comisionEstimada) : null,
       comisionPorcentaje: match.comisionPorcentaje !== null ? Number(match.comisionPorcentaje) : null,
+      // Product & price details — so the UI doesn't force the user to open
+      // the PDF just to see what they're signing.
+      producto: match.lote.producto?.nombre ?? null,
+      variedad: match.lote.variedad?.nombre ?? null,
+      cantidadKg,
+      precioKg: effectivePrice,
+      precioTotalMercancia,
+      calibres: match.calibresJson,
+      incoterm: match.incotermFinal ?? match.pedido.incoterm ?? null,
+      logistica: match.logisticaFinal ?? null,
+      terminoPago: match.terminoPagoFinal ?? null,
+      destinoFinal: match.pedido.destinoFinal ?? null,
+      direccionRecogida: match.lote.direccionRecogida ?? null,
+      // Signatures
       firmaVendedorDeadline: match.firmaVendedorDeadline?.toISOString() ?? null,
       firmaVendedor: match.transaccion?.firmaVendedor ?? null,
       firmaVendedorFecha: match.transaccion?.firmaVendedorFecha?.toISOString() ?? null,

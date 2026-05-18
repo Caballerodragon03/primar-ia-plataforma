@@ -299,10 +299,10 @@ export default function LotDetailPage() {
                               </Button>
                             </Link>
                           )}
-                          {m.transaccion?.id && ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
-                            <Link href={`/seller/lots/${id}/contract/${m.transaccion.id}`}>
+                          {['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
+                            <Link href={`/seller/contracts/${m.id}`}>
                               <Button variant="outline" size="sm" className="flex items-center gap-1">
-                                <FileText className="w-3.5 h-3.5" /> Contract
+                                <FileText className="w-3.5 h-3.5" /> Contrato
                               </Button>
                             </Link>
                           )}

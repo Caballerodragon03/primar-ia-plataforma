@@ -15,6 +15,8 @@ import {
   LOGISTICA_LABELS,
   TERMINO_PAGO_LABELS,
   incotermsForLogistica,
+  logisticaFromIncoterm,
+  INCOTERM_INFO,
   type Incoterm as IncotermType,
   type LogisticaPreferencia,
   type TerminoPago as TerminoPagoType,
@@ -58,8 +60,32 @@ export default function PublishLotPage() {
   const [error, setError] = useState('');
   const [customVariety, setCustomVariety] = useState('');
   const [showWizard, setShowWizard] = useState(false);
+  // Incoterm recommendation from wizard / profile (e.g. 'FCA'). When present,
+  // we auto-select that single incoterm + its derived logística on mount so
+  // the seller's published lot reflects their stated preference; they can
+  // expand to additional incoterms via the chips.
+  const [recommendedIncoterm, setRecommendedIncoterm] = useState<string | null>(null);
+  // Gate the chip section render until we've resolved the user's profile so
+  // we don't briefly show all 12 chips ✓ (defaultValues) and then snap to
+  // just the recommended one. Flash-of-unstyled-defaults is real.
+  const [prefsResolved, setPrefsResolved] = useState(false);
 
   useEffect(() => {
+    // Try to read recommended incoterm from either DB profile or localStorage.
+    // We use it to pre-select the chip + auto-set logística so the seller
+    // doesn't have to re-pick what they already configured in their profile.
+    function applyPrefs(prefs: { recommended?: string; selected?: string[] } | null) {
+      if (!prefs) return;
+      const rec = prefs.recommended;
+      if (rec && ALL_INCOTERMS.includes(rec as IncotermType)) {
+        setRecommendedIncoutermAndSync(rec);
+      }
+    }
+    // Local helper that snaps logística + the chip selection to the recommendation.
+    function setRecommendedIncoutermAndSync(rec: string) {
+      setRecommendedIncoterm(rec);
+    }
+
     // Check DB first for incoterm preferences, then localStorage
     api.get('/auth/profile')
       .then(({ data }) => {
@@ -67,11 +93,15 @@ export default function PublishLotPage() {
         if (prefs && prefs.selected?.length > 0) {
           // Already configured in DB — sync to localStorage and skip wizard
           localStorage.setItem('primaria_incoterms', JSON.stringify({ ...prefs, done: true }));
+          applyPrefs(prefs);
           return;
         }
         // Check localStorage
         const stored = localStorage.getItem('primaria_incoterms');
-        if (stored && JSON.parse(stored).done) return;
+        if (stored && JSON.parse(stored).done) {
+          applyPrefs(JSON.parse(stored));
+          return;
+        }
         // Check if seller already has lots
         return api.get('/lots?tab=all').then(({ data: lotsData }) => {
           const lots = lotsData.data ?? [];
@@ -84,9 +114,13 @@ export default function PublishLotPage() {
       })
       .catch(() => {
         const stored = localStorage.getItem('primaria_incoterms');
-        if (stored && JSON.parse(stored).done) return;
+        if (stored && JSON.parse(stored).done) {
+          applyPrefs(JSON.parse(stored));
+          return;
+        }
         setShowWizard(true);
-      });
+      })
+      .finally(() => setPrefsResolved(true));
   }, []);
 
   const {
@@ -105,7 +139,10 @@ export default function PublishLotPage() {
       noCalibre: false,
       publicar: false,
       logistica: 'INDIFERENTE',
-      incotermsAceptados: [...ALL_INCOTERMS],
+      // Empty by default — populated on `prefsResolved` either with the
+      // recommended chip (if any) or with the full set (fallback).
+      // Prevents flash-of-12-chips before profile load resolves.
+      incotermsAceptados: [],
       terminosPagoAceptados: ['INMEDIATO'],
     },
   });
@@ -138,6 +175,25 @@ export default function PublishLotPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logistica]);
+
+  // Populate chips once we've resolved the profile. Two cases:
+  //   (a) recommendedIncoterm present → snap logística + select only that chip.
+  //       The seller may add more chips later via toggles.
+  //   (b) no recommendation → fallback to ALL incoterms (legacy default), so
+  //       the user has the broadest match surface.
+  // Only runs once at first resolution; manual chip edits afterwards are preserved.
+  useEffect(() => {
+    if (!prefsResolved) return;
+    if (recommendedIncoterm && ALL_INCOTERMS.includes(recommendedIncoterm as IncotermType)) {
+      const derivedLogistica = logisticaFromIncoterm(recommendedIncoterm as IncotermType);
+      setValue('logistica', derivedLogistica);
+      setValue('incotermsAceptados', [recommendedIncoterm]);
+    } else {
+      // No recommendation → preserve INDIFERENTE + accept everything.
+      setValue('incotermsAceptados', [...ALL_INCOTERMS]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefsResolved, recommendedIncoterm]);
 
   const toggleIncoterm = (it: IncotermType) => {
     const cur = incotermsAceptados;
@@ -394,28 +450,59 @@ export default function PublishLotPage() {
 
             <div>
               <p className="text-xs font-medium text-text-secondary mb-2">
-                Incoterms aceptados <span className="text-text-muted">(elige varios)</span>
+                Incoterms aceptados <span className="text-text-muted">(elige uno o varios)</span>
+                {recommendedIncoterm && (
+                  <span className="ml-2 text-[11px] text-primary-dark">
+                    Recomendado por tu perfil: <strong>{recommendedIncoterm}</strong>
+                  </span>
+                )}
               </p>
               <div className="flex flex-wrap gap-2">
                 {availableIncoterms.map((it) => {
                   const active = incotermsAceptados.includes(it);
+                  const isRec = it === recommendedIncoterm;
+                  const info = INCOTERM_INFO[it];
+                  // Native title attribute → free tooltip on hover.
+                  const tooltip = info ? `${info.name} — ${info.desc} (${info.responsable})` : it;
                   return (
                     <button
                       type="button"
                       key={it}
                       onClick={() => toggleIncoterm(it)}
+                      title={tooltip}
                       className={[
                         'px-3 py-1 rounded-badge text-xs font-medium border transition-colors',
                         active
-                          ? 'bg-primary/10 border-primary text-secondary'
+                          ? isRec
+                            ? 'bg-primary border-primary text-foreground shadow-sm'
+                            : 'bg-primary/10 border-primary text-secondary'
                           : 'bg-card border-border text-text-secondary hover:border-primary',
                       ].join(' ')}
                     >
-                      {active && '✓ '}{it}
+                      {active && '✓ '}{it}{isRec ? ' ★' : ''}
                     </button>
                   );
                 })}
               </div>
+              {/* Descriptions for currently selected incoterms — shown below
+                  the chips so the seller understands what they're committing
+                  to without having to hover one by one. */}
+              {incotermsAceptados.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {incotermsAceptados
+                    .filter((it) => INCOTERM_INFO[it as IncotermType])
+                    .map((it) => {
+                      const info = INCOTERM_INFO[it as IncotermType];
+                      return (
+                        <div key={it} className="text-[11px] text-text-secondary bg-muted/40 border border-border rounded-md px-2 py-1.5">
+                          <span className="font-semibold text-text-primary">{it} — {info.name}.</span>{' '}
+                          {info.desc}{' '}
+                          <span className="text-text-muted">({info.responsable})</span>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
               {errors.incotermsAceptados && (
                 <p className="mt-1 text-xs text-red-500">
                   {(errors.incotermsAceptados as { message?: string }).message}

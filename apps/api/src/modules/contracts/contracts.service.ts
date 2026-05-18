@@ -563,6 +563,9 @@ export class ContractsService {
           firmaCompradorFecha: signedAt,
           comisionPagadaEn: signedAt,
           comisionStripeChargeId: stripeChargeId,
+          // Clear the pending session marker — anti double-charge protection
+          // is no longer needed once payment is finalized.
+          comisionStripeSessionId: null,
         },
       });
       await tx.match.update({

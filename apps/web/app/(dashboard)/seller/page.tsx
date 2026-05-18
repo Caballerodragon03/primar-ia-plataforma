@@ -51,7 +51,7 @@ interface SellerNotifSummary {
   expiredLots: number;
   unreadMessages: number;
   firstPendingContractLotId?: string;
-  firstPendingContractSellerTxId?: string;
+  firstPendingContractMatchId?: string;
   firstPendingPhotosLotId?: string;
   firstPendingPhotosTxId?: string;
 }
@@ -97,10 +97,10 @@ export default function SellerDashboard() {
   const actionItems = [
     n && n.pendingContracts > 0 && {
       icon: <PenLine className="w-5 h-5" />,
-      label: `Countersign ${n.pendingContracts} contract${n.pendingContracts > 1 ? 's' : ''}`,
-      desc: 'The buyer has signed — your countersignature is needed to proceed.',
-      href: n.pendingContracts === 1 && n.firstPendingContractLotId && n.firstPendingContractSellerTxId
-        ? `/seller/lots/${n.firstPendingContractLotId}/contract/${n.firstPendingContractSellerTxId}`
+      label: `Firmar ${n.pendingContracts} contrato${n.pendingContracts > 1 ? 's' : ''}`,
+      desc: 'Tienes contratos pendientes de firmar como vendedor. El comprador podrá pagar y firmar después.',
+      href: n.pendingContracts === 1 && n.firstPendingContractMatchId
+        ? `/seller/contracts/${n.firstPendingContractMatchId}`
         : '/seller/lots/tasks/contracts',
       color: 'amber',
     },

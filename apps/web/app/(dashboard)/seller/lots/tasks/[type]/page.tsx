@@ -7,7 +7,7 @@ import { ArrowLeft, FileText, Camera, Sparkles, CheckCircle2, Loader2, QrCode, C
 import { api } from '@/lib/api';
 
 interface ContractTask {
-  txId: string;
+  matchId: string;
   orderId: string;
   lotId: string;
   producto: string;
@@ -132,8 +132,8 @@ export default function SellerTaskListPage() {
           emptyCta={{ label: 'Publish a New Lot', href: '/seller/lots/new' }}
           renderItem={(item) => (
             <Link
-              key={item.txId}
-              href={`/seller/lots/${item.lotId}/contract/${item.txId}`}
+              key={item.matchId}
+              href={`/seller/contracts/${item.matchId}`}
               className="block p-4 bg-card rounded-card border border-border hover:border-amber-300 hover:shadow-soft-md transition-all"
             >
               <div className="flex items-center justify-between">
@@ -142,10 +142,10 @@ export default function SellerTaskListPage() {
                     Lot {shortLotId(item.lotId)} — {item.producto}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Buyer: {item.counterpart} · {item.cantidadKg.toLocaleString('es-ES')} kg
+                    Comprador: {item.counterpart} · {item.cantidadKg.toLocaleString('es-ES')} kg
                   </p>
                 </div>
-                <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-badge">Sign →</span>
+                <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-badge">Firmar →</span>
               </div>
             </Link>
           )}

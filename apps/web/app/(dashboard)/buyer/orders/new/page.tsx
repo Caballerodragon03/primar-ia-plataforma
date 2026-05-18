@@ -16,27 +16,14 @@ import {
   TERMINO_PAGO_LABELS,
   incotermsForLogistica,
   logisticaFromIncoterm,
+  INCOTERM_INFO,
+  INCOTERM_DESCRIPTIONS,
   type Incoterm as IncotermType,
   type LogisticaPreferencia,
   type TerminoPago as TerminoPagoType,
 } from '@primaria/shared';
 
 const OTHER_VALUE = '__other__';
-
-const INCOTERM_DESCRIPTIONS: Record<string, string> = {
-  EXW: 'El comprador recoge en tu explotación y gestiona todo el transporte. Mínima responsabilidad para ti.',
-  FCA: 'Entregas al transportista del comprador en un punto acordado (lonja, cooperativa). Muy habitual en Primar-IA.',
-  CPT: 'Tú contratas el transporte hasta destino. El riesgo pasa al comprador con el primer transportista.',
-  CIP: 'Como CPT pero también debes contratar el seguro (mínimo 110% del valor). Ideal para perecederos.',
-  DAP: 'Entregas en el destino del comprador. Él solo descarga. Muy habitual en exportación.',
-  DPU: 'Como DAP pero también te encargas de la descarga en destino.',
-  DDP: 'Máxima responsabilidad: pagas todo incluido aduanas de importación. Solo con experiencia exportadora.',
-  FOB: 'Solo marítimo. Entregas a bordo del buque en el puerto de origen.',
-  CIF: 'Solo marítimo. Pagas flete y seguro hasta destino; el riesgo pasa al embarcar.',
-  CFR: 'Solo marítimo. Pagas el flete pero el riesgo pasa al embarcar. Sin seguro obligatorio.',
-  FAS: 'Solo marítimo. Entregas al costado del buque en el puerto de origen.',
-  DAT: 'Entregado en terminal de transporte. Eres responsable hasta la descarga en terminal.',
-};
 
 const calibreSchema = z.object({
   calibre: z.string().min(1, 'Requerido'),
@@ -355,9 +342,9 @@ export default function CreateOrderPage() {
               >
                 {availableIncoterms.map((t) => <option key={t} value={t}>{t}</option>)}
               </Select>
-              {watchedIncoterm && INCOTERM_DESCRIPTIONS[watchedIncoterm] && (
+              {watchedIncoterm && INCOTERM_DESCRIPTIONS[watchedIncoterm as IncotermType] && (
                 <p className="text-xs text-muted-foreground mt-1 px-1">
-                  💡 {INCOTERM_DESCRIPTIONS[watchedIncoterm]}
+                  💡 {INCOTERM_DESCRIPTIONS[watchedIncoterm as IncotermType]}
                 </p>
               )}
             </div>
@@ -369,11 +356,14 @@ export default function CreateOrderPage() {
               <div className="flex flex-wrap gap-2">
                 {availableIncoterms.map((it) => {
                   const active = incotermsAceptados.includes(it);
+                  const info = INCOTERM_INFO[it as IncotermType];
+                  const tooltip = info ? `${info.name} — ${info.desc} (${info.responsable})` : it;
                   return (
                     <button
                       type="button"
                       key={it}
                       onClick={() => toggleIncoterm(it)}
+                      title={tooltip}
                       className={[
                         'px-3 py-1 rounded-badge text-xs font-medium border transition-colors',
                         active
@@ -386,6 +376,25 @@ export default function CreateOrderPage() {
                   );
                 })}
               </div>
+              {/* Description list — shown below chips for every accepted
+                  incoterm so the buyer sees responsibility split for all of
+                  them, not only the principal one. */}
+              {incotermsAceptados.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {incotermsAceptados
+                    .filter((it) => INCOTERM_INFO[it as IncotermType])
+                    .map((it) => {
+                      const info = INCOTERM_INFO[it as IncotermType];
+                      return (
+                        <div key={it} className="text-[11px] text-text-secondary bg-muted/40 border border-border rounded-md px-2 py-1.5">
+                          <span className="font-semibold text-text-primary">{it} — {info.name}.</span>{' '}
+                          {info.desc}{' '}
+                          <span className="text-text-muted">({info.responsable})</span>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
               {errors.incotermsAceptados && (
                 <p className="mt-1 text-xs text-red-500">
                   {(errors.incotermsAceptados as { message?: string }).message}

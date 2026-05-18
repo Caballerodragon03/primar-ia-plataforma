@@ -34,7 +34,7 @@ interface NotifSummary {
   unreadMessages: number;
   firstPendingOfferOrderId?: string;
   firstPendingContractOrderId?: string;
-  firstPendingContractTxId?: string;
+  firstPendingContractMatchId?: string;
   firstPendingDeliveryOrderId?: string;
   firstPendingDeliveryTxId?: string;
 }
@@ -92,10 +92,10 @@ export default function BuyerDashboard() {
   const actionItems = [
     n && n.pendingContracts > 0 && {
       icon: <PenLine className="w-5 h-5" />,
-      label: `Sign ${n.pendingContracts} contract${n.pendingContracts > 1 ? 's' : ''}`,
-      desc: 'A seller has signed — your signature is required to proceed.',
-      href: n.pendingContracts === 1 && n.firstPendingContractOrderId && n.firstPendingContractTxId
-        ? `/buyer/orders/${n.firstPendingContractOrderId}/contract/${n.firstPendingContractTxId}`
+      label: `Firmar y pagar ${n.pendingContracts} contrato${n.pendingContracts > 1 ? 's' : ''}`,
+      desc: 'El vendedor ha firmado. Tienes 48 horas hábiles para pagar la comisión y firmar.',
+      href: n.pendingContracts === 1 && n.firstPendingContractMatchId
+        ? `/buyer/contracts/${n.firstPendingContractMatchId}`
         : '/buyer/orders/tasks/contracts',
       color: 'amber',
     },

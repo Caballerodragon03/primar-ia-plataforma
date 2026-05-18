@@ -401,12 +401,30 @@ export class StripeService {
       include: {
         lote: { include: { producto: true } },
         pedido: { select: { id: true, compradorId: true } },
-        transaccion: { select: { id: true, comisionPagadaEn: true } },
+        transaccion: {
+          select: {
+            id: true,
+            comisionPagadaEn: true,
+            comisionStripeSessionId: true,
+          },
+        },
       },
     });
     if (!match) throw new AppError('Match no encontrado', 404);
     if (match.pedido.compradorId !== buyerId) {
       throw new AppError('No autorizado', 403);
+    }
+    // CRITICAL: We MUST have a transaccion before talking to Stripe. Without
+    // it the session ID can't be persisted (no row to write to) so duplicate
+    // clicks would create N Stripe sessions, AND the webhook would fail at
+    // signMatchContractAsBuyerAfterPayment with 'No existe transacción para
+    // este match'. Bail out early — the seller-sign path always creates the
+    // transaccion, but defense in depth.
+    if (!match.transaccion?.id) {
+      throw new AppError(
+        'El contrato aún no está listo. Recarga la página en unos segundos o contacta con soporte.',
+        409,
+      );
     }
     if (match.contratoEstado === 'FIRMADO' || match.transaccion?.comisionPagadaEn) {
       throw new AppError('La comisión ya está pagada', 400);
@@ -426,6 +444,36 @@ export class StripeService {
         data: { contratoEstado: 'CADUCADO' },
       });
       throw new AppError('El plazo de firma del vendedor ha caducado', 410);
+    }
+
+    // Anti double-charge: if we already created a Checkout Session for this
+    // match and it's still "open" (not paid, not expired), reuse its URL.
+    // This protects against the race where the user clicks "Firmar y pagar"
+    // twice — e.g. webhook is slow, polling expires, button reappears, user
+    // clicks again. Without this we'd create a second session and Stripe
+    // could charge both. Stripe sessions live ~24h.
+    const existingSessionId = match.transaccion?.comisionStripeSessionId;
+    if (existingSessionId) {
+      try {
+        const existing = await stripe.checkout.sessions.retrieve(existingSessionId);
+        if (existing.status === 'open' && existing.url) {
+          // Reuse — the buyer can complete the pending payment with this URL.
+          return { url: existing.url };
+        }
+        // If 'complete' but webhook hasn't fired yet, also reject — we don't
+        // want a second checkout while the first is finalizing.
+        if (existing.status === 'complete' && existing.payment_status === 'paid') {
+          throw new AppError(
+            'El pago ya se completó. Refresca la página en unos segundos para ver el contrato firmado.',
+            409,
+          );
+        }
+        // Session expired or unpaid → fall through to create a new one.
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        console.warn('[stripe] could not retrieve previous session', existingSessionId, err);
+        // Fall through — create a fresh session.
+      }
     }
 
     const comisionImporte = Number(match.comisionEstimada ?? 0);
@@ -464,10 +512,16 @@ export class StripeService {
       },
       // Frontend will poll the contract info endpoint to know when webhook
       // has fired and contract is FIRMADO.
-      success_url: `${env.CORS_ORIGIN}/buyer/orders/${match.pedido.id}/contract/${matchId}?paid=1`,
-      cancel_url: `${env.CORS_ORIGIN}/buyer/orders/${match.pedido.id}/contract/${matchId}?cancelled=1`,
+      success_url: `${env.CORS_ORIGIN}/buyer/contracts/${matchId}?paid=1`,
+      cancel_url: `${env.CORS_ORIGIN}/buyer/contracts/${matchId}?cancelled=1`,
     });
     if (!session.url) throw new AppError('Stripe no devolvió URL', 500);
+    // Persist session id so a duplicate POST reuses this same Checkout.
+    // Guaranteed to have a transaccion thanks to the early guard above.
+    await prisma.transaccion.update({
+      where: { id: match.transaccion.id },
+      data: { comisionStripeSessionId: session.id },
+    });
     return { url: session.url };
   }
 }

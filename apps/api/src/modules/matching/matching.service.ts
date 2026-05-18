@@ -1077,11 +1077,11 @@ export class MatchingService {
     expiredLots: number;
     firstPendingOfferOrderId?: string;
     firstPendingContractOrderId?: string;
-    firstPendingContractTxId?: string;
+    /** Phase 4 match id — replaces the legacy txId pointer */
+    firstPendingContractMatchId?: string;
     firstPendingDeliveryOrderId?: string;
     firstPendingDeliveryTxId?: string;
     firstPendingContractLotId?: string;
-    firstPendingContractSellerTxId?: string;
     firstPendingPhotosLotId?: string;
     firstPendingPhotosTxId?: string;
   }> {
@@ -1119,18 +1119,22 @@ export class MatchingService {
         ],
       };
 
+      // Phase 4 — buyer pending contracts: the seller has signed and the
+      // buyer must pay + sign within 48 business hours. Use match.contratoEstado
+      // as the source of truth, not transaccion.firmaComprador (legacy flow).
+      const buyerPendingContractWhere = {
+        pedido: { compradorId: userId },
+        contratoEstado: 'PENDIENTE_PAGO_COMPRADOR' as const,
+      };
+
       const [firstOffer, firstContract, firstDelivery] = await Promise.all([
         prisma.match.findFirst({
           where: unauthorizedOfferWhere,
           select: { pedidoId: true },
         }),
-        prisma.transaccion.findFirst({
-          where: {
-            compradorId: userId,
-            firmaComprador: null,
-            estado: { in: ['PENDIENTE_PAGO', 'PAGO_CAPTURADO', 'EN_TRANSITO'] },
-          },
-          select: { id: true, match: { select: { pedidoId: true } } },
+        prisma.match.findFirst({
+          where: buyerPendingContractWhere,
+          select: { id: true, pedidoId: true },
         }),
         prisma.transaccion.findFirst({
           where: {
@@ -1146,13 +1150,7 @@ export class MatchingService {
       const now = new Date();
       const [pendingOffers, pendingContracts, pendingDeliveries, expiredOrders] = await Promise.all([
         prisma.match.count({ where: unauthorizedOfferWhere }),
-        prisma.transaccion.count({
-          where: {
-            compradorId: userId,
-            firmaComprador: null,
-            estado: { in: ['PENDIENTE_PAGO', 'PAGO_CAPTURADO', 'EN_TRANSITO'] },
-          },
-        }),
+        prisma.match.count({ where: buyerPendingContractWhere }),
         prisma.transaccion.count({
           where: {
             compradorId: userId,
@@ -1180,22 +1178,26 @@ export class MatchingService {
         expiredOrders,
         expiredLots: 0,
         firstPendingOfferOrderId: firstOffer?.pedidoId,
-        firstPendingContractOrderId: firstContract?.match?.pedidoId,
-        firstPendingContractTxId: firstContract?.id,
+        firstPendingContractOrderId: firstContract?.pedidoId,
+        firstPendingContractMatchId: firstContract?.id,
         firstPendingDeliveryOrderId: firstDelivery?.match?.pedidoId,
         firstPendingDeliveryTxId: firstDelivery?.id,
       };
     }
 
     // VENDEDOR
+    // Phase 4 — seller pending contracts: the buyer hasn't signed yet (the
+    // seller signs FIRST in v2 flow). States BORRADOR and PENDIENTE_FIRMA_VENDEDOR
+    // both require seller action.
+    const sellerPendingContractWhere = {
+      lote: { vendedorId: userId },
+      contratoEstado: { in: ['BORRADOR', 'PENDIENTE_FIRMA_VENDEDOR'] as Array<'BORRADOR' | 'PENDIENTE_FIRMA_VENDEDOR'> },
+    };
+
     const [firstContract, signedTxsWithPhotos, pendingMatches] = await Promise.all([
-      prisma.transaccion.findFirst({
-        where: {
-          vendedorId: userId,
-          firmaComprador: { not: null },
-          firmaVendedor: null,
-        },
-        select: { id: true, match: { select: { loteId: true } } },
+      prisma.match.findFirst({
+        where: sellerPendingContractWhere,
+        select: { id: true, loteId: true },
       }),
       prisma.transaccion.findMany({
         where: {
@@ -1217,13 +1219,7 @@ export class MatchingService {
 
     const now = new Date();
     const [pendingContracts, expiredLots] = await Promise.all([
-      prisma.transaccion.count({
-        where: {
-          vendedorId: userId,
-          firmaComprador: { not: null },
-          firmaVendedor: null,
-        },
-      }),
+      prisma.match.count({ where: sellerPendingContractWhere }),
       prisma.lote.count({
         where: {
           vendedorId: userId,
@@ -1249,8 +1245,8 @@ export class MatchingService {
       pendingDeliveries: 0,
       expiredOrders: 0,
       expiredLots,
-      firstPendingContractLotId: firstContract?.match?.loteId,
-      firstPendingContractSellerTxId: firstContract?.id,
+      firstPendingContractLotId: firstContract?.loteId,
+      firstPendingContractMatchId: firstContract?.id,
       firstPendingPhotosLotId: firstPhotoPending?.match?.loteId,
       firstPendingPhotosTxId: firstPhotoPending?.id,
     };
@@ -1261,7 +1257,7 @@ export class MatchingService {
     role: string
   ): Promise<{
     contracts: Array<{
-      txId: string;
+      matchId: string;
       orderId: string;
       lotId: string;
       producto: string;
@@ -1317,20 +1313,20 @@ export class MatchingService {
 
     if (role === 'COMPRADOR') {
       const [pendingContracts, pendingOffers, pendingDeliveries, expiredOrdersRaw] = await Promise.all([
-        prisma.transaccion.findMany({
+        // Phase 4 — seller signed, buyer must pay+sign
+        prisma.match.findMany({
           where: {
-            compradorId: userId,
-            firmaComprador: null,
-            estado: { in: ['PENDIENTE_PAGO', 'PAGO_CAPTURADO', 'EN_TRANSITO'] },
+            pedido: { compradorId: userId },
+            contratoEstado: 'PENDIENTE_PAGO_COMPRADOR',
           },
           include: {
-            match: {
+            lote: {
               include: {
-                lote: { include: { producto: true } },
-                pedido: { select: { id: true } },
+                producto: true,
+                vendedor: { select: { nombre: true, apellidos: true } },
               },
             },
-            vendedor: { select: { nombre: true, apellidos: true } },
+            pedido: { select: { id: true } },
           },
         }),
         prisma.match.findMany({
@@ -1406,14 +1402,17 @@ export class MatchingService {
       };
 
       return {
-        contracts: pendingContracts.map((tx) => ({
-          txId: tx.id,
-          orderId: tx.match?.pedido?.id ?? '',
-          lotId: tx.match?.loteId ?? '',
-          producto: tx.match?.lote?.producto?.nombre ?? 'N/D',
-          counterpart: `${tx.vendedor?.nombre ?? ''} ${tx.vendedor?.apellidos ?? ''}`.trim(),
-          cantidadKg: Number(tx.cantidadKg),
-        })),
+        contracts: pendingContracts.map((m) => {
+          const vendedor = (m.lote as unknown as { vendedor?: { nombre: string; apellidos: string } }).vendedor;
+          return {
+            matchId: m.id,
+            orderId: m.pedido?.id ?? '',
+            lotId: m.loteId,
+            producto: m.lote?.producto?.nombre ?? 'N/D',
+            counterpart: vendedor ? `${vendedor.nombre} ${vendedor.apellidos}`.trim() : 'N/D',
+            cantidadKg: Number(m.cantidadKg),
+          };
+        }),
         offers: pendingOffers.map((m) => {
           const loteVendedor = (
             m.lote as unknown as { vendedor?: { nombre: string; apellidos: string } }
@@ -1455,20 +1454,19 @@ export class MatchingService {
 
     // VENDEDOR
     const [pendingContracts, pendingPhotos, pendingMatchOffers, expiredLotsRaw] = await Promise.all([
-      prisma.transaccion.findMany({
+      // Phase 4 — seller must sign first (BORRADOR or PENDIENTE_FIRMA_VENDEDOR)
+      prisma.match.findMany({
         where: {
-          vendedorId: userId,
-          firmaComprador: { not: null },
-          firmaVendedor: null,
+          lote: { vendedorId: userId },
+          contratoEstado: { in: ['BORRADOR', 'PENDIENTE_FIRMA_VENDEDOR'] },
         },
         include: {
-          match: {
+          lote: { include: { producto: true } },
+          pedido: {
             include: {
-              lote: { include: { producto: true } },
-              pedido: { select: { id: true } },
+              comprador: { select: { nombre: true, apellidos: true } },
             },
           },
-          comprador: { select: { nombre: true, apellidos: true } },
         },
       }),
       prisma.transaccion.findMany({
@@ -1532,13 +1530,13 @@ export class MatchingService {
     };
 
     return {
-      contracts: pendingContracts.map((tx) => ({
-        txId: tx.id,
-        orderId: tx.match?.pedido?.id ?? '',
-        lotId: tx.match?.loteId ?? '',
-        producto: tx.match?.lote?.producto?.nombre ?? 'N/D',
-        counterpart: `${tx.comprador?.nombre ?? ''} ${tx.comprador?.apellidos ?? ''}`.trim(),
-        cantidadKg: Number(tx.cantidadKg),
+      contracts: pendingContracts.map((m) => ({
+        matchId: m.id,
+        orderId: m.pedido?.id ?? '',
+        lotId: m.loteId,
+        producto: m.lote?.producto?.nombre ?? 'N/D',
+        counterpart: `${m.pedido?.comprador?.nombre ?? ''} ${m.pedido?.comprador?.apellidos ?? ''}`.trim(),
+        cantidadKg: Number(m.cantidadKg),
       })),
       offers: [],
       deliveries: [],

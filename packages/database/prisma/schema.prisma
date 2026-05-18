@@ -544,6 +544,11 @@ model Transaccion {
   resguardoPagoUrl      String?           @map("resguardo_pago_url")
   // Stripe charge cobrado al comprador por la comisión de la plataforma.
   comisionStripeChargeId String?          @map("comision_stripe_charge_id")
+  // Stripe Checkout Session activa para el pago de comisión. Se persiste
+  // ANTES de redirigir al comprador para poder reusar la misma sesión si
+  // el webhook tarda y el comprador vuelve a la página: previene cobro doble.
+  // Se limpia al pagar (webhook) o al expirar (24h Stripe TTL).
+  comisionStripeSessionId String?         @map("comision_stripe_session_id")
   comisionPagadaEn      DateTime?         @map("comision_pagada_en")
   // Vencimiento que el comprador tiene para pagar al vendedor por la operación
   // (no la comisión a primar-IA). Se calcula a partir del termino_pago_final.

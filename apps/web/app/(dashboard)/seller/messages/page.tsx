@@ -10,7 +10,7 @@ function SellerMessages() {
     <div className="h-[calc(100vh-theme(spacing.16)-theme(spacing.12))] flex flex-col">
       <div className="mb-4">
         <h1 className="text-xl font-semibold text-foreground">Mensajes</h1>
-        <p className="text-sm text-muted-foreground">Chat with your buyers about active orders.</p>
+        <p className="text-sm text-muted-foreground">Chat con tus compradores sobre operaciones activas.</p>
       </div>
       <div className="flex-1 min-h-0">
         <ChatView role="seller" initialTransaccionId={tx} />

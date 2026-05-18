@@ -80,6 +80,81 @@ export const TERMINO_PAGO_LABELS: Record<TerminoPago, string> = {
 };
 
 /**
+ * Human-readable info for each incoterm:
+ *   - `name`: long name in Spanish
+ *   - `desc`: one-line summary of the responsibility split
+ *   - `responsable`: which party bears most cost/risk (resumen del onus)
+ * Single source of truth, shared by lot/order/contract/chat UIs.
+ */
+export const INCOTERM_INFO: Record<Incoterm, { name: string; desc: string; responsable: string }> = {
+  EXW: {
+    name: 'Ex Works',
+    desc: 'El comprador recoge en la explotación del vendedor y se encarga de todo el transporte y trámites.',
+    responsable: 'Comprador: transporte completo, seguro, aduanas.',
+  },
+  FCA: {
+    name: 'Franco Transportista',
+    desc: 'El vendedor entrega al transportista designado por el comprador en un punto acordado (lonja, cooperativa, almacén).',
+    responsable: 'Comprador: transporte principal y seguro a partir de la entrega al transportista.',
+  },
+  FAS: {
+    name: 'Franco al Costado del Buque',
+    desc: 'Solo marítimo. El vendedor entrega la mercancía al costado del buque en el puerto de origen.',
+    responsable: 'Comprador: embarque, flete marítimo y seguro.',
+  },
+  FOB: {
+    name: 'Franco a Bordo',
+    desc: 'Solo marítimo. El vendedor entrega la mercancía cargada a bordo del buque en el puerto de origen.',
+    responsable: 'Comprador: flete marítimo y seguro desde el momento del embarque.',
+  },
+  CFR: {
+    name: 'Coste y Flete',
+    desc: 'Solo marítimo. El vendedor paga el flete hasta el puerto de destino, pero el riesgo pasa al comprador al embarcar.',
+    responsable: 'Vendedor: flete. Comprador: seguro y descarga.',
+  },
+  CIF: {
+    name: 'Coste, Seguro y Flete',
+    desc: 'Solo marítimo. El vendedor paga flete y seguro hasta el puerto de destino; el riesgo pasa al embarcar.',
+    responsable: 'Vendedor: flete + seguro mínimo. Comprador: descarga y trámites de importación.',
+  },
+  CPT: {
+    name: 'Transporte Pagado Hasta',
+    desc: 'El vendedor contrata y paga el transporte hasta el destino, pero el riesgo pasa al comprador con el primer transportista.',
+    responsable: 'Vendedor: transporte. Comprador: seguro y riesgo en tránsito.',
+  },
+  CIP: {
+    name: 'Transporte y Seguro Pagados Hasta',
+    desc: 'Como CPT pero el vendedor también contrata el seguro (mínimo 110% del valor). Ideal para perecederos.',
+    responsable: 'Vendedor: transporte + seguro completo. Comprador: descarga e importación.',
+  },
+  DAP: {
+    name: 'Entregado en Lugar',
+    desc: 'El vendedor entrega la mercancía en el lugar acordado en destino, lista para descargar.',
+    responsable: 'Vendedor: transporte completo hasta destino. Comprador: descarga y aduanas de importación.',
+  },
+  DPU: {
+    name: 'Entregado y Descargado',
+    desc: 'Como DAP pero el vendedor también realiza la descarga en el destino.',
+    responsable: 'Vendedor: transporte + descarga. Comprador: aduanas de importación.',
+  },
+  DDP: {
+    name: 'Entregado con Derechos Pagados',
+    desc: 'El vendedor asume todos los costes y trámites, incluyendo aduanas de importación. Máxima responsabilidad para el vendedor.',
+    responsable: 'Vendedor: todo (transporte, seguro, aduanas de origen y destino).',
+  },
+  DAT: {
+    name: 'Entregado en Terminal',
+    desc: 'El vendedor entrega y descarga la mercancía en la terminal de transporte acordada en destino.',
+    responsable: 'Vendedor: hasta la descarga en terminal. Comprador: trámites posteriores.',
+  },
+};
+
+/** Convenience: just the desc by code (most common need). */
+export const INCOTERM_DESCRIPTIONS: Record<Incoterm, string> = Object.fromEntries(
+  (Object.keys(INCOTERM_INFO) as Incoterm[]).map((k) => [k, INCOTERM_INFO[k].desc]),
+) as Record<Incoterm, string>;
+
+/**
  * Validates a lot/order's logística + incotermsAceptados combination at
  * submit time, returning an array of human-readable error messages (empty
  * if OK). Used by both Lote and Pedido validation so the same rules apply.

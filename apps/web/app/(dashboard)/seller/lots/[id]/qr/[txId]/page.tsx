@@ -182,8 +182,8 @@ export default function SellerQRPage() {
           <QrCode className="w-10 h-10 text-amber-400 mx-auto mb-3" />
           <p className="text-sm font-semibold text-amber-900">QR code not yet generated</p>
           <p className="text-xs text-amber-700 mt-1">Both parties must sign the contract before the QR code is generated.</p>
-          <Link href={`/seller/lots/${id}/contract/${txId}`}>
-            <Button variant="primary" size="sm" className="mt-4">Go to Contract</Button>
+          <Link href={`/seller/lots/${id}`}>
+            <Button variant="primary" size="sm" className="mt-4">Volver al lote</Button>
           </Link>
         </div>
       </div>

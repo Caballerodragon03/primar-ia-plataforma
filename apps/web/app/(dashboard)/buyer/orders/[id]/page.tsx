@@ -450,10 +450,10 @@ export default function OrderDetailPage() {
                                   Pay
                                 </Button>
                               )}
-                              {m.transaccion?.id && ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
-                                <Link href={`/buyer/orders/${id}/contract/${m.transaccion.id}`}>
+                              {['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
+                                <Link href={`/buyer/contracts/${m.id}`}>
                                   <Button variant="outline" size="sm" className="flex items-center gap-1">
-                                    <FileText className="w-4 h-4" /> Contract
+                                    <FileText className="w-4 h-4" /> Contrato
                                   </Button>
                                 </Link>
                               )}
