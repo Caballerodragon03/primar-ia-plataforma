@@ -249,7 +249,7 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
                   <div className="bg-muted/50 px-4 py-2.5 border-b border-border flex items-center justify-between gap-3 flex-wrap">
                     <div>
                       <p className="text-sm font-semibold text-foreground">{lot.productoNombre}</p>
-                      <p className="text-[10px] text-text-muted">Lote {lot.loteId.slice(-6).toUpperCase()}</p>
+                      <p className="text-[11px] text-text-muted">Lote {lot.loteId.slice(-6).toUpperCase()}</p>
                     </div>
                     <div className="text-xs text-text-muted">
                       Total lote: <strong>{lot.totalLoteKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg</strong>
@@ -273,7 +273,7 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
                               <p className="text-sm font-medium text-foreground">
                                 #{a.pedidoIdShort} · {a.compradorEmpresa ?? a.compradorNombre}
                               </p>
-                              <p className="text-[10px] text-text-muted">
+                              <p className="text-[11px] text-text-muted">
                                 {c.totalKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg
                                 {' · '}
                                 avg {c.avgPrecio.toFixed(3)} €/kg

@@ -45,7 +45,7 @@ export default function SellerAnalyticsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-xl font-bold text-foreground">Analíticas de ventas</h1>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-stagger">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-24 bg-muted animate-pulse rounded-card" />
           ))}
@@ -78,7 +78,7 @@ export default function SellerAnalyticsPage() {
       <h1 className="text-xl font-bold text-foreground">Analíticas de ventas</h1>
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-stagger">
         <KPICard
           label="Total Volume Matched"
           value={hasMatches ? `${data.totalVolumen.toLocaleString('es-ES')} kg` : '—'}
@@ -180,7 +180,7 @@ export default function SellerAnalyticsPage() {
       {/* Lot summary */}
       <div className="bg-card rounded-card border border-border p-5">
         <h2 className="text-sm font-semibold text-foreground mb-4">Resumen de lotes</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center animate-stagger">
           {[
             { label: 'Total lotes', value: data.totalLots },
             { label: 'Activos', value: data.activeLots },

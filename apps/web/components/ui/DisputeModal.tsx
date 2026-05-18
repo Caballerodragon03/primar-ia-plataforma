@@ -136,7 +136,7 @@ export function DisputeModal({
             <AlertTriangle className="w-5 h-5 text-red-500" />
             <div>
               <h2 className="font-semibold text-foreground text-base">Open a Claim</h2>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 {role === 'seller' ? 'Filing as seller' : 'Filing as buyer'}
               </p>
             </div>

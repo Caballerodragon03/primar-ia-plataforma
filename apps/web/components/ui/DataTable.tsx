@@ -125,7 +125,7 @@ export function DataTable<T>({
                     colSpan={columns.length}
                     className="px-4 py-16 text-center"
                   >
-                    <div className="flex flex-col items-center gap-3">
+                    <div className="flex flex-col items-center gap-3 animate-fade-in">
                       <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                         <Inbox className="w-6 h-6 text-muted-foreground" />
                       </div>
@@ -134,8 +134,12 @@ export function DataTable<T>({
                   </td>
                 </tr>
               ) : (
-                table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-accent/50 transition-colors duration-150">
+                table.getRowModel().rows.map((row, idx) => (
+                  <tr
+                    key={row.id}
+                    className="hover:bg-accent/50 transition-colors duration-150 animate-fade-in"
+                    style={{ animationDelay: `${Math.min(idx * 40, 400)}ms`, animationFillMode: 'backwards' }}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-4 py-3.5 text-foreground">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

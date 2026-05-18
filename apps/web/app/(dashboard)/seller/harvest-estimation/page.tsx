@@ -538,7 +538,7 @@ export default function HarvestEstimationPage() {
                           />
                         </div>
                         <span
-                          className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${confidenceColor(cal.confidence)}`}
+                          className={`text-[11px] font-medium px-1.5 py-0.5 rounded ${confidenceColor(cal.confidence)}`}
                         >
                           {cal.confidence}%
                         </span>

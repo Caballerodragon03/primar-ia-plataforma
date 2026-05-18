@@ -531,7 +531,7 @@ export default function SellerProfilePage() {
                   setIncotermData(null);
                   setSelectedIncoterms([]);
                 }}
-                className="text-sm text-primary underline hover:no-underline"
+                className="text-sm text-primary-dark underline hover:no-underline"
               >
                 Volver a ejecutar el asistente de contratos
               </button>

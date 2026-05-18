@@ -152,8 +152,8 @@ export default function RegisterPage() {
           backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
           backgroundSize: '24px 24px',
         }} />
-        <div className="relative z-10 max-w-sm text-center space-y-8">
-          <div className="flex justify-center">
+        <div className="relative z-10 max-w-sm text-center space-y-8 animate-fade-in">
+          <div className="flex justify-center animate-float">
             <LogoIcon size={64} color="#D4A817" />
           </div>
           <div>

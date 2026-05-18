@@ -157,7 +157,7 @@ export default function LotDetailPage() {
         <div className="bg-red-50 border border-red-200 rounded-card p-6 text-center">
           <XCircle className="w-10 h-10 text-red-400 mx-auto mb-2" />
           <p className="text-sm text-red-700">{error || 'Lote no encontrado.'}</p>
-          <Link href="/seller/lots" className="text-sm text-primary mt-3 inline-block hover:underline">
+          <Link href="/seller/lots" className="text-sm text-primary-dark mt-3 inline-block hover:underline">
             ← Back to My Lots
           </Link>
         </div>
@@ -231,7 +231,7 @@ export default function LotDetailPage() {
               <thead>
                 <tr className="bg-muted/50">
                   {['CALIBRE', 'CANTIDAD (kg)', '% DEL LOTE'].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-text-secondary uppercase tracking-wider">
+                    <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
                       {h}
                     </th>
                   ))}
@@ -277,7 +277,7 @@ export default function LotDetailPage() {
                 <thead>
                   <tr className="bg-muted/50">
                     {['COMPRADOR', 'CANTIDAD (kg)', 'PRECIO (€/kg)', 'ESTADO', 'ACCIONES'].map((h) => (
-                      <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-text-secondary uppercase tracking-wider">
+                      <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
                         {h}
                       </th>
                     ))}
@@ -378,7 +378,7 @@ export default function LotDetailPage() {
                 {(lot.certificaciones as string[]).map((cert) => (
                   <span
                     key={cert}
-                    className="px-2 py-0.5 text-[10px] font-medium bg-green-50 text-green-700 border border-green-200 rounded-badge"
+                    className="px-2 py-0.5 text-[11px] font-medium bg-green-50 text-green-700 border border-green-200 rounded-badge"
                   >
                     ✓ {cert}
                   </span>

@@ -68,13 +68,13 @@ export function MatchCard({ match, onContribute }: MatchCardProps) {
   const remainingPct = 100 - coveragePct;
 
   return (
-    <div className="bg-card rounded-card border border-border/50 p-5 flex gap-5 items-stretch shadow-soft hover:shadow-soft-md transition-all duration-200 group">
+    <div className="bg-card rounded-card border border-border/50 p-5 flex gap-5 items-stretch shadow-soft hover-lift hover-glow group">
       {/* Left: Profitability Index */}
       <div className={cn(
         'flex flex-col items-center justify-center min-w-[80px] rounded-lg px-3 py-2',
         getProfitabilityBg(score)
       )}>
-        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider text-center leading-tight mb-1">
+        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider text-center leading-tight mb-1">
           Índice de<br />rentabilidad
         </span>
         <span className={cn('text-3xl font-bold tabular-nums', getProfitabilityColor(score))}>

@@ -23,6 +23,7 @@
     --border: 220 13% 91%;
     --input: 220 13% 91%;
     --ring: 44 72% 59%;
+    --primary-dark: 44 72% 38%;
     --radius: 0.5rem;
 
     --status-delivered: 160 84% 40%;
@@ -91,12 +92,71 @@
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
   @keyframes slide-in-left {
     from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-in-right {
+    from { opacity: 0; transform: translateX(12px); }
     to { opacity: 1; transform: translateX(0); }
   }
   @keyframes scale-in {
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  @keyframes width-grow {
+    from { width: 0%; }
+  }
+}
+
+@layer utilities {
+  .animate-stagger > * {
+    opacity: 0;
+    animation: slide-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .animate-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .animate-stagger > *:nth-child(2) { animation-delay: 60ms; }
+  .animate-stagger > *:nth-child(3) { animation-delay: 120ms; }
+  .animate-stagger > *:nth-child(4) { animation-delay: 180ms; }
+  .animate-stagger > *:nth-child(5) { animation-delay: 240ms; }
+  .animate-stagger > *:nth-child(6) { animation-delay: 300ms; }
+  .animate-stagger > *:nth-child(7) { animation-delay: 360ms; }
+  .animate-stagger > *:nth-child(8) { animation-delay: 420ms; }
+  .animate-stagger > *:nth-child(9) { animation-delay: 480ms; }
+  .animate-stagger > *:nth-child(10) { animation-delay: 540ms; }
+
+  .hover-lift {
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px -8px rgb(0 0 0 / 0.1), 0 4px 16px -4px rgb(0 0 0 / 0.05);
+  }
+
+  .hover-glow:hover {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12), 0 4px 16px -4px rgb(0 0 0 / 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

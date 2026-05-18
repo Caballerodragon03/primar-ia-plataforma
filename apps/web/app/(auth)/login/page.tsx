@@ -53,8 +53,8 @@ export default function LoginPage() {
           backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
           backgroundSize: '24px 24px',
         }} />
-        <div className="relative z-10 max-w-md text-center space-y-8">
-          <div className="flex justify-center">
+        <div className="relative z-10 max-w-md text-center space-y-8 animate-fade-in">
+          <div className="flex justify-center animate-float">
             <LogoIcon size={80} color="#D4A817" />
           </div>
           <div>
@@ -65,7 +65,7 @@ export default function LoginPage() {
               Conecta directamente con productores y compradores del sector primario en España. Sin intermediarios.
             </p>
           </div>
-          <div className="flex items-center justify-center gap-8 pt-4">
+          <div className="flex items-center justify-center gap-8 pt-4 animate-stagger">
             <div className="text-center">
               <p className="text-2xl font-bold text-foreground">101+</p>
               <p className="text-xs text-muted-foreground mt-0.5">Pre-registros</p>
@@ -128,7 +128,7 @@ export default function LoginPage() {
                   {...register('password')}
                 />
                 <div className="text-right mt-1.5">
-                  <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80 transition-colors font-medium">
+                  <Link href="/forgot-password" className="text-sm text-primary-dark hover:text-primary/80 transition-colors font-medium">
                     ¿Olvidaste tu contraseña?
                   </Link>
                 </div>

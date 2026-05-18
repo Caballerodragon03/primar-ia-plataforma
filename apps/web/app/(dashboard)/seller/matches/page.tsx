@@ -268,7 +268,7 @@ export default function SellerMatchesPage() {
             </div>
             <button
               onClick={() => setShowIncotermFilter((v) => !v)}
-              className="text-xs text-primary hover:underline"
+              className="text-xs text-primary-dark hover:underline"
             >
               {showIncotermFilter ? 'Hide' : 'Edit'}
             </button>
@@ -421,7 +421,7 @@ export default function SellerMatchesPage() {
       )}
 
       {!loading && !error && sorted.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-3 animate-stagger">
           {sorted.map((match) => (
             <MatchCard key={match.id} match={match} onContribute={handleContribute} />
           ))}

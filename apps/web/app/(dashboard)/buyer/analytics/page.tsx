@@ -64,7 +64,7 @@ export default function BuyerAnalyticsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-xl font-bold text-foreground">Analíticas de compras</h1>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-stagger">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-24 bg-muted animate-pulse rounded-card" />
           ))}
@@ -96,7 +96,7 @@ export default function BuyerAnalyticsPage() {
       <h1 className="text-xl font-bold text-foreground">Analíticas de compras</h1>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-stagger">
         <KPICard
           label="Total Orders"
           value={String(data.totalOrders)}
@@ -155,7 +155,7 @@ export default function BuyerAnalyticsPage() {
       </div>
 
       {/* Two-column charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-stagger">
         {/* Top products */}
         <div className="bg-card rounded-card border border-border p-5">
           <h2 className="text-sm font-semibold text-foreground mb-4">Productos más comprados por volumen (kg)</h2>

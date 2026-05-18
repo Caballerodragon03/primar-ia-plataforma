@@ -111,7 +111,7 @@ function DeliveryConfirmInline({ transaccionId, onConfirmed }: { transaccionId: 
           Confirm
         </Button>
       </div>
-      <p className="text-[10px] text-amber-700">The code is printed on the QR label attached to the lot. Payment will be released to the seller once confirmed.</p>
+      <p className="text-[11px] text-amber-700">The code is printed on the QR label attached to the lot. Payment will be released to the seller once confirmed.</p>
     </div>
   );
 }
@@ -339,7 +339,7 @@ export default function OrderDetailPage() {
               <thead>
                 <tr className="bg-muted/50">
                   {['CALIBRE', 'CANT (kg)', 'PRECIO MÁX (€/kg)'].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
+                    <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -375,7 +375,7 @@ export default function OrderDetailPage() {
                 <thead>
                   <tr className="bg-muted/50">
                     {['VENDEDOR', 'PUNTUACIÓN', 'CANT (kg)', 'PRECIO (€/kg)', 'ESTADO', 'ACCIONES'].map((h) => (
-                      <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
+                      <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -401,7 +401,7 @@ export default function OrderDetailPage() {
                         <td className="px-4 py-2.5">
                           {m.scoreMatching != null ? (
                             <span className={[
-                              'inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-semibold',
+                              'inline-flex items-center px-2 py-0.5 rounded-badge text-[11px] font-semibold',
                               m.scoreMatching >= 0.7 ? 'bg-green-100 text-green-700' :
                               m.scoreMatching >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
                               'bg-muted text-muted-foreground',
@@ -415,7 +415,7 @@ export default function OrderDetailPage() {
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-1.5">
                             <span className={[
-                              'inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-medium',
+                              'inline-flex items-center px-2 py-0.5 rounded-badge text-[11px] font-medium',
                               m.estado === 'ACEPTADO_VENDEDOR' ? 'bg-green-100 text-green-700' :
                               m.estado === 'PROPUESTO' ? 'bg-yellow-100 text-yellow-700' :
                               m.estado === 'CONFIRMADO' ? 'bg-blue-100 text-blue-700' :
@@ -505,7 +505,7 @@ export default function OrderDetailPage() {
                       <h2 className="text-sm font-semibold text-foreground">Shipment from {sellerName}</h2>
                     </div>
                     {info.qrUsado && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-[10px] font-medium bg-green-100 text-green-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-[11px] font-medium bg-green-100 text-green-700">
                         <CheckCircle2 className="w-3 h-3" /> Delivered
                       </span>
                     )}

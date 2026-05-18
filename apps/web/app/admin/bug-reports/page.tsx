@@ -131,7 +131,7 @@ export default function BugReportsAdminPage() {
           >
             {e === 'TODOS' ? 'Todos' : ESTADO_LABELS[e].label}
             {e !== 'TODOS' && counts[e] !== undefined && (
-              <span className="ml-1.5 text-[10px] text-gray-500">({counts[e]})</span>
+              <span className="ml-1.5 text-[11px] text-gray-500">({counts[e]})</span>
             )}
           </button>
         ))}
@@ -164,14 +164,14 @@ export default function BugReportsAdminPage() {
                     ].join(' ')}
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${meta.classes}`}>
+                      <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded border ${meta.classes}`}>
                         {meta.label}
                       </span>
-                      <span className="text-[10px] text-gray-400">{formatDate(r.createdAt)}</span>
+                      <span className="text-[11px] text-gray-400">{formatDate(r.createdAt)}</span>
                     </div>
                     <p className="text-xs text-gray-900 line-clamp-2">{r.descripcion}</p>
                     {r.url && (
-                      <p className="text-[10px] text-gray-400 truncate mt-1 font-mono">{r.url}</p>
+                      <p className="text-[11px] text-gray-400 truncate mt-1 font-mono">{r.url}</p>
                     )}
                   </button>
                 );
@@ -189,7 +189,7 @@ export default function BugReportsAdminPage() {
           ) : (
             <div className="p-4 space-y-4">
               <div>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Reportado por</p>
+                <p className="text-[11px] text-gray-500 uppercase tracking-wide">Reportado por</p>
                 {selected.reporter ? (
                   <p className="text-sm text-gray-900">
                     {selected.reporter.nombre} {selected.reporter.apellidos}
@@ -200,19 +200,19 @@ export default function BugReportsAdminPage() {
                 ) : (
                   <p className="text-sm text-gray-400 italic">Usuario desconocido</p>
                 )}
-                <p className="text-[10px] text-gray-400 mt-0.5">
+                <p className="text-[11px] text-gray-400 mt-0.5">
                   {formatDate(selected.createdAt)}
                 </p>
               </div>
 
               <div>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Descripción</p>
+                <p className="text-[11px] text-gray-500 uppercase tracking-wide mb-1">Descripción</p>
                 <p className="text-sm text-gray-900 whitespace-pre-wrap">{selected.descripcion}</p>
               </div>
 
               {selected.url && (
                 <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">URL</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wide mb-1">URL</p>
                   <a
                     href={selected.url}
                     target="_blank"
@@ -226,7 +226,7 @@ export default function BugReportsAdminPage() {
 
               {selected.capturaUrl && (
                 <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Captura</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wide mb-1">Captura</p>
                   <a
                     href={selected.capturaUrl}
                     target="_blank"
@@ -244,14 +244,14 @@ export default function BugReportsAdminPage() {
 
               {selected.userAgent && (
                 <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">User Agent</p>
-                  <p className="text-[10px] text-gray-500 font-mono break-all">{selected.userAgent}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wide mb-1">User Agent</p>
+                  <p className="text-[11px] text-gray-500 font-mono break-all">{selected.userAgent}</p>
                 </div>
               )}
 
               <div className="border-t border-border pt-4 space-y-3">
                 <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Estado</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wide mb-1">Estado</p>
                   <select
                     value={draftEstado}
                     onChange={(e) => setDraftEstado(e.target.value as Estado)}
@@ -264,7 +264,7 @@ export default function BugReportsAdminPage() {
                 </div>
 
                 <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Notas internas</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wide mb-1">Notas internas</p>
                   <textarea
                     value={draftNotas}
                     onChange={(e) => setDraftNotas(e.target.value)}
@@ -284,7 +284,7 @@ export default function BugReportsAdminPage() {
                 </button>
 
                 {selected.resolvedAt && (
-                  <p className="text-[10px] text-green-700">
+                  <p className="text-[11px] text-green-700">
                     Resuelto el {formatDate(selected.resolvedAt)}
                   </p>
                 )}

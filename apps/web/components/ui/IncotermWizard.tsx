@@ -253,7 +253,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
                       {rec.code}
                     </span>
                     <span className="font-semibold text-text-primary">{rec.name}</span>
-                    <span className="ml-auto text-xs text-primary font-medium">Recomendado</span>
+                    <span className="ml-auto text-xs text-primary-dark-dark font-medium">Recomendado</span>
                   </div>
                   <p className="text-sm text-text-secondary leading-relaxed">{rec.desc}</p>
                 </div>

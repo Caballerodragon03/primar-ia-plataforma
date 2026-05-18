@@ -155,7 +155,7 @@ export function SeasonalCalendar() {
             key={cat}
             onClick={() => setActiveCategory(cat)}
             className={[
-              'px-2 py-0.5 rounded-badge text-[10px] font-medium border transition-colors',
+              'px-2 py-0.5 rounded-badge text-[11px] font-medium border transition-colors',
               activeCategory === cat
                 ? 'bg-primary/10 border-primary text-secondary'
                 : 'border-border text-text-secondary hover:border-primary bg-card',
@@ -167,7 +167,7 @@ export function SeasonalCalendar() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-3 text-[10px] text-text-secondary">
+      <div className="flex items-center gap-3 text-[11px] text-text-secondary">
         <span className="flex items-center gap-1">
           <span className="inline-block w-3 h-3 rounded-sm bg-green-500" /> Prod + Comerc
         </span>
@@ -206,7 +206,7 @@ export function SeasonalCalendar() {
               className="grid grid-cols-[120px_repeat(12,1fr)] gap-x-0.5 items-center"
               title={entry.notas}
             >
-              <span className="text-[10px] text-text-primary truncate pr-1" title={entry.producto}>
+              <span className="text-[11px] text-text-primary truncate pr-1" title={entry.producto}>
                 {entry.producto}
               </span>
               {MONTHS.map((_, i) => {

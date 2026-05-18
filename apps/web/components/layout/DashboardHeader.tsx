@@ -128,7 +128,7 @@ export function DashboardHeader() {
         >
           <Bell className="w-[18px] h-[18px] text-muted-foreground" />
           {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-medium bg-destructive text-destructive-foreground rounded-full">
+            <span className="absolute top-1 right-1 flex items-center justify-center min-w-[16px] h-4 px-1 text-[11px] font-medium bg-destructive text-destructive-foreground rounded-full">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}

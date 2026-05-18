@@ -264,7 +264,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                       'w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center',
                       closed ? 'bg-gray-400' : 'bg-secondary',
                     ].join(' ')}>
-                      <span className="text-white text-[10px] font-semibold">
+                      <span className="text-white text-[11px] font-semibold">
                         {getInitials(conv.counterpartName)}
                       </span>
                     </div>
@@ -284,7 +284,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                         </div>
                       </div>
                       <p className={[
-                        'text-[10px] truncate',
+                        'text-[11px] truncate',
                         closed ? 'text-muted-foreground' : 'text-muted-foreground',
                       ].join(' ')}>#{conv.orderId} · {conv.product}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
@@ -294,7 +294,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                           </span>
                         )}
                         <p className={[
-                          'text-[10px] truncate flex-1',
+                          'text-[11px] truncate flex-1',
                           closed ? 'text-muted-foreground/50 italic' : 'text-muted-foreground',
                         ].join(' ')}>{conv.lastMessage}</p>
                       </div>
@@ -328,7 +328,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                       'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
                       closed ? 'bg-gray-400' : 'bg-secondary',
                     ].join(' ')}>
-                      <span className="text-white text-[10px] font-semibold">
+                      <span className="text-white text-[11px] font-semibold">
                         {getInitials(selectedConv.counterpartName)}
                       </span>
                     </div>
@@ -339,13 +339,13 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                           closed ? 'text-muted-foreground' : 'text-foreground',
                         ].join(' ')}>{selectedConv.counterpartName}</p>
                         {meta && Icon && (
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${meta.classes}`}>
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-full border ${meta.classes}`}>
                             <Icon className="w-3 h-3" />
                             {meta.label}
                           </span>
                         )}
                       </div>
-                      <p className="text-[10px] text-muted-foreground">Order #{selectedConv.orderId} · {selectedConv.product}</p>
+                      <p className="text-[11px] text-muted-foreground">Order #{selectedConv.orderId} · {selectedConv.product}</p>
                     </div>
                   </>
                 );
@@ -375,7 +375,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                             fetchConversations();
                           }}
                         />
-                        <span className="text-[10px] text-muted-foreground">{formatTime(msg.sentAt)}</span>
+                        <span className="text-[11px] text-muted-foreground">{formatTime(msg.sentAt)}</span>
                       </div>
                     );
                   }
@@ -395,12 +395,12 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                       >
                         <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                         {msg.intentoBypass && (
-                          <p className="text-[10px] text-red-500 mt-1 font-medium">
+                          <p className="text-[11px] text-red-500 mt-1 font-medium">
                             BYPASS DETECTED — Message sanitized
                           </p>
                         )}
                       </div>
-                      <span className="text-[10px] text-muted-foreground">{formatTime(msg.sentAt)}</span>
+                      <span className="text-[11px] text-muted-foreground">{formatTime(msg.sentAt)}</span>
                     </div>
                   );
                 })

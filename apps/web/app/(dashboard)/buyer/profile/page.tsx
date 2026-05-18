@@ -117,7 +117,7 @@ export default function BuyerProfilePage() {
 
       {/* Account Settings */}
       {activeTab === 'account' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-stagger">
           {/* Contact info */}
           <div className="bg-card rounded-card border border-border p-6 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Persona de contacto</h2>

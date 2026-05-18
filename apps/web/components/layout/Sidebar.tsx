@@ -244,7 +244,7 @@ export function Sidebar() {
               <TooltipTrigger asChild>
                 <div className="flex justify-center mt-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-[10px] bg-primary/15 text-foreground font-semibold">
+                    <AvatarFallback className="text-[11px] bg-primary/15 text-foreground font-semibold">
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
@@ -279,9 +279,12 @@ export function Sidebar() {
                 )}
                 aria-current={isActive ? 'page' : undefined}
               >
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
-                )}
+                <span
+                  className={cn(
+                    'absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-primary transition-all duration-300 ease-out',
+                    isActive ? 'h-5 opacity-100' : 'h-0 opacity-0'
+                  )}
+                />
                 <Icon
                   className={cn(
                     'shrink-0 transition-colors duration-200',
@@ -298,7 +301,7 @@ export function Sidebar() {
                       'flex items-center justify-center bg-destructive text-destructive-foreground font-medium rounded-full',
                       collapsed
                         ? 'absolute top-0.5 right-0.5 w-2 h-2 animate-pulse'
-                        : 'ml-auto text-[10px] min-w-[18px] h-[18px] px-1'
+                        : 'ml-auto text-[11px] min-w-[18px] h-[18px] px-1'
                     )}
                   >
                     {!collapsed && badgeCount}
@@ -314,7 +317,7 @@ export function Sidebar() {
                   <TooltipContent side="right" className="flex items-center gap-2">
                     {label}
                     {badgeCount > 0 && (
-                      <span className="text-[10px] bg-destructive text-destructive-foreground rounded-full px-1.5 py-0.5">
+                      <span className="text-[11px] bg-destructive text-destructive-foreground rounded-full px-1.5 py-0.5">
                         {badgeCount}
                       </span>
                     )}

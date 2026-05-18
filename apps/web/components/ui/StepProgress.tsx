@@ -35,7 +35,7 @@ export function StepProgress({ currentStep, totalSteps, stepLabels }: StepProgre
               i + 1 <= currentStep ? 'bg-primary' : 'bg-gray-300',
             ].join(' ')} />
             <span className={[
-              'text-[10px] hidden sm:block',
+              'text-[11px] hidden sm:block',
               i + 1 === currentStep ? 'text-gray-800 font-semibold' : 'text-muted-foreground',
             ].join(' ')}>{step}</span>
           </div>

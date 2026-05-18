@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Plus, TrendingUp, Clock, DollarSign, RefreshCw } from 'lucide-react';
+import { Plus, TrendingUp, Clock, DollarSign, RefreshCw, PenLine, CreditCard, PackageCheck, AlarmClock, MessageCircle, Leaf } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { KPICard } from '@/components/ui/KPICard';
@@ -91,7 +91,7 @@ export default function BuyerDashboard() {
   const n = notifs;
   const actionItems = [
     n && n.pendingContracts > 0 && {
-      icon: '✍️',
+      icon: <PenLine className="w-5 h-5" />,
       label: `Sign ${n.pendingContracts} contract${n.pendingContracts > 1 ? 's' : ''}`,
       desc: 'A seller has signed — your signature is required to proceed.',
       href: n.pendingContracts === 1 && n.firstPendingContractOrderId && n.firstPendingContractTxId
@@ -100,7 +100,7 @@ export default function BuyerDashboard() {
       color: 'amber',
     },
     n && n.pendingOffers > 0 && {
-      icon: '💳',
+      icon: <CreditCard className="w-5 h-5" />,
       label: `Authorize payment for ${n.pendingOffers} offer${n.pendingOffers > 1 ? 's' : ''}`,
       desc: 'Pre-authorize payment to confirm the deal in escrow.',
       href: n.pendingOffers === 1 && n.firstPendingOfferOrderId
@@ -109,7 +109,7 @@ export default function BuyerDashboard() {
       color: 'blue',
     },
     n && n.pendingDeliveries > 0 && {
-      icon: '📦',
+      icon: <PackageCheck className="w-5 h-5" />,
       label: `Confirm delivery of ${n.pendingDeliveries} shipment${n.pendingDeliveries > 1 ? 's' : ''}`,
       desc: 'Scan the QR code or enter the verification code to release payment.',
       href: n.pendingDeliveries === 1 && n.firstPendingDeliveryOrderId && n.firstPendingDeliveryTxId
@@ -118,20 +118,20 @@ export default function BuyerDashboard() {
       color: 'green',
     },
     n && n.expiredOrders > 0 && {
-      icon: '⏰',
+      icon: <AlarmClock className="w-5 h-5" />,
       label: `${n.expiredOrders} order${n.expiredOrders > 1 ? 's' : ''} past delivery date`,
       desc: 'Extend the deadline or close the order with the current coverage.',
       href: '/buyer/orders/tasks/expiry',
       color: 'red',
     },
     n && n.unreadMessages > 0 && {
-      icon: '💬',
+      icon: <MessageCircle className="w-5 h-5" />,
       label: `${n.unreadMessages} unread message${n.unreadMessages > 1 ? 's' : ''}`,
       desc: 'You have unread messages from sellers.',
       href: '/buyer/messages',
       color: 'purple',
     },
-  ].filter(Boolean) as { icon: string; label: string; desc: string; href: string; color: string }[];
+  ].filter(Boolean) as { icon: React.ReactNode; label: string; desc: string; href: string; color: string }[];
 
   return (
     <div className="flex flex-col gap-6">
@@ -150,7 +150,7 @@ export default function BuyerDashboard() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-stagger">
         <KPICard
           label="Orders in Progress"
           value={loading ? '—' : String(ordersInProgress)}
@@ -190,17 +190,17 @@ export default function BuyerDashboard() {
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
             Action Required
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-stagger">
             {actionItems.map((item) => (
               <Link key={item.href + item.label} href={item.href}>
-                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-soft-md ${
+                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer hover-lift hover:shadow-soft-md ${
                   item.color === 'amber' ? 'border-amber-200 bg-amber-50 hover:border-amber-300' :
                   item.color === 'blue'  ? 'border-blue-200 bg-blue-50 hover:border-blue-300' :
                   item.color === 'green' ? 'border-green-200 bg-green-50 hover:border-green-300' :
                   item.color === 'red'   ? 'border-red-200 bg-red-50 hover:border-red-300' :
                   'border-purple-200 bg-purple-50 hover:border-purple-300'
                 }`}>
-                  <span className="text-2xl">{item.icon}</span>
+                  <span className="flex-shrink-0 text-foreground/70">{item.icon}</span>
                   <div>
                     <p className="text-sm font-semibold text-foreground">{item.label}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
@@ -215,7 +215,7 @@ export default function BuyerDashboard() {
       {!loading && actionItems.length === 0 && (
         <Link href="/buyer/orders/new">
           <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all cursor-pointer">
-            <span className="text-2xl">🌿</span>
+            <Leaf className="w-5 h-5 text-primary flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold text-foreground">¡Estás al día!</p>
               <p className="text-xs text-muted-foreground mt-0.5">Sin acciones pendientes — ¿listo para crear un nuevo pedido?</p>
@@ -225,9 +225,9 @@ export default function BuyerDashboard() {
         </Link>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-stagger">
         {/* Active Orders Table */}
-        <div className="lg:col-span-2 bg-card rounded-card border border-border overflow-hidden">
+        <div className="lg:col-span-2 bg-card rounded-card border border-border overflow-hidden hover-lift">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground">Resumen de pedidos activos</h2>
             <Link href="/buyer/orders" className="text-xs text-secondary hover:underline font-medium">
@@ -240,7 +240,7 @@ export default function BuyerDashboard() {
                 {['ID PEDIDO', 'PRODUCTO', 'CANTIDAD', 'COBERTURA', 'ESTADO'].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-2.5 text-left text-[10px] font-semibold text-secondary uppercase tracking-wider"
+                    className="px-4 py-2.5 text-left text-[11px] font-semibold text-secondary uppercase tracking-wider"
                   >
                     {h}
                   </th>
@@ -309,7 +309,7 @@ export default function BuyerDashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-card rounded-card border border-border overflow-hidden">
+        <div className="bg-card rounded-card border border-border overflow-hidden hover-lift">
           <div className="px-4 py-3 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground">Actividad reciente</h2>
           </div>
@@ -337,7 +337,7 @@ export default function BuyerDashboard() {
                           <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title="Seller offer pending" />
                         )}
                       </p>
-                      <p className="text-[10px] text-secondary mt-0.5">
+                      <p className="text-[11px] text-secondary mt-0.5">
                         {Number(order.totalKg).toLocaleString()} kg — {Math.min(100, Math.round(order.coverage ?? 0))}% covered
                       </p>
                     </div>

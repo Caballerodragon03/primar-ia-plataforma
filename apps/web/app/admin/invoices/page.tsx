@@ -94,7 +94,7 @@ export default function AdminInvoicesPage() {
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               {['Nº Factura', 'Fecha', 'Producto', 'Vendedor', 'Comprador', 'Precio total', 'Comisión', '%', 'Estado', ''].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
                   {h}
                 </th>
               ))}
@@ -119,7 +119,7 @@ export default function AdminInvoicesPage() {
                 <td className="px-4 py-3 text-right text-gray-500">{(inv.comisionPorcentaje * 100).toFixed(2)}%</td>
                 <td className="px-4 py-3">
                   <span className={[
-                    'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium',
+                    'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium',
                     inv.estado === 'COMPLETADO' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700',
                   ].join(' ')}>
                     {inv.estado}

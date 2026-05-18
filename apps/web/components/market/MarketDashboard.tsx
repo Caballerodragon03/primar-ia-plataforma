@@ -492,7 +492,7 @@ function Kpi({ label, value, positive }: { label: string; value: string; positiv
     : positive ? 'text-green-700' : 'text-red-700';
   return (
     <div className="bg-card rounded-input p-2.5 border border-border">
-      <p className="text-[10px] text-text-muted mb-0.5 uppercase tracking-wide">{label}</p>
+      <p className="text-[11px] text-text-muted mb-0.5 uppercase tracking-wide">{label}</p>
       <p className={`text-base font-semibold ${color}`}>{value}</p>
     </div>
   );

@@ -278,7 +278,7 @@ export default function PublishLotPage() {
                 <button
                   type="button"
                   onClick={() => append({ calibre: '', cantidad_kg: 0 })}
-                  className="text-sm text-primary font-medium hover:underline flex items-center gap-1"
+                  className="text-sm text-primary-dark font-medium hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add another caliber
                 </button>

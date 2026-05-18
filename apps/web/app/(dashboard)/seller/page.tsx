@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Plus, Package, GitMerge, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Plus, Package, GitMerge, CheckCircle2, RefreshCw, PenLine, Camera, Zap, AlarmClock, MessageCircle, Sprout } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { KPICard } from '@/components/ui/KPICard';
@@ -96,7 +96,7 @@ export default function SellerDashboard() {
   const n = notifs;
   const actionItems = [
     n && n.pendingContracts > 0 && {
-      icon: '✍️',
+      icon: <PenLine className="w-5 h-5" />,
       label: `Countersign ${n.pendingContracts} contract${n.pendingContracts > 1 ? 's' : ''}`,
       desc: 'The buyer has signed — your countersignature is needed to proceed.',
       href: n.pendingContracts === 1 && n.firstPendingContractLotId && n.firstPendingContractSellerTxId
@@ -105,7 +105,7 @@ export default function SellerDashboard() {
       color: 'amber',
     },
     n && n.pendingPhotos > 0 && {
-      icon: '📸',
+      icon: <Camera className="w-5 h-5" />,
       label: `Upload photos for ${n.pendingPhotos} shipment${n.pendingPhotos > 1 ? 's' : ''}`,
       desc: 'Both parties signed. Upload lot preparation photos before shipping.',
       href: n.pendingPhotos === 1 && n.firstPendingPhotosLotId && n.firstPendingPhotosTxId
@@ -114,27 +114,27 @@ export default function SellerDashboard() {
       color: 'blue',
     },
     n && n.pendingMatches > 0 && {
-      icon: '⚡',
+      icon: <Zap className="w-5 h-5" />,
       label: `${n.pendingMatches} new match${n.pendingMatches > 1 ? 'es' : ''} to review`,
       desc: 'New buyers matched to your lots. Review and accept.',
       href: n.pendingMatches === 1 ? '/seller/matches' : '/seller/lots/tasks/matches',
       color: 'green',
     },
     n && n.expiredLots > 0 && {
-      icon: '⏰',
+      icon: <AlarmClock className="w-5 h-5" />,
       label: `${n.expiredLots} lot${n.expiredLots > 1 ? 's' : ''} past availability date`,
       desc: 'Extend the period or close the lot with the current sales.',
       href: '/seller/lots/tasks/expiry',
       color: 'red',
     },
     n && n.unreadMessages > 0 && {
-      icon: '💬',
+      icon: <MessageCircle className="w-5 h-5" />,
       label: `${n.unreadMessages} unread message${n.unreadMessages > 1 ? 's' : ''}`,
       desc: 'You have unread messages from buyers.',
       href: '/seller/messages',
       color: 'purple',
     },
-  ].filter(Boolean) as { icon: string; label: string; desc: string; href: string; color: string }[];
+  ].filter(Boolean) as { icon: React.ReactNode; label: string; desc: string; href: string; color: string }[];
 
   return (
     <div className="flex flex-col gap-6">
@@ -153,7 +153,7 @@ export default function SellerDashboard() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-stagger">
         <KPICard
           label="Active Lots"
           value={loading ? '—' : String(activeLots)}
@@ -193,17 +193,17 @@ export default function SellerDashboard() {
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
             Action Required
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-stagger">
             {actionItems.map((item) => (
               <Link key={item.href + item.label} href={item.href}>
-                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-soft-md ${
+                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer hover-lift hover:shadow-soft-md ${
                   item.color === 'amber' ? 'border-amber-200 bg-amber-50 hover:border-amber-300' :
                   item.color === 'blue'  ? 'border-blue-200 bg-blue-50 hover:border-blue-300' :
                   item.color === 'green' ? 'border-green-200 bg-green-50 hover:border-green-300' :
                   item.color === 'red'   ? 'border-red-200 bg-red-50 hover:border-red-300' :
                   'border-purple-200 bg-purple-50 hover:border-purple-300'
                 }`}>
-                  <span className="text-2xl">{item.icon}</span>
+                  <span className="flex-shrink-0 text-foreground/70">{item.icon}</span>
                   <div>
                     <p className="text-sm font-semibold text-foreground">{item.label}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
@@ -218,7 +218,7 @@ export default function SellerDashboard() {
       {!loading && actionItems.length === 0 && (
         <Link href="/seller/lots/new">
           <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all cursor-pointer">
-            <span className="text-2xl">🌱</span>
+            <Sprout className="w-5 h-5 text-primary flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold text-foreground">¡Estás al día!</p>
               <p className="text-xs text-muted-foreground mt-0.5">Sin acciones pendientes — ¿listo para publicar un nuevo lote?</p>
@@ -228,9 +228,9 @@ export default function SellerDashboard() {
         </Link>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-stagger">
         {/* Active Lots Table */}
-        <div className="lg:col-span-2 bg-card rounded-card border border-border overflow-hidden">
+        <div className="lg:col-span-2 bg-card rounded-card border border-border overflow-hidden hover-lift">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground">Lotes activos y en curso</h2>
             <Link href="/seller/lots" className="text-xs text-secondary hover:underline font-medium">
@@ -243,7 +243,7 @@ export default function SellerDashboard() {
                 {['ID LOTE', 'PRODUCTO', 'CANTIDAD', 'COBERTURA', 'ESTADO'].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-2.5 text-left text-[10px] font-semibold text-secondary uppercase tracking-wider"
+                    className="px-4 py-2.5 text-left text-[11px] font-semibold text-secondary uppercase tracking-wider"
                   >
                     {h}
                   </th>
@@ -300,7 +300,7 @@ export default function SellerDashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-card rounded-card border border-border overflow-hidden">
+        <div className="bg-card rounded-card border border-border overflow-hidden hover-lift">
           <div className="px-4 py-3 border-b border-border">
             <h2 className="text-sm font-semibold text-foreground">Actividad reciente</h2>
           </div>
@@ -327,10 +327,10 @@ export default function SellerDashboard() {
                       <p className="text-xs font-medium text-foreground truncate">
                         {match.pedido?.producto?.nombre ?? 'Product'}
                       </p>
-                      <p className="text-[10px] text-secondary mt-0.5">
+                      <p className="text-[11px] text-secondary mt-0.5">
                         {qty.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg · {price.toFixed(2)} €/kg
                       </p>
-                      <p className="text-[10px] font-semibold text-secondary mt-0.5">
+                      <p className="text-[11px] font-semibold text-secondary mt-0.5">
                         {total.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €
                       </p>
                     </div>

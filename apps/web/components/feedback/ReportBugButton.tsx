@@ -167,7 +167,7 @@ export function ReportBugButton() {
                       className="w-full px-3 py-2 border border-border rounded-input text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                       disabled={submitting || uploading}
                     />
-                    <p className="text-[10px] text-text-muted mt-0.5 text-right">
+                    <p className="text-[11px] text-text-muted mt-0.5 text-right">
                       {descripcion.length}/5000
                     </p>
                   </div>
@@ -226,7 +226,7 @@ export function ReportBugButton() {
                     </div>
                   )}
 
-                  <p className="text-[10px] text-text-muted">
+                  <p className="text-[11px] text-text-muted">
                     Página: <span className="font-mono">{pathname ?? '(desconocida)'}</span>
                   </p>
                 </>

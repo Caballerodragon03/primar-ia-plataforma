@@ -24,7 +24,7 @@ export function CoverageBar({ percentage, className = '', showLabel = true, size
         aria-valuemax={100}
       >
         <div
-          className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+          className="h-full bg-primary rounded-full animate-width-grow"
           style={{ width: `${clamped}%` }}
         />
       </div>

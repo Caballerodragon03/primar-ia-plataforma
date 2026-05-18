@@ -201,7 +201,7 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
                   placeholder="Comparte tu experiencia..."
                   className="w-full border border-border rounded-lg px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                 />
-                <p className="text-[10px] text-muted-foreground text-right mt-0.5">
+                <p className="text-[11px] text-muted-foreground text-right mt-0.5">
                   {comentario.length}/500
                 </p>
               </div>

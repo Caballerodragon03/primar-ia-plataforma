@@ -63,6 +63,12 @@ export default function RootLayout({
   return (
     <html lang="es" className="scroll-smooth">
       <body className={`${poppins.variable} font-sans bg-background text-foreground antialiased`}>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-primary focus:text-foreground focus:rounded-lg focus:text-sm focus:font-medium focus:shadow-soft"
+        >
+          Saltar al contenido
+        </a>
         {children}
         <Toaster
           position="bottom-right"

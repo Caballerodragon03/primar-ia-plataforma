@@ -1,4 +1,7 @@
+'use client';
+
 import { cn } from '@/lib/utils';
+import { useCountUp } from '@/lib/useCountUp';
 
 interface KPICardProps {
   label: string;
@@ -9,11 +12,27 @@ interface KPICardProps {
   className?: string;
 }
 
+function extractNumber(val: string | number): { prefix: string; num: number; suffix: string } | null {
+  if (typeof val === 'number') return { prefix: '', num: val, suffix: '' };
+  const m = String(val).match(/^([^\d]*?)([\d,.]+)(.*)$/);
+  if (!m) return null;
+  const num = parseFloat(m[2]!.replace(/\./g, '').replace(',', '.'));
+  if (isNaN(num)) return null;
+  return { prefix: m[1]!, num, suffix: m[3]! };
+}
+
 export function KPICard({ label, value, sub, icon, trend, className }: KPICardProps) {
+  const parsed = extractNumber(value);
+  const animated = useCountUp(parsed?.num ?? 0, 900, !!parsed);
+
+  const displayValue = parsed
+    ? `${parsed.prefix}${animated.toLocaleString('es-ES', { maximumFractionDigits: 0 })}${parsed.suffix}`
+    : value;
+
   return (
     <div
       className={cn(
-        'bg-card rounded-card border border-border/50 p-5 flex flex-col gap-3 shadow-soft hover:shadow-soft-md transition-all duration-200',
+        'bg-card rounded-card border border-border/50 p-5 flex flex-col gap-3 shadow-soft hover-lift hover-glow',
         className
       )}
     >
@@ -26,7 +45,7 @@ export function KPICard({ label, value, sub, icon, trend, className }: KPICardPr
         )}
       </div>
       <div>
-        <p className="text-2xl font-bold text-foreground tabular-nums">{value}</p>
+        <p className="text-2xl font-bold text-foreground tabular-nums">{displayValue}</p>
         {sub && (
           <p className={cn(
             'text-xs mt-1',

@@ -88,7 +88,7 @@ export function NegotiationCard({
           <p className="text-xs font-semibold text-foreground">
             {isOwn ? 'Tu propuesta' : 'Propuesta recibida'}
           </p>
-          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${color}`}>
+          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${color}`}>
             {label}
           </span>
         </div>
@@ -98,7 +98,7 @@ export function NegotiationCard({
           {negociacion.precioKg !== null && (
             <div className="flex items-center gap-2 text-xs">
               <div className="flex-1">
-                <p className="text-muted-foreground text-[10px] uppercase tracking-wide">Precio actual</p>
+                <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Precio actual</p>
                 <p className="font-medium text-muted-foreground">
                   {negociacion.currentPrecioKg != null
                     ? `€${negociacion.currentPrecioKg.toFixed(4)}/kg`
@@ -107,7 +107,7 @@ export function NegotiationCard({
               </div>
               <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
               <div className="flex-1 text-right">
-                <p className="text-muted-foreground text-[10px] uppercase tracking-wide">Propuesto</p>
+                <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Propuesto</p>
                 <p className={`font-bold ${isPending ? 'text-yellow-700' : 'text-foreground'}`}>
                   €{negociacion.precioKg.toFixed(4)}/kg
                 </p>
@@ -118,14 +118,14 @@ export function NegotiationCard({
           {negociacion.incoterm !== null && (
             <div className="flex items-center gap-2 text-xs">
               <div className="flex-1">
-                <p className="text-muted-foreground text-[10px] uppercase tracking-wide">Incoterm actual</p>
+                <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Incoterm actual</p>
                 <p className="font-medium text-muted-foreground">
                   {negociacion.currentIncoterm ?? '—'}
                 </p>
               </div>
               <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
               <div className="flex-1 text-right">
-                <p className="text-muted-foreground text-[10px] uppercase tracking-wide">Propuesto</p>
+                <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Propuesto</p>
                 <p className={`font-bold ${isPending ? 'text-yellow-700' : 'text-foreground'}`}>
                   {negociacion.incoterm}
                 </p>

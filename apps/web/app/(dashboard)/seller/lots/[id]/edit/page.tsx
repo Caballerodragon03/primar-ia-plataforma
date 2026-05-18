@@ -187,7 +187,7 @@ export default function EditLotPage() {
           <button
             type="button"
             onClick={() => append({ calibre: '', cantidad_kg: 0 })}
-            className="text-sm text-primary hover:underline flex items-center gap-1 font-medium"
+            className="text-sm text-primary-dark hover:underline flex items-center gap-1 font-medium"
           >
             <Plus className="w-3.5 h-3.5" /> Add caliber
           </button>
