@@ -44,6 +44,10 @@ export class LotsService {
         fotosUrls: data.fotosUrls ?? [],
         comentariosAdicionales: data.comentariosAdicionales,
         estado: data.publicar ? 'ACTIVO' : 'BORRADOR',
+        // Phase 2 — logistica + multi-select preferences
+        logistica: data.logistica,
+        incotermsAceptados: data.incotermsAceptados,
+        terminosPagoAceptados: data.terminosPagoAceptados,
       },
       include: { producto: true, variedad: true },
     });
@@ -166,6 +170,9 @@ export class LotsService {
         ...(data.fotosUrls && { fotosUrls: data.fotosUrls }),
         ...(data.comentariosAdicionales !== undefined && { comentariosAdicionales: data.comentariosAdicionales }),
         ...(data.publicar !== undefined && { estado: data.publicar ? 'ACTIVO' : 'BORRADOR' }),
+        ...(data.logistica !== undefined && { logistica: data.logistica }),
+        ...(data.incotermsAceptados !== undefined && { incotermsAceptados: data.incotermsAceptados }),
+        ...(data.terminosPagoAceptados !== undefined && { terminosPagoAceptados: data.terminosPagoAceptados }),
       },
       include: { producto: true, variedad: true },
     });

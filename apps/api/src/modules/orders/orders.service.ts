@@ -41,6 +41,14 @@ export class OrdersService {
         fechaEntregaDeseada: new Date(data.fechaEntregaDeseada),
         notasAdicionales: data.notasAdicionales,
         estado: data.publicar ? 'ACTIVO' : 'BORRADOR',
+        // Phase 2 — logistica + multi-select preferences
+        logistica: data.logistica,
+        // Fallback: si no se mandó la lista, asumimos que el comprador
+        // sólo acepta el incoterm legacy seleccionado.
+        incotermsAceptados: data.incotermsAceptados && data.incotermsAceptados.length > 0
+          ? data.incotermsAceptados
+          : [data.incoterm],
+        terminosPagoAceptados: data.terminosPagoAceptados,
       },
       include: { producto: true, variedad: true },
     });
@@ -182,6 +190,9 @@ export class OrdersService {
         ...(data.fechaEntregaDeseada && { fechaEntregaDeseada: new Date(data.fechaEntregaDeseada) }),
         ...(data.notasAdicionales !== undefined && { notasAdicionales: data.notasAdicionales }),
         ...(data.publicar !== undefined && { estado: data.publicar ? 'ACTIVO' : 'BORRADOR' }),
+        ...(data.logistica !== undefined && { logistica: data.logistica }),
+        ...(data.incotermsAceptados !== undefined && { incotermsAceptados: data.incotermsAceptados }),
+        ...(data.terminosPagoAceptados !== undefined && { terminosPagoAceptados: data.terminosPagoAceptados }),
       },
       include: { producto: true, variedad: true },
     });

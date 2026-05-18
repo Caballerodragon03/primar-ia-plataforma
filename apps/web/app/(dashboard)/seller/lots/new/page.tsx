@@ -1,14 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2, MapPin } from 'lucide-react';
+import { Plus, Trash2, MapPin, Truck, Wallet, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button, Input, Select, FileDropzone, IncotermWizard } from '@/components/ui';
 import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
+import {
+  ALL_INCOTERMS,
+  ALL_TERMINOS_PAGO,
+  LOGISTICA_LABELS,
+  TERMINO_PAGO_LABELS,
+  incotermsForLogistica,
+  type Incoterm as IncotermType,
+  type LogisticaPreferencia,
+  type TerminoPago as TerminoPagoType,
+} from '@primaria/shared';
 
 const OTHER_VALUE = '__other__';
 
@@ -29,6 +39,9 @@ const schema = z.object({
   fotosUrls: z.array(z.string()).default([]),
   comentariosAdicionales: z.string().max(1000).optional(),
   publicar: z.boolean().default(false),
+  logistica: z.enum(['YO_ENVIO', 'OTRO_RECOGE', 'INDIFERENTE']).default('INDIFERENTE'),
+  incotermsAceptados: z.array(z.string()).min(1, 'Selecciona al menos un incoterm'),
+  terminosPagoAceptados: z.array(z.enum(['INMEDIATO', 'DIAS_30', 'DIAS_60'])).min(1, 'Selecciona al menos un término de pago'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -91,6 +104,9 @@ export default function PublishLotPage() {
       fotosUrls: [],
       noCalibre: false,
       publicar: false,
+      logistica: 'INDIFERENTE',
+      incotermsAceptados: [...ALL_INCOTERMS],
+      terminosPagoAceptados: ['INMEDIATO'],
     },
   });
 
@@ -100,6 +116,48 @@ export default function PublishLotPage() {
   const selectedVariedadId = watch('variedadId');
   const selectedCerts = watch('certificaciones');
   const noCalibre = watch('noCalibre');
+  const logistica = watch('logistica');
+  const incotermsAceptados = watch('incotermsAceptados') ?? [];
+  const terminosPagoAceptados = watch('terminosPagoAceptados') ?? [];
+
+  // Incoterms disponibles según la opción de logística — el comprador no
+  // puede elegir incoterms incompatibles con "Yo envío" o "Otro recoge".
+  const availableIncoterms = useMemo(
+    () => incotermsForLogistica(logistica as LogisticaPreferencia),
+    [logistica],
+  );
+
+  // Si el usuario cambia logística, recortamos los incoterms aceptados a los
+  // que sigan siendo válidos. Sin esto, podría enviar un combo inconsistente.
+  useEffect(() => {
+    const valid = incotermsAceptados.filter((it) =>
+      (availableIncoterms as readonly string[]).includes(it),
+    );
+    if (valid.length !== incotermsAceptados.length) {
+      setValue('incotermsAceptados', valid.length > 0 ? valid : [...availableIncoterms]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logistica]);
+
+  const toggleIncoterm = (it: IncotermType) => {
+    const cur = incotermsAceptados;
+    if (cur.includes(it)) {
+      setValue('incotermsAceptados', cur.filter((x) => x !== it));
+    } else {
+      setValue('incotermsAceptados', [...cur, it]);
+    }
+  };
+
+  const toggleTerminoPago = (tp: TerminoPagoType) => {
+    const cur = terminosPagoAceptados;
+    if (cur.includes(tp)) {
+      // No permitas dejar el array vacío.
+      if (cur.length === 1) return;
+      setValue('terminosPagoAceptados', cur.filter((x) => x !== tp));
+    } else {
+      setValue('terminosPagoAceptados', [...cur, tp]);
+    }
+  };
 
   useEffect(() => {
     api.get('/products').then(({ data }) => setProducts(data.data)).catch(() => {});
@@ -317,6 +375,95 @@ export default function PublishLotPage() {
               {...register('fechaFinDisponibilidad')}
               error={errors.fechaFinDisponibilidad?.message}
             />
+          </div>
+
+          {/* Logística + Incoterms */}
+          <div className="pt-4 border-t border-border space-y-3">
+            <div className="flex items-center gap-2">
+              <Truck className="w-4 h-4 text-text-secondary" />
+              <h3 className="text-sm font-semibold text-text-primary">¿Quién se encarga del envío?</h3>
+            </div>
+            <Select
+              label=""
+              {...register('logistica')}
+            >
+              <option value="INDIFERENTE">{LOGISTICA_LABELS.INDIFERENTE} (más matches)</option>
+              <option value="YO_ENVIO">{LOGISTICA_LABELS.YO_ENVIO}</option>
+              <option value="OTRO_RECOGE">{LOGISTICA_LABELS.OTRO_RECOGE}</option>
+            </Select>
+
+            <div>
+              <p className="text-xs font-medium text-text-secondary mb-2">
+                Incoterms aceptados <span className="text-text-muted">(elige varios)</span>
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {availableIncoterms.map((it) => {
+                  const active = incotermsAceptados.includes(it);
+                  return (
+                    <button
+                      type="button"
+                      key={it}
+                      onClick={() => toggleIncoterm(it)}
+                      className={[
+                        'px-3 py-1 rounded-badge text-xs font-medium border transition-colors',
+                        active
+                          ? 'bg-primary/10 border-primary text-secondary'
+                          : 'bg-card border-border text-text-secondary hover:border-primary',
+                      ].join(' ')}
+                    >
+                      {active && '✓ '}{it}
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.incotermsAceptados && (
+                <p className="mt-1 text-xs text-red-500">
+                  {(errors.incotermsAceptados as { message?: string }).message}
+                </p>
+              )}
+              <p className="text-[11px] text-text-muted mt-2 flex items-start gap-1.5">
+                <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                <span>
+                  Los incoterms se filtran según quién envía. Para ampliarlos, cambia la opción de logística.
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* Términos de pago */}
+          <div className="pt-4 border-t border-border space-y-3">
+            <div className="flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-text-secondary" />
+              <h3 className="text-sm font-semibold text-text-primary">Términos de pago aceptados</h3>
+            </div>
+            <p className="text-xs text-text-muted">
+              Elige uno o varios. El comprador podrá pagar bajo cualquiera de los términos que aceptes.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {ALL_TERMINOS_PAGO.map((tp) => {
+                const active = terminosPagoAceptados.includes(tp);
+                return (
+                  <button
+                    type="button"
+                    key={tp}
+                    onClick={() => toggleTerminoPago(tp)}
+                    className={[
+                      'px-3 py-1.5 rounded-badge text-xs font-medium border transition-colors',
+                      active
+                        ? 'bg-primary/10 border-primary text-secondary'
+                        : 'bg-card border-border text-text-secondary hover:border-primary',
+                    ].join(' ')}
+                  >
+                    {active && '✓ '}{TERMINO_PAGO_LABELS[tp]}
+                  </button>
+                );
+              })}
+            </div>
+            {errors.terminosPagoAceptados && (
+              <p className="mt-1 text-xs text-red-500">
+                {(errors.terminosPagoAceptados as { message?: string }).message}
+              </p>
+            )}
           </div>
         </section>
 
