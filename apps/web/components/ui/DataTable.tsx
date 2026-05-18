@@ -8,7 +8,8 @@ import {
   type ColumnDef,
 } from '@tanstack/react-table';
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Inbox, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Tab {
   key: string;
@@ -36,11 +37,11 @@ export function DataTable<T>({
   tabs,
   onTabChange,
   activeTab = 'all',
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = 'Buscar...',
   globalFilter = '',
   onGlobalFilterChange,
   isLoading = false,
-  emptyMessage = 'No results found.',
+  emptyMessage = 'No se encontraron resultados.',
 }: DataTableProps<T>) {
   const [internalFilter, setInternalFilter] = useState('');
   const filter = onGlobalFilterChange ? globalFilter : internalFilter;
@@ -60,17 +61,17 @@ export function DataTable<T>({
       {/* Tabs + Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {tabs && (
-          <div className="flex gap-1 bg-gray-100 p-1 rounded-input">
+          <div className="flex gap-0.5 bg-muted p-1 rounded-lg">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => onTabChange?.(tab.key)}
-                className={[
-                  'px-3 py-1.5 text-sm font-medium rounded transition-colors duration-150',
+                className={cn(
+                  'px-3.5 py-1.5 text-sm font-medium rounded-md transition-all duration-200 cursor-pointer',
                   activeTab === tab.key
-                    ? 'bg-white text-text-primary shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary',
-                ].join(' ')}
+                    ? 'bg-card text-foreground shadow-soft-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
                 {tab.label}
               </button>
@@ -78,28 +79,28 @@ export function DataTable<T>({
           </div>
         )}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             placeholder={searchPlaceholder}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="pl-9 pr-4 py-2 text-sm border border-border rounded-input focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white w-64"
+            className="pl-9 pr-4 py-2 text-sm border border-input rounded-input focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-card w-64 shadow-soft-sm hover:shadow-soft transition-all duration-200 placeholder:text-muted-foreground"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-card border border-border bg-surface overflow-hidden">
+      <div className="rounded-card border border-border/50 bg-card overflow-hidden shadow-soft">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-border">
+            <thead className="bg-muted/50 border-b border-border">
               {table.getHeaderGroups().map((hg) => (
                 <tr key={hg.id}>
                   {hg.headers.map((header) => (
                     <th
                       key={header.id}
-                      className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wide"
+                      className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider"
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </th>
@@ -107,13 +108,13 @@ export function DataTable<T>({
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
                     {columns.map((_, j) => (
-                      <td key={j} className="px-4 py-3">
-                        <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                      <td key={j} className="px-4 py-3.5">
+                        <div className="h-4 bg-muted rounded-md animate-pulse" />
                       </td>
                     ))}
                   </tr>
@@ -122,16 +123,21 @@ export function DataTable<T>({
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-4 py-10 text-center text-text-muted"
+                    className="px-4 py-16 text-center"
                   >
-                    {emptyMessage}
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                        <Inbox className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground text-sm">{emptyMessage}</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={row.id} className="hover:bg-accent/50 transition-colors duration-150">
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-3 text-text-primary">
+                      <td key={cell.id} className="px-4 py-3.5 text-foreground">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}

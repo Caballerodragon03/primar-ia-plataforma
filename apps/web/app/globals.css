@@ -4,19 +4,57 @@
 
 @layer base {
   :root {
-    --background: #F8F8F6;
-    --surface: #FFFFFF;
-    --primary: #E1C44D;
-    --secondary: #5F5C48;
-    --border: #E5E7EB;
+    --background: 48 33% 97%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 44 72% 59%;
+    --primary-foreground: 0 0% 10%;
+    --secondary: 46 10% 32%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 48 20% 93%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 48 33% 94%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 44 72% 59%;
+    --radius: 0.5rem;
+
+    --status-delivered: 160 84% 40%;
+    --status-in-transit: 217 91% 60%;
+    --status-funding: 44 72% 59%;
+    --status-cancelled: 0 84% 60%;
+    --status-pending: 38 92% 50%;
+    --status-committed: 160 84% 40%;
+
+    --sidebar-width: 220px;
+    --sidebar-width-collapsed: 64px;
+    --header-height: 64px;
   }
 
   * {
+    border-color: hsl(var(--border));
     box-sizing: border-box;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    background-color: var(--background);
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
   }
 }
 
@@ -27,5 +65,38 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary));
+  }
+}
+
+@layer base {
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-in-left {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
   }
 }

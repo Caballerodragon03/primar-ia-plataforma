@@ -15,9 +15,22 @@ import {
   Sprout,
   AlertTriangle,
   LineChart,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
+import { cn } from '@/lib/utils';
+import { Logo } from '@/components/brand/Logo';
+import { Avatar, AvatarFallback } from '@/components/shadcn/avatar';
+import { Badge } from '@/components/shadcn/badge';
+import { Separator } from '@/components/shadcn/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/shadcn/tooltip';
 
 interface NotificationSummary {
   pendingOffers: number;
@@ -102,8 +115,8 @@ export function Sidebar() {
 
   const [notifications, setNotifications] =
     useState<NotificationSummary>(EMPTY_NOTIFICATIONS);
-
   const [planInfo, setPlanInfo] = useState<{ plan: string; badge: string | null } | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -114,7 +127,7 @@ export function Sidebar() {
         setNotifications(res.data.data);
       }
     } catch {
-      // silently ignore — notifications are non-critical
+      // silently ignore
     }
   }, []);
 
@@ -130,7 +143,7 @@ export function Sidebar() {
         });
       }
     } catch {
-      // silently ignore — plan info is non-critical
+      // silently ignore
     }
   }, []);
 
@@ -140,24 +153,18 @@ export function Sidebar() {
     fetchPlanInfo();
     const interval = setInterval(fetchNotifications, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [user, pathname, fetchNotifications, fetchPlanInfo]); // re-fetch immediately when user navigates
+  }, [user, pathname, fetchNotifications, fetchPlanInfo]);
 
   const getBadgeCount = (keys?: Array<keyof NotificationSummary>): number => {
     if (!keys) return 0;
     return keys.reduce((sum, k) => sum + (notifications[k] ?? 0), 0);
   };
 
-  const getPlanBadgeStyle = (plan: string): string => {
+  const getPlanBadgeVariant = (plan: string) => {
     const p = plan.toUpperCase();
-    // Seller plans
-    if (p === 'FINCA') return 'bg-green-100 text-green-700';
-    if (p === 'CAMPO') return 'bg-yellow-100 text-yellow-700';
-    if (p === 'COSECHA') return 'bg-gray-100 text-gray-600';
-    // Buyer plans
-    if (p === 'CENTRAL') return 'bg-green-100 text-green-700';
-    if (p === 'LONJA') return 'bg-yellow-100 text-yellow-700';
-    if (p === 'MERCADO') return 'bg-gray-100 text-gray-600';
-    return 'bg-gray-100 text-gray-600';
+    if (p === 'FINCA' || p === 'CENTRAL') return 'delivered' as const;
+    if (p === 'CAMPO' || p === 'LONJA') return 'funding' as const;
+    return 'secondary' as const;
   };
 
   const navItems = user?.role === 'COMPRADOR' ? BUYER_NAV : SELLER_NAV;
@@ -172,69 +179,178 @@ export function Sidebar() {
     router.push('/login');
   };
 
+  const userInitials = user
+    ? `${user.nombre?.[0] ?? ''}${user.apellidos?.[0] ?? ''}`.toUpperCase()
+    : '?';
+
+  const roleLabel = user?.role === 'COMPRADOR' ? 'Comprador' : 'Vendedor';
+
   return (
-    <aside className="w-[140px] min-h-screen bg-surface border-r border-border flex flex-col flex-shrink-0">
-      {/* Logo + Company */}
-      <div className="p-3 border-b border-border">
-        <p className="text-sm font-bold text-gray-900">
-          Primar<span className="text-primary">-IA</span>
-        </p>
-        {user && (
-          <p className="text-[10px] text-secondary mt-0.5 truncate">
-            {user.nombre} {user.apellidos}
-          </p>
+    <TooltipProvider delayDuration={0}>
+      <aside
+        className={cn(
+          'relative min-h-screen bg-card border-r border-border/50 flex flex-col flex-shrink-0 shadow-soft-sm transition-all duration-300 ease-out',
+          collapsed ? 'w-[var(--sidebar-width-collapsed)]' : 'w-[var(--sidebar-width)]'
         )}
-        {planInfo && (
-          <span
-            className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-medium ${getPlanBadgeStyle(planInfo.plan)}`}
-          >
-            {planInfo.plan}
-          </span>
-        )}
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 p-2 flex flex-col gap-1" aria-label="Main navigation">
-        {navItems.map(({ label, href, icon: Icon, badgeKeys }) => {
-          const isActive = pathname === href || pathname.startsWith(`${href}/`);
-          const hasBadge = getBadgeCount(badgeKeys) > 0;
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={[
-                'relative flex flex-col items-center gap-1 p-2 rounded-input transition-colors duration-150 cursor-pointer',
-                'min-h-[44px] justify-center text-center',
-                isActive
-                  ? 'bg-yellow-50 text-secondary font-semibold'
-                  : 'text-gray-400 hover:bg-gray-50 hover:text-secondary',
-              ].join(' ')}
-              aria-current={isActive ? 'page' : undefined}
-            >
-              <Icon className={['w-5 h-5', isActive ? 'text-secondary' : 'text-gray-400'].join(' ')} />
-              <span className="text-[10px] leading-tight">{label}</span>
-              {hasBadge && (
-                <span
-                  className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"
-                  aria-hidden="true"
-                />
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Logout */}
-      <div className="p-2 border-t border-border">
+      >
+        {/* Collapse toggle */}
         <button
-          onClick={handleLogout}
-          className="w-full flex flex-col items-center gap-1 p-2 rounded-input text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors duration-150 cursor-pointer min-h-[44px] justify-center"
-          aria-label="Logout"
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute -right-3 top-20 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card shadow-soft-sm hover:shadow-soft transition-all duration-200 cursor-pointer"
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          <LogOut className="w-4 h-4" />
-          <span className="text-[10px]">Logout</span>
+          {collapsed ? (
+            <ChevronRight className="h-3 w-3 text-muted-foreground" />
+          ) : (
+            <ChevronLeft className="h-3 w-3 text-muted-foreground" />
+          )}
         </button>
-      </div>
-    </aside>
+
+        {/* Logo + User */}
+        <div className={cn('p-4 pb-3', collapsed && 'px-2')}>
+          <div className={cn('mb-4', collapsed ? 'flex justify-center' : '')}>
+            {collapsed ? (
+              <Logo variant="icon" width={32} />
+            ) : (
+              <Logo variant="small" width={120} />
+            )}
+          </div>
+
+          {!collapsed && user && (
+            <div className="flex items-center gap-3">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="text-xs bg-primary/15 text-foreground font-semibold">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate leading-tight">
+                  {user.nombre} {user.apellidos}
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[11px] text-muted-foreground">{roleLabel}</span>
+                  {planInfo && (
+                    <Badge variant={getPlanBadgeVariant(planInfo.plan)} className="text-[9px] px-1.5 py-0 h-4">
+                      {planInfo.plan}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {collapsed && user && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex justify-center mt-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-[10px] bg-primary/15 text-foreground font-semibold">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {user.nombre} {user.apellidos}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Nav */}
+        <nav className={cn('flex-1 p-2 flex flex-col gap-0.5 overflow-y-auto scrollbar-thin', collapsed && 'px-1.5')} aria-label="Main navigation">
+          {navItems.map(({ label, href, icon: Icon, badgeKeys }) => {
+            const isActive = pathname === href || pathname.startsWith(`${href}/`);
+            const badgeCount = getBadgeCount(badgeKeys);
+
+            const navLink = (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  'group relative flex items-center gap-3 rounded-lg transition-all duration-200 cursor-pointer',
+                  collapsed ? 'justify-center p-2.5' : 'px-3 py-2.5',
+                  'min-h-[40px]',
+                  isActive
+                    ? 'bg-primary/10 text-foreground font-medium'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+                )}
+                <Icon
+                  className={cn(
+                    'shrink-0 transition-colors duration-200',
+                    collapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]',
+                    isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                  )}
+                />
+                {!collapsed && (
+                  <span className="text-[13px] leading-tight truncate">{label}</span>
+                )}
+                {badgeCount > 0 && (
+                  <span
+                    className={cn(
+                      'flex items-center justify-center bg-destructive text-destructive-foreground font-medium rounded-full',
+                      collapsed
+                        ? 'absolute top-0.5 right-0.5 w-2 h-2 animate-pulse'
+                        : 'ml-auto text-[10px] min-w-[18px] h-[18px] px-1'
+                    )}
+                  >
+                    {!collapsed && badgeCount}
+                  </span>
+                )}
+              </Link>
+            );
+
+            if (collapsed) {
+              return (
+                <Tooltip key={href}>
+                  <TooltipTrigger asChild>{navLink}</TooltipTrigger>
+                  <TooltipContent side="right" className="flex items-center gap-2">
+                    {label}
+                    {badgeCount > 0 && (
+                      <span className="text-[10px] bg-destructive text-destructive-foreground rounded-full px-1.5 py-0.5">
+                        {badgeCount}
+                      </span>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return navLink;
+          })}
+        </nav>
+
+        <Separator />
+
+        {/* Logout */}
+        <div className={cn('p-2', collapsed && 'px-1.5')}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleLogout}
+                className={cn(
+                  'w-full flex items-center gap-3 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 cursor-pointer',
+                  collapsed ? 'justify-center p-2.5' : 'px-3 py-2.5'
+                )}
+                aria-label="Logout"
+              >
+                <LogOut className={cn(collapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]')} />
+                {!collapsed && <span className="text-[13px]">Cerrar sesión</span>}
+              </button>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side="right">Cerrar sesión</TooltipContent>
+            )}
+          </Tooltip>
+        </div>
+      </aside>
+    </TooltipProvider>
   );
 }

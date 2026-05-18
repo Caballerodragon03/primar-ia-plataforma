@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { CoverageBar } from './CoverageBar';
 import { Button } from './Button';
 
@@ -42,9 +43,15 @@ interface MatchCardProps {
 }
 
 function getProfitabilityColor(score: number): string {
-  if (score >= 80) return 'text-green-600';
-  if (score >= 60) return 'text-yellow-600';
-  return 'text-gray-500';
+  if (score >= 80) return 'text-emerald-600';
+  if (score >= 60) return 'text-amber-600';
+  return 'text-muted-foreground';
+}
+
+function getProfitabilityBg(score: number): string {
+  if (score >= 80) return 'bg-emerald-50';
+  if (score >= 60) return 'bg-amber-50';
+  return 'bg-muted';
 }
 
 export function MatchCard({ match, onContribute }: MatchCardProps) {
@@ -61,54 +68,57 @@ export function MatchCard({ match, onContribute }: MatchCardProps) {
   const remainingPct = 100 - coveragePct;
 
   return (
-    <div className="bg-surface rounded-card border border-border p-5 flex gap-5 items-stretch hover:shadow-sm transition-shadow">
+    <div className="bg-card rounded-card border border-border/50 p-5 flex gap-5 items-stretch shadow-soft hover:shadow-soft-md transition-all duration-200 group">
       {/* Left: Profitability Index */}
-      <div className="flex flex-col items-center justify-center min-w-[80px] border-r border-border pr-5">
-        <span className="text-[10px] font-medium text-text-secondary uppercase tracking-wide text-center leading-tight mb-1">
-          Profitability<br />Index
+      <div className={cn(
+        'flex flex-col items-center justify-center min-w-[80px] rounded-lg px-3 py-2',
+        getProfitabilityBg(score)
+      )}>
+        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider text-center leading-tight mb-1">
+          Índice de<br />rentabilidad
         </span>
-        <span className={`text-3xl font-bold tabular-nums ${getProfitabilityColor(score)}`}>
+        <span className={cn('text-3xl font-bold tabular-nums', getProfitabilityColor(score))}>
           {score}
         </span>
-        <span className="text-xs text-text-secondary">/100</span>
+        <span className="text-xs text-muted-foreground">/100</span>
       </div>
 
       {/* Center: Details */}
-      <div className="flex-1 flex flex-col gap-2 min-w-0">
+      <div className="flex-1 flex flex-col gap-2.5 min-w-0">
         <div>
-          <p className="font-semibold text-text-primary text-base leading-tight">
+          <p className="font-semibold text-foreground text-base leading-tight">
             {match.pedido.producto.nombre}
           </p>
           {match.pedido.variedad && (
-            <p className="text-sm text-text-secondary">{match.pedido.variedad.nombre}</p>
+            <p className="text-sm text-muted-foreground">{match.pedido.variedad.nombre}</p>
           )}
         </div>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          <span className="text-text-secondary">
-            Price Offered:{' '}
-            <span className="font-medium text-text-primary">
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
+          <span className="text-muted-foreground">
+            Precio:{' '}
+            <span className="font-medium text-foreground">
               €{precioKg.toFixed(2)}/kg
             </span>
           </span>
-          <span className="text-text-secondary">
-            Destination:{' '}
-            <span className="font-medium text-text-primary">
+          <span className="text-muted-foreground">
+            Destino:{' '}
+            <span className="font-medium text-foreground">
               {match.pedido.destinoFinal ?? 'N/A'}
             </span>
           </span>
-          <span className="text-text-secondary">
-            Distance:{' '}
-            <span className="font-medium text-text-primary">
+          <span className="text-muted-foreground">
+            Distancia:{' '}
+            <span className="font-medium text-foreground">
               {match.distanceKm != null ? `${match.distanceKm} km` : 'N/A'}
             </span>
           </span>
         </div>
 
         <div>
-          <p className="text-xs text-text-secondary mb-1">
-            Remaining Quantity Needed:{' '}
-            <span className="font-medium text-text-primary">
+          <p className="text-xs text-muted-foreground mb-1.5">
+            Cantidad restante:{' '}
+            <span className="font-medium text-foreground">
               {totalKgNeeded > 0
                 ? `${Math.round((remainingPct / 100) * totalKgNeeded).toLocaleString()} kg`
                 : 'N/A'}
@@ -124,8 +134,9 @@ export function MatchCard({ match, onContribute }: MatchCardProps) {
           variant="primary"
           size="sm"
           onClick={() => onContribute(match)}
+          className="group-hover:shadow-soft"
         >
-          Contribute My Lot
+          Contribuir
         </Button>
       </div>
     </div>

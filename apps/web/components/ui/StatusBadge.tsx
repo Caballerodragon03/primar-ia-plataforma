@@ -1,21 +1,23 @@
 'use client';
 
+import { cn } from '@/lib/utils';
+
 type StatusConfig = { label: string; classes: string };
 
 const STATUS_MAP: Record<string, StatusConfig> = {
-  ACTIVO:              { label: 'Open',        classes: 'bg-blue-100 text-blue-800' },
-  BORRADOR:            { label: 'Draft',       classes: 'bg-gray-100 text-gray-600' },
-  PARCIALMENTE_VENDIDO:{ label: 'In Progress', classes: 'bg-amber-100 text-amber-800' },
-  PARCIALMENTE_CUBIERTO:{ label: 'In Progress',classes: 'bg-amber-100 text-amber-800' },
-  VENDIDO:             { label: 'Full',        classes: 'bg-green-100 text-green-700' },
-  TOTALMENTE_CUBIERTO: { label: 'Full',        classes: 'bg-green-100 text-green-700' },
-  CANCELADO:           { label: 'Cancelled',   classes: 'bg-red-100 text-red-700' },
-  EXPIRADO:            { label: 'Expired',     classes: 'bg-gray-200 text-gray-500' },
-  CERRADO:             { label: 'Closed',      classes: 'bg-gray-200 text-gray-600' },
-  EN_TRANSITO:         { label: 'In Transit',  classes: 'bg-blue-100 text-blue-700' },
-  ENTREGADO:           { label: 'Delivered',   classes: 'bg-green-100 text-green-700' },
-  COMPLETADO:          { label: 'Completed',   classes: 'bg-green-100 text-green-700' },
-  PENDIENTE_PAGO:      { label: 'Pending Pay', classes: 'bg-amber-100 text-amber-800' },
+  ACTIVO:              { label: 'Activo',         classes: 'bg-blue-50 text-blue-700 border-blue-100' },
+  BORRADOR:            { label: 'Borrador',       classes: 'bg-muted text-muted-foreground border-border' },
+  PARCIALMENTE_VENDIDO:{ label: 'En progreso',    classes: 'bg-amber-50 text-amber-700 border-amber-100' },
+  PARCIALMENTE_CUBIERTO:{ label: 'En progreso',   classes: 'bg-amber-50 text-amber-700 border-amber-100' },
+  VENDIDO:             { label: 'Vendido',         classes: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  TOTALMENTE_CUBIERTO: { label: 'Cubierto',       classes: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  CANCELADO:           { label: 'Cancelado',       classes: 'bg-red-50 text-red-700 border-red-100' },
+  EXPIRADO:            { label: 'Expirado',        classes: 'bg-muted text-muted-foreground border-border' },
+  CERRADO:             { label: 'Cerrado',         classes: 'bg-muted text-muted-foreground border-border' },
+  EN_TRANSITO:         { label: 'En tránsito',     classes: 'bg-blue-50 text-blue-700 border-blue-100' },
+  ENTREGADO:           { label: 'Entregado',       classes: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  COMPLETADO:          { label: 'Completado',      classes: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  PENDIENTE_PAGO:      { label: 'Pago pendiente',  classes: 'bg-amber-50 text-amber-700 border-amber-100' },
 };
 
 interface Props {
@@ -24,10 +26,14 @@ interface Props {
 }
 
 export function StatusBadge({ status, className = '' }: Props) {
-  const config = STATUS_MAP[status] ?? { label: status, classes: 'bg-gray-100 text-gray-600' };
+  const config = STATUS_MAP[status] ?? { label: status, classes: 'bg-muted text-muted-foreground border-border' };
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-badge text-xs font-medium ${config.classes} ${className}`}
+      className={cn(
+        'inline-flex items-center px-2.5 py-0.5 rounded-badge text-xs font-medium border',
+        config.classes,
+        className
+      )}
     >
       {config.label}
     </span>

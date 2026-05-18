@@ -4,7 +4,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { Button } from '@/components/ui/Button';
 import { Step1 } from './steps/Step1';
@@ -12,30 +12,33 @@ import { Step2 } from './steps/Step2';
 import { Step3 } from './steps/Step3';
 import { Step4 } from './steps/Step4';
 import { api } from '@/lib/api';
+import { Logo } from '@/components/brand/Logo';
+import { LogoIcon } from '@/components/brand/LogoIcon';
+import { Progress } from '@/components/shadcn/progress';
 import type { RegisterFormData } from './types';
 
-const STEP_LABELS = ['Account Creation', 'Company Details', 'Documents', 'Legal & Compliance'];
+const STEP_LABELS = ['Cuenta', 'Empresa', 'Documentos', 'Legal'];
 
 const step1Schema = z.object({
   role: z.enum(['VENDEDOR', 'COMPRADOR']),
-  email: z.string().email('Invalid email'),
-  password: z.string().min(12, 'Minimum 12 characters'),
+  email: z.string().email('Email no válido'),
+  password: z.string().min(12, 'Mínimo 12 caracteres'),
   telefono: z.string().optional(),
   idioma: z.enum(['ES', 'EN']).default('ES'),
 });
 
 const step2Schema = z.object({
-  razonSocial: z.string().min(2, 'Required'),
-  cifNif: z.string().regex(/^[A-Z0-9]{9}$/, 'Must be exactly 9 alphanumeric characters (e.g. B12345678)'),
+  razonSocial: z.string().min(2, 'Obligatorio'),
+  cifNif: z.string().regex(/^[A-Z0-9]{9}$/, 'Debe ser 9 caracteres alfanuméricos (ej. B12345678)'),
   formaJuridica: z.string().optional(),
-  direccionFiscal: z.string().min(5, 'Required'),
+  direccionFiscal: z.string().min(5, 'Obligatorio'),
   ciudad: z.string().optional(),
   codigoPostal: z.string().optional(),
   pais: z.string().default('ES'),
-  nombre: z.string().min(1, 'Required'),
-  apellidos: z.string().min(1, 'Required'),
+  nombre: z.string().min(1, 'Obligatorio'),
+  apellidos: z.string().min(1, 'Obligatorio'),
   personaContactoLegal: z.string().optional(),
-  cargoContactoLegal: z.string().min(2, 'Required'),
+  cargoContactoLegal: z.string().min(2, 'Obligatorio'),
 });
 
 const fullSchema = step1Schema.merge(step2Schema).extend({
@@ -104,8 +107,8 @@ export default function RegisterPage() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string }; status?: number }; message?: string; code?: string };
       const message = axiosErr?.response?.data?.error
-        ?? (axiosErr?.code === 'ECONNABORTED' ? 'Connection timed out. Please try again.' : null)
-        ?? (axiosErr?.message ? `Error: ${axiosErr.message}` : 'Registration failed. Please try again.');
+        ?? (axiosErr?.code === 'ECONNABORTED' ? 'Tiempo de conexión agotado. Inténtalo de nuevo.' : null)
+        ?? (axiosErr?.message ? `Error: ${axiosErr.message}` : 'Error en el registro. Inténtalo de nuevo.');
       setServerError(message);
     }
   };
@@ -113,25 +116,27 @@ export default function RegisterPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="bg-surface rounded-card shadow-sm border border-border p-8 text-center">
-            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">We have received your Registration Submission!</h2>
-            <p className="text-secondary text-sm mb-6">
-              We will verify your information and you will receive confirmation on the status of the submission shortly.
+        <div className="w-full max-w-md animate-fade-in">
+          <div className="bg-card rounded-2xl shadow-soft-md border border-border/50 p-8 text-center">
+            <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground mb-2">¡Registro recibido!</h2>
+            <p className="text-muted-foreground text-sm mb-6">
+              Verificaremos tu información y recibirás confirmación sobre el estado de tu solicitud en breve.
             </p>
-            <div className="bg-gray-50 rounded-input p-4 mb-6 text-left">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-secondary">E-mail</span>
-                <span className="font-medium text-gray-900">{success.email}</span>
+            <div className="bg-muted/50 rounded-lg p-4 mb-6 text-left space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">E-mail</span>
+                <span className="font-medium text-foreground">{success.email}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-secondary">Password</span>
-                <span className="font-medium text-gray-900">••••••••••</span>
+                <span className="text-muted-foreground">Contraseña</span>
+                <span className="font-medium text-foreground">••••••••••</span>
               </div>
             </div>
             <Link href="/login">
-              <Button variant="outline" size="lg" className="w-full">Go Back to Login</Button>
+              <Button variant="outline" size="lg" className="w-full">Volver al inicio de sesión</Button>
             </Link>
           </div>
         </div>
@@ -140,37 +145,71 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-lg">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Primar<span className="text-primary">-IA</span>
-          </h1>
-          <p className="text-secondary text-sm mt-1">Create your account</p>
+    <div className="min-h-screen flex">
+      {/* Left branding panel */}
+      <div className="hidden lg:flex lg:w-[40%] relative overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 items-center justify-center p-12">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
+          backgroundSize: '24px 24px',
+        }} />
+        <div className="relative z-10 max-w-sm text-center space-y-8">
+          <div className="flex justify-center">
+            <LogoIcon size={64} color="#D4A817" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground leading-tight">
+              Únete al marketplace agrícola B2B más innovador
+            </h2>
+            <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+              Más de 100 empresas ya confían en Primar-IA para conectar con el sector primario español.
+            </p>
+          </div>
         </div>
+      </div>
 
-        <div className="bg-surface rounded-card shadow-sm border border-border p-8">
-          <StepProgress currentStep={currentStep} totalSteps={4} stepLabels={STEP_LABELS} />
-
-          {serverError && (
-            <div role="alert" className="mb-4 p-3 rounded-input bg-red-50 border border-red-200 text-sm text-red-700">
-              {serverError}
+      {/* Right form panel */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12 bg-background">
+        <div className="w-full max-w-lg animate-fade-in">
+          <div className="text-center mb-6">
+            <div className="flex justify-center mb-3">
+              <Logo variant="small" width={140} />
             </div>
-          )}
+            <p className="text-muted-foreground text-sm">Crea tu cuenta</p>
+          </div>
 
-          <FormProvider {...methods}>
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
-              {currentStep === 1 && <Step1 onNext={nextStep} />}
-              {currentStep === 2 && <Step2 onNext={nextStep} onBack={prevStep} />}
-              {currentStep === 3 && <Step3 onNext={nextStep} onBack={prevStep} />}
-              {currentStep === 4 && <Step4 onBack={prevStep} isSubmitting={isSubmitting} />}
-            </form>
-          </FormProvider>
+          {/* Progress bar */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">Paso {currentStep} de 4</span>
+              <span className="text-xs font-medium text-foreground">{STEP_LABELS[currentStep - 1]}</span>
+            </div>
+            <Progress value={(currentStep / 4) * 100} className="h-1.5" />
+          </div>
 
-          <p className="text-center text-sm text-secondary mt-6">
-            Already have an account?{' '}
-            <Link href="/login" className="font-semibold text-gray-900 hover:underline">Sign In</Link>
-          </p>
+          <div className="bg-card rounded-2xl shadow-soft-md border border-border/50 p-8">
+            <StepProgress currentStep={currentStep} totalSteps={4} stepLabels={STEP_LABELS} />
+
+            {serverError && (
+              <div role="alert" className="mb-5 flex items-start gap-2.5 p-3 rounded-lg bg-destructive/5 border border-destructive/20 text-sm text-destructive">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{serverError}</span>
+              </div>
+            )}
+
+            <FormProvider {...methods}>
+              <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                {currentStep === 1 && <Step1 onNext={nextStep} />}
+                {currentStep === 2 && <Step2 onNext={nextStep} onBack={prevStep} />}
+                {currentStep === 3 && <Step3 onNext={nextStep} onBack={prevStep} />}
+                {currentStep === 4 && <Step4 onBack={prevStep} isSubmitting={isSubmitting} />}
+              </form>
+            </FormProvider>
+
+            <p className="text-center text-sm text-muted-foreground mt-6">
+              ¿Ya tienes cuenta?{' '}
+              <Link href="/login" className="font-semibold text-foreground hover:text-primary transition-colors">Iniciar sesión</Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

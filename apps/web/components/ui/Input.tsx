@@ -1,6 +1,7 @@
 'use client';
 import { forwardRef, useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -18,9 +19,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
+          <label htmlFor={inputId} className="text-sm font-medium text-foreground">
             {label}
-            {props.required && <span className="text-red-500 ml-0.5">*</span>}
+            {props.required && <span className="text-destructive ml-0.5">*</span>}
           </label>
         )}
         <div className="relative">
@@ -30,24 +31,25 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             type={inputType}
             aria-invalid={!!error}
             aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
-            className={[
-              'w-full px-3 py-2.5 min-h-[44px] rounded-input border text-sm',
-              'text-gray-900 placeholder-gray-400 bg-white',
-              'transition-colors duration-150',
-              'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary',
+            className={cn(
+              'w-full px-3.5 py-2.5 min-h-[44px] rounded-input border text-sm',
+              'text-foreground placeholder:text-muted-foreground bg-card',
+              'transition-all duration-200',
+              'focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary',
+              'shadow-soft-sm hover:shadow-soft',
               error
-                ? 'border-red-400 focus:ring-red-200 focus:border-red-400'
-                : 'border-border hover:border-gray-400',
+                ? 'border-destructive/50 focus:ring-destructive/20 focus:border-destructive'
+                : 'border-input hover:border-muted-foreground/30',
               showPasswordToggle ? 'pr-10' : '',
               className,
-            ].join(' ')}
+            )}
             {...props}
           />
           {showPasswordToggle && (
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none min-w-[24px] min-h-[24px] flex items-center justify-center"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none min-w-[24px] min-h-[24px] flex items-center justify-center transition-colors"
               aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -55,11 +57,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {hint && !error && (
-          <p id={`${inputId}-hint`} className="text-xs text-gray-500">{hint}</p>
+          <p id={`${inputId}-hint`} className="text-xs text-muted-foreground">{hint}</p>
         )}
         {error && (
-          <p id={`${inputId}-error`} role="alert" className="text-xs text-red-500 flex items-center gap-1">
-            <span>⚠</span> {error}
+          <p id={`${inputId}-error`} role="alert" className="text-xs text-destructive flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" /> {error}
           </p>
         )}
       </div>

@@ -1,6 +1,7 @@
 'use client';
 import { forwardRef } from 'react';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -13,10 +14,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-gray-900 hover:opacity-90 border border-transparent font-semibold',
-  outline: 'bg-transparent text-secondary border border-secondary hover:bg-gray-50 font-medium',
-  ghost: 'bg-transparent text-secondary hover:bg-gray-100 border border-transparent font-medium',
-  danger: 'bg-red-500 text-white hover:bg-red-600 border border-transparent font-semibold',
+  primary: 'bg-primary text-primary-foreground hover:brightness-105 shadow-soft-sm hover:shadow-soft border border-transparent font-semibold',
+  outline: 'bg-card text-secondary border border-input hover:bg-accent hover:text-accent-foreground shadow-soft-sm font-medium',
+  ghost: 'bg-transparent text-secondary hover:bg-accent border border-transparent font-medium',
+  danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-soft-sm border border-transparent font-semibold',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -32,15 +33,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={isDisabled}
-        className={[
+        className={cn(
           'inline-flex items-center justify-center gap-2 rounded-button cursor-pointer',
-          'transition-all duration-150 select-none',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+          'transition-all duration-200 select-none active:scale-[0.98]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
           variantClasses[variant],
           sizeClasses[size],
-          isDisabled ? 'opacity-50 cursor-not-allowed' : '',
+          isDisabled && 'opacity-50 cursor-not-allowed',
           className,
-        ].join(' ')}
+        )}
         {...props}
       >
         {loading && <Loader2 className="w-4 h-4 animate-spin" />}
