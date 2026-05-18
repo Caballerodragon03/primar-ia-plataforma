@@ -41,7 +41,7 @@ const schema = z.object({
   publicar: z.boolean().default(false),
   logistica: z.enum(['YO_ENVIO', 'OTRO_RECOGE', 'INDIFERENTE']).default('INDIFERENTE'),
   incotermsAceptados: z.array(z.string()).min(1, 'Selecciona al menos un incoterm'),
-  terminosPagoAceptados: z.array(z.enum(['INMEDIATO', 'DIAS_30', 'DIAS_60'])).min(1, 'Selecciona al menos un término de pago'),
+  terminosPagoAceptados: z.array(z.enum(ALL_TERMINOS_PAGO as unknown as [string, ...string[]])).min(1, 'Selecciona al menos un término de pago'),
 });
 
 type FormValues = z.infer<typeof schema>;

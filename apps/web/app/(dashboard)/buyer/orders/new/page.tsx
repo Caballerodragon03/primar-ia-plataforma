@@ -44,7 +44,7 @@ const calibreSchema = z.object({
   precio_max_kg: z.coerce.number().positive('Debe ser positivo'),
 });
 
-const INCOTERMS = ['EXW','FCA','FOB','CIF','DAP','DDP','FAS','CFR','CPT','CIP','DAT','DPU'] as const;
+// Reuse shared incoterm list — single source of truth in @primaria/shared.
 const FREQUENCIES = ['Weekly', 'Bi-weekly', 'Monthly', 'One-time'];
 
 const schema = z.object({
@@ -52,7 +52,7 @@ const schema = z.object({
   variedadId: z.string().optional(),
   calibresSolicitados: z.array(calibreSchema).min(1),
   noCalibre: z.boolean().default(false),
-  incoterm: z.enum(INCOTERMS),
+  incoterm: z.enum(ALL_INCOTERMS as unknown as [string, ...string[]]),
   destinoFinal: z.string().min(2, 'Introduce el destino').optional(),
   frecuencia: z.string().optional(),
   transporte: z.enum(['own', 'external']).default('own'),
@@ -62,7 +62,7 @@ const schema = z.object({
   publicar: z.boolean().default(false),
   logistica: z.enum(['YO_ENVIO', 'OTRO_RECOGE', 'INDIFERENTE']).default('INDIFERENTE'),
   incotermsAceptados: z.array(z.string()).min(1, 'Selecciona al menos un incoterm'),
-  terminosPagoAceptados: z.array(z.enum(['INMEDIATO', 'DIAS_30', 'DIAS_60'])).min(1, 'Selecciona al menos un término de pago'),
+  terminosPagoAceptados: z.array(z.enum(ALL_TERMINOS_PAGO as unknown as [string, ...string[]])).min(1, 'Selecciona al menos un término de pago'),
 });
 
 type FormValues = z.infer<typeof schema>;
