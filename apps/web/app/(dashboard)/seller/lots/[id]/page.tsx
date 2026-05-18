@@ -204,7 +204,7 @@ export default function LotDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left: main info */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-5 min-w-0">
           {/* Coverage */}
           <div className="bg-card rounded-card border border-border p-5">
             <h2 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
@@ -223,7 +223,7 @@ export default function LotDetailPage() {
           </div>
 
           {/* Calibres */}
-          <div className="bg-card rounded-card border border-border overflow-hidden">
+          <div className="bg-card rounded-card border border-border overflow-x-auto">
             <div className="px-4 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-text-primary">Calibres</h2>
             </div>
@@ -260,7 +260,7 @@ export default function LotDetailPage() {
           </div>
 
           {/* Matches */}
-          <div className="bg-card rounded-card border border-border overflow-hidden">
+          <div className="bg-card rounded-card border border-border overflow-x-auto">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-text-primary">
@@ -273,7 +273,7 @@ export default function LotDetailPage() {
                 <p className="text-xs text-text-muted mt-1">La plataforma te notificará cuando se encuentre un match.</p>
               </div>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[700px]">
                 <thead>
                   <tr className="bg-muted/50">
                     {['COMPRADOR', 'CANTIDAD (kg)', 'PRECIO (€/kg)', 'ESTADO', 'ACCIONES'].map((h) => (

@@ -329,9 +329,9 @@ export default function OrderDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left: calibres + matches */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-5 min-w-0">
           {/* Calibres requested */}
-          <div className="bg-card rounded-card border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-card border border-border shadow-soft overflow-x-auto">
             <div className="px-5 py-3 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Calibres solicitados</h2>
             </div>
@@ -358,7 +358,7 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Farmer contributions */}
-          <div className="bg-card rounded-card border border-border shadow-soft overflow-hidden">
+          <div className="bg-card rounded-card border border-border shadow-soft overflow-x-auto">
             <div className="px-5 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-foreground">
@@ -371,7 +371,7 @@ export default function OrderDetailPage() {
                 <p className="text-xs text-muted-foreground mt-1">La plataforma empareja tu pedido con lotes disponibles automáticamente.</p>
               </div>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[800px]">
                 <thead>
                   <tr className="bg-muted/50">
                     {['VENDEDOR', 'PUNTUACIÓN', 'CANT (kg)', 'PRECIO (€/kg)', 'ESTADO', 'ACCIONES'].map((h) => (
