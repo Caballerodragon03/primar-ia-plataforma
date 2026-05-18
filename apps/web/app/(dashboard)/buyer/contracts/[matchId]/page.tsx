@@ -60,6 +60,10 @@ interface MatchContractInfo {
   terminoPago: string | null;
   destinoFinal: string | null;
   direccionRecogida: string | null;
+  // Phase 5 — auto-generated documents
+  facturaPlataformaUrl: string | null;
+  facturaVendedorUrl: string | null;
+  resguardoPagoUrl: string | null;
   firmaVendedorDeadline: string | null;
   firmaVendedor: string | null;
   firmaVendedorFecha: string | null;
@@ -522,12 +526,71 @@ export default function BuyerMatchContractPage() {
       )}
 
       {info.contratoEstado === 'FIRMADO' && (
-        <div className="bg-green-50 border border-green-200 rounded-card p-5">
-          <p className="text-sm font-semibold text-green-900">Contrato firmado y comisión pagada</p>
-          <p className="text-xs text-green-800 mt-1">
-            Comisión pagada el {formatDateTime(info.comisionPagadaEn)}. Ahora procede el pago del importe al vendedor según las condiciones del contrato.
-          </p>
-        </div>
+        <>
+          <div className="bg-green-50 border border-green-200 rounded-card p-5">
+            <p className="text-sm font-semibold text-green-900">Contrato firmado y comisión pagada</p>
+            <p className="text-xs text-green-800 mt-1">
+              Comisión pagada el {formatDateTime(info.comisionPagadaEn)}. Ahora procede el pago del importe al vendedor según las condiciones del contrato.
+            </p>
+          </div>
+
+          {/* Phase 5 — auto-generated documents for the buyer */}
+          {(info.facturaPlataformaUrl || info.facturaVendedorUrl || info.resguardoPagoUrl) && (
+            <div className="bg-card border border-border rounded-card p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-foreground">Documentos generados</h2>
+              <p className="text-xs text-text-secondary">
+                Hemos generado automáticamente las facturas y el resguardo con las instrucciones para que pagues al vendedor.
+              </p>
+              <div className="space-y-2">
+                {info.resguardoPagoUrl && (
+                  <a
+                    href={info.resguardoPagoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-2 px-3 py-2 border border-primary/40 bg-primary/5 rounded-lg hover:bg-primary/10 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary-dark" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Resguardo de pago al vendedor</p>
+                        <p className="text-[11px] text-text-secondary">IBAN, importe y referencia para tu transferencia</p>
+                      </div>
+                    </div>
+                    <Download className="w-4 h-4 text-primary-dark" />
+                  </a>
+                )}
+                {info.facturaVendedorUrl && (
+                  <a
+                    href={info.facturaVendedorUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-2 px-3 py-2 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">Factura del vendedor (mercancía)</span>
+                    </div>
+                    <Download className="w-4 h-4 text-text-secondary" />
+                  </a>
+                )}
+                {info.facturaPlataformaUrl && (
+                  <a
+                    href={info.facturaPlataformaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-2 px-3 py-2 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">Factura Primar-IA (comisión)</span>
+                    </div>
+                    <Download className="w-4 h-4 text-text-secondary" />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Sign-and-pay modal with irrevocability ack */}

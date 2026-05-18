@@ -103,6 +103,10 @@ export async function getMatchContractInfo(req: Request, res: Response): Promise
           firmaVendedorFecha: true,
           contratoPdfUrl: true,
           comisionPagadaEn: true,
+          // Phase 5 — auto-generated invoice URLs
+          facturaPlataformaUrl: true,
+          facturaVendedorUrl: true,
+          resguardoPagoUrl: true,
         },
       },
     },
@@ -151,6 +155,16 @@ export async function getMatchContractInfo(req: Request, res: Response): Promise
       firmaComprador: match.transaccion?.firmaComprador ?? null,
       firmaCompradorFecha: match.transaccion?.firmaCompradorFecha?.toISOString() ?? null,
       comisionPagadaEn: match.transaccion?.comisionPagadaEn?.toISOString() ?? null,
+      // Phase 5 — auto-generated documents (null until contract is FIRMADO).
+      // The seller's invoice is shown to BOTH parties: buyer needs it as
+      // proof of purchase for accounting, seller needs it as proof of sale.
+      facturaPlataformaUrl: match.transaccion?.facturaPlataformaUrl ?? null,
+      facturaVendedorUrl: match.transaccion?.facturaVendedorUrl ?? null,
+      // The payment receipt is only shown to the BUYER (it contains
+      // transfer instructions for them to execute).
+      resguardoPagoUrl: match.lote.vendedorId === userId
+        ? null
+        : (match.transaccion?.resguardoPagoUrl ?? null),
       // Role-discriminator for frontend UI rendering
       isSeller: match.lote.vendedorId === userId,
       isBuyer: match.pedido.compradorId === userId,

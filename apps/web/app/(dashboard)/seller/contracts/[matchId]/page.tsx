@@ -51,6 +51,10 @@ interface MatchContractInfo {
   terminoPago: string | null;
   destinoFinal: string | null;
   direccionRecogida: string | null;
+  // Phase 5 — auto-generated documents (null until contract is FIRMADO)
+  facturaPlataformaUrl: string | null;
+  facturaVendedorUrl: string | null;
+  resguardoPagoUrl: string | null;
   // Signatures
   firmaVendedorDeadline: string | null;
   firmaVendedor: string | null;
@@ -468,12 +472,56 @@ export default function SellerMatchContractPage() {
       )}
 
       {info.contratoEstado === 'FIRMADO' && (
-        <div className="bg-green-50 border border-green-200 rounded-card p-5">
-          <p className="text-sm font-semibold text-green-900">Contrato firmado por ambas partes</p>
-          <p className="text-xs text-green-800 mt-1">
-            El comprador pagó la comisión el {formatDateTime(info.comisionPagadaEn)}. Procede con la entrega y la cobranza según las condiciones acordadas.
-          </p>
-        </div>
+        <>
+          <div className="bg-green-50 border border-green-200 rounded-card p-5">
+            <p className="text-sm font-semibold text-green-900">Contrato firmado por ambas partes</p>
+            <p className="text-xs text-green-800 mt-1">
+              El comprador pagó la comisión el {formatDateTime(info.comisionPagadaEn)}. Procede con la entrega y la cobranza según las condiciones acordadas.
+            </p>
+          </div>
+
+          {/* Phase 5 — auto-generated documents. The seller can download both
+              invoices (their own to send to accounting, and the platform's for
+              reference). The resguardo de pago is buyer-only. */}
+          {(info.facturaPlataformaUrl || info.facturaVendedorUrl) && (
+            <div className="bg-card border border-border rounded-card p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-foreground">Documentos generados</h2>
+              <p className="text-xs text-text-secondary">
+                Tras la firma del contrato hemos generado automáticamente la factura de tu venta y la de la comisión de Primar-IA.
+              </p>
+              <div className="space-y-2">
+                {info.facturaVendedorUrl && (
+                  <a
+                    href={info.facturaVendedorUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-2 px-3 py-2 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">Tu factura (venta al comprador)</span>
+                    </div>
+                    <Download className="w-4 h-4 text-text-secondary" />
+                  </a>
+                )}
+                {info.facturaPlataformaUrl && (
+                  <a
+                    href={info.facturaPlataformaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-2 px-3 py-2 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">Factura comisión Primar-IA (referencia)</span>
+                    </div>
+                    <Download className="w-4 h-4 text-text-secondary" />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

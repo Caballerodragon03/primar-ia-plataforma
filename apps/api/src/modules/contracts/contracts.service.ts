@@ -586,13 +586,27 @@ export class ContractsService {
 
     // Generate the FINAL contract PDF (no watermark) outside the tx — PDF
     // generation is heavy and we don't want to extend the Serializable lock.
+    let contractFinalUrl: string | null = null;
     try {
       const result = await this.generateContractFinal(matchId);
-      return { contractFinalUrl: result.url };
+      contractFinalUrl = result.url;
     } catch (err) {
       console.error('[contracts] generateContractFinal failed after buyer sign:', err);
-      return { contractFinalUrl: null };
     }
+
+    // Phase 5 — fire-and-forget generation of the three invoice/receipt PDFs.
+    // Failures are logged but do NOT roll back. Admin can regenerate manually
+    // through a maintenance endpoint if needed.
+    void (async () => {
+      try {
+        const { invoiceV2Service } = await import('../invoices/invoice-v2.service.js');
+        await invoiceV2Service.generateAllForMatch(matchId);
+      } catch (err) {
+        console.error('[invoices] auto-generation failed for match', matchId, err);
+      }
+    })();
+
+    return { contractFinalUrl };
   }
 
   async getContractBufferForMatch(matchId: string, userId: string): Promise<{ buffer: Buffer; filename: string }> {
