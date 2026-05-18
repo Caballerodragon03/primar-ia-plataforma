@@ -6,6 +6,9 @@ import {
   signContract,
   uploadLotPhotos,
   confirmDelivery,
+  getMatchContractInfo,
+  downloadMatchContract,
+  regenerateDraftContract,
 } from './contracts.controller.js';
 import { asyncHandler } from '../../shared/async-handler.js';
 
@@ -13,6 +16,16 @@ export const contractsRouter = Router();
 
 contractsRouter.use(requireAuth);
 
+// ─── Match-level endpoints (Phase 3) — registered FIRST to avoid the
+//     `:transaccionId` catch-all matching `/match/...`.
+// GET    /api/v1/contracts/match/:matchId/info
+contractsRouter.get('/match/:matchId/info', asyncHandler(getMatchContractInfo));
+// GET    /api/v1/contracts/match/:matchId/download
+contractsRouter.get('/match/:matchId/download', asyncHandler(downloadMatchContract));
+// POST   /api/v1/contracts/match/:matchId/regenerate-draft
+contractsRouter.post('/match/:matchId/regenerate-draft', asyncHandler(regenerateDraftContract));
+
+// ─── Existing transaccion-level endpoints (legacy QR/delivery flow) ─────────
 // GET /api/v1/contracts/:transaccionId — download PDF contract
 contractsRouter.get('/:transaccionId', asyncHandler(downloadContract));
 

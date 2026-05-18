@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
+import { prisma } from '@primaria/database';
 import { contractsService } from './contracts.service.js';
+import { AppError } from '../../middleware/error.middleware.js';
 
 export async function downloadContract(req: Request, res: Response): Promise<void> {
   const { transaccionId } = req.params as { transaccionId: string };
@@ -47,5 +49,127 @@ export async function confirmDelivery(req: Request, res: Response): Promise<void
     return;
   }
   const result = await contractsService.confirmDelivery(transaccionId, req.user!.sub, qrToken);
+  res.json({ success: true, data: result });
+}
+
+// ─── Phase 3 — Match-level contract endpoints ────────────────────────────────
+
+/**
+ * GET /api/v1/contracts/match/:matchId/info
+ * Returns contract metadata: state, draft URL, commission snapshot, signatures,
+ * and the buyer/seller IDs for the frontend to know which UI to render.
+ * Authorized for either party of the match.
+ */
+export async function getMatchContractInfo(req: Request, res: Response): Promise<void> {
+  const matchId = (req.params as { matchId: string }).matchId;
+  const userId = req.user!.sub;
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+    select: {
+      id: true,
+      contratoEstado: true,
+      contratoBorradorUrl: true,
+      comisionEstimada: true,
+      comisionPorcentaje: true,
+      firmaVendedorDeadline: true,
+      lote: { select: { vendedorId: true } },
+      pedido: { select: { compradorId: true } },
+      transaccion: {
+        select: {
+          id: true,
+          firmaComprador: true,
+          firmaCompradorFecha: true,
+          firmaVendedor: true,
+          firmaVendedorFecha: true,
+          contratoPdfUrl: true,
+          comisionPagadaEn: true,
+        },
+      },
+    },
+  });
+  if (!match) throw new AppError('Match no encontrado', 404);
+  if (match.lote.vendedorId !== userId && match.pedido.compradorId !== userId) {
+    throw new AppError('No autorizado', 403);
+  }
+  res.json({
+    success: true,
+    data: {
+      matchId: match.id,
+      contratoEstado: match.contratoEstado,
+      contratoBorradorUrl: match.contratoBorradorUrl,
+      contratoPdfUrl: match.transaccion?.contratoPdfUrl ?? null,
+      comisionEstimada: match.comisionEstimada !== null ? Number(match.comisionEstimada) : null,
+      comisionPorcentaje: match.comisionPorcentaje !== null ? Number(match.comisionPorcentaje) : null,
+      firmaVendedorDeadline: match.firmaVendedorDeadline?.toISOString() ?? null,
+      firmaVendedor: match.transaccion?.firmaVendedor ?? null,
+      firmaVendedorFecha: match.transaccion?.firmaVendedorFecha?.toISOString() ?? null,
+      firmaComprador: match.transaccion?.firmaComprador ?? null,
+      firmaCompradorFecha: match.transaccion?.firmaCompradorFecha?.toISOString() ?? null,
+      comisionPagadaEn: match.transaccion?.comisionPagadaEn?.toISOString() ?? null,
+      // Role-discriminator for frontend UI rendering
+      isSeller: match.lote.vendedorId === userId,
+      isBuyer: match.pedido.compradorId === userId,
+    },
+  });
+}
+
+/**
+ * GET /api/v1/contracts/match/:matchId/download
+ * Streams the contract PDF (draft or final based on contratoEstado).
+ * The PDF is regenerated on-demand so it always reflects current data
+ * (signatures, edits in chat negotiation, etc.).
+ */
+export async function downloadMatchContract(req: Request, res: Response): Promise<void> {
+  const matchId = (req.params as { matchId: string }).matchId;
+  const userId = req.user!.sub;
+  const { buffer, filename } = await contractsService.getContractBufferForMatch(matchId, userId);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Content-Length', buffer.length);
+  res.send(buffer);
+}
+
+/**
+ * POST /api/v1/contracts/match/:matchId/regenerate-draft
+ * Forces regeneration of the draft contract (after a negotiation in chat,
+ * for example). Only allowed if the contract isn't yet signed.
+ * Authorized for either party.
+ */
+export async function regenerateDraftContract(req: Request, res: Response): Promise<void> {
+  const matchId = (req.params as { matchId: string }).matchId;
+  const userId = req.user!.sub;
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+    select: {
+      contratoEstado: true,
+      lote: { select: { vendedorId: true } },
+      pedido: { select: { compradorId: true } },
+    },
+  });
+  if (!match) throw new AppError('Match no encontrado', 404);
+  if (match.lote.vendedorId !== userId && match.pedido.compradorId !== userId) {
+    throw new AppError('No autorizado', 403);
+  }
+  if (match.contratoEstado === 'FIRMADO') {
+    throw new AppError('El contrato ya está firmado, no se puede regenerar', 400);
+  }
+  // Allow regeneration from BORRADOR or PENDIENTE_FIRMA_VENDEDOR.
+  // If seller already signed (PENDIENTE_PAGO_COMPRADOR), regen requires
+  // re-signing — clear signatures first.
+  if (match.contratoEstado === 'PENDIENTE_PAGO_COMPRADOR') {
+    // Reset firma + estado so the seller has to re-sign post-modification.
+    const tx = await prisma.transaccion.findUnique({ where: { matchId }, select: { id: true } });
+    if (tx) {
+      await prisma.transaccion.update({
+        where: { id: tx.id },
+        data: { firmaVendedor: null, firmaVendedorFecha: null },
+      });
+    }
+    await prisma.match.update({
+      where: { id: matchId },
+      data: { contratoEstado: 'BORRADOR' },
+    });
+  }
+  const result = await contractsService.generateContractDraft(matchId);
   res.json({ success: true, data: result });
 }

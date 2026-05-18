@@ -1,9 +1,13 @@
 import crypto from 'crypto';
 import PDFDocument from 'pdfkit';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { prisma } from '@primaria/database';
 import { AppError } from '../../middleware/error.middleware.js';
 import { generarQRToken } from '@primaria/shared';
 import { env } from '../../config/env.js';
+import { getR2 } from '../../shared/r2.js';
+import { buildContractData } from './contract-data.js';
+import { generateContractPdf } from './contract-pdf.js';
 
 export class ContractsService {
   async getContractInfo(transaccionId: string, userId: string) {
@@ -308,6 +312,137 @@ export class ContractsService {
   async getContractStream(transaccionId: string, userId: string): Promise<{ buffer: Buffer; filename: string }> {
     const buffer = await this.generateContract(transaccionId, userId);
     return { buffer, filename: `contrato-${transaccionId}.pdf` };
+  }
+
+  // ─── Phase 3 — Match-level contract draft + final ───────────────────────
+
+  /**
+   * Upload a PDF buffer to R2 under contracts/{matchId}/{filename}.
+   * Returns the public URL. If R2 is not configured (dev/test), returns a
+   * placeholder URL so the rest of the flow still works.
+   */
+  private async uploadContractToR2(matchId: string, filename: string, buffer: Buffer): Promise<string> {
+    const r2Configured = env.R2_ACCOUNT_ID !== 'placeholder' && env.R2_ACCESS_KEY_ID !== 'placeholder';
+    if (!r2Configured) {
+      // Without R2 we still return a URL so frontend wiring works; the file
+      // simply isn't reachable until R2 is configured. The DEV WARNING is
+      // logged to make this obvious.
+      console.warn('[contracts] R2 not configured — contract not persisted. Configure R2_* env vars.');
+      return `https://uploads.primar-ia.com/contracts/${matchId}/${filename}`;
+    }
+    const key = `contracts/${matchId}/${filename}`;
+    await getR2().send(new PutObjectCommand({
+      Bucket: env.R2_BUCKET_NAME,
+      Key: key,
+      Body: buffer,
+      ContentType: 'application/pdf',
+      // Force download instead of inline preview — same defence in depth
+      // we applied to user-uploaded files.
+      ContentDisposition: `attachment; filename="${filename}"`,
+    }));
+    return `${env.R2_PUBLIC_URL}/${key}`;
+  }
+
+  /**
+   * Generates the DRAFT contract (with NO VÁLIDO watermark on every page),
+   * uploads to R2, stores the URL on match.contratoBorradorUrl + sets the
+   * estado to PENDIENTE_FIRMA_VENDEDOR. Snapshot the commission amount.
+   *
+   * Idempotent: if a draft already exists for this match, returns the
+   * existing URL.
+   */
+  async generateContractDraft(matchId: string): Promise<{ url: string; reference: string }> {
+    const existing = await prisma.match.findUnique({
+      where: { id: matchId },
+      select: { contratoBorradorUrl: true, contratoEstado: true },
+    });
+    if (!existing) throw new AppError('Match no encontrado', 404);
+    // If already past borrador, do not regenerate — would invalidate previous signatures.
+    if (existing.contratoBorradorUrl && existing.contratoEstado !== 'BORRADOR' && existing.contratoEstado !== 'PENDIENTE_FIRMA_VENDEDOR') {
+      return { url: existing.contratoBorradorUrl, reference: '' };
+    }
+
+    const data = await buildContractData(matchId, { esFinal: false });
+    const buffer = await generateContractPdf(data);
+    const filename = `borrador-${Date.now()}.pdf`;
+    const url = await this.uploadContractToR2(matchId, filename, buffer);
+
+    await prisma.match.update({
+      where: { id: matchId },
+      data: {
+        contratoBorradorUrl: url,
+        contratoEstado: 'PENDIENTE_FIRMA_VENDEDOR',
+        comisionEstimada: data.comision.importe,
+        comisionPorcentaje: data.comision.porcentajeFinal,
+      },
+    });
+
+    return { url, reference: data.reference };
+  }
+
+  /**
+   * Generates the FINAL contract (no watermark) AFTER both parties have
+   * signed and the buyer has paid the commission. Stores the URL on
+   * transaccion.contratoPdfUrl (existing field) AND match.contratoEstado='FIRMADO'.
+   */
+  async generateContractFinal(matchId: string): Promise<{ url: string; reference: string }> {
+    const data = await buildContractData(matchId, { esFinal: true });
+
+    // Hard requirement: both signatures must be present + commission paid.
+    if (!data.firmaVendedor.firma || !data.firmaComprador.firma) {
+      throw new AppError('El contrato final requiere las firmas de ambas partes', 400);
+    }
+    const txCheck = await prisma.transaccion.findUnique({
+      where: { matchId },
+      select: { comisionPagadaEn: true, id: true },
+    });
+    if (!txCheck?.comisionPagadaEn) {
+      throw new AppError('El contrato final requiere que la comisión haya sido pagada', 400);
+    }
+
+    const buffer = await generateContractPdf(data);
+    const filename = `contrato-final.pdf`;
+    const url = await this.uploadContractToR2(matchId, filename, buffer);
+
+    await prisma.match.update({
+      where: { id: matchId },
+      data: { contratoEstado: 'FIRMADO' },
+    });
+    if (txCheck.id) {
+      await prisma.transaccion.update({
+        where: { id: txCheck.id },
+        data: { contratoPdfUrl: url },
+      });
+    }
+    return { url, reference: data.reference };
+  }
+
+  /**
+   * Returns the contract PDF buffer for either party of the match.
+   * Used by the download endpoint — checks ownership and chooses draft vs
+   * final based on contratoEstado.
+   */
+  async getContractBufferForMatch(matchId: string, userId: string): Promise<{ buffer: Buffer; filename: string }> {
+    const match = await prisma.match.findUnique({
+      where: { id: matchId },
+      select: {
+        contratoEstado: true,
+        lote: { select: { vendedorId: true } },
+        pedido: { select: { compradorId: true } },
+      },
+    });
+    if (!match) throw new AppError('Match no encontrado', 404);
+    if (match.lote.vendedorId !== userId && match.pedido.compradorId !== userId) {
+      throw new AppError('No autorizado para acceder a este contrato', 403);
+    }
+
+    const esFinal = match.contratoEstado === 'FIRMADO';
+    const data = await buildContractData(matchId, { esFinal });
+    const buffer = await generateContractPdf(data);
+    return {
+      buffer,
+      filename: esFinal ? `contrato-final-${matchId.slice(-6)}.pdf` : `contrato-borrador-${matchId.slice(-6)}.pdf`,
+    };
   }
 }
 

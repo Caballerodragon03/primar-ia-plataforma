@@ -1047,6 +1047,19 @@ export class MatchingService {
       }
     );
 
+    // Phase 3 — auto-generate the contract DRAFT after seller acceptance.
+    // Best-effort: if PDF/R2 fails we don't roll back the match acceptance,
+    // we just log and let the user retry via the dedicated endpoint.
+    void (async () => {
+      try {
+        const { contractsService } = await import('../contracts/contracts.service.js');
+        await contractsService.generateContractDraft(matchId);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[contracts] auto-draft after contributeToOrder failed:', msg);
+      }
+    })();
+
     return updatedMatch;
   }
 
