@@ -17,6 +17,10 @@ export interface RegisterFormData {
   apellidos: string;
   personaContactoLegal: string;
   cargoContactoLegal: string;
+  // Step 2 (vendedor-only — datos bancarios y fiscales)
+  iban?: string;
+  swiftBic?: string;
+  regimenFiscal?: 'GENERAL' | 'AGRARIO' | 'RECARGO_EQUIVALENCIA' | 'EXENTO';
   // Step 4
   acceptedTerms: boolean;
   acceptedPrivacy: boolean;

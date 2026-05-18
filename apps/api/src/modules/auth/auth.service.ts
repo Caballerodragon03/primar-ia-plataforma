@@ -52,6 +52,11 @@ export class AuthService {
             pais: data.pais,
             personaContactoLegal: data.personaContactoLegal,
             cargoContactoLegal: data.cargoContactoLegal,
+            // Datos bancarios/fiscales — el schema obliga a tenerlos en
+            // vendedores y son opcionales en compradores.
+            iban: data.iban ?? null,
+            swiftBic: data.swiftBic ?? null,
+            regimenFiscal: data.regimenFiscal ?? 'GENERAL',
           },
         },
       },
@@ -288,6 +293,10 @@ export class AuthService {
       await prisma.user.update({ where: { id: userId }, data: updateData });
     }
 
+    // NOTE: IBAN, regimenFiscal, CIF, razón social, dirección fiscal NO se
+    // actualizan desde este endpoint por seguridad. Se introducen una sola vez
+    // al registrarse y sólo un admin puede modificarlas.
+
     return { success: true };
   }
 
@@ -305,6 +314,19 @@ export class AuthService {
         estado: true,
         preferenciasIncoterm: true,
         preferenciasNotif: true,
+        empresa: {
+          select: {
+            razonSocial: true,
+            cifNif: true,
+            direccionFiscal: true,
+            ciudad: true,
+            codigoPostal: true,
+            pais: true,
+            iban: true,
+            swiftBic: true,
+            regimenFiscal: true,
+          },
+        },
       },
     });
     if (!user) throw new AppError('Usuario no encontrado', 404);

@@ -27,7 +27,15 @@ const step1Schema = z.object({
   idioma: z.enum(['ES', 'EN']).default('ES'),
 });
 
+// IBAN: 2 letras (país) + 2 dígitos control + hasta 30 alfanuméricos.
+const ibanRegex = /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/;
+
+// Keep the base step2 as a plain ZodObject so the multi-step trigger() helper
+// (which reads .shape) still works. Conditional validation for vendor-only
+// banking/fiscal fields is enforced separately in the form (see Step2.tsx)
+// and on the backend (registerSchema.superRefine).
 const step2Schema = z.object({
+  role: z.enum(['VENDEDOR', 'COMPRADOR']).optional(),
   razonSocial: z.string().min(2, 'Obligatorio'),
   cifNif: z.string().regex(/^[A-Z0-9]{9}$/, 'Debe ser 9 caracteres alfanuméricos (ej. B12345678)'),
   formaJuridica: z.string().optional(),
@@ -39,6 +47,12 @@ const step2Schema = z.object({
   apellidos: z.string().min(1, 'Obligatorio'),
   personaContactoLegal: z.string().optional(),
   cargoContactoLegal: z.string().min(2, 'Obligatorio'),
+  iban: z.string().optional()
+    .refine((v) => !v || ibanRegex.test(v.toUpperCase().replace(/\s+/g, '')), {
+      message: 'IBAN inválido — formato ES12 1234 1234 12 1234567890',
+    }),
+  swiftBic: z.string().optional(),
+  regimenFiscal: z.enum(['GENERAL', 'AGRARIO', 'RECARGO_EQUIVALENCIA', 'EXENTO']).optional(),
 });
 
 const fullSchema = step1Schema.merge(step2Schema).extend({
@@ -102,6 +116,12 @@ export default function RegisterPage() {
         apellidos: data.apellidos,
         personaContactoLegal: `${data.nombre} ${data.apellidos}`,
         cargoContactoLegal: data.cargoContactoLegal,
+        // Vendedor-only: IBAN + régimen fiscal. Para compradores van undefined.
+        iban: data.role === 'VENDEDOR' && data.iban
+          ? data.iban.toUpperCase().replace(/\s+/g, '')
+          : undefined,
+        swiftBic: data.role === 'VENDEDOR' && data.swiftBic ? data.swiftBic : undefined,
+        regimenFiscal: data.role === 'VENDEDOR' ? data.regimenFiscal : undefined,
       });
       setSuccess({ email: data.email });
     } catch (err: unknown) {

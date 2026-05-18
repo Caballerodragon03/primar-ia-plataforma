@@ -1025,7 +1025,10 @@ export class MatchingService {
         const existingTx = await tx.transaccion.findUnique({ where: { matchId } });
         if (!existingTx) {
           const precioTotal = cantidadKg * precioKg;
-          const commission = calcularComision(precioTotal, 'card');
+          // Commission is now snapshot-only at this point — the real charge
+          // happens later when the buyer pays it before signing the contract.
+          // We still record the estimate so analytics + previews work.
+          const commission = calcularComision(precioTotal);
           await tx.transaccion.create({
             data: {
               matchId,
@@ -1034,7 +1037,7 @@ export class MatchingService {
               cantidadKg,
               precioTotal,
               comisionPlataforma: commission.total,
-              comisionPorcentaje: commission.porcentaje,
+              comisionPorcentaje: commission.porcentajeFinal,
               estado: 'PENDIENTE_PAGO',
             },
           });

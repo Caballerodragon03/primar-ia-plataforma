@@ -6,6 +6,14 @@ import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import type { RegisterFormData } from '../types';
 
+const REGIMEN_FISCAL_OPTIONS = [
+  { value: '', label: 'Selecciona régimen fiscal...' },
+  { value: 'GENERAL', label: 'General (IVA 21%, sin retención)' },
+  { value: 'AGRARIO', label: 'Régimen especial agrario (IVA 4/10%, IRPF 2%)' },
+  { value: 'RECARGO_EQUIVALENCIA', label: 'Recargo de equivalencia (minorista)' },
+  { value: 'EXENTO', label: 'Exento (intracomunitario, exportación...)' },
+];
+
 const LEGAL_FORM_OPTIONS = [
   { value: '', label: 'Select legal form...' },
   { value: 'SL', label: 'S.L. (Sociedad Limitada)' },
@@ -29,8 +37,37 @@ interface Step2Props {
   onBack: () => void;
 }
 
+// IBAN format check shared with backend (ES + 2 control + 4-30 alfanum).
+const ibanFormat = /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/;
+
 export function Step2({ onNext, onBack }: Step2Props) {
-  const { register, formState: { errors } } = useFormContext<RegisterFormData>();
+  const { register, watch, setError, clearErrors, formState: { errors } } = useFormContext<RegisterFormData>();
+  const role = watch('role');
+  const isSeller = role === 'VENDEDOR';
+
+  const handleNext = () => {
+    // Extra conditional validation for sellers — defer to backend if user
+    // somehow bypasses this, but the friendlier UX is to flag here.
+    if (isSeller) {
+      const ibanRaw = (watch('iban') ?? '').toUpperCase().replace(/\s+/g, '');
+      const regimen = watch('regimenFiscal');
+      let ok = true;
+      if (!ibanRaw || !ibanFormat.test(ibanRaw)) {
+        setError('iban', { message: 'IBAN inválido — obligatorio para vendedores' });
+        ok = false;
+      } else {
+        clearErrors('iban');
+      }
+      if (!regimen) {
+        setError('regimenFiscal', { message: 'Selecciona el régimen fiscal' });
+        ok = false;
+      } else {
+        clearErrors('regimenFiscal');
+      }
+      if (!ok) return;
+    }
+    onNext();
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -129,11 +166,50 @@ export function Step2({ onNext, onBack }: Step2Props) {
         </div>
       </div>
 
+      {isSeller && (
+        <div>
+          <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">
+            Datos bancarios y fiscales (sólo vendedores)
+          </h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            Necesarios para emitir facturas con la fiscalidad correcta y para que el comprador pueda transferirte. <strong>Sólo se introducen una vez aquí</strong> — para modificarlos posteriormente deberás contactar con Primar-IA.
+          </p>
+          <div className="flex flex-col gap-4">
+            <Input
+              label="IBAN"
+              placeholder="ES12 1234 1234 12 1234567890"
+              required
+              hint="IBAN europeo — 24 caracteres (España). Se normaliza automáticamente."
+              error={errors.iban?.message}
+              {...register('iban', {
+                onChange: (e: ChangeEvent<HTMLInputElement>) => {
+                  // Stripping spaces + uppercasing as you type so the UX matches the validation.
+                  e.target.value = e.target.value.toUpperCase().replace(/\s+/g, '');
+                },
+              })}
+            />
+            <Input
+              label="SWIFT / BIC"
+              placeholder="BSCHESMM (opcional, sólo cuentas no-IBAN)"
+              error={errors.swiftBic?.message}
+              {...register('swiftBic')}
+            />
+            <Select
+              label="Régimen fiscal"
+              required
+              options={REGIMEN_FISCAL_OPTIONS}
+              error={errors.regimenFiscal?.message}
+              {...register('regimenFiscal')}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-3 mt-2">
         <Button type="button" variant="outline" size="lg" className="flex-1" onClick={onBack}>
           Back
         </Button>
-        <Button type="button" variant="primary" size="lg" className="flex-1" onClick={onNext}>
+        <Button type="button" variant="primary" size="lg" className="flex-1" onClick={handleNext}>
           Continue
         </Button>
       </div>

@@ -80,6 +80,57 @@ enum Incoterm {
   DPU
 }
 
+// Quién se encarga de la logística desde el punto de vista del listador.
+// YO_ENVIO       = el vendedor envía / el comprador no tiene que recoger
+// OTRO_RECOGE    = el vendedor no envía / el comprador debe recoger
+// INDIFERENTE    = sin preferencia (abierto a ambas)
+enum LogisticaPreferencia {
+  YO_ENVIO
+  OTRO_RECOGE
+  INDIFERENTE
+}
+
+// Términos de pago acordados o aceptados.
+enum TerminoPago {
+  INMEDIATO
+  DIAS_30
+  DIAS_60
+}
+
+// Régimen fiscal del vendedor — necesario para emitir facturas correctas.
+enum RegimenFiscal {
+  GENERAL                  // 21% IVA, 0% retención
+  AGRARIO                  // régimen especial agrario: IVA reducido (4% / 10%), IRPF 2%
+  RECARGO_EQUIVALENCIA     // minoristas, sin IRPF, IVA + recargo
+  EXENTO                   // exento de IVA (operaciones exteriores, etc.)
+}
+
+// Estado del contrato dentro del flujo de firma/pago.
+enum ContratoEstado {
+  BORRADOR                 // generado pero ninguno ha firmado
+  PENDIENTE_FIRMA_VENDEDOR // vendedor todavía no ha firmado
+  PENDIENTE_PAGO_COMPRADOR // vendedor firmó, comprador debe pagar comisión + firmar
+  FIRMADO                  // ambos firmaron, comisión pagada
+  CADUCADO                 // vendedor firmó pero comprador no pagó/firmó en 48h hábiles
+  CANCELADO                // alguna parte canceló antes de completar
+}
+
+// Tipos de evento que dispara una alerta anti-bypass.
+enum BypassAlertEstado {
+  PENDIENTE
+  AVISADO
+  BANEADO
+  DESCARTADO
+}
+
+// Estado de revisión de un patrón de cancelaciones sospechosas.
+enum CancelacionEstado {
+  PENDIENTE
+  INVESTIGADA
+  AVISADO
+  SUSPENDIDO
+}
+
 enum TransaccionEstado {
   PENDIENTE_PAGO
   PAGO_CAPTURADO
@@ -269,6 +320,12 @@ model Empresa {
   stripeCustomerId      String?  @map("stripe_customer_id")
   descripcion           String?
   fotosUrls             Json?    @map("fotos_urls")
+  // Datos bancarios para que el comprador transfiera al vendedor.
+  // IBAN español formato 24 dígitos; otras geografías permitidas.
+  iban                  String?  @map("iban")
+  swiftBic              String?  @map("swift_bic")
+  // Régimen fiscal — se usa para generar facturas correctas con IVA/IRPF.
+  regimenFiscal         RegimenFiscal @default(GENERAL) @map("regimen_fiscal")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
@@ -355,6 +412,14 @@ model Lote {
   fotosUrls              Json?      @map("fotos_urls")
   comentariosAdicionales String?    @map("comentarios_adicionales")
   estado                 LoteEstado @default(BORRADOR)
+  // Quién se encarga del envío/recogida desde el punto de vista del vendedor.
+  logistica              LogisticaPreferencia @default(INDIFERENTE)
+  // Incoterms que el vendedor acepta (filtra los matches).
+  // String[] de Incoterm. Default a [] (sin restricciones — equivalente a "todos").
+  incotermsAceptados     Json       @default("[]") @map("incoterms_aceptados")
+  // Términos de pago que el vendedor acepta. Multi-select.
+  // String[] de TerminoPago. Default a ["INMEDIATO"].
+  terminosPagoAceptados  Json       @default("[\"INMEDIATO\"]") @map("terminos_pago_aceptados")
   createdAt              DateTime   @default(now()) @map("created_at")
   updatedAt              DateTime   @updatedAt @map("updated_at")
 
@@ -387,6 +452,13 @@ model Pedido {
   estado                 PedidoEstado @default(BORRADOR)
   stripePaymentIntentId  String?      @unique @map("stripe_payment_intent_id")
   contratoPdfUrl         String?      @map("contrato_pdf_url")
+  // Quién recoge/envía desde el punto de vista del comprador.
+  logistica              LogisticaPreferencia @default(INDIFERENTE)
+  // Incoterms que el comprador acepta (multi). Si está vacío, se asume el campo
+  // legacy `incoterm` como única opción aceptada.
+  incotermsAceptados     Json         @default("[]") @map("incoterms_aceptados")
+  // Términos de pago que el comprador acepta. Multi-select.
+  terminosPagoAceptados  Json         @default("[\"INMEDIATO\"]") @map("terminos_pago_aceptados")
   createdAt              DateTime     @default(now()) @map("created_at")
   updatedAt              DateTime     @updatedAt @map("updated_at")
 
@@ -411,6 +483,24 @@ model Match {
   scoreMatching Float?      @map("score_matching")
   scoreDetalle  Json?       @map("score_detalle")
   visibleDesde  DateTime    @default(now()) @map("visible_desde")
+  // Condiciones finales acordadas en chat antes de firmar. Snapshot que se
+  // refleja en el contrato y en la factura. Si null, se hereda del Lote/Pedido.
+  incotermFinal       Incoterm?            @map("incoterm_final")
+  logisticaFinal      LogisticaPreferencia? @map("logistica_final")
+  terminoPagoFinal    TerminoPago?         @map("termino_pago_final")
+  precioKgFinal       Decimal?             @db.Decimal(10, 4) @map("precio_kg_final")
+  // Flujo de contrato: borrador (con watermark) y estado de firma.
+  contratoEstado          ContratoEstado @default(BORRADOR) @map("contrato_estado")
+  contratoBorradorUrl     String?        @map("contrato_borrador_url")
+  // Snapshot de la comisión calculada al generar el contrato borrador.
+  comisionEstimada        Decimal?       @db.Decimal(10, 2) @map("comision_estimada")
+  comisionPorcentaje      Decimal?       @db.Decimal(6, 5)  @map("comision_porcentaje")
+  // Si el vendedor firma, el comprador tiene 48h hábiles para pagar+firmar.
+  firmaVendedorDeadline   DateTime?      @map("firma_vendedor_deadline")
+  // Tracking de cancelaciones — útil para anti-bypass admin tab.
+  canceladoPor            String?        @map("cancelado_por") // userId of canceller
+  canceladoEn             DateTime?      @map("cancelado_en")
+  motivoCancelacion       String?        @map("motivo_cancelacion") @db.VarChar(500)
   createdAt     DateTime    @default(now()) @map("created_at")
 
   lote          Lote        @relation(fields: [loteId], references: [id])
@@ -422,6 +512,8 @@ model Match {
   @@index([pedidoId, estado])
   // Used by the market analytics queries (estado='CONFIRMADO' + date range)
   @@index([estado, createdAt])
+  // Used by the cron that auto-caduca contratos a las 48h hábiles
+  @@index([contratoEstado, firmaVendedorDeadline])
   @@map("matches")
 }
 
@@ -449,6 +541,16 @@ model Transaccion {
   fotosLoteUrls         Json?             @map("fotos_lote_urls")
   facturaPlataformaUrl  String?           @map("factura_plataforma_url")
   facturaVendedorUrl    String?           @map("factura_vendedor_url")
+  resguardoPagoUrl      String?           @map("resguardo_pago_url")
+  // Stripe charge cobrado al comprador por la comisión de la plataforma.
+  comisionStripeChargeId String?          @map("comision_stripe_charge_id")
+  comisionPagadaEn      DateTime?         @map("comision_pagada_en")
+  // Vencimiento que el comprador tiene para pagar al vendedor por la operación
+  // (no la comisión a primar-IA). Se calcula a partir del termino_pago_final.
+  vencimientoPagoVendedor DateTime?       @map("vencimiento_pago_vendedor")
+  // Eventos clave para disparar valoraciones recíprocas.
+  enviadoEn             DateTime?         @map("enviado_en")
+  recibidoEn            DateTime?         @map("recibido_en")
   createdAt             DateTime          @default(now()) @map("created_at")
   updatedAt             DateTime          @updatedAt @map("updated_at")
 
@@ -751,6 +853,51 @@ model BugReport {
   @@index([estado])
   @@index([createdAt])
   @@map("bug_reports")
+}
+
+// Alertas generadas por la IA (Gemini) al revisar mensajes del chat en
+// busca de patrones de bypass (compartir teléfono/email/redes, mover la
+// conversación fuera de la plataforma, etc.). Procesadas en cron diario.
+model BypassAlert {
+  id                String            @id @default(cuid())
+  mensajeId         String            @unique @map("mensaje_id")
+  remitenteId       String            @map("remitente_id")
+  receptorId        String?           @map("receptor_id")
+  // Score 0-100 producido por la IA (mayor = más sospechoso).
+  score             Int
+  // Patrones detectados: phone | email | messaging | location | offer_off_platform | other
+  patrones          Json
+  // Extracto del mensaje detectado para la admin UI.
+  extracto          String?           @db.VarChar(500)
+  estado            BypassAlertEstado @default(PENDIENTE)
+  accionTomada      String?           @map("accion_tomada")
+  adminId           String?           @map("admin_id")
+  resolvedAt        DateTime?         @map("resolved_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+
+  @@index([estado, createdAt])
+  @@index([remitenteId])
+  @@map("bypass_alerts")
+}
+
+// Tracking de parejas vendedor-comprador que cancelan matches repetidamente,
+// patrón sospechoso de bypass de plataforma.
+model CancelacionSospechosa {
+  id                  String            @id @default(cuid())
+  vendedorId          String            @map("vendedor_id")
+  compradorId         String            @map("comprador_id")
+  totalCancelaciones  Int               @default(1) @map("total_cancelaciones")
+  ultimaCancelacionAt DateTime          @map("ultima_cancelacion_at")
+  estado              CancelacionEstado @default(PENDIENTE)
+  accionTomada        String?           @map("accion_tomada")
+  adminId             String?           @map("admin_id")
+  notas               String?           @db.Text
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  @@unique([vendedorId, compradorId])
+  @@index([estado, ultimaCancelacionAt])
+  @@map("cancelaciones_sospechosas")
 }
 
 // Weekly auto-generated market report from mapa.gob.es boletín semanal

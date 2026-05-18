@@ -82,7 +82,11 @@ export class StripeService {
       const cantidadKg = Number(match.cantidadKg);
       const precioKg = Number(match.precioKg);
       const total = cantidadKg * precioKg;
-      const comision = calcularComision(total, metodoPago);
+      // metodoPago is kept in the request body for backwards compat with
+      // mobile clients, but the new commission table does not vary by
+      // payment method (commission is always charged via card to the buyer).
+      void metodoPago;
+      const comision = calcularComision(total);
 
       const vendedorEmpresa = match.lote.vendedor.empresa;
       const sellerReady =
