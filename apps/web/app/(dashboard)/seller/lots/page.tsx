@@ -19,16 +19,16 @@ type LotRow = {
 const col = createColumnHelper<LotRow>();
 
 const TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'open', label: 'Open' },
-  { key: 'inprogress', label: 'In Progress' },
-  { key: 'full', label: 'Full' },
-  { key: 'cancelled', label: 'Cancelled' },
+  { key: 'all', label: 'Todos' },
+  { key: 'open', label: 'Abiertos' },
+  { key: 'inprogress', label: 'En curso' },
+  { key: 'full', label: 'Completos' },
+  { key: 'cancelled', label: 'Cancelados' },
 ];
 
 const columns = [
   col.accessor('id', {
-    header: 'Lot ID',
+    header: 'ID Lote',
     cell: (info) => (
       <Link
         href={`/seller/lots/${info.getValue()}`}
@@ -38,21 +38,21 @@ const columns = [
       </Link>
     ),
   }),
-  col.accessor('producto.nombre', { header: 'Product' }),
+  col.accessor('producto.nombre', { header: 'Producto' }),
   col.accessor('totalKg', {
-    header: 'Total Quantity',
+    header: 'Cantidad total',
     cell: (info) => `${info.getValue().toLocaleString()} kg`,
   }),
   col.accessor('coverage', {
-    header: 'Coverage %',
+    header: '% Cobertura',
     cell: (info) => <CoverageBar percentage={info.getValue()} className="min-w-[120px]" />,
   }),
   col.accessor('estado', {
-    header: 'Status',
+    header: 'Estado',
     cell: (info) => <StatusBadge status={info.getValue()} />,
   }),
   col.accessor('fechaDisponibilidad', {
-    header: 'Pickup Date',
+    header: 'Fecha recogida',
     cell: (info) => new Date(info.getValue()).toLocaleDateString('es-ES'),
   }),
 ];
@@ -91,7 +91,7 @@ export default function MyLotsPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">My Lots</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Mis Lotes</h1>
         <Link href="/seller/lots/new">
           <Button variant="primary" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
@@ -123,9 +123,9 @@ export default function MyLotsPage() {
         onTabChange={handleTabChange}
         globalFilter={globalFilter}
         onGlobalFilterChange={setGlobalFilter}
-        searchPlaceholder="Search by Lot ID or Product..."
+        searchPlaceholder="Buscar por ID de lote o producto..."
         isLoading={isLoading}
-        emptyMessage="No lots found. Publish your first lot to start selling."
+        emptyMessage="Sin lotes. Publica tu primer lote para empezar a vender."
       />
     </div>
   );

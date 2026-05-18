@@ -75,16 +75,16 @@ export function PaymentModal({
         aria-hidden="true"
       />
 
-      <div className="relative w-full max-w-md bg-white rounded-card shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-md bg-card rounded-card shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 id="payment-modal-title" className="text-lg font-semibold text-gray-900">
+          <h2 id="payment-modal-title" className="text-lg font-semibold text-foreground">
             Confirmar y pagar
           </h2>
           <button
             type="button"
             onClick={handleClose}
             disabled={isLoading}
-            className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-full text-muted-foreground hover:text-muted-foreground hover:bg-muted transition-colors"
             aria-label="Cerrar modal"
           >
             <X className="w-5 h-5" />
@@ -93,22 +93,22 @@ export function PaymentModal({
 
         <div className="px-6 py-5 space-y-5">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2.5">
-              <div className="flex justify-between text-sm text-gray-600">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2.5">
+              <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Subtotal pedido</span>
-                <span className="font-medium text-gray-900">{formatEur(orderSubtotal)}</span>
+                <span className="font-medium text-foreground">{formatEur(orderSubtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Coste logístico estimado</span>
-                <span className="font-medium text-gray-900">{formatEur(logisticsCost)}</span>
+                <span className="font-medium text-foreground">{formatEur(logisticsCost)}</span>
               </div>
-              <div className="border-t border-gray-200 pt-2.5 flex justify-between">
-                <span className="text-base font-bold text-gray-900">Total</span>
-                <span className="text-base font-bold text-gray-900">{formatEur(total)}</span>
+              <div className="border-t border-border pt-2.5 flex justify-between">
+                <span className="text-base font-bold text-foreground">Total</span>
+                <span className="text-base font-bold text-foreground">{formatEur(total)}</span>
               </div>
             </div>
 
-            <div className="flex gap-2.5 text-sm text-gray-600 bg-blue-50 rounded-lg p-3">
+            <div className="flex gap-2.5 text-sm text-muted-foreground bg-blue-50 rounded-lg p-3">
               <Lock className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
               <p>
                 Serás redirigido a Stripe para completar el pago de forma segura. El importe
@@ -117,7 +117,7 @@ export function PaymentModal({
             </div>
 
             <fieldset>
-              <legend className="text-sm font-medium text-gray-700 mb-2">Método de pago</legend>
+              <legend className="text-sm font-medium text-foreground mb-2">Método de pago</legend>
               <div className="grid grid-cols-2 gap-3">
                 <label
                   className={[
@@ -135,8 +135,8 @@ export function PaymentModal({
                     onChange={() => setMetodoPago('card')}
                     className="accent-primary"
                   />
-                  <CreditCard className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-700">Tarjeta</span>
+                  <CreditCard className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground">Tarjeta</span>
                 </label>
                 <label
                   className={[
@@ -154,8 +154,8 @@ export function PaymentModal({
                     onChange={() => setMetodoPago('sepa_debit')}
                     className="accent-primary"
                   />
-                  <Building2 className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-700">SEPA</span>
+                  <Building2 className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-foreground">SEPA</span>
                 </label>
               </div>
             </fieldset>

@@ -42,7 +42,7 @@ export function UpgradePrompt(props: UpgradePromptProps) {
 
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-        <div className="bg-surface border border-border rounded-[12px] p-8 max-w-md w-full text-center">
+        <div className="bg-card border border-border rounded-[12px] p-8 max-w-md w-full text-center">
           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <ArrowUpCircle className="w-6 h-6 text-primary" />
           </div>
@@ -74,7 +74,7 @@ export function UpgradePrompt(props: UpgradePromptProps) {
   const href = role === 'VENDEDOR' ? '/seller/subscription' : '/buyer/subscription';
 
   return (
-    <div className="bg-surface border border-border rounded-[12px] p-8 text-center max-w-md mx-auto">
+    <div className="bg-card border border-border rounded-[12px] p-8 text-center max-w-md mx-auto">
       <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
         <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />

@@ -90,9 +90,9 @@ export default function ConfirmReceptionPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-sm space-y-4 animate-pulse">
-          <div className="h-16 w-16 bg-gray-200 rounded-full mx-auto" />
-          <div className="h-6 bg-gray-200 rounded w-48 mx-auto" />
-          <div className="h-48 bg-gray-200 rounded-card" />
+          <div className="h-16 w-16 bg-muted rounded-full mx-auto" />
+          <div className="h-6 bg-muted rounded w-48 mx-auto" />
+          <div className="h-48 bg-muted rounded-card" />
         </div>
       </div>
     );
@@ -102,7 +102,7 @@ export default function ConfirmReceptionPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-3">
-          <p className="text-red-600">{fetchError ?? 'Order not found.'}</p>
+          <p className="text-red-600">{fetchError ?? 'Pedido no encontrado.'}</p>
           <Button variant="outline" onClick={() => router.push('/buyer/orders')}>
             Back to Orders
           </Button>
@@ -120,35 +120,35 @@ export default function ConfirmReceptionPage() {
             <CheckCircle2 className="w-16 h-16 text-green-500" strokeWidth={1.5} />
           </div>
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold text-gray-900">Lot Received Successfully!</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-foreground">Lot Received Successfully!</h1>
+            <p className="text-sm text-muted-foreground">
               Please review the details below before releasing payment.
             </p>
           </div>
         </div>
 
         {/* Details card */}
-        <div className="bg-white rounded-card border border-border shadow-sm p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+        <div className="bg-card rounded-card border border-border shadow-soft p-6 space-y-4">
+          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
             Delivery Summary
           </h2>
 
           <dl className="space-y-3">
             <div className="flex justify-between items-center">
-              <dt className="text-sm text-gray-500">Product</dt>
-              <dd className="text-sm font-medium text-gray-900 text-right max-w-[60%]">{productName}</dd>
+              <dt className="text-sm text-muted-foreground">Product</dt>
+              <dd className="text-sm font-medium text-foreground text-right max-w-[60%]">{productName}</dd>
             </div>
             <div className="border-t border-gray-100" />
             <div className="flex justify-between items-center">
-              <dt className="text-sm text-gray-500">Farmer ID</dt>
-              <dd className="text-sm font-mono text-gray-900">
+              <dt className="text-sm text-muted-foreground">Farmer ID</dt>
+              <dd className="text-sm font-mono text-foreground">
                 {primaryMatch ? primaryMatch.vendedorId.slice(-8).toUpperCase() : '—'}
               </dd>
             </div>
             <div className="border-t border-gray-100" />
             <div className="flex justify-between items-center">
-              <dt className="text-sm text-gray-500">Quantity</dt>
-              <dd className="text-sm font-medium text-gray-900">
+              <dt className="text-sm text-muted-foreground">Quantity</dt>
+              <dd className="text-sm font-medium text-foreground">
                 {primaryMatch
                   ? `${parseFloat(primaryMatch.cantidadKg).toLocaleString('es-ES')} kg`
                   : `${order.totalKg.toLocaleString('es-ES')} kg`}
@@ -156,8 +156,8 @@ export default function ConfirmReceptionPage() {
             </div>
             <div className="border-t border-gray-100" />
             <div className="flex justify-between items-center">
-              <dt className="text-sm text-gray-500">Order ID</dt>
-              <dd className="text-sm font-mono font-medium text-gray-900">#{shortOrderId}</dd>
+              <dt className="text-sm text-muted-foreground">Order ID</dt>
+              <dd className="text-sm font-mono font-medium text-foreground">#{shortOrderId}</dd>
             </div>
           </dl>
         </div>
@@ -190,7 +190,7 @@ export default function ConfirmReceptionPage() {
           </Button>
         </div>
 
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-muted-foreground">
           Releasing payment is irreversible. Only confirm if the lot has been inspected and accepted.
         </p>
       </div>

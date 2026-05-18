@@ -101,7 +101,7 @@ export default function SellerTaskListPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <Link href="/seller" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900">
+      <Link href="/seller" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="w-4 h-4" /> Back to Dashboard
       </Link>
 
@@ -114,17 +114,17 @@ export default function SellerTaskListPage() {
         }`}>
           {config.icon}
         </div>
-        <h1 className="text-xl font-bold text-gray-900">{config.title}</h1>
+        <h1 className="text-xl font-bold text-foreground">{config.title}</h1>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
       ) : error ? (
         <p className="text-sm text-red-500 text-center py-8">Error: {error}</p>
       ) : !tasks ? (
-        <p className="text-sm text-gray-500 text-center py-8">Could not load tasks.</p>
+        <p className="text-sm text-muted-foreground text-center py-8">Could not load tasks.</p>
       ) : type === 'contracts' ? (
         <TaskList
           items={tasks.contracts}
@@ -134,14 +134,14 @@ export default function SellerTaskListPage() {
             <Link
               key={item.txId}
               href={`/seller/lots/${item.lotId}/contract/${item.txId}`}
-              className="block p-4 bg-white rounded-card border border-border hover:border-amber-300 hover:shadow-md transition-all"
+              className="block p-4 bg-card rounded-card border border-border hover:border-amber-300 hover:shadow-soft-md transition-all"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
+                  <p className="text-sm font-semibold text-foreground">
                     Lot {shortLotId(item.lotId)} — {item.producto}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Buyer: {item.counterpart} · {item.cantidadKg.toLocaleString('es-ES')} kg
                   </p>
                 </div>
@@ -159,14 +159,14 @@ export default function SellerTaskListPage() {
             <Link
               key={item.txId}
               href={`/seller/lots/${item.lotId}/qr/${item.txId}`}
-              className="block p-4 bg-white rounded-card border border-border hover:border-blue-300 hover:shadow-md transition-all"
+              className="block p-4 bg-card rounded-card border border-border hover:border-blue-300 hover:shadow-soft-md transition-all"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
+                  <p className="text-sm font-semibold text-foreground">
                     Lot {shortLotId(item.lotId)} — {item.producto}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Buyer: {item.buyer} · {item.cantidadKg.toLocaleString('es-ES')} kg
                   </p>
                 </div>
@@ -184,14 +184,14 @@ export default function SellerTaskListPage() {
             <Link
               key={item.matchId}
               href={`/seller/lots/${item.lotId}`}
-              className="block p-4 bg-white rounded-card border border-border hover:border-green-300 hover:shadow-md transition-all"
+              className="block p-4 bg-card rounded-card border border-border hover:border-green-300 hover:shadow-soft-md transition-all"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
+                  <p className="text-sm font-semibold text-foreground">
                     Lot {shortLotId(item.lotId)} — {item.producto}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Buyer: {item.buyer} · {item.cantidadKg.toLocaleString('es-ES')} kg · €{item.precioKg.toFixed(3)}/kg
                   </p>
                 </div>
@@ -208,14 +208,14 @@ export default function SellerTaskListPage() {
           renderItem={(item) => (
             <div
               key={item.lotId}
-              className="p-4 bg-white rounded-card border border-border space-y-3"
+              className="p-4 bg-card rounded-card border border-border space-y-3"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
+                  <p className="text-sm font-semibold text-foreground">
                     Lot {shortLotId(item.lotId)} — {item.producto}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Ended: {new Date(item.fechaFin).toLocaleDateString('es-ES')} · Sold: {item.coverage}% · {item.totalKg.toLocaleString('es-ES')} kg
                   </p>
                 </div>
@@ -223,7 +223,7 @@ export default function SellerTaskListPage() {
               </div>
               <div className="flex items-end gap-3">
                 <div className="flex-1">
-                  <label className="text-xs text-gray-500 block mb-1">Extend to new date</label>
+                  <label className="text-xs text-muted-foreground block mb-1">Extend to new date</label>
                   <input
                     type="date"
                     className="w-full px-3 py-1.5 border border-border rounded-input text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -251,7 +251,7 @@ export default function SellerTaskListPage() {
           )}
         />
       ) : (
-        <p className="text-sm text-gray-500 text-center py-8">Unknown task type.</p>
+        <p className="text-sm text-muted-foreground text-center py-8">Unknown task type.</p>
       )}
     </div>
   );
@@ -273,8 +273,8 @@ function TaskList<T>({
       <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
         <CheckCircle2 className="w-10 h-10 text-green-400" />
         <div>
-          <p className="text-sm font-semibold text-gray-700">You&apos;re all caught up!</p>
-          <p className="text-xs text-gray-500 mt-1">{emptyMsg}</p>
+          <p className="text-sm font-semibold text-foreground">¡Estás al día!</p>
+          <p className="text-xs text-muted-foreground mt-1">{emptyMsg}</p>
         </div>
         <Link
           href={emptyCta.href}
@@ -287,7 +287,7 @@ function TaskList<T>({
   }
   return (
     <div className="space-y-3">
-      <p className="text-xs text-gray-500">{items.length} pending task{items.length !== 1 ? 's' : ''}</p>
+      <p className="text-xs text-muted-foreground">{items.length} pending task{items.length !== 1 ? 's' : ''}</p>
       {items.map(renderItem)}
     </div>
   );

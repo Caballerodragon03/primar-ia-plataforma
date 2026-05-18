@@ -23,7 +23,7 @@ export function ScoreBadge({ score, status, size = 'md' }: ScoreBadgeProps) {
 
   if (starCount === null) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-xs font-medium bg-gray-100 text-gray-500">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-xs font-medium bg-muted text-muted-foreground">
         Nuevo
       </span>
     );

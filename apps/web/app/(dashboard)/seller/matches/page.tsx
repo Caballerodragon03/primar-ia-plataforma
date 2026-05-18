@@ -28,10 +28,10 @@ function loadIncotermPrefs(): IncotermPrefs | null {
 }
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'best', label: 'Best Match' },
-  { key: 'price', label: 'Best Price' },
-  { key: 'distance', label: 'Closest Distance' },
-  { key: 'newest', label: 'Newest' },
+  { key: 'best', label: 'Mejor match' },
+  { key: 'price', label: 'Mejor precio' },
+  { key: 'distance', label: 'Más cercano' },
+  { key: 'newest', label: 'Más reciente' },
 ];
 
 interface ApiMatchItem {
@@ -112,7 +112,7 @@ export default function SellerMatchesPage() {
       );
       setMatches((res.data.data ?? []) as Match[]);
     } catch {
-      setError('Failed to load matches. Please try again.');
+      setError('Error al cargar los matches.');
     } finally {
       setLoading(false);
     }
@@ -242,15 +242,15 @@ export default function SellerMatchesPage() {
     <div className="space-y-6">
       {/* Page title */}
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">Your Matching Orders</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Tus pedidos compatibles</h1>
         <p className="text-sm text-text-secondary mt-1">
-          Orders that best match your published lots.
+          Pedidos que mejor encajan con tus lotes publicados.
         </p>
       </div>
 
       {/* Incoterm filter — shown when wizard has been completed */}
       {incotermPrefs?.done && (
-        <div className="bg-white border border-border rounded-card px-4 py-3">
+        <div className="bg-card border border-border rounded-card px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-primary" />
@@ -291,9 +291,9 @@ export default function SellerMatchesPage() {
                       'px-3 py-1 rounded-badge text-xs font-medium border transition-colors',
                       active
                         ? isRec
-                          ? 'bg-primary text-gray-900 border-primary'
+                          ? 'bg-primary text-foreground border-primary'
                           : 'bg-primary/10 border-primary text-text-primary'
-                        : 'bg-white border-border text-text-muted line-through',
+                        : 'bg-card border-border text-text-muted line-through',
                     ].join(' ')}
                   >
                     {code}{isRec ? ' ★' : ''}
@@ -340,7 +340,7 @@ export default function SellerMatchesPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-input w-fit">
+      <div className="flex gap-1 bg-muted p-1 rounded-input w-fit">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -348,7 +348,7 @@ export default function SellerMatchesPage() {
             className={[
               'px-4 py-1.5 text-sm font-medium rounded transition-colors duration-150',
               activeTab === tab.key
-                ? 'bg-white text-text-primary shadow-sm'
+                ? 'bg-card text-text-primary shadow-soft'
                 : 'text-text-secondary hover:text-text-primary',
             ].join(' ')}
           >
@@ -361,7 +361,7 @@ export default function SellerMatchesPage() {
       {loading && (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-surface rounded-card border border-border p-5 h-32 animate-pulse" />
+            <div key={i} className="bg-card rounded-card border border-border p-5 h-32 animate-pulse" />
           ))}
         </div>
       )}
@@ -381,8 +381,8 @@ export default function SellerMatchesPage() {
       {!loading && !error && sorted.length === 0 && (
         <div className="space-y-6">
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Star className="w-8 h-8 text-gray-300" />
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Star className="w-8 h-8 text-muted-foreground/50" />
             </div>
             <p className="font-semibold text-text-primary mb-1">No matching orders yet.</p>
             <p className="text-sm text-text-secondary max-w-sm">
@@ -391,7 +391,7 @@ export default function SellerMatchesPage() {
           </div>
 
           {marketDemand.length > 0 && (
-            <div className="bg-surface border border-border rounded-card p-5 space-y-4">
+            <div className="bg-card border border-border rounded-card p-5 space-y-4">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-primary" />
                 <h3 className="font-semibold text-text-primary text-sm">What Buyers Are Requesting</h3>
@@ -402,7 +402,7 @@ export default function SellerMatchesPage() {
                   <div key={`${d.productoNombre}:${d.calibre}`} className="flex items-center justify-between py-3">
                     <div>
                       <span className="text-sm font-medium text-text-primary">{d.productoNombre}</span>
-                      <span className="ml-2 text-xs bg-gray-100 text-text-secondary px-2 py-0.5 rounded-badge">
+                      <span className="ml-2 text-xs bg-muted text-text-secondary px-2 py-0.5 rounded-badge">
                         Caliber {d.calibre}
                       </span>
                     </div>

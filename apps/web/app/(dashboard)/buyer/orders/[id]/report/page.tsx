@@ -106,12 +106,12 @@ export default function ReportIssuePage() {
           <AlertTriangle className="w-5 h-5 text-red-500" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Report an Issue</h1>
-          <p className="text-sm text-gray-500">Order #{id}</p>
+          <h1 className="text-xl font-semibold text-foreground">Report an Issue</h1>
+          <p className="text-sm text-muted-foreground">Order #{id}</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-surface rounded-card border border-border p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-card rounded-card border border-border p-6 space-y-6">
         {/* Issue Type */}
         <Select
           label="Issue Type"
@@ -123,7 +123,7 @@ export default function ReportIssuePage() {
 
         {/* Description */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-foreground">
             Description <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -132,7 +132,7 @@ export default function ReportIssuePage() {
             placeholder="Describe the issue in detail…"
             rows={5}
             className={[
-              'w-full px-3 py-2.5 rounded-input border text-sm text-gray-900 placeholder-gray-400 bg-white',
+              'w-full px-3 py-2.5 rounded-input border text-sm text-foreground placeholder-gray-400 bg-card',
               'transition-colors duration-150 resize-none',
               'focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary',
               descriptionError ? 'border-red-400' : 'border-border hover:border-gray-400',
@@ -144,7 +144,7 @@ export default function ReportIssuePage() {
             ) : (
               <span />
             )}
-            <span className={['text-xs', descripcion.length >= MIN_DESCRIPTION ? 'text-gray-400' : 'text-amber-500'].join(' ')}>
+            <span className={['text-xs', descripcion.length >= MIN_DESCRIPTION ? 'text-muted-foreground' : 'text-amber-500'].join(' ')}>
               {descripcion.length} / {MIN_DESCRIPTION} min chars
             </span>
           </div>
@@ -165,13 +165,13 @@ export default function ReportIssuePage() {
               {files.map((f, i) => (
                 <li
                   key={i}
-                  className="flex items-center justify-between px-3 py-2 rounded-input border border-border bg-gray-50 text-sm"
+                  className="flex items-center justify-between px-3 py-2 rounded-input border border-border bg-muted/50 text-sm"
                 >
-                  <span className="truncate text-gray-700">{f.name}</span>
+                  <span className="truncate text-foreground">{f.name}</span>
                   <button
                     type="button"
                     onClick={() => removeFile(i)}
-                    className="ml-3 text-gray-400 hover:text-red-500 flex-shrink-0 cursor-pointer text-xs"
+                    className="ml-3 text-muted-foreground hover:text-red-500 flex-shrink-0 cursor-pointer text-xs"
                   >
                     Remove
                   </button>

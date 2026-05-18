@@ -42,14 +42,14 @@ function estadoLabel(estado: TxEstado): { label: string; icon: typeof CheckCircl
       return {
         label: 'Reembolsado',
         icon: RotateCcw,
-        classes: 'bg-gray-200 text-gray-700 border-gray-300',
+        classes: 'bg-muted text-foreground border-border',
         banner: 'Esta transacción fue reembolsada — la conversación es solo lectura.',
       };
     default:
       return {
         label: estado,
         icon: CheckCircle2,
-        classes: 'bg-gray-100 text-gray-700 border-gray-200',
+        classes: 'bg-muted text-foreground border-border',
         banner: '',
       };
   }
@@ -225,11 +225,11 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
   const selectedConv = conversations.find((c) => c.transaccionId === selectedId);
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden rounded-card border border-border bg-surface">
+    <div className="flex h-full min-h-0 overflow-hidden rounded-card border border-border bg-card">
       {/* Left panel — conversation list */}
       <div className="w-[240px] flex-shrink-0 border-r border-border flex flex-col">
         <div className="p-4 border-b border-border">
-          <h2 className="text-sm font-semibold text-gray-900">Messages</h2>
+          <h2 className="text-sm font-semibold text-foreground">Messages</h2>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -237,13 +237,13 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
             <div className="p-4 space-y-3">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="animate-pulse space-y-1.5">
-                  <div className="h-3 bg-gray-200 rounded w-3/4" />
-                  <div className="h-2.5 bg-gray-100 rounded w-1/2" />
+                  <div className="h-3 bg-muted rounded w-3/4" />
+                  <div className="h-2.5 bg-muted rounded w-1/2" />
                 </div>
               ))}
             </div>
           ) : conversations.length === 0 ? (
-            <div className="p-4 text-center text-xs text-gray-400">No conversations yet</div>
+            <div className="p-4 text-center text-xs text-muted-foreground">No conversations yet</div>
           ) : (
             conversations.map((conv) => {
               const isSelected = conv.transaccionId === selectedId;
@@ -255,7 +255,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                   onClick={() => setSelectedId(conv.transaccionId)}
                   className={[
                     'w-full text-left px-3 py-3 border-b border-border transition-colors duration-150 cursor-pointer',
-                    isSelected ? 'bg-yellow-50' : closed ? 'bg-gray-50 hover:bg-gray-100' : 'hover:bg-gray-50',
+                    isSelected ? 'bg-yellow-50' : closed ? 'bg-muted/50 hover:bg-muted' : 'hover:bg-accent/50',
                     closed ? 'opacity-70' : '',
                   ].join(' ')}
                 >
@@ -272,20 +272,20 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                       <div className="flex items-center justify-between gap-1">
                         <p className={[
                           'text-xs font-semibold truncate',
-                          closed ? 'text-gray-500' : 'text-gray-900',
+                          closed ? 'text-muted-foreground' : 'text-foreground',
                         ].join(' ')}>{conv.counterpartName}</p>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           {conv.unreadCount > 0 && !closed && (
-                            <span className="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[9px] font-bold text-gray-900">
+                            <span className="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[9px] font-bold text-foreground">
                               {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
                             </span>
                           )}
-                          <span className="text-[9px] text-gray-400">{formatConvTime(conv.lastMessageAt)}</span>
+                          <span className="text-[9px] text-muted-foreground">{formatConvTime(conv.lastMessageAt)}</span>
                         </div>
                       </div>
                       <p className={[
                         'text-[10px] truncate',
-                        closed ? 'text-gray-400' : 'text-gray-500',
+                        closed ? 'text-muted-foreground' : 'text-muted-foreground',
                       ].join(' ')}>#{conv.orderId} · {conv.product}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {meta && (
@@ -295,7 +295,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                         )}
                         <p className={[
                           'text-[10px] truncate flex-1',
-                          closed ? 'text-gray-300 italic' : 'text-gray-400',
+                          closed ? 'text-muted-foreground/50 italic' : 'text-muted-foreground',
                         ].join(' ')}>{conv.lastMessage}</p>
                       </div>
                     </div>
@@ -310,7 +310,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
       {/* Right panel — active conversation */}
       <div className="flex-1 flex flex-col min-w-0">
         {!selectedId ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-400 gap-3">
+          <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground gap-3">
             <MessageSquare className="w-10 h-10 text-gray-200" />
             <p className="text-sm">Select a conversation</p>
           </div>
@@ -336,7 +336,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className={[
                           'text-sm font-semibold',
-                          closed ? 'text-gray-600' : 'text-gray-900',
+                          closed ? 'text-muted-foreground' : 'text-foreground',
                         ].join(' ')}>{selectedConv.counterpartName}</p>
                         {meta && Icon && (
                           <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${meta.classes}`}>
@@ -345,7 +345,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                           </span>
                         )}
                       </div>
-                      <p className="text-[10px] text-gray-500">Order #{selectedConv.orderId} · {selectedConv.product}</p>
+                      <p className="text-[10px] text-muted-foreground">Order #{selectedConv.orderId} · {selectedConv.product}</p>
                     </div>
                   </>
                 );
@@ -355,7 +355,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
               {messages.length === 0 ? (
-                <p className="text-center text-xs text-gray-400 mt-8">No messages yet. Say hello!</p>
+                <p className="text-center text-xs text-muted-foreground mt-8">No messages yet. Say hello!</p>
               ) : (
                 messages.map((msg) => {
                   const isOwn = msg.senderId === user?.id;
@@ -375,7 +375,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                             fetchConversations();
                           }}
                         />
-                        <span className="text-[10px] text-gray-400">{formatTime(msg.sentAt)}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatTime(msg.sentAt)}</span>
                       </div>
                     );
                   }
@@ -389,8 +389,8 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                         className={[
                           'max-w-[75%] px-3.5 py-2.5 text-sm',
                           isOwn
-                            ? 'bg-[#E1C44D33] text-gray-900 rounded-l-xl rounded-tr-xl'
-                            : 'bg-white border border-border text-gray-900 rounded-r-xl rounded-tl-xl',
+                            ? 'bg-[#E1C44D33] text-foreground rounded-l-xl rounded-tr-xl'
+                            : 'bg-card border border-border text-foreground rounded-r-xl rounded-tl-xl',
                         ].join(' ')}
                       >
                         <p className="whitespace-pre-wrap break-words">{msg.content}</p>
@@ -400,7 +400,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                           </p>
                         )}
                       </div>
-                      <span className="text-[10px] text-gray-400">{formatTime(msg.sentAt)}</span>
+                      <span className="text-[10px] text-muted-foreground">{formatTime(msg.sentAt)}</span>
                     </div>
                   );
                 })
@@ -428,7 +428,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                 const meta = estadoLabel(selectedConv.estado);
                 const Icon = meta.icon;
                 return (
-                  <div className="px-4 py-4 border-t border-border bg-gray-50 flex items-center gap-2 text-xs text-gray-600 justify-center">
+                  <div className="px-4 py-4 border-t border-border bg-muted/50 flex items-center gap-2 text-xs text-muted-foreground justify-center">
                     <Icon className="w-4 h-4" />
                     <span>{meta.banner}</span>
                   </div>
@@ -450,7 +450,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                 <button
                   type="button"
                   disabled
-                  className="p-2 text-gray-300 cursor-not-allowed flex-shrink-0"
+                  className="p-2 text-muted-foreground/50 cursor-not-allowed flex-shrink-0"
                   aria-label="Attach file (coming soon)"
                   title="Attachments coming soon"
                 >
@@ -464,7 +464,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                   onKeyDown={handleKeyDown}
                   placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
                   rows={1}
-                  className="flex-1 resize-none px-3 py-2.5 rounded-input border border-border text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors min-h-[44px] max-h-[120px] overflow-y-auto"
+                  className="flex-1 resize-none px-3 py-2.5 rounded-input border border-border text-sm text-foreground placeholder-gray-400 bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors min-h-[44px] max-h-[120px] overflow-y-auto"
                   style={{ height: 'auto' }}
                   onInput={(e) => {
                     const el = e.currentTarget;
@@ -479,8 +479,8 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                   className={[
                     'p-2.5 rounded-button flex-shrink-0 transition-colors duration-150',
                     text.trim() && !sending
-                      ? 'bg-primary text-gray-900 hover:opacity-90 cursor-pointer'
-                      : 'bg-gray-100 text-gray-300 cursor-not-allowed',
+                      ? 'bg-primary text-foreground hover:opacity-90 cursor-pointer'
+                      : 'bg-muted text-muted-foreground/50 cursor-not-allowed',
                   ].join(' ')}
                   aria-label="Send message"
                 >

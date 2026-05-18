@@ -58,11 +58,11 @@ type Lot = {
 
 const ESTADO_ICON: Record<string, React.ReactNode> = {
   ACTIVO: <CheckCircle2 className="w-4 h-4 text-green-500" />,
-  BORRADOR: <Clock className="w-4 h-4 text-gray-400" />,
+  BORRADOR: <Clock className="w-4 h-4 text-muted-foreground" />,
   PARCIALMENTE_VENDIDO: <Zap className="w-4 h-4 text-yellow-500" />,
   VENDIDO: <CheckCircle2 className="w-4 h-4 text-blue-500" />,
   CANCELADO: <XCircle className="w-4 h-4 text-red-500" />,
-  EXPIRADO: <XCircle className="w-4 h-4 text-gray-400" />,
+  EXPIRADO: <XCircle className="w-4 h-4 text-muted-foreground" />,
 };
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -90,7 +90,7 @@ export default function LotDetailPage() {
     api
       .get(`/lots/${id}`)
       .then(({ data }) => setLot(data.data))
-      .catch(() => setError('Could not load lot details.'))
+      .catch(() => setError('No se pudo cargar los detalles del lote.'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -145,7 +145,7 @@ export default function LotDetailPage() {
     return (
       <div className="p-6 max-w-4xl mx-auto space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-card" />
+          <div key={i} className="h-24 bg-muted animate-pulse rounded-card" />
         ))}
       </div>
     );
@@ -156,7 +156,7 @@ export default function LotDetailPage() {
       <div className="p-6 max-w-4xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-card p-6 text-center">
           <XCircle className="w-10 h-10 text-red-400 mx-auto mb-2" />
-          <p className="text-sm text-red-700">{error || 'Lot not found.'}</p>
+          <p className="text-sm text-red-700">{error || 'Lote no encontrado.'}</p>
           <Link href="/seller/lots" className="text-sm text-primary mt-3 inline-block hover:underline">
             ← Back to My Lots
           </Link>
@@ -206,7 +206,7 @@ export default function LotDetailPage() {
         {/* Left: main info */}
         <div className="lg:col-span-2 space-y-5">
           {/* Coverage */}
-          <div className="bg-surface rounded-card border border-border p-5">
+          <div className="bg-card rounded-card border border-border p-5">
             <h2 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
               <Package className="w-4 h-4" /> Coverage
             </h2>
@@ -223,14 +223,14 @@ export default function LotDetailPage() {
           </div>
 
           {/* Calibres */}
-          <div className="bg-surface rounded-card border border-border overflow-hidden">
+          <div className="bg-card rounded-card border border-border overflow-hidden">
             <div className="px-4 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-text-primary">Calibers</h2>
+              <h2 className="text-sm font-semibold text-text-primary">Calibres</h2>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50">
-                  {['CALIBER', 'QUANTITY (kg)', '% OF LOT'].map((h) => (
+                <tr className="bg-muted/50">
+                  {['CALIBRE', 'CANTIDAD (kg)', '% DEL LOTE'].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-text-secondary uppercase tracking-wider">
                       {h}
                     </th>
@@ -241,12 +241,12 @@ export default function LotDetailPage() {
                 {calibres.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="px-4 py-6 text-center text-xs text-text-muted">
-                      No calibers defined
+                      Sin calibres definidos
                     </td>
                   </tr>
                 ) : (
                   calibres.map((c, i) => (
-                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                    <tr key={i} className="hover:bg-accent/50 transition-colors">
                       <td className="px-4 py-2.5 font-medium text-text-primary">{c.calibre || '—'}</td>
                       <td className="px-4 py-2.5">{Number(c.cantidad_kg).toLocaleString('es-ES')}</td>
                       <td className="px-4 py-2.5 text-text-secondary">
@@ -260,7 +260,7 @@ export default function LotDetailPage() {
           </div>
 
           {/* Matches */}
-          <div className="bg-surface rounded-card border border-border overflow-hidden">
+          <div className="bg-card rounded-card border border-border overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-text-primary">
@@ -269,14 +269,14 @@ export default function LotDetailPage() {
             </div>
             {lot.matches.length === 0 ? (
               <div className="p-6 text-center">
-                <p className="text-xs text-text-muted">No active matches yet.</p>
-                <p className="text-xs text-text-muted mt-1">The platform will notify you when a match is found.</p>
+                <p className="text-xs text-text-muted">Sin matches activos aún.</p>
+                <p className="text-xs text-text-muted mt-1">La plataforma te notificará cuando se encuentre un match.</p>
               </div>
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50">
-                    {['BUYER', 'QUANTITY (kg)', 'PRICE (€/kg)', 'STATUS', 'ACTIONS'].map((h) => (
+                  <tr className="bg-muted/50">
+                    {['COMPRADOR', 'CANTIDAD (kg)', 'PRECIO (€/kg)', 'ESTADO', 'ACCIONES'].map((h) => (
                       <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-text-secondary uppercase tracking-wider">
                         {h}
                       </th>
@@ -285,7 +285,7 @@ export default function LotDetailPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {lot.matches.map((m) => (
-                    <tr key={m.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={m.id} className="hover:bg-accent/50 transition-colors">
                       <td className="px-4 py-2.5 font-medium">{m.pedido.comprador.nombre}</td>
                       <td className="px-4 py-2.5">{Number(m.cantidadKg).toLocaleString('es-ES')}</td>
                       <td className="px-4 py-2.5">€{Number(m.precioKg).toFixed(3)}</td>
@@ -344,12 +344,12 @@ export default function LotDetailPage() {
         {/* Right: details + actions */}
         <div className="space-y-5">
           {/* Details */}
-          <div className="bg-surface rounded-card border border-border p-4">
-            <h2 className="text-sm font-semibold text-text-primary mb-3">Details</h2>
+          <div className="bg-card rounded-card border border-border p-4">
+            <h2 className="text-sm font-semibold text-text-primary mb-3">Detalles</h2>
             <InfoRow label="Product" value={lot.producto.nombre} />
             <InfoRow label="Category" value={lot.producto.categoria} />
             {lot.variedad && <InfoRow label="Variety" value={lot.variedad.nombre} />}
-            <InfoRow label="Type" value={lot.tipo === 'VENTA_DIRECTA' ? 'Direct Sale' : 'Auction'} />
+            <InfoRow label="Type" value={lot.tipo === 'VENTA_DIRECTA' ? 'Venta directa' : 'Subasta'} />
             <InfoRow
               label="Availability"
               value={
@@ -372,8 +372,8 @@ export default function LotDetailPage() {
 
           {/* Certifications */}
           {lot.certificaciones && lot.certificaciones.length > 0 && (
-            <div className="bg-surface rounded-card border border-border p-4">
-              <h2 className="text-sm font-semibold text-text-primary mb-3">Certifications</h2>
+            <div className="bg-card rounded-card border border-border p-4">
+              <h2 className="text-sm font-semibold text-text-primary mb-3">Certificaciones</h2>
               <div className="flex flex-wrap gap-1.5">
                 {(lot.certificaciones as string[]).map((cert) => (
                   <span
@@ -389,15 +389,15 @@ export default function LotDetailPage() {
 
           {/* Comments */}
           {lot.comentariosAdicionales && (
-            <div className="bg-surface rounded-card border border-border p-4">
-              <h2 className="text-sm font-semibold text-text-primary mb-2">Comments</h2>
+            <div className="bg-card rounded-card border border-border p-4">
+              <h2 className="text-sm font-semibold text-text-primary mb-2">Comentarios</h2>
               <p className="text-xs text-text-secondary leading-relaxed">{lot.comentariosAdicionales}</p>
             </div>
           )}
 
           {/* Actions */}
-          <div className="bg-surface rounded-card border border-border p-4 space-y-2">
-            <h2 className="text-sm font-semibold text-text-primary mb-3">Actions</h2>
+          <div className="bg-card rounded-card border border-border p-4 space-y-2">
+            <h2 className="text-sm font-semibold text-text-primary mb-3">Acciones</h2>
 
             {canPublish && (
               <Button

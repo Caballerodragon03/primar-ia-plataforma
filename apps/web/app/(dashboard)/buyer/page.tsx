@@ -59,7 +59,7 @@ export default function BuyerDashboard() {
       setOrders(res.data.data ?? []);
       setNotifs(notifRes.data?.data ?? null);
     } catch {
-      setError('Failed to load dashboard data.');
+      setError('Error al cargar los datos del panel.');
     } finally {
       setLoading(false);
     }
@@ -138,8 +138,8 @@ export default function BuyerDashboard() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome back!</h1>
-          <p className="text-secondary text-sm mt-1">Here&apos;s what&apos;s happening with your orders.</p>
+          <h1 className="text-2xl font-bold text-foreground">¡Bienvenido de nuevo!</h1>
+          <p className="text-secondary text-sm mt-1">Aquí tienes un resumen de tus pedidos.</p>
         </div>
         <Link href="/buyer/orders/new">
           <Button variant="primary" size="md" className="flex items-center gap-2">
@@ -154,19 +154,19 @@ export default function BuyerDashboard() {
         <KPICard
           label="Orders in Progress"
           value={loading ? '—' : String(ordersInProgress)}
-          sub={loading ? 'Loading...' : 'Active orders'}
+          sub={loading ? 'Loading...' : 'Pedidos activos'}
           icon={<Clock className="w-4 h-4" />}
         />
         <KPICard
           label="Total Value"
           value={loading ? '—' : `€${totalValue.toLocaleString('es-ES', { maximumFractionDigits: 0 })}`}
-          sub={loading ? 'Loading...' : 'Committed value'}
+          sub={loading ? 'Loading...' : 'Valor comprometido'}
           icon={<DollarSign className="w-4 h-4" />}
         />
         <KPICard
           label="Pending Deliveries"
           value={loading ? '—' : String(pendingDeliveries)}
-          sub={loading ? 'Loading...' : 'Ready to pay'}
+          sub={loading ? 'Loading...' : 'Listo para pagar'}
           icon={<TrendingUp className="w-4 h-4" />}
         />
       </div>
@@ -186,14 +186,14 @@ export default function BuyerDashboard() {
 
       {!loading && actionItems.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
             Action Required
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {actionItems.map((item) => (
               <Link key={item.href + item.label} href={item.href}>
-                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md ${
+                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-soft-md ${
                   item.color === 'amber' ? 'border-amber-200 bg-amber-50 hover:border-amber-300' :
                   item.color === 'blue'  ? 'border-blue-200 bg-blue-50 hover:border-blue-300' :
                   item.color === 'green' ? 'border-green-200 bg-green-50 hover:border-green-300' :
@@ -202,8 +202,8 @@ export default function BuyerDashboard() {
                 }`}>
                   <span className="text-2xl">{item.icon}</span>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{item.label}</p>
-                    <p className="text-xs text-gray-600 mt-0.5">{item.desc}</p>
+                    <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
                   </div>
                 </div>
               </Link>
@@ -217,27 +217,27 @@ export default function BuyerDashboard() {
           <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all cursor-pointer">
             <span className="text-2xl">🌿</span>
             <div>
-              <p className="text-sm font-semibold text-gray-900">You&apos;re all caught up!</p>
-              <p className="text-xs text-gray-500 mt-0.5">No pending actions — ready to place a new order?</p>
+              <p className="text-sm font-semibold text-foreground">¡Estás al día!</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Sin acciones pendientes — ¿listo para crear un nuevo pedido?</p>
             </div>
-            <span className="ml-auto text-sm font-medium text-primary">Create New Order →</span>
+            <span className="ml-auto text-sm font-medium text-primary">Crear pedido →</span>
           </div>
         </Link>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Active Orders Table */}
-        <div className="lg:col-span-2 bg-surface rounded-card border border-border overflow-hidden">
+        <div className="lg:col-span-2 bg-card rounded-card border border-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold text-gray-900">Active Orders Summary</h2>
+            <h2 className="text-sm font-semibold text-foreground">Resumen de pedidos activos</h2>
             <Link href="/buyer/orders" className="text-xs text-secondary hover:underline font-medium">
               View All Orders
             </Link>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50">
-                {['ORDER ID', 'PRODUCT', 'QUANTITY', 'COVERAGE', 'STATUS'].map((h) => (
+              <tr className="bg-muted/50">
+                {['ID PEDIDO', 'PRODUCTO', 'CANTIDAD', 'COBERTURA', 'ESTADO'].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-2.5 text-left text-[10px] font-semibold text-secondary uppercase tracking-wider"
@@ -257,7 +257,7 @@ export default function BuyerDashboard() {
               ) : topOrders.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-6 text-center text-sm text-secondary">
-                    No active orders.{' '}
+                    Sin pedidos activos.{' '}
                     <Link href="/buyer/orders/new" className="text-primary underline">Create one</Link>
                   </td>
                 </tr>
@@ -268,7 +268,7 @@ export default function BuyerDashboard() {
                   const coveragePct = Math.min(100, Math.round(Number(order.coverage) || 0));
                   const totalKg = Number(order.totalKg ?? 0);
                   return (
-                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={order.id} className="hover:bg-accent/50 transition-colors">
                       <td className="px-4 py-3 font-mono text-xs text-secondary">
                         <span className="relative inline-flex items-center gap-1">
                           {orderId}
@@ -277,19 +277,19 @@ export default function BuyerDashboard() {
                           )}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-900">
+                      <td className="px-4 py-3 text-foreground">
                         {order.producto?.nombre ?? '—'}
                         {order.variedad && (
                           <span className="text-secondary"> / {order.variedad.nombre}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
+                      <td className="px-4 py-3 text-foreground">
                         {totalKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
+                      <td className="px-4 py-3 text-foreground">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium w-9 tabular-nums">{coveragePct}%</span>
-                          <div className="flex-1 h-1.5 max-w-[80px] bg-gray-200 rounded-full overflow-hidden">
+                          <div className="flex-1 h-1.5 max-w-[80px] bg-muted rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full ${coveragePct >= 100 ? 'bg-green-500' : coveragePct > 0 ? 'bg-primary' : 'bg-gray-300'}`}
                               style={{ width: `${coveragePct}%` }}
@@ -309,9 +309,9 @@ export default function BuyerDashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-surface rounded-card border border-border overflow-hidden">
+        <div className="bg-card rounded-card border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold text-gray-900">Recent Activity</h2>
+            <h2 className="text-sm font-semibold text-foreground">Actividad reciente</h2>
           </div>
           <div className="p-4 flex flex-col gap-3">
             {loading ? (
@@ -321,17 +321,17 @@ export default function BuyerDashboard() {
                 <SkeletonBlock className="h-12 w-full" />
               </>
             ) : recentOrders.length === 0 ? (
-              <p className="text-xs text-secondary text-center mt-2">No orders yet</p>
+              <p className="text-xs text-secondary text-center mt-2">Sin pedidos aún</p>
             ) : (
               recentOrders.map((order) => {
                 const hasOffer = order.matches.some((m) => m.estado === 'ACEPTADO_VENDEDOR');
                 return (
                   <div
                     key={order.id}
-                    className="flex items-start justify-between p-3 bg-gray-50 rounded-input"
+                    className="flex items-start justify-between p-3 bg-muted/50 rounded-input"
                   >
                     <div>
-                      <p className="text-xs font-medium text-gray-900 flex items-center gap-1">
+                      <p className="text-xs font-medium text-foreground flex items-center gap-1">
                         {order.producto?.nombre ?? '—'}
                         {hasOffer && (
                           <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title="Seller offer pending" />
@@ -351,10 +351,10 @@ export default function BuyerDashboard() {
       </div>
 
       {/* Seasonal Calendar */}
-      <div className="bg-surface rounded-card border border-border overflow-hidden">
+      <div className="bg-card rounded-card border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border">
-          <h2 className="text-sm font-semibold text-gray-900">Seasonal Calendar — Spain</h2>
-          <p className="text-xs text-secondary mt-0.5">Production and commercialization seasons by product category</p>
+          <h2 className="text-sm font-semibold text-foreground">Calendario estacional — España</h2>
+          <p className="text-xs text-secondary mt-0.5">Temporadas de producción y comercialización por categoría de producto</p>
         </div>
         <div className="p-4">
           <SeasonalCalendar />

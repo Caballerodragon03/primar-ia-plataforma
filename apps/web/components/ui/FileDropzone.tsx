@@ -51,21 +51,21 @@ export function FileDropzone({ label, hint, accept = '.pdf', maxSizeMB = 10, onF
 
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-sm font-medium text-gray-700">{label}</p>
-      {hint && <p className="text-xs text-gray-500">{hint}</p>}
+      <p className="text-sm font-medium text-foreground">{label}</p>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
 
       {uploadedFile ? (
         <div className="flex items-center gap-3 p-3 rounded-input border border-green-200 bg-green-50">
           <FileText className="w-5 h-5 text-green-600 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-800 truncate">{uploadedFile.name}</p>
-            <p className="text-xs text-gray-500">{uploadedFile.sizeMB} MB · Upload successful</p>
+            <p className="text-xs text-muted-foreground">{uploadedFile.sizeMB} MB · Upload successful</p>
           </div>
           <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
           <button
             type="button"
             onClick={removeFile}
-            className="text-gray-400 hover:text-gray-600 cursor-pointer min-w-[20px] min-h-[20px]"
+            className="text-muted-foreground hover:text-muted-foreground cursor-pointer min-w-[20px] min-h-[20px]"
             aria-label="Remove file"
           >
             <X className="w-4 h-4" />
@@ -80,19 +80,19 @@ export function FileDropzone({ label, hint, accept = '.pdf', maxSizeMB = 10, onF
           className={[
             'flex flex-col items-center justify-center gap-2 p-6 rounded-input',
             'border-2 border-dashed cursor-pointer transition-colors duration-150',
-            isDragging ? 'border-primary bg-yellow-50' : 'border-gray-300 hover:border-gray-400 bg-white',
+            isDragging ? 'border-primary bg-yellow-50' : 'border-border hover:border-gray-400 bg-card',
           ].join(' ')}
           role="button"
           tabIndex={0}
           aria-label={`Upload ${label}`}
           onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
         >
-          <CloudUpload className={['w-8 h-8', isDragging ? 'text-primary' : 'text-gray-400'].join(' ')} />
+          <CloudUpload className={['w-8 h-8', isDragging ? 'text-primary' : 'text-muted-foreground'].join(' ')} />
           <div className="text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               <span className="font-semibold text-gray-800">Upload a file</span> or drag and drop
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">PDF up to {maxSizeMB}MB</p>
+            <p className="text-xs text-muted-foreground mt-0.5">PDF up to {maxSizeMB}MB</p>
           </div>
           <input
             ref={inputRef}

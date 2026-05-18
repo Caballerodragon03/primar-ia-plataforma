@@ -93,7 +93,7 @@ function MonthCell({
   inComercializacion: boolean;
   isCurrentMonth: boolean;
 }) {
-  let bg = 'bg-gray-100';
+  let bg = 'bg-muted';
   if (inProduccion && inComercializacion) bg = 'bg-green-500';
   else if (inProduccion) bg = 'bg-green-300';
   else if (inComercializacion) bg = 'bg-yellow-300';
@@ -140,7 +140,7 @@ export function SeasonalCalendar() {
     return (
       <div className="animate-pulse space-y-2 p-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-5 bg-gray-100 rounded w-full" />
+          <div key={i} className="h-5 bg-muted rounded w-full" />
         ))}
       </div>
     );
@@ -158,7 +158,7 @@ export function SeasonalCalendar() {
               'px-2 py-0.5 rounded-badge text-[10px] font-medium border transition-colors',
               activeCategory === cat
                 ? 'bg-primary/10 border-primary text-secondary'
-                : 'border-border text-text-secondary hover:border-primary bg-white',
+                : 'border-border text-text-secondary hover:border-primary bg-card',
             ].join(' ')}
           >
             {cat}

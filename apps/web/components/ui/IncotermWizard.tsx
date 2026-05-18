@@ -145,7 +145,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
   const progressPercent = step >= 1 && step <= 5 ? (step / 5) * 100 : step === 6 ? 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-muted/50 flex flex-col items-center justify-center px-4 py-10">
       {/* Progress bar — only visible during questions and results */}
       {step > 0 && (
         <div className="w-full max-w-lg mb-6">
@@ -164,7 +164,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
         </div>
       )}
 
-      <div className="w-full max-w-lg bg-surface rounded-card border border-border shadow-sm">
+      <div className="w-full max-w-lg bg-card rounded-card border border-border shadow-soft">
         {/* Step 0: Welcome */}
         {step === 0 && (
           <div className="p-8 flex flex-col items-center text-center gap-6">
@@ -203,7 +203,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
                       'w-full text-left px-4 py-3 rounded-card border text-sm font-medium transition-all duration-150',
                       isActive
                         ? 'bg-primary/10 border-primary text-text-primary ring-2 ring-primary/20'
-                        : 'bg-white border-border text-text-secondary hover:border-primary hover:bg-gray-50',
+                        : 'bg-card border-border text-text-secondary hover:border-primary hover:bg-accent/50',
                     ].join(' ')}
                   >
                     {opt.label}
@@ -249,7 +249,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
               return (
                 <div className="rounded-card border-2 border-primary bg-primary/5 p-5 space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-primary text-gray-900 text-xs font-bold tracking-wide">
+                    <span className="px-2 py-0.5 rounded bg-primary text-foreground text-xs font-bold tracking-wide">
                       {rec.code}
                     </span>
                     <span className="font-semibold text-text-primary">{rec.name}</span>
@@ -279,9 +279,9 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
                         'px-3 py-1.5 rounded-badge text-sm font-medium border transition-all duration-150',
                         isSelected
                           ? isRec
-                            ? 'bg-primary text-gray-900 border-primary'
+                            ? 'bg-primary text-foreground border-primary'
                             : 'bg-primary/10 border-primary text-text-primary'
-                          : 'bg-white border-border text-text-secondary line-through opacity-50 hover:opacity-70',
+                          : 'bg-card border-border text-text-secondary line-through opacity-50 hover:opacity-70',
                       ].join(' ')}
                     >
                       {inc.code}

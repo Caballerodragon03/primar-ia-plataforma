@@ -203,17 +203,17 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-card max-w-4xl w-full max-h-[90vh] flex flex-col shadow-xl">
+      <div className="bg-card rounded-card max-w-4xl w-full max-h-[90vh] flex flex-col shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-secondary" />
-            <h2 className="text-lg font-semibold text-gray-900">Auto-distribuir al mejor precio</h2>
+            <h2 className="text-lg font-semibold text-foreground">Auto-distribuir al mejor precio</h2>
           </div>
           <button
             onClick={onClose}
             disabled={submitting}
-            className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+            className="text-muted-foreground hover:text-muted-foreground disabled:opacity-30"
             aria-label="Cerrar"
           >
             <X className="w-5 h-5" />
@@ -237,7 +237,7 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
           ) : !hasAnyAllocation ? (
             <div className="py-12 text-center">
               <Package className="w-10 h-10 text-gray-200 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">No hay matches pendientes que asignar.</p>
+              <p className="text-sm text-muted-foreground">No hay matches pendientes que asignar.</p>
               <p className="text-xs text-text-muted mt-1">
                 Cuando llegue alguna oferta nueva, vuelve aquí.
               </p>
@@ -246,9 +246,9 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
             <div className="space-y-6">
               {lots.map((lot) => (
                 <div key={lot.loteId} className="border border-border rounded-card overflow-hidden">
-                  <div className="bg-gray-50 px-4 py-2.5 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+                  <div className="bg-muted/50 px-4 py-2.5 border-b border-border flex items-center justify-between gap-3 flex-wrap">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{lot.productoNombre}</p>
+                      <p className="text-sm font-semibold text-foreground">{lot.productoNombre}</p>
                       <p className="text-[10px] text-text-muted">Lote {lot.loteId.slice(-6).toUpperCase()}</p>
                     </div>
                     <div className="text-xs text-text-muted">
@@ -265,12 +265,12 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
                           key={a.matchId}
                           className={[
                             'px-4 py-3 transition-colors',
-                            deleted ? 'bg-gray-50 opacity-50' : 'hover:bg-yellow-50/40',
+                            deleted ? 'bg-muted/50 opacity-50' : 'hover:bg-yellow-50/40',
                           ].join(' ')}
                         >
                           <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="text-sm font-medium text-foreground">
                                 #{a.pedidoIdShort} · {a.compradorEmpresa ?? a.compradorNombre}
                               </p>
                               <p className="text-[10px] text-text-muted">
@@ -293,7 +293,7 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
                               <button
                                 onClick={() => deleteRow(a.matchId)}
                                 disabled={submitting}
-                                className="p-1 text-gray-400 hover:text-red-500 disabled:opacity-30"
+                                className="p-1 text-muted-foreground hover:text-red-500 disabled:opacity-30"
                                 aria-label="Eliminar"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -307,7 +307,7 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
                                 const qty = getCantidad(a, c.calibre);
                                 return (
                                   <div key={c.calibre} className="flex items-center gap-2 text-xs">
-                                    <span className="font-medium text-gray-700 min-w-[60px]">
+                                    <span className="font-medium text-foreground min-w-[60px]">
                                       {c.calibre}
                                     </span>
                                     <input
@@ -320,7 +320,7 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
                                         setCantidad(a.matchId, c.calibre, parseFloat(e.target.value) || 0)
                                       }
                                       disabled={submitting}
-                                      className="w-24 px-2 py-1 border border-border rounded text-right text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100"
+                                      className="w-24 px-2 py-1 border border-border rounded text-right text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-muted"
                                     />
                                     <span className="text-text-muted">kg</span>
                                     <span className="text-text-muted ml-auto">
@@ -351,9 +351,9 @@ export function AutoDistributeModal({ open, onClose, onSuccess }: AutoDistribute
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3 flex-wrap bg-gray-50">
+        <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3 flex-wrap bg-muted/50">
           <div className="text-xs text-text-secondary">
-            Total: <strong className="text-gray-900">{computed.grandKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg</strong>
+            Total: <strong className="text-foreground">{computed.grandKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg</strong>
             {' · '}
             Ingresos estimados: <strong className="text-secondary">{computed.grandRevenue.toFixed(2)} €</strong>
             {progress && (

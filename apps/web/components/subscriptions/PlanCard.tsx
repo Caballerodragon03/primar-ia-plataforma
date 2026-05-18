@@ -14,7 +14,7 @@ export function PlanCard({ name, price, features, badge, isCurrent, onSelect, po
   return (
     <div
       className={[
-        'relative flex flex-col rounded-[12px] border p-6 bg-surface transition-shadow',
+        'relative flex flex-col rounded-[12px] border p-6 bg-card transition-shadow',
         popular ? 'border-primary shadow-lg ring-2 ring-primary/20' : 'border-border',
         isCurrent ? 'ring-2 ring-green-200 border-green-300' : '',
       ].join(' ')}
@@ -58,7 +58,7 @@ export function PlanCard({ name, price, features, badge, isCurrent, onSelect, po
       {isCurrent ? (
         <button
           disabled
-          className="w-full py-2.5 px-4 rounded-[8px] bg-gray-100 text-gray-500 text-sm font-medium cursor-not-allowed"
+          className="w-full py-2.5 px-4 rounded-[8px] bg-muted text-muted-foreground text-sm font-medium cursor-not-allowed"
         >
           Tu Plan Actual
         </button>

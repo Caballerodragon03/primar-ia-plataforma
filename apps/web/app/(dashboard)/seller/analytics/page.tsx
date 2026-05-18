@@ -44,13 +44,13 @@ export default function SellerAnalyticsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-gray-900">Seller Analytics</h1>
+        <h1 className="text-xl font-bold text-foreground">Analíticas de ventas</h1>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-card" />
+            <div key={i} className="h-24 bg-muted animate-pulse rounded-card" />
           ))}
         </div>
-        <div className="h-64 bg-gray-100 animate-pulse rounded-card" />
+        <div className="h-64 bg-muted animate-pulse rounded-card" />
       </div>
     );
   }
@@ -59,10 +59,10 @@ export default function SellerAnalyticsPage() {
   if (!data || data.totalLots === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-gray-900">Seller Analytics</h1>
-        <div className="bg-surface rounded-card border border-border p-10 text-center">
-          <TrendingUp className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-text-primary">No data yet</p>
+        <h1 className="text-xl font-bold text-foreground">Analíticas de ventas</h1>
+        <div className="bg-card rounded-card border border-border p-10 text-center">
+          <TrendingUp className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
+          <p className="text-sm font-medium text-text-primary">Sin datos aún</p>
           <p className="text-xs text-text-secondary mt-1">
             Publish your first lot and complete a match to see your analytics here.
           </p>
@@ -75,7 +75,7 @@ export default function SellerAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">Seller Analytics</h1>
+      <h1 className="text-xl font-bold text-foreground">Analíticas de ventas</h1>
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -88,13 +88,13 @@ export default function SellerAnalyticsPage() {
         <KPICard
           label="Total Value"
           value={hasMatches ? `€${data.totalValor.toLocaleString('es-ES', { maximumFractionDigits: 0 })}` : '—'}
-          sub="From confirmed matches"
+          sub="De matches confirmados"
           icon={<DollarSign className="w-4 h-4" />}
         />
         <KPICard
           label="Avg. Price / kg"
           value={hasMatches ? `€${data.avgPrecioKg.toFixed(3)}` : '—'}
-          sub="Across all calibers"
+          sub="En todos los calibres"
           icon={<TrendingUp className="w-4 h-4" />}
         />
         <KPICard
@@ -106,9 +106,9 @@ export default function SellerAnalyticsPage() {
       </div>
 
       {/* Volume over time */}
-      <div className="bg-surface rounded-card border border-border p-5">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">
-          Volume Matched Over Time (kg) — Last 12 months
+      <div className="bg-card rounded-card border border-border p-5">
+        <h2 className="text-sm font-semibold text-foreground mb-4">
+          Volumen comprometido a lo largo del tiempo (kg) — Últimos 12 meses
         </h2>
         {hasMatches ? (
           <ResponsiveContainer width="100%" height={260}>
@@ -143,9 +143,9 @@ export default function SellerAnalyticsPage() {
       </div>
 
       {/* Top products */}
-      <div className="bg-surface rounded-card border border-border p-5">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">
-          Top Products by Volume Matched (kg)
+      <div className="bg-card rounded-card border border-border p-5">
+        <h2 className="text-sm font-semibold text-foreground mb-4">
+          Productos más vendidos por volumen (kg)
         </h2>
         {data.topProducts.length > 0 ? (
           <ResponsiveContainer width="100%" height={Math.max(140, data.topProducts.length * 44)}>
@@ -178,15 +178,15 @@ export default function SellerAnalyticsPage() {
       </div>
 
       {/* Lot summary */}
-      <div className="bg-surface rounded-card border border-border p-5">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">Lot Summary</h2>
+      <div className="bg-card rounded-card border border-border p-5">
+        <h2 className="text-sm font-semibold text-foreground mb-4">Resumen de lotes</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
           {[
-            { label: 'Total Lots', value: data.totalLots },
-            { label: 'Active', value: data.activeLots },
-            { label: 'Sold', value: data.soldLots },
+            { label: 'Total lotes', value: data.totalLots },
+            { label: 'Activos', value: data.activeLots },
+            { label: 'Vendidos', value: data.soldLots },
           ].map(({ label, value }) => (
-            <div key={label} className="bg-gray-50 rounded-input p-4">
+            <div key={label} className="bg-muted/50 rounded-input p-4">
               <p className="text-2xl font-bold text-text-primary">{value}</p>
               <p className="text-xs text-text-secondary mt-1">{label}</p>
             </div>

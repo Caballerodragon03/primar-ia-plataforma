@@ -34,15 +34,15 @@ type AnalyticsData = {
 };
 
 const farmerColumns: ColumnDef<AnalyticsData['topVendedores'][number], string>[] = [
-  { accessorKey: 'farmer', header: 'SELLER' },
+  { accessorKey: 'farmer', header: 'VENDEDOR' },
   {
     accessorKey: 'volume',
-    header: 'VOLUME (kg)',
+    header: 'VOLUMEN (kg)',
     cell: ({ getValue }) => getValue<number>().toLocaleString('es-ES'),
   },
   {
     accessorKey: 'value',
-    header: 'VALUE (€)',
+    header: 'VALOR (€)',
     cell: ({ getValue }) => `€${getValue<number>().toLocaleString('es-ES', { maximumFractionDigits: 0 })}`,
   },
   { accessorKey: 'orders', header: 'MATCHES' },
@@ -63,13 +63,13 @@ export default function BuyerAnalyticsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-gray-900">Buyer Analytics</h1>
+        <h1 className="text-xl font-bold text-foreground">Analíticas de compras</h1>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-card" />
+            <div key={i} className="h-24 bg-muted animate-pulse rounded-card" />
           ))}
         </div>
-        <div className="h-64 bg-gray-100 animate-pulse rounded-card" />
+        <div className="h-64 bg-muted animate-pulse rounded-card" />
       </div>
     );
   }
@@ -77,10 +77,10 @@ export default function BuyerAnalyticsPage() {
   if (!data || data.totalOrders === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-gray-900">Buyer Analytics</h1>
-        <div className="bg-surface rounded-card border border-border p-10 text-center">
-          <ShoppingCart className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-text-primary">No data yet</p>
+        <h1 className="text-xl font-bold text-foreground">Analíticas de compras</h1>
+        <div className="bg-card rounded-card border border-border p-10 text-center">
+          <ShoppingCart className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
+          <p className="text-sm font-medium text-text-primary">Sin datos aún</p>
           <p className="text-xs text-text-secondary mt-1">
             Create and publish your first order to start seeing your purchase analytics.
           </p>
@@ -93,7 +93,7 @@ export default function BuyerAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">Buyer Analytics</h1>
+      <h1 className="text-xl font-bold text-foreground">Analíticas de compras</h1>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -106,27 +106,27 @@ export default function BuyerAnalyticsPage() {
         <KPICard
           label="Total Spend"
           value={hasMatches ? `€${data.totalGasto.toLocaleString('es-ES', { maximumFractionDigits: 0 })}` : '—'}
-          sub="From matched lots"
+          sub="De lotes comprometidos"
           icon={<DollarSign className="w-4 h-4" />}
         />
         <KPICard
           label="Volume Purchased"
           value={hasMatches ? `${data.totalVolumen.toLocaleString('es-ES')} kg` : '—'}
-          sub="Across all orders"
+          sub="En todos los pedidos"
           icon={<TrendingUp className="w-4 h-4" />}
         />
         <KPICard
           label="Avg. Price / kg"
           value={hasMatches ? `€${data.avgPrecioKg.toFixed(3)}` : '—'}
-          sub="Weighted average"
+          sub="Media ponderada"
           icon={<CheckCircle2 className="w-4 h-4 text-green-500" />}
         />
       </div>
 
       {/* Volume over time */}
-      <div className="bg-surface rounded-card border border-border p-5">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">
-          Volume Purchased Over Time (kg) — Last 12 months
+      <div className="bg-card rounded-card border border-border p-5">
+        <h2 className="text-sm font-semibold text-foreground mb-4">
+          Volumen comprado a lo largo del tiempo (kg) — Últimos 12 meses
         </h2>
         {hasMatches ? (
           <ResponsiveContainer width="100%" height={260}>
@@ -157,8 +157,8 @@ export default function BuyerAnalyticsPage() {
       {/* Two-column charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top products */}
-        <div className="bg-surface rounded-card border border-border p-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Top Products by Volume (kg)</h2>
+        <div className="bg-card rounded-card border border-border p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-4">Productos más comprados por volumen (kg)</h2>
           {data.topProducts.length > 0 ? (
             <ResponsiveContainer width="100%" height={Math.max(140, data.topProducts.length * 44)}>
               <BarChart
@@ -183,8 +183,8 @@ export default function BuyerAnalyticsPage() {
         </div>
 
         {/* Orders by category */}
-        <div className="bg-surface rounded-card border border-border p-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Orders by Product Category</h2>
+        <div className="bg-card rounded-card border border-border p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-4">Pedidos por categoría de producto</h2>
           {data.ordersByCategory.length > 0 ? (
             <ResponsiveContainer width="100%" height={Math.max(140, data.ordersByCategory.length * 44)}>
               <BarChart data={data.ordersByCategory} margin={{ top: 4, right: 8, left: 0, bottom: 20 }}>
@@ -202,14 +202,14 @@ export default function BuyerAnalyticsPage() {
       </div>
 
       {/* Top sellers table */}
-      <div className="bg-surface rounded-card border border-border p-5">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">Top Sellers by Volume Matched</h2>
+      <div className="bg-card rounded-card border border-border p-5">
+        <h2 className="text-sm font-semibold text-foreground mb-4">Top vendedores por volumen</h2>
         {data.topVendedores.length > 0 ? (
           <DataTable
             data={data.topVendedores}
             columns={farmerColumns}
-            searchPlaceholder="Search sellers..."
-            emptyMessage="No seller data available."
+            searchPlaceholder="Buscar vendedores..."
+            emptyMessage="Sin datos de vendedores disponibles."
           />
         ) : (
           <p className="text-xs text-text-muted text-center py-8">

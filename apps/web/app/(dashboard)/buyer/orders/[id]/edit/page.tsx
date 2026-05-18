@@ -119,7 +119,7 @@ export default function EditOrderPage() {
   if (loading) {
     return (
       <div className="p-6 max-w-2xl mx-auto space-y-4">
-        {[1, 2, 3].map((i) => <div key={i} className="h-12 bg-gray-100 animate-pulse rounded-card" />)}
+        {[1, 2, 3].map((i) => <div key={i} className="h-12 bg-muted animate-pulse rounded-card" />)}
       </div>
     );
   }
@@ -146,8 +146,8 @@ export default function EditOrderPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Calibres */}
-        <div className="bg-surface rounded-card border border-border p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-text-primary">Calibers Requested</h2>
+        <div className="bg-card rounded-card border border-border p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-text-primary">Calibres solicitados</h2>
           <div className="space-y-3">
             {fields.map((field, i) => (
               <div key={field.id} className="grid grid-cols-3 gap-3 items-end">
@@ -209,8 +209,8 @@ export default function EditOrderPage() {
         </div>
 
         {/* Order details */}
-        <div className="bg-surface rounded-card border border-border p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-text-primary">Order Details</h2>
+        <div className="bg-card rounded-card border border-border p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-text-primary">Detalles del pedido</h2>
           <Select
             label="Incoterm"
             {...register('incoterm')}
@@ -248,7 +248,7 @@ export default function EditOrderPage() {
 
         <div className="flex gap-3 justify-end">
           <Link href={`/buyer/orders/${id}`}>
-            <Button variant="outline" type="button">Cancel</Button>
+            <Button variant="outline" type="button">Cancelar</Button>
           </Link>
           <Button variant="primary" type="submit" loading={isSubmitting}>
             Save Changes

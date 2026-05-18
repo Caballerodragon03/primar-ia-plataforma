@@ -13,7 +13,7 @@ export default function QRScanRedirect() {
 
   return (
     <div className="p-6 text-center">
-      <p className="text-sm text-gray-500">Redirecting to order details...</p>
+      <p className="text-sm text-muted-foreground">Redirecting to order details...</p>
     </div>
   );
 }

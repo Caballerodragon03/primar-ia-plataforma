@@ -102,8 +102,8 @@ export default function BuyerDeliveryPage() {
   if (loading) {
     return (
       <div className="p-6 max-w-2xl mx-auto space-y-4 animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-64" />
-        <div className="h-64 bg-gray-200 rounded-card" />
+        <div className="h-8 bg-muted rounded w-64" />
+        <div className="h-64 bg-muted rounded-card" />
       </div>
     );
   }
@@ -122,7 +122,7 @@ export default function BuyerDeliveryPage() {
   if (!bothSigned) {
     return (
       <div className="p-6 max-w-2xl mx-auto space-y-6">
-        <Link href={`/buyer/orders/${id}`} className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900">
+        <Link href={`/buyer/orders/${id}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" /> Back to Order
         </Link>
         <div className="bg-amber-50 border border-amber-200 rounded-card p-6 text-center">
@@ -139,35 +139,35 @@ export default function BuyerDeliveryPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
-      <Link href={`/buyer/orders/${id}`} className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900">
+      <Link href={`/buyer/orders/${id}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="w-4 h-4" /> Back to Order
       </Link>
 
       <div className="flex items-center gap-3">
         <QrCode className="w-6 h-6 text-primary" />
-        <h1 className="text-xl font-bold text-gray-900">Delivery Confirmation</h1>
+        <h1 className="text-xl font-bold text-foreground">Delivery Confirmation</h1>
       </div>
 
       {/* Shipment info */}
-      <div className="bg-white rounded-card border border-border shadow-sm p-5">
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Shipment Details</h2>
+      <div className="bg-card rounded-card border border-border shadow-soft p-5">
+        <h2 className="text-sm font-semibold text-foreground mb-3">Shipment Details</h2>
         <dl className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
-          <div><dt className="text-xs text-gray-500">Product</dt><dd className="font-medium">{contract.producto}{contract.variedad ? ` — ${contract.variedad}` : ''}</dd></div>
-          <div><dt className="text-xs text-gray-500">Quantity</dt><dd className="font-medium">{contract.cantidadKg.toLocaleString('es-ES')} kg</dd></div>
-          <div><dt className="text-xs text-gray-500">Seller</dt><dd className="font-medium">{contract.vendedor.nombre}</dd></div>
-          <div><dt className="text-xs text-gray-500">Status</dt><dd className="font-medium">{contract.estado}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Product</dt><dd className="font-medium">{contract.producto}{contract.variedad ? ` — ${contract.variedad}` : ''}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Quantity</dt><dd className="font-medium">{contract.cantidadKg.toLocaleString('es-ES')} kg</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Seller</dt><dd className="font-medium">{contract.vendedor.nombre}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Status</dt><dd className="font-medium">{contract.estado}</dd></div>
         </dl>
       </div>
 
       {/* Lot photos from seller */}
       {contract.fotosLoteUrls.length > 0 && (
-        <div className="bg-white rounded-card border border-border shadow-sm p-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <div className="bg-card rounded-card border border-border shadow-soft p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <ImageIcon className="w-4 h-4" /> Lot Preparation Photos
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {contract.fotosLoteUrls.map((url, i) => (
-              <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-border hover:shadow-md transition-shadow">
+              <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-border hover:shadow-soft-md transition-shadow">
                 <img src={url} alt={`Lot photo ${i + 1}`} className="w-full h-32 object-cover" />
               </a>
             ))}
@@ -192,9 +192,9 @@ export default function BuyerDeliveryPage() {
       ) : (
         <>
           {/* QR Scanner */}
-          <div className="bg-white rounded-card border border-border shadow-sm p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-900">Scan QR Code</h2>
-            <p className="text-xs text-gray-500">
+          <div className="bg-card rounded-card border border-border shadow-soft p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Scan QR Code</h2>
+            <p className="text-xs text-muted-foreground">
               Scan the QR code attached to the lot, or enter the verification code manually.
             </p>
 
@@ -212,15 +212,15 @@ export default function BuyerDeliveryPage() {
           </div>
 
           {/* Manual entry */}
-          <div className="bg-white rounded-card border border-border shadow-sm p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-900">Manual Verification Code</h2>
-            <p className="text-xs text-gray-500">If you cannot scan the QR, enter the code printed on the label.</p>
+          <div className="bg-card rounded-card border border-border shadow-soft p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Manual Verification Code</h2>
+            <p className="text-xs text-muted-foreground">If you cannot scan the QR, enter the code printed on the label.</p>
             <input
               type="text"
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
               placeholder="Enter verification code..."
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+              className="w-full border border-border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
             <Button
               variant="primary"

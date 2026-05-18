@@ -121,15 +121,15 @@ export default function CreateOrderPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-text-primary">Create New Order</h1>
+      <h1 className="text-2xl font-bold text-text-primary"> Crear Pedido</h1>
 
       <FreeTierMatchingNotice itemKind="pedido" subscriptionHref="/buyer/subscription" />
 
       <form className="grid grid-cols-1 lg:grid-cols-2 gap-6" onSubmit={(e) => e.preventDefault()}>
         {/* Left: Commercial Details */}
         <section className="space-y-5">
-          <div className="bg-surface rounded-card border border-border p-5 space-y-4">
-            <h2 className="font-semibold text-text-primary">Commercial Details</h2>
+          <div className="bg-card rounded-card border border-border p-5 space-y-4">
+            <h2 className="font-semibold text-text-primary">Detalles comerciales</h2>
 
             <div className="grid grid-cols-2 gap-4">
               <Select
@@ -228,7 +228,7 @@ export default function CreateOrderPage() {
                     type="button"
                     onClick={() => remove(idx)}
                     disabled={fields.length === 1}
-                    className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 mt-0.5"
+                    className="p-2 text-muted-foreground hover:text-red-500 disabled:opacity-30 mt-0.5"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -263,8 +263,8 @@ export default function CreateOrderPage() {
 
         {/* Right: Logistics & Terms */}
         <section className="space-y-5">
-          <div className="bg-surface rounded-card border border-border p-5 space-y-4">
-            <h2 className="font-semibold text-text-primary">Logistics &amp; Terms</h2>
+          <div className="bg-card rounded-card border border-border p-5 space-y-4">
+            <h2 className="font-semibold text-text-primary">Logística y condiciones</h2>
 
             <div>
               <Select
@@ -276,7 +276,7 @@ export default function CreateOrderPage() {
                 {INCOTERMS.map((t) => <option key={t} value={t}>{t}</option>)}
               </Select>
               {watchedIncoterm && INCOTERM_DESCRIPTIONS[watchedIncoterm] && (
-                <p className="text-xs text-gray-500 mt-1 px-1">
+                <p className="text-xs text-muted-foreground mt-1 px-1">
                   💡 {INCOTERM_DESCRIPTIONS[watchedIncoterm]}
                 </p>
               )}
@@ -308,7 +308,7 @@ export default function CreateOrderPage() {
             />
 
             {/* Cost Summary */}
-            <div className="bg-gray-50 rounded-input p-4 space-y-1 text-sm">
+            <div className="bg-muted/50 rounded-input p-4 space-y-1 text-sm">
               <p className="font-medium text-text-primary">Logistics Cost Estimation</p>
               <p className="text-text-muted text-xs">Fill in the calibers and quantities to see the estimated total.</p>
             </div>
@@ -337,7 +337,7 @@ export default function CreateOrderPage() {
               disabled={isSubmitting}
               onClick={handleSubmit((v) => onSubmit(v, true))}
             >
-              {isSubmitting ? 'Publishing...' : 'Publish Order'}
+              {isSubmitting ? 'Publicando...' : 'Publish Order'}
             </Button>
           </div>
         </div>

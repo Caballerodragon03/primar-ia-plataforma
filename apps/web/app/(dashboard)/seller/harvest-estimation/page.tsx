@@ -241,7 +241,7 @@ export default function HarvestEstimationPage() {
       case 'DOWN':
         return <TrendingDown className="w-4 h-4 text-red-500" />;
       default:
-        return <Minus className="w-4 h-4 text-gray-400" />;
+        return <Minus className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -252,7 +252,7 @@ export default function HarvestEstimationPage() {
       case 'DOWN':
         return 'text-red-500';
       default:
-        return 'text-gray-500';
+        return 'text-muted-foreground';
     }
   };
 
@@ -292,14 +292,14 @@ export default function HarvestEstimationPage() {
           <Sprout className="w-6 h-6 text-[#5F5C48]" />
           <h1 className="text-xl font-bold text-[#5F5C48]">Estimación de Cosecha</h1>
         </div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Descarga la plantilla Excel, rellénala con tu historial de cosechas por calibre y
           temporada, y súbela para obtener predicciones automáticas.
         </p>
       </div>
 
       {/* Step 1: Download Template */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
+      <section className="bg-card rounded-xl border border-border p-6">
         <div className="flex items-start gap-4">
           <div className="p-3 bg-[#F5F4EE] rounded-lg">
             <FileSpreadsheet className="w-6 h-6 text-[#5F5C48]" />
@@ -308,7 +308,7 @@ export default function HarvestEstimationPage() {
             <h2 className="text-base font-semibold text-[#5F5C48] mb-1">
               1. Descarga la plantilla
             </h2>
-            <p className="text-sm text-gray-500 mb-3">
+            <p className="text-sm text-muted-foreground mb-3">
               La plantilla incluye instrucciones y un ejemplo. Rellena la pestaña &quot;Datos&quot;
               con tus temporadas, calibres y cantidades en kg.
             </p>
@@ -324,21 +324,21 @@ export default function HarvestEstimationPage() {
       </section>
 
       {/* Step 2: Select Product + Upload */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
+      <section className="bg-card rounded-xl border border-border p-6">
         <h2 className="text-base font-semibold text-[#5F5C48] mb-4">
           2. Selecciona producto y sube el archivo
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Producto</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Producto</label>
             <select
               value={selectedProduct}
               onChange={(e) => {
                 setSelectedProduct(e.target.value);
                 setSelectedVariety('');
               }}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E1C44D] focus:border-transparent outline-none"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E1C44D] focus:border-transparent outline-none"
             >
               <option value="">Seleccionar producto...</option>
               {products.map((p) => (
@@ -349,13 +349,13 @@ export default function HarvestEstimationPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Variedad <span className="text-gray-400">(opcional)</span>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
+              Variedad <span className="text-muted-foreground">(opcional)</span>
             </label>
             <select
               value={selectedVariety}
               onChange={(e) => setSelectedVariety(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E1C44D] focus:border-transparent outline-none"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E1C44D] focus:border-transparent outline-none"
               disabled={varieties.length === 0}
             >
               <option value="">Todas</option>
@@ -374,7 +374,7 @@ export default function HarvestEstimationPage() {
             'relative border-2 border-dashed rounded-xl p-8 text-center transition-colors',
             dragActive
               ? 'border-[#E1C44D] bg-[#E1C44D]/5'
-              : 'border-gray-300 hover:border-gray-400',
+              : 'border-border hover:border-gray-400',
             !selectedProduct ? 'opacity-50 pointer-events-none' : '',
           ].join(' ')}
           onDragOver={(e) => {
@@ -387,15 +387,15 @@ export default function HarvestEstimationPage() {
           {uploading ? (
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="w-8 h-8 animate-spin text-[#E1C44D]" />
-              <p className="text-sm text-gray-500">Procesando archivo...</p>
+              <p className="text-sm text-muted-foreground">Procesando archivo...</p>
             </div>
           ) : (
             <>
-              <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-1">
+              <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground mb-1">
                 Arrastra tu archivo Excel aquí o haz clic para seleccionar
               </p>
-              <p className="text-xs text-gray-400">Formato: .xlsx (máx. 5 MB)</p>
+              <p className="text-xs text-muted-foreground">Formato: .xlsx (máx. 5 MB)</p>
               <input
                 type="file"
                 accept=".xlsx,.xls"
@@ -426,37 +426,37 @@ export default function HarvestEstimationPage() {
       </section>
 
       {/* Historial Table */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
+      <section className="bg-card rounded-xl border border-border p-6">
         <h2 className="text-base font-semibold text-[#5F5C48] mb-4">Historial importado</h2>
         {histLoading ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : historial.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">
+          <p className="text-sm text-muted-foreground text-center py-6">
             No hay registros todavía. Sube tu primer archivo Excel arriba.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left">
-                  <th className="py-2 pr-4 font-medium text-gray-600">Producto</th>
-                  <th className="py-2 pr-4 font-medium text-gray-600">Variedad</th>
-                  <th className="py-2 pr-4 font-medium text-gray-600">Temporada</th>
-                  <th className="py-2 pr-4 font-medium text-gray-600">Calibres</th>
-                  <th className="py-2 font-medium text-gray-600 w-16" />
+                <tr className="border-b border-border text-left">
+                  <th className="py-2 pr-4 font-medium text-muted-foreground">Producto</th>
+                  <th className="py-2 pr-4 font-medium text-muted-foreground">Variedad</th>
+                  <th className="py-2 pr-4 font-medium text-muted-foreground">Temporada</th>
+                  <th className="py-2 pr-4 font-medium text-muted-foreground">Calibres</th>
+                  <th className="py-2 font-medium text-muted-foreground w-16" />
                 </tr>
               </thead>
               <tbody>
                 {historial.map((record) => (
                   <tr key={record.id} className="border-b border-gray-100 last:border-0">
                     <td className="py-2.5 pr-4 text-[#5F5C48]">{record.producto.nombre}</td>
-                    <td className="py-2.5 pr-4 text-gray-500">
+                    <td className="py-2.5 pr-4 text-muted-foreground">
                       {record.variedad?.nombre ?? '—'}
                     </td>
-                    <td className="py-2.5 pr-4 text-gray-500">{record.temporada}</td>
-                    <td className="py-2.5 pr-4 text-gray-500">
+                    <td className="py-2.5 pr-4 text-muted-foreground">{record.temporada}</td>
+                    <td className="py-2.5 pr-4 text-muted-foreground">
                       {record.calibres
                         .map((c) => `${c.calibre}: ${c.cantidadKg.toLocaleString('es-ES')} kg`)
                         .join(', ')}
@@ -464,7 +464,7 @@ export default function HarvestEstimationPage() {
                     <td className="py-2.5 text-right">
                       <button
                         onClick={() => handleDelete(record.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                        className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors cursor-pointer"
                         aria-label="Eliminar registro"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -479,7 +479,7 @@ export default function HarvestEstimationPage() {
       </section>
 
       {/* Predictions Panel */}
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
+      <section className="bg-card rounded-xl border border-border p-6">
         <h2 className="text-base font-semibold text-[#5F5C48] mb-2">Predicciones</h2>
 
         <div className="flex items-start gap-2 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -494,10 +494,10 @@ export default function HarvestEstimationPage() {
 
         {predLoading ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : predictions.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">
+          <p className="text-sm text-muted-foreground text-center py-6">
             Sube al menos dos temporadas de datos para obtener predicciones.
           </p>
         ) : (
@@ -505,13 +505,13 @@ export default function HarvestEstimationPage() {
             {predictions.map((pred) => (
               <div
                 key={`${pred.productoId}-${pred.variedadNombre ?? 'all'}`}
-                className="border border-gray-200 rounded-lg p-4"
+                className="border border-border rounded-lg p-4"
               >
                 <h3 className="text-sm font-semibold text-[#5F5C48] mb-0.5">
                   {pred.productoNombre}
                 </h3>
                 {pred.variedadNombre && (
-                  <p className="text-xs text-gray-400">{pred.variedadNombre}</p>
+                  <p className="text-xs text-muted-foreground">{pred.variedadNombre}</p>
                 )}
                 {pred.nextSeason && (
                   <p className="text-xs text-[#E1C44D] font-medium mb-3">
@@ -522,7 +522,7 @@ export default function HarvestEstimationPage() {
                   {pred.calibres.map((cal) => (
                     <div key={cal.calibre} className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">{cal.calibre}</span>
+                        <span className="text-muted-foreground">{cal.calibre}</span>
                         <span
                           className={`flex items-center gap-1 font-medium ${trendColor(cal.trend)}`}
                         >
@@ -531,7 +531,7 @@ export default function HarvestEstimationPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
                             className="h-full bg-[#E1C44D] rounded-full transition-all"
                             style={{ width: `${cal.confidence}%` }}

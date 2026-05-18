@@ -68,13 +68,13 @@ function formatEur(amount: number): string {
 }
 
 const MATCH_STATE_LABELS: Record<string, string> = {
-  PROPUESTO: 'Proposed',
-  ENVIADO_VENDEDOR: 'Sent to Seller',
-  ACEPTADO_VENDEDOR: 'Accepted',
-  RECHAZADO_VENDEDOR: 'Rejected',
-  PENDIENTE_PAGO: 'Awaiting Payment',
-  CONFIRMADO: 'Confirmed',
-  CANCELADO: 'Cancelled',
+  PROPUESTO: 'Propuesto',
+  ENVIADO_VENDEDOR: 'Enviado al vendedor',
+  ACEPTADO_VENDEDOR: 'Aceptado',
+  RECHAZADO_VENDEDOR: 'Rechazado',
+  PENDIENTE_PAGO: 'Pendiente de pago',
+  CONFIRMADO: 'Confirmado',
+  CANCELADO: 'Cancelado',
 };
 
 function DeliveryConfirmInline({ transaccionId, onConfirmed }: { transaccionId: string; onConfirmed: () => void }) {
@@ -104,7 +104,7 @@ function DeliveryConfirmInline({ transaccionId, onConfirmed }: { transaccionId: 
           value={code}
           onChange={(e) => setCode(e.target.value)}
           placeholder="Enter QR / verification code..."
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+          className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
           onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
         />
         <Button variant="primary" size="sm" loading={confirming} onClick={handleConfirm}>
@@ -156,7 +156,7 @@ export default function OrderDetailPage() {
         setTxInfoMap(map);
       }
     } catch {
-      setError('Failed to load order details. Please try again.');
+      setError('Error al cargar los detalles del pedido.');
     } finally {
       setIsLoading(false);
     }
@@ -215,9 +215,9 @@ export default function OrderDetailPage() {
   if (isLoading) {
     return (
       <div className="p-6 space-y-4 animate-pulse max-w-4xl mx-auto">
-        <div className="h-8 bg-gray-200 rounded w-64" />
-        <div className="h-48 bg-gray-200 rounded-card" />
-        <div className="h-64 bg-gray-200 rounded-card" />
+        <div className="h-8 bg-muted rounded w-64" />
+        <div className="h-48 bg-muted rounded-card" />
+        <div className="h-64 bg-muted rounded-card" />
       </div>
     );
   }
@@ -225,8 +225,8 @@ export default function OrderDetailPage() {
   if (error || !order) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-600 mb-4">{error ?? 'Order not found.'}</p>
-        <Button variant="outline" onClick={() => router.push('/buyer/orders')}>Back to Orders</Button>
+        <p className="text-red-600 mb-4">{error ?? 'Pedido no encontrado.'}</p>
+        <Button variant="outline" onClick={() => router.push('/buyer/orders')}>Volver a pedidos</Button>
       </div>
     );
   }
@@ -249,7 +249,7 @@ export default function OrderDetailPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       {/* Back */}
-      <Link href="/buyer/orders" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+      <Link href="/buyer/orders" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="w-4 h-4" />
         Back to My Orders
       </Link>
@@ -258,13 +258,13 @@ export default function OrderDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900">Order #{shortId}: {productName}</h1>
+            <h1 className="text-2xl font-bold text-foreground">Order #{shortId}: {productName}</h1>
             <StatusBadge status={order.estado} />
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-gray-500">Coverage</span>
+            <span className="text-sm text-muted-foreground">Cobertura</span>
             <CoverageBar percentage={displayCoverage} className="w-48" />
-            <span className="text-sm font-semibold text-gray-900">{Math.round(displayCoverage)}%</span>
+            <span className="text-sm font-semibold text-foreground">{Math.round(displayCoverage)}%</span>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -331,23 +331,23 @@ export default function OrderDetailPage() {
         {/* Left: calibres + matches */}
         <div className="lg:col-span-2 space-y-5">
           {/* Calibres requested */}
-          <div className="bg-white rounded-card border border-border shadow-sm overflow-hidden">
+          <div className="bg-card rounded-card border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-gray-900">Calibers Requested</h2>
+              <h2 className="text-sm font-semibold text-foreground">Calibres solicitados</h2>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50">
-                  {['CALIBER', 'QTY (kg)', 'MAX PRICE (€/kg)'].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                <tr className="bg-muted/50">
+                  {['CALIBRE', 'CANT (kg)', 'PRECIO MÁX (€/kg)'].map((h) => (
+                    <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border/50">
                 {calibres.length === 0 ? (
-                  <tr><td colSpan={3} className="px-4 py-6 text-center text-xs text-gray-400">No calibers defined</td></tr>
+                  <tr><td colSpan={3} className="px-4 py-6 text-center text-xs text-muted-foreground">Sin calibres definidos</td></tr>
                 ) : calibres.map((c, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
+                  <tr key={i} className="hover:bg-accent/50">
                     <td className="px-4 py-2.5 font-medium">{c.calibre || '—'}</td>
                     <td className="px-4 py-2.5">{Number(c.cantidad_kg).toLocaleString('es-ES')}</td>
                     <td className="px-4 py-2.5">€{Number(c.precio_max_kg).toFixed(3)}</td>
@@ -358,34 +358,34 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Farmer contributions */}
-          <div className="bg-white rounded-card border border-border shadow-sm overflow-hidden">
+          <div className="bg-card rounded-card border border-border shadow-soft overflow-hidden">
             <div className="px-5 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
-              <h2 className="text-sm font-semibold text-gray-900">
+              <h2 className="text-sm font-semibold text-foreground">
                 Seller Contributions ({order.matches.length})
               </h2>
             </div>
             {order.matches.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-sm text-gray-500">No contributions yet.</p>
-                <p className="text-xs text-gray-400 mt-1">The platform matches your order with available lots automatically.</p>
+                <p className="text-sm text-muted-foreground">Sin contribuciones aún.</p>
+                <p className="text-xs text-muted-foreground mt-1">La plataforma empareja tu pedido con lotes disponibles automáticamente.</p>
               </div>
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50">
-                    {['SELLER', 'SCORE', 'QTY (kg)', 'PRICE (€/kg)', 'STATUS', 'ACTIONS'].map((h) => (
-                      <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                  <tr className="bg-muted/50">
+                    {['VENDEDOR', 'PUNTUACIÓN', 'CANT (kg)', 'PRECIO (€/kg)', 'ESTADO', 'ACCIONES'].map((h) => (
+                      <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border/50">
                   {order.matches.map((m) => {
                     const kg = Number(m.cantidadKg);
                     const price = Number(m.precioKg);
                     const canPayThis = m.estado === 'ACEPTADO_VENDEDOR' && !order.stripePaymentIntentId;
                     return (
-                      <tr key={m.id} className="hover:bg-gray-50">
+                      <tr key={m.id} className="hover:bg-accent/50">
                         <td className="px-4 py-2.5 font-medium">
                           <div className="flex flex-col gap-0.5">
                             <span>{m.lote.vendedor.nombre} {m.lote.vendedor.apellidos}</span>
@@ -404,11 +404,11 @@ export default function OrderDetailPage() {
                               'inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-semibold',
                               m.scoreMatching >= 0.7 ? 'bg-green-100 text-green-700' :
                               m.scoreMatching >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-gray-100 text-gray-600',
+                              'bg-muted text-muted-foreground',
                             ].join(' ')}>
                               {Math.round(m.scoreMatching * 100)}/100
                             </span>
-                          ) : <span className="text-gray-400 text-xs">—</span>}
+                          ) : <span className="text-muted-foreground text-xs">—</span>}
                         </td>
                         <td className="px-4 py-2.5">{kg.toLocaleString('es-ES')}</td>
                         <td className="px-4 py-2.5">{price > 0 ? `€${price.toFixed(3)}` : '—'}</td>
@@ -419,7 +419,7 @@ export default function OrderDetailPage() {
                               m.estado === 'ACEPTADO_VENDEDOR' ? 'bg-green-100 text-green-700' :
                               m.estado === 'PROPUESTO' ? 'bg-yellow-100 text-yellow-700' :
                               m.estado === 'CONFIRMADO' ? 'bg-blue-100 text-blue-700' :
-                              'bg-gray-100 text-gray-600',
+                              'bg-muted text-muted-foreground',
                             ].join(' ')}>
                               {MATCH_STATE_LABELS[m.estado] ?? m.estado}
                             </span>
@@ -498,11 +498,11 @@ export default function OrderDetailPage() {
               const info = txInfoMap[m.transaccion!.id]!;
               const sellerName = `${m.lote.vendedor.nombre} ${m.lote.vendedor.apellidos}`.trim();
               return (
-                <div key={m.id} className="bg-white rounded-card border border-border shadow-sm overflow-hidden">
+                <div key={m.id} className="bg-card rounded-card border border-border shadow-soft overflow-hidden">
                   <div className="px-5 py-3 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-primary" />
-                      <h2 className="text-sm font-semibold text-gray-900">Shipment from {sellerName}</h2>
+                      <h2 className="text-sm font-semibold text-foreground">Shipment from {sellerName}</h2>
                     </div>
                     {info.qrUsado && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-[10px] font-medium bg-green-100 text-green-700">
@@ -514,10 +514,10 @@ export default function OrderDetailPage() {
                   {/* Lot photos */}
                   {info.fotosLoteUrls.length > 0 && (
                     <div className="p-4 border-b border-border">
-                      <p className="text-xs font-medium text-gray-700 mb-2">📸 Lot preparation photos</p>
+                      <p className="text-xs font-medium text-foreground mb-2">📸 Lot preparation photos</p>
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {info.fotosLoteUrls.map((url, i) => (
-                          <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-border hover:shadow-md transition-shadow">
+                          <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-border hover:shadow-soft-md transition-shadow">
                             <img src={url} alt={`Lot photo ${i + 1}`} className="w-full h-20 object-cover" />
                           </a>
                         ))}
@@ -539,7 +539,7 @@ export default function OrderDetailPage() {
                         <p className="text-sm font-medium">You confirmed delivery. Payment released.</p>
                       </div>
                       {info.hasRated ? (
-                        <p className="text-xs text-gray-400">Ya has valorado esta transacción.</p>
+                        <p className="text-xs text-muted-foreground">Ya has valorado esta transacción.</p>
                       ) : (
                         <Button
                           variant="outline"
@@ -553,10 +553,10 @@ export default function OrderDetailPage() {
                     </div>
                   )}
                   {!info.qrToken && !info.firmaVendedor && (
-                    <div className="p-4 text-xs text-gray-500">Waiting for the seller to sign the contract.</div>
+                    <div className="p-4 text-xs text-muted-foreground">Waiting for the seller to sign the contract.</div>
                   )}
                   {!info.qrToken && info.firmaVendedor && (
-                    <div className="p-4 text-xs text-gray-500">Contract signed. QR code will appear once generated.</div>
+                    <div className="p-4 text-xs text-muted-foreground">Contract signed. QR code will appear once generated.</div>
                   )}
                 </div>
               );
@@ -565,34 +565,34 @@ export default function OrderDetailPage() {
 
         {/* Right: order details */}
         <div className="space-y-5">
-          <div className="bg-white rounded-card border border-border shadow-sm p-5">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Order Details</h2>
+          <div className="bg-card rounded-card border border-border shadow-soft p-5">
+            <h2 className="text-sm font-semibold text-foreground mb-4">Detalles del pedido</h2>
             <dl className="space-y-3">
               {[
-                { label: 'Product', value: order.producto.nombre },
-                order.variedad ? { label: 'Variety', value: order.variedad.nombre } : null,
-                { label: 'Total qty', value: `${order.totalKg.toLocaleString('es-ES')} kg` },
+                { label: 'Producto', value: order.producto.nombre },
+                order.variedad ? { label: 'Variedad', value: order.variedad.nombre } : null,
+                { label: 'Cantidad total', value: `${order.totalKg.toLocaleString('es-ES')} kg` },
                 { label: 'Incoterm', value: order.incoterm },
-                order.destinoFinal ? { label: 'Destination', value: order.destinoFinal } : null,
-                order.frecuencia ? { label: 'Frequency', value: order.frecuencia } : null,
+                order.destinoFinal ? { label: 'Destino', value: order.destinoFinal } : null,
+                order.frecuencia ? { label: 'Frecuencia', value: order.frecuencia } : null,
                 order.fechaEntregaDeseada ? {
-                  label: 'Delivery by',
+                  label: 'Entrega antes de',
                   value: new Date(order.fechaEntregaDeseada).toLocaleDateString('es-ES'),
                 } : null,
-                logisticsCost > 0 ? { label: 'Est. logistics', value: formatEur(logisticsCost) } : null,
+                logisticsCost > 0 ? { label: 'Logística est.', value: formatEur(logisticsCost) } : null,
               ].filter((x): x is { label: string; value: string } => x !== null).map(({ label, value }) => (
                 <div key={label} className="flex justify-between gap-2">
-                  <dt className="text-xs text-gray-500 shrink-0">{label}</dt>
-                  <dd className="text-xs font-medium text-gray-900 text-right">{value}</dd>
+                  <dt className="text-xs text-muted-foreground shrink-0">{label}</dt>
+                  <dd className="text-xs font-medium text-foreground text-right">{value}</dd>
                 </div>
               ))}
             </dl>
           </div>
 
           {order.notasAdicionales && (
-            <div className="bg-white rounded-card border border-border shadow-sm p-5">
-              <h2 className="text-sm font-semibold text-gray-900 mb-2">Notes</h2>
-              <p className="text-xs text-gray-600 leading-relaxed">{order.notasAdicionales}</p>
+            <div className="bg-card rounded-card border border-border shadow-soft p-5">
+              <h2 className="text-sm font-semibold text-foreground mb-2">Notas</h2>
+              <p className="text-xs text-muted-foreground leading-relaxed">{order.notasAdicionales}</p>
             </div>
           )}
         </div>

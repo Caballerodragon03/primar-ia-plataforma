@@ -94,11 +94,11 @@ export default function SellerSubscriptionPage() {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-48" />
-          <div className="h-4 bg-gray-200 rounded w-96" />
+          <div className="h-8 bg-muted rounded w-48" />
+          <div className="h-4 bg-muted rounded w-96" />
           <div className="grid grid-cols-3 gap-6 mt-8">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-96 bg-gray-100 rounded-[12px]" />
+              <div key={i} className="h-96 bg-muted rounded-[12px]" />
             ))}
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function SellerSubscriptionPage() {
 
       {data && (
         <>
-          <div className="bg-surface border border-border rounded-[12px] p-4 mb-8">
+          <div className="bg-card border border-border rounded-[12px] p-4 mb-8">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <span className="text-sm text-text-secondary">Plan actual:</span>
@@ -169,7 +169,7 @@ export default function SellerSubscriptionPage() {
 
           {checkoutLoading && (
             <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-[12px] shadow-lg text-center">
+              <div className="bg-card p-6 rounded-[12px] shadow-lg text-center">
                 <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-3" />
                 <p className="text-sm text-text-secondary">Redirigiendo a Stripe...</p>
               </div>

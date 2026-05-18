@@ -60,16 +60,16 @@ export function NegotiationOfferModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 bg-white rounded-2xl shadow-xl w-full max-w-sm">
+      <div className="relative z-10 bg-card rounded-2xl shadow-xl w-full max-w-sm">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-yellow-600" />
-            <h2 className="font-semibold text-gray-900 text-sm">
+            <h2 className="font-semibold text-foreground text-sm">
               {parentId ? 'Realizar contraoferta' : 'Proponer cambio'}
             </h2>
           </div>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 text-gray-400">
+          <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -77,12 +77,12 @@ export function NegotiationOfferModal({
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
           {/* Price */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-foreground mb-1">
               Precio por kg (€)
             </label>
             <div className="flex items-center gap-2">
               {currentPrecioKg != null && (
-                <span className="text-xs text-gray-400 line-through whitespace-nowrap">
+                <span className="text-xs text-muted-foreground line-through whitespace-nowrap">
                   €{currentPrecioKg.toFixed(4)}
                 </span>
               )}
@@ -93,7 +93,7 @@ export function NegotiationOfferModal({
                 value={precioKg}
                 onChange={(e) => setPrecioKg(e.target.value)}
                 placeholder="Nuevo precio/kg"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
+                className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
               />
             </div>
             {precioChanged && (
@@ -105,19 +105,19 @@ export function NegotiationOfferModal({
 
           {/* Incoterm */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-foreground mb-1">
               Incoterm
             </label>
             <div className="flex items-center gap-2">
               {currentIncoterm && (
-                <span className="text-xs text-gray-400 line-through whitespace-nowrap">
+                <span className="text-xs text-muted-foreground line-through whitespace-nowrap">
                   {currentIncoterm}
                 </span>
               )}
               <select
                 value={incoterm}
                 onChange={(e) => setIncoterm(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none bg-white"
+                className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none bg-card"
               >
                 <option value="">Sin cambio</option>
                 {INCOTERMS.map((t) => (

@@ -21,12 +21,12 @@ type OrderRow = {
 const col = createColumnHelper<OrderRow>();
 
 const TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'open', label: 'Open' },
-  { key: 'inprogress', label: 'In Progress' },
-  { key: 'full', label: 'Full' },
-  { key: 'cancelled', label: 'Cancelled' },
-  { key: 'closed', label: 'Closed' },
+  { key: 'all', label: 'Todos' },
+  { key: 'open', label: 'Abiertos' },
+  { key: 'inprogress', label: 'En curso' },
+  { key: 'full', label: 'Completos' },
+  { key: 'cancelled', label: 'Cancelados' },
+  { key: 'closed', label: 'Cerrados' },
 ];
 
 const columns = [
@@ -41,7 +41,7 @@ const columns = [
     },
   }),
   col.accessor('id', {
-    header: 'Order ID',
+    header: 'ID Pedido',
     cell: (info) => {
       const hasPendingAccepted = info.row.original.matches?.some(
         (m) => m.estado === 'ACEPTADO_VENDEDOR'
@@ -64,21 +64,21 @@ const columns = [
       );
     },
   }),
-  col.accessor('producto.nombre', { header: 'Product' }),
+  col.accessor('producto.nombre', { header: 'Producto' }),
   col.accessor('totalKg', {
-    header: 'Total Quantity',
+    header: 'Cantidad total',
     cell: (info) => `${info.getValue().toLocaleString()} kg`,
   }),
   col.accessor('coverage', {
-    header: 'Coverage %',
+    header: '% Cobertura',
     cell: (info) => <CoverageBar percentage={info.getValue()} className="min-w-[120px]" />,
   }),
   col.accessor('estado', {
-    header: 'Status',
+    header: 'Estado',
     cell: (info) => <StatusBadge status={info.getValue()} />,
   }),
   col.accessor('fechaEntregaDeseada', {
-    header: 'Delivery Date',
+    header: 'Fecha entrega',
     cell: (info) => new Date(info.getValue()).toLocaleDateString('es-ES'),
   }),
 ];
@@ -126,7 +126,7 @@ export default function MyOrdersPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">My Orders</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Mis Pedidos</h1>
         <Link href="/buyer/orders/new">
           <Button variant="primary" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
@@ -158,9 +158,9 @@ export default function MyOrdersPage() {
         onTabChange={handleTabChange}
         globalFilter={globalFilter}
         onGlobalFilterChange={setGlobalFilter}
-        searchPlaceholder="Search by Order ID or Product..."
+        searchPlaceholder="Buscar por ID de pedido o producto..."
         isLoading={isLoading}
-        emptyMessage="No orders found. Create your first order to get started."
+        emptyMessage="Sin pedidos. Crea tu primer pedido para empezar."
       />
     </div>
   );

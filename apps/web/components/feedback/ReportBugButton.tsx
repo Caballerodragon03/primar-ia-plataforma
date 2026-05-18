@@ -116,7 +116,7 @@ export function ReportBugButton() {
       {/* Floating trigger button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 right-4 z-40 group flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-border shadow-md hover:shadow-lg hover:bg-gray-50 transition-all text-xs font-medium text-text-secondary hover:text-secondary"
+        className="fixed bottom-4 right-4 z-40 group flex items-center gap-2 px-3 py-2 rounded-full bg-card border border-border shadow-md hover:shadow-lg hover:bg-accent/50 transition-all text-xs font-medium text-text-secondary hover:text-secondary"
         aria-label="Reportar un problema"
         title="Reportar un problema"
       >
@@ -127,16 +127,16 @@ export function ReportBugButton() {
       {/* Modal */}
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-card max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl">
+          <div className="bg-card rounded-card max-w-lg w-full max-h-[90vh] flex flex-col shadow-xl">
             <div className="flex items-center justify-between px-5 py-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <Bug className="w-4 h-4 text-secondary" />
-                <h2 className="text-base font-semibold text-gray-900">Reportar un problema</h2>
+                <h2 className="text-base font-semibold text-foreground">Reportar un problema</h2>
               </div>
               <button
                 onClick={close}
                 disabled={submitting || uploading}
-                className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                className="text-muted-foreground hover:text-muted-foreground disabled:opacity-30"
                 aria-label="Cerrar"
               >
                 <X className="w-4 h-4" />
@@ -147,7 +147,7 @@ export function ReportBugButton() {
               {success ? (
                 <div className="py-6 text-center">
                   <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-gray-900">¡Gracias!</p>
+                  <p className="text-sm font-semibold text-foreground">¡Gracias!</p>
                   <p className="text-xs text-text-secondary mt-1">
                     Tu reporte se envió correctamente. Lo revisaremos cuanto antes.
                   </p>
@@ -191,7 +191,7 @@ export function ReportBugButton() {
                       Captura de pantalla (opcional)
                     </label>
                     {file ? (
-                      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 border border-border rounded-input text-xs">
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/50 border border-border rounded-input text-xs">
                         <span className="truncate text-text-secondary">
                           📎 {file.name} <span className="text-text-muted">({(file.size / 1024).toFixed(0)} KB)</span>
                         </span>
@@ -206,7 +206,7 @@ export function ReportBugButton() {
                         </button>
                       </div>
                     ) : (
-                      <label className="flex items-center justify-center gap-2 px-3 py-3 border border-dashed border-border rounded-input text-xs text-text-muted hover:bg-gray-50 cursor-pointer">
+                      <label className="flex items-center justify-center gap-2 px-3 py-3 border border-dashed border-border rounded-input text-xs text-text-muted hover:bg-accent/50 cursor-pointer">
                         <Upload className="w-3.5 h-3.5" />
                         Elegir imagen (PNG, JPG, máx. 10 MB)
                         <input
@@ -234,18 +234,18 @@ export function ReportBugButton() {
             </div>
 
             {!success && (
-              <div className="px-5 py-3 border-t border-border flex justify-end gap-2 bg-gray-50">
+              <div className="px-5 py-3 border-t border-border flex justify-end gap-2 bg-muted/50">
                 <button
                   onClick={close}
                   disabled={submitting || uploading}
-                  className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-gray-900 disabled:opacity-50"
+                  className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-foreground disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={submitting || uploading || descripcion.trim().length < 5}
-                  className="px-4 py-1.5 text-xs font-semibold bg-primary text-gray-900 rounded-button hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  className="px-4 py-1.5 text-xs font-semibold bg-primary text-foreground rounded-button hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   {(uploading || submitting) && <Loader2 className="w-3 h-3 animate-spin" />}
                   {uploading ? 'Subiendo imagen…' : submitting ? 'Enviando…' : 'Enviar reporte'}

@@ -176,14 +176,14 @@ export default function PublishLotPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-text-primary">Publish a New Lot</h1>
+      <h1 className="text-2xl font-bold text-text-primary">Publicar nuevo lote</h1>
 
       <FreeTierMatchingNotice itemKind="lote" subscriptionHref="/seller/subscription" />
 
       <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
         {/* Product Details */}
-        <section className="bg-surface rounded-card border border-border p-5 space-y-4">
-          <h2 className="font-semibold text-text-primary">Product Details</h2>
+        <section className="bg-card rounded-card border border-border p-5 space-y-4">
+          <h2 className="font-semibold text-text-primary">Detalles del producto</h2>
           <div className="grid grid-cols-2 gap-4">
             <Select
               label="Product"
@@ -269,7 +269,7 @@ export default function PublishLotPage() {
                       type="button"
                       onClick={() => remove(idx)}
                       disabled={fields.length === 1}
-                      className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 mt-0.5"
+                      className="p-2 text-muted-foreground hover:text-red-500 disabled:opacity-30 mt-0.5"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -288,8 +288,8 @@ export default function PublishLotPage() {
         </section>
 
         {/* Logistics */}
-        <section className="bg-surface rounded-card border border-border p-5 space-y-4">
-          <h2 className="font-semibold text-text-primary">Logistics &amp; Availability</h2>
+        <section className="bg-card rounded-card border border-border p-5 space-y-4">
+          <h2 className="font-semibold text-text-primary">Logística y disponibilidad</h2>
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <input
@@ -321,8 +321,8 @@ export default function PublishLotPage() {
         </section>
 
         {/* Supporting Info */}
-        <section className="bg-surface rounded-card border border-border p-5 space-y-4">
-          <h2 className="font-semibold text-text-primary">Supporting Information</h2>
+        <section className="bg-card rounded-card border border-border p-5 space-y-4">
+          <h2 className="font-semibold text-text-primary">Información adicional</h2>
 
           <div>
             <p className="text-sm font-medium text-text-secondary mb-2">Associated Certificates</p>
@@ -343,7 +343,7 @@ export default function PublishLotPage() {
                         'px-3 py-1 rounded-badge text-sm font-medium border transition-colors',
                         active
                           ? 'bg-primary/10 border-primary text-secondary'
-                          : 'bg-white border-border text-text-secondary hover:border-primary',
+                          : 'bg-card border-border text-text-secondary hover:border-primary',
                       ].join(' ')}
                     >
                       {active && '✓ '}{cert.tipo}
@@ -400,7 +400,7 @@ export default function PublishLotPage() {
             disabled={isSubmitting}
             onClick={handleSubmit((v) => onSubmit(v, true))}
           >
-            {isSubmitting ? 'Publishing...' : 'Publish Lot'}
+            {isSubmitting ? 'Publicando...' : 'Publish Lot'}
           </Button>
         </div>
       </form>

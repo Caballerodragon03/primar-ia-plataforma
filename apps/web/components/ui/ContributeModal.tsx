@@ -132,7 +132,7 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
       />
 
       {/* Panel */}
-      <div className="relative z-10 bg-surface rounded-card shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+      <div className="relative z-10 bg-card rounded-card shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b border-border">
           <div>
@@ -145,7 +145,7 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
           </div>
           <button
             onClick={onClose}
-            className="ml-3 p-1 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 flex-shrink-0"
+            className="ml-3 p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-muted-foreground flex-shrink-0"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -153,7 +153,7 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
         </div>
 
         {/* Info row */}
-        <div className="px-5 py-3 bg-gray-50 border-b border-border flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <div className="px-5 py-3 bg-muted/50 border-b border-border flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <span className="text-text-secondary">
             Product:{' '}
             <span className="font-medium text-text-primary">{match.pedido.producto.nombre}</span>
@@ -179,7 +179,7 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
           {match.pedido.incoterm && (
             <span className="inline-flex items-center gap-1 text-text-secondary">
               Incoterm:{' '}
-              <span className="font-medium text-text-primary bg-gray-100 border border-border rounded px-1.5 py-0.5 text-xs">
+              <span className="font-medium text-text-primary bg-muted border border-border rounded px-1.5 py-0.5 text-xs">
                 {match.pedido.incoterm}
               </span>
             </span>

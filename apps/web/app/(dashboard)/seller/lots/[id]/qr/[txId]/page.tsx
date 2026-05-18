@@ -83,7 +83,7 @@ function QRCodeDisplay({ value }: { value: string }) {
 
   }, [value]);
 
-  return <canvas ref={canvasRef} className="border border-gray-200 rounded-lg" />;
+  return <canvas ref={canvasRef} className="border border-border rounded-lg" />;
 }
 
 export default function SellerQRPage() {
@@ -157,8 +157,8 @@ export default function SellerQRPage() {
   if (loading) {
     return (
       <div className="p-6 max-w-2xl mx-auto space-y-4 animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-64" />
-        <div className="h-64 bg-gray-200 rounded-card" />
+        <div className="h-8 bg-muted rounded w-64" />
+        <div className="h-64 bg-muted rounded-card" />
       </div>
     );
   }
@@ -175,7 +175,7 @@ export default function SellerQRPage() {
   if (!contract.qrToken) {
     return (
       <div className="p-6 max-w-2xl mx-auto space-y-6">
-        <Link href={`/seller/lots/${id}`} className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900">
+        <Link href={`/seller/lots/${id}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" /> Back to Lot
         </Link>
         <div className="bg-amber-50 border border-amber-200 rounded-card p-6 text-center">
@@ -192,27 +192,27 @@ export default function SellerQRPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
-      <Link href={`/seller/lots/${id}`} className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 print:hidden">
+      <Link href={`/seller/lots/${id}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground print:hidden">
         <ArrowLeft className="w-4 h-4" /> Back to Lot
       </Link>
 
       <div className="flex items-center gap-3">
         <QrCode className="w-6 h-6 text-primary" />
-        <h1 className="text-xl font-bold text-gray-900">QR Code & Lot Photos</h1>
+        <h1 className="text-xl font-bold text-foreground">QR Code & Lot Photos</h1>
       </div>
 
       {/* QR Code */}
-      <div className="bg-white rounded-card border border-border shadow-sm p-6 text-center" id="qr-print-area">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">Lot Verification QR Code</h2>
+      <div className="bg-card rounded-card border border-border shadow-soft p-6 text-center" id="qr-print-area">
+        <h2 className="text-sm font-semibold text-foreground mb-4">Lot Verification QR Code</h2>
         <div className="inline-block">
           <QRCodeDisplay value={contract.qrToken} />
         </div>
-        <p className="text-xs text-gray-500 mt-3">Print this QR code and attach it to the lot before shipping.</p>
-        <p className="text-xs text-gray-400 mt-1">The buyer will scan this code to confirm delivery.</p>
+        <p className="text-xs text-muted-foreground mt-3">Print this QR code and attach it to the lot before shipping.</p>
+        <p className="text-xs text-muted-foreground mt-1">The buyer will scan this code to confirm delivery.</p>
 
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <p className="text-xs text-gray-500 mb-1">Verification Code (manual entry):</p>
-          <p className="text-sm font-mono font-bold text-gray-900 select-all break-all">{contract.qrToken}</p>
+        <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+          <p className="text-xs text-muted-foreground mb-1">Verification Code (manual entry):</p>
+          <p className="text-sm font-mono font-bold text-foreground select-all break-all">{contract.qrToken}</p>
         </div>
 
         {contract.qrUsado && (
@@ -220,7 +220,7 @@ export default function SellerQRPage() {
             <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto mb-1" />
             <p className="text-xs font-semibold text-green-900">Delivery confirmed by buyer</p>
             {contract.hasRated ? (
-              <p className="text-xs text-gray-500 text-center">Ya has valorado esta transacción.</p>
+              <p className="text-xs text-muted-foreground text-center">Ya has valorado esta transacción.</p>
             ) : (
               <Button
                 variant="outline"
@@ -242,23 +242,23 @@ export default function SellerQRPage() {
       </div>
 
       {/* Shipment info */}
-      <div className="bg-white rounded-card border border-border shadow-sm p-5 print:hidden">
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Shipment</h2>
+      <div className="bg-card rounded-card border border-border shadow-soft p-5 print:hidden">
+        <h2 className="text-sm font-semibold text-foreground mb-3">Shipment</h2>
         <dl className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
-          <div><dt className="text-xs text-gray-500">Product</dt><dd className="font-medium">{contract.producto}{contract.variedad ? ` — ${contract.variedad}` : ''}</dd></div>
-          <div><dt className="text-xs text-gray-500">Quantity</dt><dd className="font-medium">{contract.cantidadKg.toLocaleString('es-ES')} kg</dd></div>
-          <div><dt className="text-xs text-gray-500">Buyer</dt><dd className="font-medium">{contract.comprador.nombre}</dd></div>
-          <div><dt className="text-xs text-gray-500">Status</dt><dd className="font-medium">{contract.estado}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Product</dt><dd className="font-medium">{contract.producto}{contract.variedad ? ` — ${contract.variedad}` : ''}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Quantity</dt><dd className="font-medium">{contract.cantidadKg.toLocaleString('es-ES')} kg</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Buyer</dt><dd className="font-medium">{contract.comprador.nombre}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Status</dt><dd className="font-medium">{contract.estado}</dd></div>
         </dl>
       </div>
 
       {/* Photo upload */}
       {!contract.qrUsado && (
-        <div className="bg-white rounded-card border border-border shadow-sm p-5 space-y-4 print:hidden">
-          <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+        <div className="bg-card rounded-card border border-border shadow-soft p-5 space-y-4 print:hidden">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <ImageIcon className="w-4 h-4" /> Lot Preparation Photos
           </h2>
-          <p className="text-xs text-gray-500">Upload photos of the prepared lot. The buyer will see these before delivery.</p>
+          <p className="text-xs text-muted-foreground">Upload photos of the prepared lot. The buyer will see these before delivery.</p>
 
           {/* Existing photos */}
           {photoUrls.length > 0 && (
@@ -290,7 +290,7 @@ export default function SellerQRPage() {
               type="button"
               onClick={() => photoInputRef.current?.click()}
               disabled={uploadingPhoto}
-              className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-600 hover:border-primary hover:text-primary transition-colors w-full justify-center disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-border rounded-lg text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors w-full justify-center disabled:opacity-50"
             >
               {uploadingPhoto ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</>
@@ -298,7 +298,7 @@ export default function SellerQRPage() {
                 <><Upload className="w-4 h-4" /> Click to upload photo</>
               )}
             </button>
-            <p className="text-xs text-gray-400 text-center">JPG or PNG, max 10MB each</p>
+            <p className="text-xs text-muted-foreground text-center">JPG or PNG, max 10MB each</p>
           </div>
 
           <Button
@@ -314,8 +314,8 @@ export default function SellerQRPage() {
 
       {/* Already uploaded photos (read-only when QR used) */}
       {contract.qrUsado && photoUrls.length > 0 && (
-        <div className="bg-white rounded-card border border-border shadow-sm p-5 print:hidden">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <div className="bg-card rounded-card border border-border shadow-soft p-5 print:hidden">
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <ImageIcon className="w-4 h-4" /> Lot Photos
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

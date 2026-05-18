@@ -24,10 +24,10 @@ const ESTADO_COLORS: Record<string, string> = {
 };
 
 const ESTADO_LABELS: Record<string, string> = {
-  ABIERTA: 'Open',
-  RESPUESTA_VENDEDOR: 'Seller responded',
-  EN_REVISION: 'Under review',
-  RESUELTA: 'Resolved',
+  ABIERTA: 'Abierta',
+  RESPUESTA_VENDEDOR: 'Respuesta del vendedor',
+  EN_REVISION: 'En revisión',
+  RESUELTA: 'Resuelta',
 };
 
 export default function SellerDisputesPage() {
@@ -46,37 +46,37 @@ export default function SellerDisputesPage() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-2">
         <AlertTriangle className="w-5 h-5 text-red-500" />
-        <h1 className="text-xl font-bold text-gray-900">My Disputes</h1>
+        <h1 className="text-xl font-bold text-foreground">Mis Reclamaciones</h1>
       </div>
 
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-gray-100 animate-pulse rounded-xl" />
+            <div key={i} className="h-20 bg-muted animate-pulse rounded-xl" />
           ))}
         </div>
       ) : disputes.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-gray-400">No disputes found.</p>
+          <p className="text-muted-foreground">Sin reclamaciones.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {disputes.map((d) => {
             const comprador = d.transaccion?.comprador;
             const producto = d.transaccion?.match?.pedido?.producto?.nombre;
-            const badgeClass = ESTADO_COLORS[d.estado] ?? 'bg-gray-100 text-gray-600';
+            const badgeClass = ESTADO_COLORS[d.estado] ?? 'bg-muted text-muted-foreground';
             const badgeLabel = ESTADO_LABELS[d.estado] ?? d.estado;
 
             return (
               <button
                 key={d.id}
                 onClick={() => router.push(`/seller/disputes/${d.id}`)}
-                className="w-full text-left bg-white rounded-xl border border-gray-200 p-4 hover:border-gray-300 transition-colors cursor-pointer"
+                className="w-full text-left bg-card rounded-xl border border-border p-4 hover:border-border transition-colors cursor-pointer"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900">{d.tipoProblema.replace(/_/g, ' ')}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm font-semibold text-foreground">{d.tipoProblema.replace(/_/g, ' ')}</p>
+                    <p className="text-xs text-muted-foreground">
                       {producto && <span>{producto} · </span>}
                       {comprador && <span>Buyer: {comprador.nombre} {comprador.apellidos} · </span>}
                       {new Date(d.createdAt).toLocaleDateString('es-ES')}

@@ -20,7 +20,7 @@ export function UsageMeter({ current, max, label }: UsageMeterProps) {
           {current}/{isUnlimited ? '∞' : max}
         </span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${barColor}`}
           style={{ width: isUnlimited ? '0%' : `${pct}%` }}

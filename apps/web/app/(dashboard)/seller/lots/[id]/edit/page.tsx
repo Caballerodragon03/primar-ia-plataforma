@@ -110,7 +110,7 @@ export default function EditLotPage() {
   if (loading) {
     return (
       <div className="p-6 max-w-2xl mx-auto space-y-4">
-        {[1, 2, 3].map((i) => <div key={i} className="h-12 bg-gray-100 animate-pulse rounded-card" />)}
+        {[1, 2, 3].map((i) => <div key={i} className="h-12 bg-muted animate-pulse rounded-card" />)}
       </div>
     );
   }
@@ -121,7 +121,7 @@ export default function EditLotPage() {
         <Link href={`/seller/lots/${id}`} className="text-text-secondary hover:text-text-primary">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-xl font-bold text-text-primary">Edit Lot</h1>
+        <h1 className="text-xl font-bold text-text-primary">Editar lote</h1>
       </div>
 
       {committedKg > 0 && (
@@ -137,8 +137,8 @@ export default function EditLotPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Calibres */}
-        <div className="bg-surface rounded-card border border-border p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-text-primary">Calibers</h2>
+        <div className="bg-card rounded-card border border-border p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-text-primary">Calibres</h2>
           {committedKg > 0 && (
             <p className="text-xs text-text-secondary">
               Note: prices can be updated, but total kg must stay ≥ {committedKg.toLocaleString('es-ES')} kg committed.
@@ -194,7 +194,7 @@ export default function EditLotPage() {
         </div>
 
         {/* Logistics */}
-        <div className="bg-surface rounded-card border border-border p-5 space-y-4">
+        <div className="bg-card rounded-card border border-border p-5 space-y-4">
           <h2 className="text-sm font-semibold text-text-primary">Logistics</h2>
           <Input
             label="Pickup Location"
@@ -220,7 +220,7 @@ export default function EditLotPage() {
 
         <div className="flex gap-3 justify-end">
           <Link href={`/seller/lots/${id}`}>
-            <Button variant="outline" type="button">Cancel</Button>
+            <Button variant="outline" type="button">Cancelar</Button>
           </Link>
           <Button variant="primary" type="submit" loading={isSubmitting}>
             Save Changes

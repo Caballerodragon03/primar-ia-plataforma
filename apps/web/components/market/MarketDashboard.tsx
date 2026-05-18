@@ -123,12 +123,12 @@ export function MarketDashboard() {
 
       {/* Weekly sentiment summary */}
       {report && (
-        <section className="bg-white border border-border rounded-card p-5">
+        <section className="bg-card border border-border rounded-card p-5">
           <div className="flex items-start justify-between mb-3 flex-wrap gap-3">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <FileText className="w-4 h-4 text-secondary" />
-                <h2 className="text-base font-semibold text-gray-900">Análisis semanal — Boletín MAPA</h2>
+                <h2 className="text-base font-semibold text-foreground">Análisis semanal — Boletín MAPA</h2>
                 {sentiment && (
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${sentiment.classes}`}>
                     {sentiment.label}
@@ -146,7 +146,7 @@ export function MarketDashboard() {
               Boletín oficial <ExternalLink className="w-3 h-3" />
             </a>
           </div>
-          <p className="text-sm text-gray-700 leading-relaxed">{report.resumen}</p>
+          <p className="text-sm text-foreground leading-relaxed">{report.resumen}</p>
           {report.highlights && (
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
               {report.highlights.alza && report.highlights.alza.length > 0 && (
@@ -175,10 +175,10 @@ export function MarketDashboard() {
       )}
 
       {/* Product list */}
-      <section className="bg-white border border-border rounded-card p-5">
+      <section className="bg-card border border-border rounded-card p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Mercado por producto</h2>
+            <h2 className="text-base font-semibold text-foreground">Mercado por producto</h2>
             <p className="text-xs text-text-muted">
               Operaciones confirmadas en los últimos {days} días
             </p>
@@ -190,7 +190,7 @@ export function MarketDashboard() {
                 onClick={() => { setDays(w.days); setExpandedId(null); }}
                 className={[
                   'px-3 py-1.5 font-medium transition-colors',
-                  days === w.days ? 'bg-primary text-gray-900' : 'bg-white text-text-secondary hover:bg-gray-50',
+                  days === w.days ? 'bg-primary text-foreground' : 'bg-card text-text-secondary hover:bg-accent/50',
                 ].join(' ')}
               >
                 {w.label}
@@ -201,7 +201,7 @@ export function MarketDashboard() {
 
         {loading ? (
           <div className="space-y-2">
-            {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />)}
+            {[1,2,3].map(i => <div key={i} className="h-16 bg-muted rounded animate-pulse" />)}
           </div>
         ) : prices.length === 0 ? (
           <p className="text-sm text-text-muted italic py-10 text-center">
@@ -253,10 +253,10 @@ function ProductRow({
 }) {
   const delta = row.deltaPct;
   const deltaColor =
-    delta === null ? 'text-gray-400' :
+    delta === null ? 'text-muted-foreground' :
     delta > 1 ? 'text-green-700' :
     delta < -1 ? 'text-red-700' :
-    'text-gray-600';
+    'text-muted-foreground';
   const DeltaIcon =
     delta === null ? Minus :
     delta > 1 ? TrendingUp :
@@ -265,16 +265,16 @@ function ProductRow({
 
   return (
     <div className={[
-      'border border-border rounded-input bg-white transition-shadow',
-      expanded ? 'shadow-sm' : 'hover:bg-gray-50/60',
+      'border border-border rounded-input bg-card transition-shadow',
+      expanded ? 'shadow-soft' : 'hover:bg-accent/50/60',
     ].join(' ')}>
       {/* Row summary */}
       <button
         onClick={onToggle}
         className="w-full grid grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_auto] gap-3 px-3 py-3 text-sm text-left items-center"
       >
-        <div className="font-medium text-gray-900 col-span-2 md:col-span-1">{row.producto}</div>
-        <div className="text-right font-semibold text-gray-900">{row.avgPrice.toFixed(3)} €/kg</div>
+        <div className="font-medium text-foreground col-span-2 md:col-span-1">{row.producto}</div>
+        <div className="text-right font-semibold text-foreground">{row.avgPrice.toFixed(3)} €/kg</div>
         <div className={`text-right font-medium ${deltaColor} flex items-center justify-end gap-1`}>
           <DeltaIcon className="w-3.5 h-3.5" />
           {delta === null ? '—' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}%`}
@@ -295,7 +295,7 @@ function ProductRow({
 
       {/* Expanded content */}
       {expanded && (
-        <div className="border-t border-border px-3 py-4 bg-gray-50/30">
+        <div className="border-t border-border px-3 py-4 bg-muted/50/30">
           <ProductDetailLazy productoId={row.productoId} productName={row.producto} days={windowDays} />
         </div>
       )}
@@ -338,7 +338,7 @@ function ProductDetailLazy({
     return (
       <div className="bg-gradient-to-br from-primary/10 to-amber-50 border border-primary/40 rounded-card p-6 text-center">
         <Lock className="w-8 h-8 text-secondary mx-auto mb-2" />
-        <h3 className="text-base font-semibold text-gray-900 mb-1">
+        <h3 className="text-base font-semibold text-foreground mb-1">
           El análisis detallado requiere suscripción
         </h3>
         <p className="text-xs text-text-secondary mb-3 max-w-md mx-auto">
@@ -346,7 +346,7 @@ function ProductDetailLazy({
         </p>
         <Link
           href="../subscription"
-          className="inline-block bg-primary text-gray-900 font-semibold px-4 py-1.5 rounded-button hover:opacity-90 transition-opacity text-xs"
+          className="inline-block bg-primary text-foreground font-semibold px-4 py-1.5 rounded-button hover:opacity-90 transition-opacity text-xs"
         >
           Ver planes
         </Link>
@@ -357,8 +357,8 @@ function ProductDetailLazy({
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="h-48 bg-gray-100 rounded animate-pulse" />
-        <div className="h-32 bg-gray-100 rounded animate-pulse" />
+        <div className="h-48 bg-muted rounded animate-pulse" />
+        <div className="h-32 bg-muted rounded animate-pulse" />
       </div>
     );
   }
@@ -415,7 +415,7 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
         <h3 className="text-xs font-medium text-text-secondary mb-2 uppercase tracking-wide">
           Histórico diario de precio medio
         </h3>
-        <div className="h-56 bg-white rounded-input border border-border p-2">
+        <div className="h-56 bg-card rounded-input border border-border p-2">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
@@ -438,7 +438,7 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
             Desglose por calibre
           </h3>
           <div className="grid md:grid-cols-2 gap-3">
-            <div className="h-56 bg-white rounded-input border border-border p-2">
+            <div className="h-56 bg-card rounded-input border border-border p-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={detail.calibreBreakdown.map((c) => ({ ...c, calibre: c.calibre || 'Sin calibre' }))}
@@ -455,7 +455,7 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="overflow-x-auto bg-white rounded-input border border-border">
+            <div className="overflow-x-auto bg-card rounded-input border border-border">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs font-medium text-text-secondary border-b border-border">
@@ -468,7 +468,7 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
                 <tbody>
                   {detail.calibreBreakdown.map((c) => (
                     <tr key={c.calibre} className="border-b border-border/40 last:border-0">
-                      <td className="py-1.5 px-3 font-medium text-gray-900">{c.calibre || '—'}</td>
+                      <td className="py-1.5 px-3 font-medium text-foreground">{c.calibre || '—'}</td>
                       <td className="py-1.5 px-3 text-right">{c.avgPrice.toFixed(3)} €/kg</td>
                       <td className="py-1.5 px-3 text-right text-text-secondary">
                         {c.totalKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg
@@ -488,10 +488,10 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
 
 function Kpi({ label, value, positive }: { label: string; value: string; positive?: boolean }) {
   const color = positive === undefined
-    ? 'text-gray-900'
+    ? 'text-foreground'
     : positive ? 'text-green-700' : 'text-red-700';
   return (
-    <div className="bg-white rounded-input p-2.5 border border-border">
+    <div className="bg-card rounded-input p-2.5 border border-border">
       <p className="text-[10px] text-text-muted mb-0.5 uppercase tracking-wide">{label}</p>
       <p className={`text-base font-semibold ${color}`}>{value}</p>
     </div>

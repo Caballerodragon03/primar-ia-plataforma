@@ -10,8 +10,8 @@ import { useAuthStore } from '@/store/auth.store';
 type Tab = 'account' | 'company';
 
 const LANGUAGE_OPTIONS = [
-  { value: 'ES', label: 'Spanish (ES)' },
-  { value: 'EN', label: 'English (EN)' },
+  { value: 'ES', label: 'Español (ES)' },
+  { value: 'EN', label: 'Inglés (EN)' },
 ];
 
 export default function BuyerProfilePage() {
@@ -47,7 +47,7 @@ export default function BuyerProfilePage() {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : undefined;
-      setAccountError(msg ?? 'Failed to save changes.');
+      setAccountError(msg ?? 'Error al guardar los cambios.');
     } finally {
       setSavingAccount(false);
     }
@@ -56,7 +56,7 @@ export default function BuyerProfilePage() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match.');
+      setPasswordError('Las contraseñas no coinciden.');
       return;
     }
     setSavingPassword(true);
@@ -77,7 +77,7 @@ export default function BuyerProfilePage() {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : undefined;
-      setPasswordError(msg ?? 'Failed to change password.');
+      setPasswordError(msg ?? 'Error al cambiar la contraseña.');
     } finally {
       setSavingPassword(false);
     }
@@ -91,8 +91,8 @@ export default function BuyerProfilePage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
-        <p className="text-sm text-gray-500">Manage your account and company details.</p>
+        <h1 className="text-xl font-semibold text-foreground">Perfil</h1>
+        <p className="text-sm text-muted-foreground">Gestiona tu cuenta y los datos de tu empresa.</p>
       </div>
 
       {/* Sub-nav tabs */}
@@ -105,8 +105,8 @@ export default function BuyerProfilePage() {
             className={[
               'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors duration-150 border-b-2 cursor-pointer',
               activeTab === key
-                ? 'border-primary text-gray-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700',
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
             ].join(' ')}
           >
             <Icon className="w-4 h-4" />
@@ -119,25 +119,25 @@ export default function BuyerProfilePage() {
       {activeTab === 'account' && (
         <div className="space-y-6">
           {/* Contact info */}
-          <div className="bg-surface rounded-card border border-border p-6 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-900">Contact Person</h2>
+          <div className="bg-card rounded-card border border-border p-6 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Persona de contacto</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-500 mb-0.5">Name</p>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-xs text-muted-foreground mb-0.5">Nombre</p>
+                <p className="text-sm font-medium text-foreground">
                   {user?.nombre} {user?.apellidos}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 mb-0.5">Email</p>
-                <p className="text-sm font-medium text-gray-900">{user?.email}</p>
+                <p className="text-xs text-muted-foreground mb-0.5">Correo</p>
+                <p className="text-sm font-medium text-foreground">{user?.email}</p>
               </div>
             </div>
           </div>
 
           {/* Editable fields */}
-          <form onSubmit={handleSaveAccount} className="bg-surface rounded-card border border-border p-6 space-y-4">
-            <h2 className="text-sm font-semibold text-gray-900">Preferences</h2>
+          <form onSubmit={handleSaveAccount} className="bg-card rounded-card border border-border p-6 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Preferencias</h2>
             <Input
               label="Phone"
               type="tel"
@@ -155,7 +155,7 @@ export default function BuyerProfilePage() {
               <p role="alert" className="text-xs text-red-500">⚠ {accountError}</p>
             )}
             {accountSuccess && (
-              <p className="text-xs text-green-600">Changes saved successfully.</p>
+              <p className="text-xs text-green-600">Cambios guardados correctamente.</p>
             )}
             <div className="flex justify-end">
               <Button type="submit" loading={savingAccount}>
@@ -165,10 +165,10 @@ export default function BuyerProfilePage() {
           </form>
 
           {/* Change password */}
-          <form onSubmit={handleChangePassword} className="bg-surface rounded-card border border-border p-6 space-y-4">
+          <form onSubmit={handleChangePassword} className="bg-card rounded-card border border-border p-6 space-y-4">
             <div className="flex items-center gap-2 mb-1">
-              <Lock className="w-4 h-4 text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-900">Change Password</h2>
+              <Lock className="w-4 h-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground">Cambiar contraseña</h2>
             </div>
             <Input
               label="Current Password"
@@ -190,13 +190,13 @@ export default function BuyerProfilePage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              error={confirmPassword && newPassword !== confirmPassword ? 'Passwords do not match' : undefined}
+              error={confirmPassword && newPassword !== confirmPassword ? 'Las contraseñas no coinciden' : undefined}
             />
             {passwordError && (
               <p role="alert" className="text-xs text-red-500">⚠ {passwordError}</p>
             )}
             {passwordSuccess && (
-              <p className="text-xs text-green-600">Password updated successfully.</p>
+              <p className="text-xs text-green-600">Contraseña actualizada correctamente.</p>
             )}
             <div className="flex justify-end">
               <Button
@@ -226,20 +226,20 @@ export default function BuyerProfilePage() {
             </p>
           </div>
 
-          <div className="bg-surface rounded-card border border-border p-6 space-y-4">
+          <div className="bg-card rounded-card border border-border p-6 space-y-4">
             {[
-              { label: 'Legal Name', value: '—' },
+              { label: 'Razón social', value: '—' },
               { label: 'CIF / NIF', value: '—' },
-              { label: 'Legal Form', value: '—' },
-              { label: 'Address', value: '—' },
-              { label: 'City', value: '—' },
-              { label: 'Postal Code', value: '—' },
-              { label: 'Country', value: '—' },
-              { label: 'IBAN', value: 'Managed securely by Stripe' },
+              { label: 'Forma jurídica', value: '—' },
+              { label: 'Dirección', value: '—' },
+              { label: 'Ciudad', value: '—' },
+              { label: 'Código postal', value: '—' },
+              { label: 'País', value: '—' },
+              { label: 'IBAN', value: 'Gestionado de forma segura por Stripe' },
             ].map(({ label, value }) => (
               <div key={label} className="grid grid-cols-2 gap-4 py-2 border-b border-border last:border-0">
-                <p className="text-xs text-gray-500 font-medium">{label}</p>
-                <p className="text-sm text-gray-900">{value}</p>
+                <p className="text-xs text-muted-foreground font-medium">{label}</p>
+                <p className="text-sm text-foreground">{value}</p>
               </div>
             ))}
           </div>

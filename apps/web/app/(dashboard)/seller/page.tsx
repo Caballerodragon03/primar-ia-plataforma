@@ -76,7 +76,7 @@ export default function SellerDashboard() {
       setMatches(matchesRes.data.data ?? []);
       setNotifs(notifRes.data?.data ?? null);
     } catch {
-      setError('Failed to load dashboard data.');
+      setError('Error al cargar los datos del panel.');
     } finally {
       setLoading(false);
     }
@@ -141,8 +141,8 @@ export default function SellerDashboard() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome back!</h1>
-          <p className="text-secondary text-sm mt-1">Manage your lots and track your matches.</p>
+          <h1 className="text-2xl font-bold text-foreground">¡Bienvenido de nuevo!</h1>
+          <p className="text-secondary text-sm mt-1">Gestiona tus lotes y revisa tus matches.</p>
         </div>
         <Link href="/seller/lots/new">
           <Button variant="primary" size="md" className="flex items-center gap-2">
@@ -163,13 +163,13 @@ export default function SellerDashboard() {
         <KPICard
           label="Pending Matches"
           value={loading ? '—' : String(pendingMatches)}
-          sub={loading ? 'Loading...' : 'Awaiting your review'}
+          sub={loading ? 'Loading...' : 'Esperando tu revisión'}
           icon={<GitMerge className="w-4 h-4" />}
         />
         <KPICard
           label="Lots Closed"
           value={loading ? '—' : String(completedSales)}
-          sub={loading ? 'Loading...' : 'Fully sold or cancelled'}
+          sub={loading ? 'Loading...' : 'Vendidos o cancelados'}
           icon={<CheckCircle2 className="w-4 h-4" />}
         />
       </div>
@@ -189,14 +189,14 @@ export default function SellerDashboard() {
 
       {!loading && actionItems.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
             Action Required
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {actionItems.map((item) => (
               <Link key={item.href + item.label} href={item.href}>
-                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md ${
+                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-soft-md ${
                   item.color === 'amber' ? 'border-amber-200 bg-amber-50 hover:border-amber-300' :
                   item.color === 'blue'  ? 'border-blue-200 bg-blue-50 hover:border-blue-300' :
                   item.color === 'green' ? 'border-green-200 bg-green-50 hover:border-green-300' :
@@ -205,8 +205,8 @@ export default function SellerDashboard() {
                 }`}>
                   <span className="text-2xl">{item.icon}</span>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{item.label}</p>
-                    <p className="text-xs text-gray-600 mt-0.5">{item.desc}</p>
+                    <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
                   </div>
                 </div>
               </Link>
@@ -220,27 +220,27 @@ export default function SellerDashboard() {
           <div className="flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all cursor-pointer">
             <span className="text-2xl">🌱</span>
             <div>
-              <p className="text-sm font-semibold text-gray-900">You&apos;re all caught up!</p>
-              <p className="text-xs text-gray-500 mt-0.5">No pending actions — ready to publish a new lot?</p>
+              <p className="text-sm font-semibold text-foreground">¡Estás al día!</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Sin acciones pendientes — ¿listo para publicar un nuevo lote?</p>
             </div>
-            <span className="ml-auto text-sm font-medium text-primary">Publish New Lot →</span>
+            <span className="ml-auto text-sm font-medium text-primary">Publicar lote →</span>
           </div>
         </Link>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Active Lots Table */}
-        <div className="lg:col-span-2 bg-surface rounded-card border border-border overflow-hidden">
+        <div className="lg:col-span-2 bg-card rounded-card border border-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold text-gray-900">Active &amp; In Progress Lots</h2>
+            <h2 className="text-sm font-semibold text-foreground">Lotes activos y en curso</h2>
             <Link href="/seller/lots" className="text-xs text-secondary hover:underline font-medium">
               View All Lots
             </Link>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50">
-                {['LOT ID', 'PRODUCT', 'QUANTITY', 'COVERAGE', 'STATUS'].map((h) => (
+              <tr className="bg-muted/50">
+                {['ID LOTE', 'PRODUCTO', 'CANTIDAD', 'COBERTURA', 'ESTADO'].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-2.5 text-left text-[10px] font-semibold text-secondary uppercase tracking-wider"
@@ -260,7 +260,7 @@ export default function SellerDashboard() {
               ) : topActiveLots.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-6 text-center text-sm text-secondary">
-                    No active lots. <Link href="/seller/lots/new" className="text-primary underline">Publish one</Link>
+                    Sin lotes activos. <Link href="/seller/lots/new" className="text-primary underline">Publish one</Link>
                   </td>
                 </tr>
               ) : (
@@ -269,18 +269,18 @@ export default function SellerDashboard() {
                   const totalKg = Number(lot.totalKg ?? lot.calibres?.reduce((s, c) => s + c.cantidad_kg, 0) ?? 0);
                   const coveragePct = Math.min(100, Math.round(Number(lot.coverage ?? 0)));
                   return (
-                    <tr key={lot.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={lot.id} className="hover:bg-accent/50 transition-colors">
                       <td className="px-4 py-3 font-mono text-xs text-secondary">
                         {lot.id.slice(-5).toUpperCase()}
                       </td>
-                      <td className="px-4 py-3 text-gray-900">{lot.producto?.nombre ?? '—'}</td>
-                      <td className="px-4 py-3 text-gray-700">
+                      <td className="px-4 py-3 text-foreground">{lot.producto?.nombre ?? '—'}</td>
+                      <td className="px-4 py-3 text-foreground">
                         {totalKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
+                      <td className="px-4 py-3 text-foreground">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium w-9 tabular-nums">{coveragePct}%</span>
-                          <div className="flex-1 h-1.5 max-w-[80px] bg-gray-200 rounded-full overflow-hidden">
+                          <div className="flex-1 h-1.5 max-w-[80px] bg-muted rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full ${coveragePct >= 100 ? 'bg-green-500' : coveragePct > 0 ? 'bg-primary' : 'bg-gray-300'}`}
                               style={{ width: `${coveragePct}%` }}
@@ -300,9 +300,9 @@ export default function SellerDashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-surface rounded-card border border-border overflow-hidden">
+        <div className="bg-card rounded-card border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold text-gray-900">Recent Activity</h2>
+            <h2 className="text-sm font-semibold text-foreground">Actividad reciente</h2>
           </div>
           <div className="p-4 flex flex-col gap-3">
             {loading ? (
@@ -312,7 +312,7 @@ export default function SellerDashboard() {
                 <SkeletonBlock className="h-12 w-full" />
               </>
             ) : recentMatches.length === 0 ? (
-              <p className="text-xs text-secondary text-center mt-2">No recent matches yet</p>
+              <p className="text-xs text-secondary text-center mt-2">Sin matches recientes</p>
             ) : (
               recentMatches.map((match) => {
                 const qty = Number(match.cantidadKg);
@@ -321,10 +321,10 @@ export default function SellerDashboard() {
                 return (
                   <div
                     key={match.id}
-                    className="flex items-start justify-between p-3 bg-gray-50 rounded-input"
+                    className="flex items-start justify-between p-3 bg-muted/50 rounded-input"
                   >
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-gray-900 truncate">
+                      <p className="text-xs font-medium text-foreground truncate">
                         {match.pedido?.producto?.nombre ?? 'Product'}
                       </p>
                       <p className="text-[10px] text-secondary mt-0.5">
@@ -344,10 +344,10 @@ export default function SellerDashboard() {
       </div>
 
       {/* Seasonal Calendar */}
-      <div className="bg-surface rounded-card border border-border overflow-hidden">
+      <div className="bg-card rounded-card border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border">
-          <h2 className="text-sm font-semibold text-gray-900">Seasonal Calendar — Spain</h2>
-          <p className="text-xs text-secondary mt-0.5">Production and commercialization seasons by product category</p>
+          <h2 className="text-sm font-semibold text-foreground">Calendario estacional — España</h2>
+          <p className="text-xs text-secondary mt-0.5">Temporadas de producción y comercialización por categoría de producto</p>
         </div>
         <div className="p-4">
           <SeasonalCalendar />

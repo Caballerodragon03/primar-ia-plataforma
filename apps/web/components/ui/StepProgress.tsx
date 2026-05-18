@@ -14,9 +14,9 @@ export function StepProgress({ currentStep, totalSteps, stepLabels }: StepProgre
         <p className="text-xs font-medium text-secondary uppercase tracking-wide">
           Step {currentStep} of {totalSteps}
         </p>
-        <p className="text-xs font-semibold text-gray-700">{label}</p>
+        <p className="text-xs font-semibold text-foreground">{label}</p>
       </div>
-      <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
         <div
           className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
           style={{ width: `${progressPct === 0 ? 8 : progressPct}%` }}
@@ -36,7 +36,7 @@ export function StepProgress({ currentStep, totalSteps, stepLabels }: StepProgre
             ].join(' ')} />
             <span className={[
               'text-[10px] hidden sm:block',
-              i + 1 === currentStep ? 'text-gray-800 font-semibold' : 'text-gray-400',
+              i + 1 === currentStep ? 'text-gray-800 font-semibold' : 'text-muted-foreground',
             ].join(' ')}>{step}</span>
           </div>
         ))}
