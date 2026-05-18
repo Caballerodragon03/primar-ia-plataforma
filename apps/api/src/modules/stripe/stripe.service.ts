@@ -320,10 +320,40 @@ export class StripeService {
 
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        // Branch by what kind of session this is:
+        //   - subscription mode → subscription webhook handler
+        //   - payment mode + metadata.kind='match_commission' → Phase 4 flow
+        //   - payment mode + metadata.matchId only → legacy v1 marketplace flow
         if (session.mode === 'subscription') {
           const { subscriptionService } = await import('../subscriptions/subscription.service.js');
           await subscriptionService.handleSubscriptionWebhook(event);
+        } else if (session.metadata?.kind === 'match_commission') {
+          // Phase 4 — commission payment for match-level contract.
+          const matchId = session.metadata?.matchId;
+          const buyerSignature = session.metadata?.buyerSignature;
+          const buyerIp = session.metadata?.buyerIp || null;
+          if (!matchId || !buyerSignature) {
+            console.error('[stripe] match_commission session missing metadata', session.id);
+            break;
+          }
+          try {
+            const { contractsService } = await import('../contracts/contracts.service.js');
+            const paymentIntentId = typeof session.payment_intent === 'string'
+              ? session.payment_intent
+              : session.payment_intent?.id ?? session.id;
+            await contractsService.signMatchContractAsBuyerAfterPayment(
+              matchId,
+              buyerSignature,
+              buyerIp,
+              paymentIntentId,
+            );
+          } catch (err) {
+            // Caducó / contrato ya firmado / etc. — log and surface for admin.
+            // Refund handling for the caducó case is admin-managed for MVP.
+            console.error('[stripe] commission webhook failed for match', matchId, err);
+          }
         } else if (session.mode === 'payment' && session.metadata?.matchId) {
+          // Legacy v1 (pago seguro) flow — captures the full mercancía amount.
           const piId = typeof session.payment_intent === 'string'
             ? session.payment_intent
             : session.payment_intent?.id ?? null;
@@ -348,6 +378,97 @@ export class StripeService {
       default:
         break;
     }
+  }
+
+  /**
+   * Phase 4 — Stripe Checkout for the platform commission paid by the buyer.
+   * Pre-requisites:
+   *   - Match is in PENDIENTE_PAGO_COMPRADOR (seller already signed)
+   *   - Buyer hits "Firmar y pagar" → posts their signature → we put it
+   *     in session metadata so the webhook can persist it atomically with
+   *     the payment confirmation.
+   *
+   * Returns the Checkout Session URL the frontend redirects to.
+   */
+  async createCommissionCheckoutForMatch(
+    matchId: string,
+    buyerId: string,
+    buyerSignature: string,
+    buyerIp: string | null,
+  ): Promise<{ url: string }> {
+    const match = await prisma.match.findUnique({
+      where: { id: matchId },
+      include: {
+        lote: { include: { producto: true } },
+        pedido: { select: { id: true, compradorId: true } },
+        transaccion: { select: { id: true, comisionPagadaEn: true } },
+      },
+    });
+    if (!match) throw new AppError('Match no encontrado', 404);
+    if (match.pedido.compradorId !== buyerId) {
+      throw new AppError('No autorizado', 403);
+    }
+    if (match.contratoEstado === 'FIRMADO' || match.transaccion?.comisionPagadaEn) {
+      throw new AppError('La comisión ya está pagada', 400);
+    }
+    if (match.contratoEstado !== 'PENDIENTE_PAGO_COMPRADOR') {
+      throw new AppError(
+        match.contratoEstado === 'CADUCADO'
+          ? 'El plazo de firma del vendedor ha caducado. Pide al vendedor volver a firmar.'
+          : 'El vendedor todavía no ha firmado el contrato',
+        400,
+      );
+    }
+    if (match.firmaVendedorDeadline && match.firmaVendedorDeadline.getTime() < Date.now()) {
+      // Mark caducado now so the UI is consistent.
+      await prisma.match.update({
+        where: { id: matchId },
+        data: { contratoEstado: 'CADUCADO' },
+      });
+      throw new AppError('El plazo de firma del vendedor ha caducado', 410);
+    }
+
+    const comisionImporte = Number(match.comisionEstimada ?? 0);
+    if (comisionImporte <= 0) {
+      throw new AppError('Comisión no calculada para este contrato', 500);
+    }
+    const ivaPercent = 0.21;
+    const importeIva = Math.round(comisionImporte * ivaPercent * 100); // cents
+    const importeBase = Math.round(comisionImporte * 100); // cents
+    const totalCents = importeBase + importeIva;
+
+    const productoNombre = match.lote.producto?.nombre ?? 'Operación';
+    const refOrden = match.pedido.id.slice(-6).toUpperCase();
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'eur',
+            unit_amount: totalCents,
+            product_data: {
+              name: `Comisión Primar-IA — Pedido #${refOrden}`,
+              description: `Servicio de intermediación para la operación de ${productoNombre}. Incluye 21% IVA.`,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        kind: 'match_commission',
+        matchId,
+        buyerSignature,
+        buyerIp: buyerIp ?? '',
+      },
+      // Frontend will poll the contract info endpoint to know when webhook
+      // has fired and contract is FIRMADO.
+      success_url: `${env.CORS_ORIGIN}/buyer/orders/${match.pedido.id}/contract/${matchId}?paid=1`,
+      cancel_url: `${env.CORS_ORIGIN}/buyer/orders/${match.pedido.id}/contract/${matchId}?cancelled=1`,
+    });
+    if (!session.url) throw new AppError('Stripe no devolvió URL', 500);
+    return { url: session.url };
   }
 }
 

@@ -130,6 +130,64 @@ export async function downloadMatchContract(req: Request, res: Response): Promis
 }
 
 /**
+ * POST /api/v1/contracts/match/:matchId/buyer-checkout
+ * The buyer hits "Firmar y pagar". We accept their signature in the body
+ * BUT we do NOT persist it yet — only after Stripe confirms payment via
+ * webhook. The signature is stashed in the Stripe Checkout metadata so the
+ * webhook can recover it atomically.
+ *
+ * Returns: { url } — the frontend redirects the buyer to Stripe.
+ */
+export async function startBuyerCommissionCheckout(req: Request, res: Response): Promise<void> {
+  const matchId = (req.params as { matchId: string }).matchId;
+  const userId = req.user!.sub;
+  const { signatureData, ack } = req.body as { signatureData: string; ack?: boolean };
+  if (!signatureData || typeof signatureData !== 'string' || signatureData.length > 500) {
+    throw new AppError('Firma inválida (texto entre 1 y 500 caracteres)', 400);
+  }
+  // Hard ack — the buyer must explicitly accept the irrevocability notice.
+  // The frontend shows a modal that requires checking a box to enable this.
+  if (ack !== true) {
+    throw new AppError('Debes aceptar el aviso de firma irrevocable antes de continuar', 400);
+  }
+  const ip =
+    (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim()
+    ?? req.socket.remoteAddress
+    ?? null;
+  // Stripe metadata values are limited to 500 chars and we only have 50 keys
+  // — keep signature ≤ 480 to leave room for the audit suffix.
+  const trimmedSig = signatureData.trim().slice(0, 480);
+  const { stripeService } = await import('../stripe/stripe.service.js');
+  const result = await stripeService.createCommissionCheckoutForMatch(
+    matchId, userId, trimmedSig, ip,
+  );
+  res.json({ success: true, data: result });
+}
+
+/**
+ * POST /api/v1/contracts/match/:matchId/sign-seller
+ * The seller signs the contract. Only the seller of the match can hit this.
+ * After signing, contract estado moves to PENDIENTE_PAGO_COMPRADOR and a
+ * 48-business-hours deadline is set for the buyer to pay + sign.
+ */
+export async function signMatchAsSeller(req: Request, res: Response): Promise<void> {
+  const matchId = (req.params as { matchId: string }).matchId;
+  const userId = req.user!.sub;
+  const { signatureData } = req.body as { signatureData: string };
+  if (!signatureData || typeof signatureData !== 'string' || signatureData.length > 500) {
+    throw new AppError('Firma inválida (texto entre 1 y 500 caracteres)', 400);
+  }
+  // Capture client IP for the audit trail (use x-forwarded-for if present
+  // — common when behind a reverse proxy like Railway/Cloudflare).
+  const ip =
+    (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim()
+    ?? req.socket.remoteAddress
+    ?? null;
+  const result = await contractsService.signMatchContractAsSeller(matchId, userId, signatureData, ip);
+  res.json({ success: true, data: result });
+}
+
+/**
  * POST /api/v1/contracts/match/:matchId/regenerate-draft
  * Forces regeneration of the draft contract (after a negotiation in chat,
  * for example). Only allowed if the contract isn't yet signed.

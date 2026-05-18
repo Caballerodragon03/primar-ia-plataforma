@@ -3,11 +3,13 @@ import PDFDocument from 'pdfkit';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { prisma } from '@primaria/database';
 import { AppError } from '../../middleware/error.middleware.js';
-import { generarQRToken } from '@primaria/shared';
+import { generarQRToken, addBusinessHours } from '@primaria/shared';
 import { env } from '../../config/env.js';
 import { getR2 } from '../../shared/r2.js';
 import { buildContractData } from './contract-data.js';
 import { generateContractPdf } from './contract-pdf.js';
+
+const SELLER_SIGN_DEADLINE_BUSINESS_HOURS = 48;
 
 export class ContractsService {
   async getContractInfo(transaccionId: string, userId: string) {
@@ -422,6 +424,174 @@ export class ContractsService {
    * Used by the download endpoint — checks ownership and chooses draft vs
    * final based on contratoEstado.
    */
+  /**
+   * The seller signs the contract. This MUST happen before the buyer pays
+   * the commission — by design (per product spec). After signing:
+   *   - estado moves to PENDIENTE_PAGO_COMPRADOR
+   *   - firmaVendedorDeadline = now + 48 business hours
+   *   - cron expires the signature if buyer doesn't pay within window
+   *
+   * The signature is stored on the Transaccion (one is auto-created if
+   * none exists, with estado=PENDIENTE_PAGO). We DO NOT yet create the
+   * Transaccion at match acceptance (Phase 3 wires it into contributeToOrder
+   * but only saves the comision snapshot). The first time a seller signs,
+   * we make sure the Transaccion exists.
+   */
+  async signMatchContractAsSeller(
+    matchId: string,
+    userId: string,
+    signatureData: string,
+    ipAddress: string | null,
+  ): Promise<{ deadline: Date; contratoEstado: string }> {
+    return prisma.$transaction(async (tx) => {
+      const match = await tx.match.findUnique({
+        where: { id: matchId },
+        include: {
+          lote: { select: { vendedorId: true } },
+          pedido: { select: { compradorId: true } },
+          transaccion: true,
+        },
+      });
+      if (!match) throw new AppError('Match no encontrado', 404);
+      if (match.lote.vendedorId !== userId) {
+        throw new AppError('Sólo el vendedor puede firmar primero', 403);
+      }
+      if (match.contratoEstado === 'FIRMADO') {
+        throw new AppError('El contrato ya está firmado por ambas partes', 400);
+      }
+      if (match.contratoEstado === 'CADUCADO' || match.contratoEstado === 'CANCELADO') {
+        throw new AppError('El contrato ha caducado o ha sido cancelado. Pide al comprador renegociar.', 400);
+      }
+      if (match.contratoEstado === 'PENDIENTE_PAGO_COMPRADOR') {
+        throw new AppError('Ya has firmado este contrato. Estamos esperando al pago del comprador.', 400);
+      }
+      // Allow signing from BORRADOR or PENDIENTE_FIRMA_VENDEDOR.
+
+      // Ensure Transaccion exists (Phase 3 auto-creates it in contributeToOrder
+      // via matching.service, but defensively create here if missing).
+      let txRecord = match.transaccion;
+      if (!txRecord) {
+        const cantidadKg = Number(match.cantidadKg);
+        const precioKg = Number(match.precioKg);
+        const precioTotal = cantidadKg * precioKg;
+        txRecord = await tx.transaccion.create({
+          data: {
+            matchId,
+            vendedorId: match.lote.vendedorId,
+            compradorId: match.pedido.compradorId,
+            cantidadKg,
+            precioTotal,
+            comisionPlataforma: Number(match.comisionEstimada ?? 0),
+            comisionPorcentaje: Number(match.comisionPorcentaje ?? 0),
+            estado: 'PENDIENTE_PAGO',
+          },
+        });
+      }
+
+      // Store seller signature + audit data. We append the IP to the signature
+      // string so the audit trail is part of the firma itself (it's persisted
+      // as text — eIDAS Article 25.1 accepts this minimum-evidence model).
+      const signatureWithAudit = `${signatureData.trim()} [IP:${ipAddress ?? 'unknown'}]`;
+      const signedAt = new Date();
+      const deadline = addBusinessHours(signedAt, SELLER_SIGN_DEADLINE_BUSINESS_HOURS);
+
+      await tx.transaccion.update({
+        where: { id: txRecord.id },
+        data: {
+          firmaVendedor: signatureWithAudit,
+          firmaVendedorFecha: signedAt,
+        },
+      });
+      await tx.match.update({
+        where: { id: matchId },
+        data: {
+          contratoEstado: 'PENDIENTE_PAGO_COMPRADOR',
+          firmaVendedorDeadline: deadline,
+        },
+      });
+
+      return { deadline, contratoEstado: 'PENDIENTE_PAGO_COMPRADOR' };
+    }, { isolationLevel: 'Serializable' });
+  }
+
+  /**
+   * The buyer's signature step. Called from the Stripe webhook AFTER the
+   * commission payment has been confirmed. Atomic with the commission
+   * marker — either both happen or neither.
+   *
+   * Verifies the deadline hasn't passed; if it has, throws and the webhook
+   * marks the payment for refund elsewhere.
+   */
+  async signMatchContractAsBuyerAfterPayment(
+    matchId: string,
+    signatureData: string,
+    ipAddress: string | null,
+    stripeChargeId: string,
+  ): Promise<{ contractFinalUrl: string | null }> {
+    const result = await prisma.$transaction(async (tx) => {
+      const match = await tx.match.findUnique({
+        where: { id: matchId },
+        include: { transaccion: true, lote: { select: { vendedorId: true } }, pedido: { select: { compradorId: true } } },
+      });
+      if (!match) throw new AppError('Match no encontrado', 404);
+      if (match.contratoEstado === 'FIRMADO') {
+        // Idempotent — webhook may fire twice.
+        return { alreadyFinalized: true };
+      }
+      if (match.contratoEstado !== 'PENDIENTE_PAGO_COMPRADOR') {
+        throw new AppError(`Contrato en estado incompatible: ${match.contratoEstado}`, 400);
+      }
+      if (match.firmaVendedorDeadline && match.firmaVendedorDeadline.getTime() < Date.now()) {
+        // Caducó — el webhook que llama esto debe disparar refund.
+        await tx.match.update({
+          where: { id: matchId },
+          data: { contratoEstado: 'CADUCADO' },
+        });
+        throw new AppError('El plazo de firma del vendedor ha caducado. La comisión será reembolsada.', 410);
+      }
+      if (!match.transaccion) {
+        throw new AppError('No existe transacción para este match', 500);
+      }
+
+      const signedAt = new Date();
+      const signatureWithAudit = `${signatureData.trim()} [IP:${ipAddress ?? 'unknown'}]`;
+
+      await tx.transaccion.update({
+        where: { id: match.transaccion.id },
+        data: {
+          firmaComprador: signatureWithAudit,
+          firmaCompradorFecha: signedAt,
+          comisionPagadaEn: signedAt,
+          comisionStripeChargeId: stripeChargeId,
+        },
+      });
+      await tx.match.update({
+        where: { id: matchId },
+        data: { contratoEstado: 'FIRMADO' },
+      });
+      return { alreadyFinalized: false };
+    }, { isolationLevel: 'Serializable' });
+
+    if (result.alreadyFinalized) {
+      // Look up the existing URL
+      const tx = await prisma.transaccion.findUnique({
+        where: { matchId },
+        select: { contratoPdfUrl: true },
+      });
+      return { contractFinalUrl: tx?.contratoPdfUrl ?? null };
+    }
+
+    // Generate the FINAL contract PDF (no watermark) outside the tx — PDF
+    // generation is heavy and we don't want to extend the Serializable lock.
+    try {
+      const result = await this.generateContractFinal(matchId);
+      return { contractFinalUrl: result.url };
+    } catch (err) {
+      console.error('[contracts] generateContractFinal failed after buyer sign:', err);
+      return { contractFinalUrl: null };
+    }
+  }
+
   async getContractBufferForMatch(matchId: string, userId: string): Promise<{ buffer: Buffer; filename: string }> {
     const match = await prisma.match.findUnique({
       where: { id: matchId },

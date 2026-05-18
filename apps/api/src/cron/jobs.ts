@@ -125,6 +125,47 @@ async function runMarketDataJob(): Promise<void> {
   console.log('[CRON] Market report job result:', result);
 }
 
+// ─── Job 4: Expire contracts where seller signed but buyer didn't pay ──────
+
+/**
+ * Phase 4 — Look for matches in PENDIENTE_PAGO_COMPRADOR whose
+ * firmaVendedorDeadline has passed. Mark them as CADUCADO and clear the
+ * seller's signature (so they can re-sign if they want to give the buyer
+ * another shot). Runs hourly — granularity is plenty for a 48h window.
+ */
+async function expireSellerSignatures(): Promise<void> {
+  const { prisma } = await import('@primaria/database');
+  const now = new Date();
+  const expired = await prisma.match.findMany({
+    where: {
+      contratoEstado: 'PENDIENTE_PAGO_COMPRADOR',
+      firmaVendedorDeadline: { lte: now },
+    },
+    select: { id: true, transaccion: { select: { id: true } } },
+  });
+  if (expired.length === 0) return;
+  console.log(`[CRON] Expiring ${expired.length} seller signatures past deadline`);
+  for (const m of expired) {
+    try {
+      await prisma.$transaction([
+        prisma.match.update({
+          where: { id: m.id },
+          data: { contratoEstado: 'CADUCADO' },
+        }),
+        // Clear seller signature so a fresh sign-flow can be initiated.
+        ...(m.transaccion ? [
+          prisma.transaccion.update({
+            where: { id: m.transaccion.id },
+            data: { firmaVendedor: null, firmaVendedorFecha: null },
+          }),
+        ] : []),
+      ]);
+    } catch (err) {
+      console.error('[CRON] Failed to expire match', m.id, err);
+    }
+  }
+}
+
 // ─── Register all cron jobs ───────────────────────────────────────────────────
 
 export function startCronJobs(): void {
@@ -142,6 +183,11 @@ export function startCronJobs(): void {
   cron.schedule('0 7 * * 1', () => {
     void runMarketDataJob();
   }, { timezone: 'Europe/Madrid' });
+
+  // Hourly — expire seller signatures past their 48-business-hours deadline
+  cron.schedule('5 * * * *', () => {
+    void expireSellerSignatures();
+  });
 
   console.log('[CRON] All cron jobs registered');
 }

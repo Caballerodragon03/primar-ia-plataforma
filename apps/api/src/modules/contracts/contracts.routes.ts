@@ -9,6 +9,8 @@ import {
   getMatchContractInfo,
   downloadMatchContract,
   regenerateDraftContract,
+  signMatchAsSeller,
+  startBuyerCommissionCheckout,
 } from './contracts.controller.js';
 import { asyncHandler } from '../../shared/async-handler.js';
 
@@ -24,6 +26,10 @@ contractsRouter.get('/match/:matchId/info', asyncHandler(getMatchContractInfo));
 contractsRouter.get('/match/:matchId/download', asyncHandler(downloadMatchContract));
 // POST   /api/v1/contracts/match/:matchId/regenerate-draft
 contractsRouter.post('/match/:matchId/regenerate-draft', asyncHandler(regenerateDraftContract));
+// POST   /api/v1/contracts/match/:matchId/sign-seller
+contractsRouter.post('/match/:matchId/sign-seller', asyncHandler(signMatchAsSeller));
+// POST   /api/v1/contracts/match/:matchId/buyer-checkout
+contractsRouter.post('/match/:matchId/buyer-checkout', asyncHandler(startBuyerCommissionCheckout));
 
 // ─── Existing transaccion-level endpoints (legacy QR/delivery flow) ─────────
 // GET /api/v1/contracts/:transaccionId — download PDF contract
