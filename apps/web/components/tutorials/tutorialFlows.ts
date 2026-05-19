@@ -160,8 +160,8 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     placement: 'top',
     title: 'Campo 8 · Términos de pago aceptados',
     content:
-      'Cuándo te pagan: contado, 30 días fecha factura, 60 días… Marca los plazos que aceptas. Compradores con plazos más largos se filtran fuera. Marco "contado".',
-    autofill: { terminosPagoAceptados: ['CONTADO'] },
+      'Cuándo te pagan: inmediato, 30 días fecha factura, 60 días… Marca los plazos que aceptas. Compradores con plazos más largos se filtran fuera. Marco "inmediato".',
+    autofill: { terminosPagoAceptados: ['INMEDIATO'] },
   },
   {
     key: 'btn-publicar',

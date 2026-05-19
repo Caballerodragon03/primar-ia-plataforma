@@ -110,15 +110,16 @@ export function IntroTutorial({ role, onComplete }: IntroTutorialProps) {
     onComplete();
   }
 
-  function handleCallback(data: EventData) {
+  async function handleCallback(data: EventData) {
     const { status, type } = data;
-    // Joyride v3 emite tour:end al pulsar el botón final, y status='finished'
-    // o 'skipped'. Aceptamos ambos para no perder el evento por la versión.
     const ended = type === 'tour:end' || status === 'finished' || status === 'skipped';
     if (!ended) return;
     setRun(false);
-    void persistComplete();
-    // Solo redirigimos cuando se completó (no cuando se saltó).
+    // Phase 14M v3.5 — await la persistencia ANTES de navegar para que
+    // la pantalla de Tutoriales del perfil refleje "Completado" al
+    // recargar /auth/profile. Antes hacíamos fire-and-forget y la pantalla
+    // se cargaba antes de que el POST llegara.
+    await persistComplete();
     if (status !== 'skipped') {
       const profileHref = role === 'VENDEDOR' ? '/seller/profile' : '/buyer/profile';
       router.push(`${profileHref}?tab=tutoriales`);
@@ -130,7 +131,7 @@ export function IntroTutorial({ role, onComplete }: IntroTutorialProps) {
       steps={steps}
       run={run}
       continuous
-      onEvent={handleCallback}
+      onEvent={(data) => { void handleCallback(data); }}
       locale={{
         back: 'Atrás',
         close: 'Cerrar',

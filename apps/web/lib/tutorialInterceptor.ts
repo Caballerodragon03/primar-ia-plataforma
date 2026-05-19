@@ -42,7 +42,10 @@ function mockMatch(): unknown {
       producto: { nombre: 'Aguacate' },
       variedad: { nombre: 'Hass' },
       incoterm: 'DAP',
-      incotermsAceptados: ['DAP'],
+      // Phase 14M v3.5 — el comprador "ficticio" acepta cualquier
+      // incoterm para que el filtro de la página de matches no lo
+      // oculte sea cual sea la configuración del vendedor real.
+      incotermsAceptados: ['EXW', 'FCA', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP', 'FAS', 'FOB', 'CFR', 'CIF', 'DAT'],
       comprador: {
         id: 'tutorial-comprador-X',
         nombre: 'Frutas García',
@@ -269,8 +272,19 @@ function mockGetForUrl(url: string): unknown | null {
   if (url === `/contracts/match/${TUTORIAL_IDS.MATCH}/info`) {
     return { success: true, data: mockContractInfo() };
   }
+  // buyer/orders/[id]/page.tsx hace api.get(/contracts/{transaccionId}/info)
+  // por cada match con transacción — devolvemos el mismo mock.
+  if (url === `/contracts/${TUTORIAL_IDS.TRANSACCION}/info`) {
+    return { success: true, data: mockContractInfo() };
+  }
   if (url === '/valoraciones/pending') {
     return { success: true, data: null };
+  }
+  // Otros GETs que las páginas del flow podrían llamar pero que no
+  // necesitamos poblar — devolvemos lista vacía silenciosamente para
+  // que no caigan a backend.
+  if (url.startsWith('/scoring/') || url.startsWith('/disputes') || url.startsWith('/market/')) {
+    return { success: true, data: [] };
   }
   return null;
 }
