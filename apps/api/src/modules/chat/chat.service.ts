@@ -30,6 +30,8 @@ export class ChatService {
             },
             pedido: { select: { id: true } },
           },
+          // Phase 8 — surface contratoEstado so the chat UI can hide the
+          // pre-contract privacy reminder once both parties have signed.
         },
         mensajes: {
           orderBy: { createdAt: 'desc' },
@@ -81,6 +83,8 @@ export class ChatService {
         lastMessageAt: lastMessage?.createdAt?.toISOString() ?? tx.createdAt.toISOString(),
         unreadCount: unreadByTx.get(tx.id) ?? 0,
         estado: tx.estado,
+        // Drives the chat privacy-reminder banner (hidden once FIRMADO).
+        contratoEstado: tx.match?.contratoEstado ?? null,
       };
     });
   }

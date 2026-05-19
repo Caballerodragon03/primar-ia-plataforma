@@ -64,6 +64,9 @@ interface Conversation {
   lastMessageAt: string;
   unreadCount: number;
   estado: TxEstado;
+  /** Phase 8 — drives whether the chat privacy banner is shown.
+   *  Hidden once both parties have signed (FIRMADO). */
+  contratoEstado?: 'BORRADOR' | 'PENDIENTE_FIRMA_VENDEDOR' | 'PENDIENTE_PAGO_COMPRADOR' | 'FIRMADO' | 'CADUCADO' | 'CANCELADO' | null;
 }
 
 interface Message {
@@ -442,13 +445,20 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
               <>
                 {/* Phase 8 — Privacy reminder banner. Persistent reminder
                     above the input so users learn the rule. The daily Gemini
-                    scanner enforces it; this is the education layer. */}
-                <div className="px-4 py-2 border-t border-border bg-blue-50/60 text-[11px] text-blue-900 flex items-start gap-1.5">
-                  <span aria-hidden>🔒</span>
-                  <span>
-                    Por tu seguridad: no compartas teléfono, email ni cierres la operación fuera de Primar-IA hasta firmar el contrato. Los mensajes son revisados por IA.
-                  </span>
-                </div>
+                    scanner enforces it; this is the education layer.
+                    Hidden once contratoEstado === 'FIRMADO' — by then both
+                    parties have signed, identifying info is in the contract,
+                    and coordinating delivery requires sharing logistics
+                    details. The IA scan still runs (anti retroactive bypass)
+                    but we stop nagging the user. */}
+                {selectedConv?.contratoEstado !== 'FIRMADO' && (
+                  <div className="px-4 py-2 border-t border-border bg-blue-50/60 text-[11px] text-blue-900 flex items-start gap-1.5">
+                    <span aria-hidden>🔒</span>
+                    <span>
+                      Por tu seguridad: no compartas teléfono, email ni cierres la operación fuera de Primar-IA hasta firmar el contrato. Los mensajes son revisados por IA.
+                    </span>
+                  </div>
+                )}
                 <div className="px-4 py-3 border-t border-border flex items-end gap-2">
                 {/* Negotiate button */}
                 <button

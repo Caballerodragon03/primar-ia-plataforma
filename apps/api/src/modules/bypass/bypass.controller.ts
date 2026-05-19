@@ -121,12 +121,18 @@ export async function resolveBypassAlert(req: Request, res: Response): Promise<v
         resolvedAt: new Date(),
       },
     });
-    // BANEADO action escalates: also set the user's estado to SUSPENDIDO so
-    // they can't continue using the platform.
+    // BANEADO action escalates: set user.estado=SUSPENDIDO AND revoke all
+    // refresh tokens so the JWT-vs-DB drift can't keep the user signed in.
+    // The access token still lives up to its 1h expiry, but without a refresh
+    // token they can't extend their session. Mitigates the "banned user keeps
+    // browsing for 1h" UX/security gap.
     if (accion === 'BANEADO') {
       await tx.user.update({
         where: { id: alert.remitenteId },
         data: { estado: 'SUSPENDIDO' as UserEstado },
+      });
+      await tx.refreshToken.deleteMany({
+        where: { userId: alert.remitenteId },
       });
     }
   });
