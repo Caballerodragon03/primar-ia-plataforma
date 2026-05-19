@@ -52,6 +52,10 @@ interface ApiMatchItem {
     calibresSolicitados: unknown;
     producto: { nombre: string };
     variedad: { nombre: string } | null;
+    // The API `include` returns ALL pedido fields, including these two,
+    // which the incoterm filter (Fix Phase 14D) needs to inspect.
+    incoterm?: string;
+    incotermsAceptados?: unknown;
   };
   lote: {
     id: string;
@@ -143,16 +147,26 @@ export default function SellerMatchesPage() {
     };
   }, []);
 
-  // Filter matches by incoterm if filter is active
+  // Filter matches by incoterm if filter is active.
+  // Phase 14D — antes solo se comparaba contra el `pedido.incoterm` principal,
+  // lo cual descartaba pedidos cuya lista `incotermsAceptados` SÍ incluía un
+  // incoterm aceptado por el vendedor. Ahora el match pasa el filtro si:
+  //   (a) el incoterm principal está en el filtro, O
+  //   (b) ALGUNO de los incoterms aceptados por el comprador está en el filtro.
   const filtered = useMemo(() => {
     if (!incotermPrefs?.done || incotermFilter.size === 0) return matches;
     return matches.filter((m) => {
-      // The match pedido has an incoterm field — filter by it
-      const pedidoIncoterm = (m.pedido as { incoterm?: string }).incoterm;
-      if (!pedidoIncoterm) return true;
-      return incotermFilter.has(pedidoIncoterm);
+      const p = m.pedido as { incoterm?: string; incotermsAceptados?: unknown };
+      const aceptados = Array.isArray(p.incotermsAceptados) ? (p.incotermsAceptados as string[]) : [];
+      const candidatos = [p.incoterm, ...aceptados].filter((v): v is string => !!v);
+      // Sin info de incoterm en el pedido → no descartar (defensivo).
+      if (candidatos.length === 0) return true;
+      return candidatos.some((c) => incotermFilter.has(c));
     });
   }, [matches, incotermFilter, incotermPrefs]);
+
+  // Phase 14D — distinguir "no hay matches en absoluto" vs "el filtro los oculta"
+  const hiddenByFilter = matches.length > 0 && filtered.length === 0;
 
   const sorted = useMemo(() => sortMatches(filtered, activeTab), [filtered, activeTab]);
   const totalProfit = useMemo(() => computeTotalProfit(filtered), [filtered]);
@@ -312,8 +326,9 @@ export default function SellerMatchesPage() {
         </div>
       )}
 
-      {/* Automated Best Match banner */}
-      {!loading && matches.length > 0 && (
+      {/* Automated Best Match banner — only when matches survive the filter,
+          otherwise mostraba "€0,00" misleading. Phase 14D fix. */}
+      {!loading && filtered.length > 0 && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-yellow-50 border border-primary/40 rounded-card px-5 py-4">
           <div className="flex items-center gap-2">
             <Star className="w-5 h-5 text-primary flex-shrink-0 fill-primary" />
@@ -385,10 +400,30 @@ export default function SellerMatchesPage() {
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <Star className="w-8 h-8 text-muted-foreground/50" />
             </div>
-            <p className="font-semibold text-text-primary mb-1">Todavía no hay pedidos que encajen.</p>
-            <p className="text-sm text-text-secondary max-w-sm">
-              No buyers match your current lot calibers. See what buyers are requesting below.
-            </p>
+            {/* Phase 14D — diferenciar: filtro oculta vs no hay matches. */}
+            {hiddenByFilter ? (
+              <>
+                <p className="font-semibold text-text-primary mb-1">
+                  Tienes {matches.length} match{matches.length === 1 ? '' : 'es'} pero el filtro de incoterm los oculta.
+                </p>
+                <p className="text-sm text-text-secondary max-w-sm">
+                  Amplía los incoterms del filtro o pulsa <strong>Restablecer</strong> para verlos todos.
+                </p>
+                <button
+                  onClick={() => incotermPrefs && setIncotermFilter(new Set(incotermPrefs.selected))}
+                  className="mt-4 text-xs text-primary-dark underline hover:no-underline"
+                >
+                  Restablecer filtro
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-text-primary mb-1">Todavía no hay pedidos que encajen.</p>
+                <p className="text-sm text-text-secondary max-w-sm">
+                  Ningún comprador encaja con los calibres de tus lotes actuales. Mira lo que están pidiendo abajo.
+                </p>
+              </>
+            )}
           </div>
 
           {marketDemand.length > 0 && (
@@ -396,7 +431,7 @@ export default function SellerMatchesPage() {
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-primary" />
                 <h3 className="font-semibold text-text-primary text-sm">Lo que están pidiendo los compradores</h3>
-                <span className="text-xs text-text-secondary">— update your lot calibers to get matched</span>
+                <span className="text-xs text-text-secondary">— actualiza los calibres de tus lotes para encajar</span>
               </div>
               <div className="divide-y divide-border">
                 {marketDemand.map((d) => (
@@ -404,14 +439,14 @@ export default function SellerMatchesPage() {
                     <div>
                       <span className="text-sm font-medium text-text-primary">{d.productoNombre}</span>
                       <span className="ml-2 text-xs bg-muted text-text-secondary px-2 py-0.5 rounded-badge">
-                        Caliber {d.calibre}
+                        Calibre {d.calibre}
                       </span>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-text-primary">
                         {d.totalKg.toLocaleString('es-ES')} kg
                       </p>
-                      <p className="text-xs text-text-secondary">{d.orderCount} order{d.orderCount !== 1 ? 's' : ''}</p>
+                      <p className="text-xs text-text-secondary">{d.orderCount} pedido{d.orderCount !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
                 ))}
