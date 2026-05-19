@@ -181,7 +181,7 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     kind: 'modal',
     title: '¡Lote publicado!',
     content:
-      'El motor de matching ha encontrado a un comprador compatible. Vamos a verlo en tu pantalla de matches.',
+      'El motor de matching ha encontrado un comprador compatible. Te llevo a /seller/matches para verlo en pantalla.',
   },
   {
     key: 'ver-matches',
@@ -191,32 +191,45 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     placement: 'center',
     title: 'Matches con compradores',
     content:
-      'Aquí ves los pedidos que encajan con tu lote: comprador, su puntuación, kg que pide, precio €/kg y match score. En modo prueba simulamos que aparece "Frutas García S.L." pidiendo 1.000 kg de calibre 14 a 3,15 €/kg.',
+      'Esta es la pantalla real de matches con un comprador simulado: "Frutas García S.L." pidiendo 1.000 kg de calibre 14 a 3,15 €/kg, match 84/100. Aquí ves toda la información del comprador y de su pedido antes de aceptar.',
   },
   {
     key: 'aceptar-match',
     kind: 'modal',
     title: 'Contribuir al pedido',
     content:
-      'Pulsarías "Contribuir al pedido" en la tarjeta del comprador. Se abre un modal donde indicas cuántos kg comprometes POR CALIBRE — tope = mínimo entre lo que tienes y lo que el comprador pide.',
+      'Pulsarías "Contribuir al pedido" en la tarjeta. Se abre un modal donde indicas cuántos kg comprometes POR CALIBRE — tope = mínimo entre lo que tienes y lo que el comprador pide.',
     note: 'Simulamos que aceptas 1.000 kg de calibre 14 a 3,15 €/kg.',
   },
 
   // ─── Contrato y firma ─────────────────────────────────────────────
   {
-    key: 'borrador-contrato',
+    key: 'ir-contrato',
     kind: 'modal',
-    title: 'Borrador del contrato',
+    title: 'Borrador del contrato generado',
     content:
-      'Primar-IA genera automáticamente el borrador del contrato con todas las condiciones acordadas (kg, €/kg, incoterm, plazo, calibres). Es un PDF descargable que puedes revisar antes de firmar.',
+      'Al aceptar, Primar-IA crea automáticamente el borrador del contrato y te lleva a su pantalla. Te llevo allí.',
+  },
+  {
+    key: 'ver-contrato',
+    kind: 'spotlight',
+    route: `/seller/contracts/tutorial-match-MX42`,
+    target: 'body',
+    placement: 'center',
+    title: 'Tu contrato (estado: PENDIENTE_FIRMA_VENDEDOR)',
+    content:
+      'Esta es la pantalla real del contrato. Ves todas las condiciones acordadas, el PDF, el deadline de firma (48 h hábiles), la comisión estimada de Primar-IA y los datos del comprador. Aquí decides si firmar o negociar en chat.',
   },
   {
     key: 'firmar-vendedor',
-    kind: 'modal',
+    kind: 'spotlight',
+    route: `/seller/contracts/tutorial-match-MX42`,
+    target: '[data-tutorial="btn-firmar-vendedor"]',
+    placement: 'top',
     title: 'Firmar como vendedor',
     content:
-      'Tienes 48 h hábiles para firmar. Firmas dibujando en un canvas o tecleando una rúbrica. Al firmar, el contrato pasa a estado PENDIENTE_PAGO_COMPRADOR.',
-    note: 'Si no firmas a tiempo, el match caduca y el lote queda libre otra vez.',
+      'Este botón abre el panel de firma: dibujas tu rúbrica en el canvas o la tecleas. Al firmar, el contrato pasa a PENDIENTE_PAGO_COMPRADOR y queda esperando que el comprador firme y pague la comisión.',
+    note: 'En modo prueba el botón está interceptado: si lo pulsas no pasa nada. Continúa para seguir.',
   },
   {
     key: 'comprador-firma-paga',
@@ -413,28 +426,47 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
 
   // ─── Ofertas y aceptación ──────────────────────────────────────────
   {
-    key: 'ver-ofertas',
+    key: 'ir-detalle-pedido',
     kind: 'modal',
+    title: '¡Pedido creado!',
+    content:
+      'El motor de matching ha encontrado un vendedor compatible. Te llevo al detalle del pedido para que veas la oferta.',
+  },
+  {
+    key: 'ver-ofertas',
+    kind: 'spotlight',
+    route: `/buyer/orders/tutorial-pedido-PD7K9`,
+    target: 'body',
+    placement: 'center',
     title: 'Ofertas de vendedores',
     content:
-      'En la pantalla del pedido verías una sección "Ofertas de vendedores" con todos los que encajan. Cada tarjeta lleva: vendedor, puntuación, kg comprometidos, €/kg y estado.',
-    note: 'Simulamos que aparece "Cooperativa El Naranjo" ofreciendo 1.500 kg de calibre 3 a 0,52 €/kg.',
+      'Esta es la pantalla real del pedido. La sección "Ofertas de vendedores" muestra todos los que encajan con tu pedido. Aquí ves "Cooperativa El Naranjo" ofreciendo 1.500 kg de calibre 3 a 0,52 €/kg, con su puntuación y los datos del lote.',
   },
   {
     key: 'aceptar-oferta',
     kind: 'modal',
     title: 'Aceptar la oferta',
     content:
-      'Aceptas tal cual, o negocias en chat (mismo modal que el del vendedor: precio por calibre, kg, incoterm, plazo). Varios vendedores pueden contribuir al mismo pedido — la plataforma reparte por calibre.',
+      'Aceptarías la oferta tal cual o abrirías el chat para negociar precio/calibres/incoterm. Varios vendedores pueden contribuir al mismo pedido — la plataforma reparte por calibre.',
   },
 
   // ─── Contrato, firma y pago ────────────────────────────────────────
   {
-    key: 'borrador-contrato',
+    key: 'ir-contrato-comprador',
     kind: 'modal',
     title: 'Borrador del contrato',
     content:
-      'Cuando el vendedor firma, te llega notificación y revisas el borrador. Es un PDF con todas las condiciones acordadas (kg, €/kg, incoterm, plazo, calibres).',
+      'Al aceptar y cuando el vendedor firma, te llega notificación y revisas el borrador. Te llevo a la pantalla del contrato.',
+  },
+  {
+    key: 'ver-contrato-comprador',
+    kind: 'spotlight',
+    route: `/buyer/contracts/tutorial-match-MX42`,
+    target: 'body',
+    placement: 'center',
+    title: 'Tu contrato como comprador',
+    content:
+      'Esta es la pantalla real del contrato (lado comprador). Aquí ves todas las condiciones, el PDF descargable, la comisión que pagarás a Primar-IA y los datos del vendedor. Desde aquí firmas y pagas la comisión.',
   },
   {
     key: 'firmar-pagar',

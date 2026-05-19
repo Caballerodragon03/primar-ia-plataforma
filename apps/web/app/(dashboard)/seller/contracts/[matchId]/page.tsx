@@ -416,6 +416,7 @@ export default function SellerMatchContractPage() {
                 variant="primary"
                 onClick={() => setShowSignPad(true)}
                 className="flex items-center gap-2"
+                data-tutorial="btn-firmar-vendedor"
               >
                 <PenTool className="w-4 h-4" /> Firmar contrato
               </Button>
