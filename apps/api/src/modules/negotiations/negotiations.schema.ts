@@ -15,6 +15,10 @@ import {
 const calibreSchema = z.object({
   calibre: z.string().min(1),
   cantidad_kg: z.number().positive(),
+  // Phase 14G — precio per calibre (opcional). Si se especifica, sobrescribe
+  // el precioKg global para ese calibre concreto en el contrato. Si se omite,
+  // el calibre hereda el precio global (precioKg de la oferta o el match).
+  precio_kg: z.number().positive().optional(),
 });
 
 export const createOfertaSchema = z.object({

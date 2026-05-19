@@ -80,6 +80,11 @@ interface Message {
 }
 
 interface ChatViewProps {
+  /** Phase 14G — si true, abre el modal de propuesta automáticamente una vez
+   *  la conversación inicial esté cargada. Se usa desde
+   *  /seller|buyer/contracts/[matchId] cuando el usuario pulsa
+   *  "Modificar condiciones (chat)" para que llegue al chat ya con el modal. */
+  autoOpenOffer?: boolean;
   role: 'buyer' | 'seller';
   initialTransaccionId?: string;
 }
@@ -113,7 +118,7 @@ function formatConvTime(iso: string): string {
   }
 }
 
-export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
+export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: ChatViewProps) {
   const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialTransaccionId ?? null);
@@ -121,7 +126,18 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [loadingConvs, setLoadingConvs] = useState(true);
+  // Phase 14G — abre el modal de propuesta automáticamente la primera vez
+  // que se carga el chat si la prop autoOpenOffer está activa. Se usa cuando
+  // el usuario llega desde "Modificar condiciones (chat)" en la página de
+  // contrato, para evitar que tenga que adivinar qué botón pulsar.
   const [showOfferModal, setShowOfferModal] = useState(false);
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenOffer && !autoOpenedRef.current && selectedId && !loadingConvs) {
+      autoOpenedRef.current = true;
+      setShowOfferModal(true);
+    }
+  }, [autoOpenOffer, selectedId, loadingConvs]);
   const [sendError, setSendError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);

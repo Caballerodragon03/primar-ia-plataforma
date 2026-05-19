@@ -31,6 +31,8 @@ import type { CreateOfertaInput } from './negotiations.schema.js';
 interface CalibreSnapshot {
   calibre: string;
   cantidad_kg: number;
+  // Phase 14G — opcional, sobrescribe precioKg global del match para ese calibre.
+  precio_kg?: number;
 }
 
 export class NegotiationsService {

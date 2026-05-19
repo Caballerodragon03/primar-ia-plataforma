@@ -30,7 +30,13 @@ import {
   type TerminoPago as TerminoPagoType,
 } from '@primaria/shared';
 
-interface CalibreItem { calibre: string; cantidad_kg: number }
+interface CalibreItem {
+  calibre: string;
+  cantidad_kg: number;
+  // Phase 14G — precio por calibre opcional. Si está vacío hereda
+  // currentPrecioKg / el precio del match.
+  precio_kg?: number;
+}
 
 interface NegotiationOfferModalProps {
   transaccionId: string;
@@ -57,6 +63,10 @@ export function NegotiationOfferModal({
 }: NegotiationOfferModalProps) {
   // Local form state. Empty string means "no change to this field" except for
   // calibres which uses a separate edit-mode flag.
+  // Phase 14G — el precio se gestiona POR CALIBRE en la sección de calibres.
+  // Se conserva un campo "precio global" como atajo opcional para aplicar el
+  // mismo precio a todos los calibres de golpe (al editarlo, se rellena en
+  // todas las filas que aún no tengan precio_kg).
   const [precioKg, setPrecioKg] = useState(currentPrecioKg != null ? currentPrecioKg.toFixed(4) : '');
   const [incoterm, setIncoterm] = useState(currentIncoterm ?? '');
   const [logistica, setLogistica] = useState(currentLogistica ?? '');
@@ -141,7 +151,14 @@ export function NegotiationOfferModal({
       if (incotermChanged) body.incoterm = incoterm;
       if (logisticaChanged) body.logistica = logistica;
       if (terminoChanged) body.terminoPago = terminoPago;
-      if (calibresChanged) body.calibres = calibres.map((c) => ({ calibre: c.calibre.trim(), cantidad_kg: Number(c.cantidad_kg) }));
+      if (calibresChanged) body.calibres = calibres.map((c) => {
+        const item: { calibre: string; cantidad_kg: number; precio_kg?: number } = {
+          calibre: c.calibre.trim(),
+          cantidad_kg: Number(c.cantidad_kg),
+        };
+        if (c.precio_kg != null && c.precio_kg > 0) item.precio_kg = Number(c.precio_kg);
+        return item;
+      });
       if (parentId) body.parentId = parentId;
       await api.post(`/chat/${transaccionId}/offers`, body);
       onSuccess();
@@ -178,9 +195,11 @@ export function NegotiationOfferModal({
         </div>
 
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-5">
-          {/* Price */}
+          {/* Price (global shortcut) — Phase 14G — apply to all calibres */}
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Precio por kg (€)</label>
+            <label className="block text-xs font-medium text-foreground mb-1">
+              Precio global por kg <span className="text-muted-foreground">(opcional — atajo)</span>
+            </label>
             <div className="flex items-center gap-2">
               {currentPrecioKg != null && (
                 <span className="text-xs text-muted-foreground line-through whitespace-nowrap">
@@ -196,12 +215,24 @@ export function NegotiationOfferModal({
                 placeholder="Nuevo precio/kg"
                 className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
               />
+              <button
+                type="button"
+                onClick={() => {
+                  const v = Number(precioKg);
+                  if (!Number.isFinite(v) || v <= 0) return;
+                  if (!editCalibres) setEditCalibres(true);
+                  setCalibres((cs) => cs.map((c) => ({ ...c, precio_kg: v })));
+                }}
+                disabled={!precioKg || Number(precioKg) <= 0}
+                className="text-[11px] px-2 py-1.5 rounded border border-border text-text-secondary hover:bg-muted disabled:opacity-40 whitespace-nowrap"
+                title="Aplica este precio a todos los calibres"
+              >
+                Aplicar a todos
+              </button>
             </div>
-            {precioChanged && (
-              <p className="text-[11px] text-yellow-700 mt-0.5">
-                Cambio: €{currentPrecioKg?.toFixed(4) ?? '—'} → €{Number(precioKg).toFixed(4)}
-              </p>
-            )}
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Para precios distintos por calibre, edítalos uno a uno abajo.
+            </p>
           </div>
 
           {/* Logística */}
@@ -315,19 +346,29 @@ export function NegotiationOfferModal({
                 {(currentCalibres ?? []).map((c) => (
                   <span key={c.calibre} className="text-[11px] bg-muted text-text-secondary px-2 py-0.5 rounded-badge">
                     {c.calibre}: {c.cantidad_kg.toLocaleString('es-ES')} kg
+                    {c.precio_kg != null && c.precio_kg > 0 && (
+                      <> · €{c.precio_kg.toFixed(3)}/kg</>
+                    )}
                   </span>
                 ))}
               </div>
             ) : (
               <div className="space-y-2">
+                {/* Phase 14G — header row para columnas. */}
+                <div className="grid grid-cols-[5rem_1fr_5.5rem_1.5rem] gap-2 px-1 text-[10px] uppercase tracking-wide text-text-muted">
+                  <span>Calibre</span>
+                  <span>Cantidad (kg)</span>
+                  <span>Precio €/kg</span>
+                  <span />
+                </div>
                 {calibres.map((c, i) => (
-                  <div key={i} className="flex items-center gap-2">
+                  <div key={i} className="grid grid-cols-[5rem_1fr_5.5rem_1.5rem] gap-2 items-center">
                     <input
                       type="text"
-                      placeholder="Calibre"
+                      placeholder="3"
                       value={c.calibre}
                       onChange={(e) => updateCalibre(i, { calibre: e.target.value })}
-                      className="w-20 border border-border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
+                      className="border border-border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
                     />
                     <input
                       type="number"
@@ -336,9 +377,22 @@ export function NegotiationOfferModal({
                       placeholder="kg"
                       value={c.cantidad_kg || ''}
                       onChange={(e) => updateCalibre(i, { cantidad_kg: Number(e.target.value) })}
-                      className="flex-1 border border-border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
+                      className="border border-border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
                     />
-                    <span className="text-[11px] text-muted-foreground">kg</span>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      min="0.0001"
+                      placeholder={currentPrecioKg?.toFixed(3) ?? '€/kg'}
+                      value={c.precio_kg ?? ''}
+                      onChange={(e) =>
+                        updateCalibre(i, {
+                          precio_kg: e.target.value === '' ? undefined : Number(e.target.value),
+                        })
+                      }
+                      className="border border-border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
+                      title="Precio por kg para este calibre. Si lo dejas vacío hereda el precio global."
+                    />
                     <button
                       type="button"
                       onClick={() => removeCalibre(i)}
@@ -356,6 +410,9 @@ export function NegotiationOfferModal({
                 >
                   <Plus className="w-3.5 h-3.5" /> Añadir calibre
                 </button>
+                <p className="text-[10px] text-muted-foreground">
+                  Precios vacíos heredan el precio global de la fila superior.
+                </p>
               </div>
             )}
           </div>

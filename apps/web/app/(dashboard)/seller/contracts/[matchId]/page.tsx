@@ -421,7 +421,7 @@ export default function SellerMatchContractPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => router.push(info.transaccionId ? `/seller/messages?tx=${info.transaccionId}` : '/seller/messages')}
+                onClick={() => router.push(info.transaccionId ? `/seller/messages?tx=${info.transaccionId}&propose=1` : '/seller/messages')}
               >
                 Modificar condiciones (chat)
               </Button>

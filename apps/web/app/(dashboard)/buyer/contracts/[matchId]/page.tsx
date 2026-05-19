@@ -519,7 +519,7 @@ export default function BuyerMatchContractPage() {
             <Button variant="primary" onClick={openSignModal} className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" /> Firmar y pagar comisión
             </Button>
-            <Button variant="outline" onClick={() => router.push(info.transaccionId ? `/buyer/messages?tx=${info.transaccionId}` : '/buyer/messages')}>
+            <Button variant="outline" onClick={() => router.push(info.transaccionId ? `/buyer/messages?tx=${info.transaccionId}&propose=1` : '/buyer/messages')}>
               Modificar condiciones (chat)
             </Button>
             <Button
