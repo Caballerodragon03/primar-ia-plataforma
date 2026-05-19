@@ -6,7 +6,7 @@ import { updateEstadoSchema } from './admin.schema.js';
 import { asyncHandler } from '../../shared/async-handler.js';
 import { listBypassAlerts, resolveBypassAlert } from '../bypass/bypass.controller.js';
 import { listSuspiciousCancellations, resolveSuspiciousCancellation } from '../cancellations/cancellations.controller.js';
-import { regenerateInvoicesController, runBypassScanController } from './admin-maintenance.controller.js';
+import { regenerateInvoicesController, runBypassScanController, cronStatusController } from './admin-maintenance.controller.js';
 
 export const adminRouter = Router();
 
@@ -33,3 +33,4 @@ adminRouter.post('/cancellations/:id/resolve', asyncHandler(resolveSuspiciousCan
 // Phase 11 — Maintenance triggers for async jobs that occasionally fail.
 adminRouter.post('/maintenance/regenerate-invoices/:matchId', asyncHandler(regenerateInvoicesController));
 adminRouter.post('/maintenance/bypass-scan/run', asyncHandler(runBypassScanController));
+adminRouter.get('/maintenance/cron-status', asyncHandler(cronStatusController));

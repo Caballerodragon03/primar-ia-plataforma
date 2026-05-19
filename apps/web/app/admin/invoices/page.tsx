@@ -1,173 +1,70 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { api } from '@/lib/api';
-import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+/**
+ * Phase 13 — Pantalla legacy retirada.
+ *
+ * El módulo de facturación v1 (apps/api/src/modules/invoices/invoice.service.ts)
+ * tenía un IVA hardcoded al 10% que es incorrecto para productos
+ * agroalimentarios. Las facturas v2 (Fase 5) reemplazan esa lógica con
+ * cálculo correcto por régimen fiscal del vendedor y se generan
+ * automáticamente al firmar el contrato.
+ *
+ * Esta pantalla queda como redirect informativo en lugar de migrar la
+ * lógica vieja (cuyos datos ya no se generan en el flujo actual).
+ */
+import { Receipt, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 
-interface PlatformInvoice {
-  id: string;
-  numero: string;
-  fecha: string;
-  producto: string;
-  vendedor: { nombre: string; empresa: string | null; cifNif: string | null };
-  comprador: { nombre: string; empresa: string | null; cifNif: string | null };
-  precioTotal: number;
-  comisionPlataforma: number;
-  comisionPorcentaje: number;
-  estado: string;
-}
-
-interface InvoiceListResponse {
-  data: PlatformInvoice[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
-
-function formatEur(n: number) {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
-}
-
-export default function AdminInvoicesPage() {
-  const [invoices, setInvoices] = useState<PlatformInvoice[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [totalComision, setTotalComision] = useState(0);
-
-  const fetchInvoices = useCallback(async (p: number) => {
-    setLoading(true);
-    try {
-      const res = await api.get<{ success: boolean; data: InvoiceListResponse }>(`/invoices/admin?page=${p}`);
-      const d = res.data.data;
-      setInvoices(d.data);
-      setPage(d.page);
-      setTotalPages(d.totalPages);
-      setTotal(d.total);
-      setTotalComision(d.data.reduce((acc, i) => acc + i.comisionPlataforma, 0));
-    } catch {
-      // handle error
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchInvoices(1);
-  }, [fetchInvoices]);
-
-  const openInvoice = async (txId: string) => {
-    try {
-      const res = await api.get(`/invoices/admin/${txId}/html`, { responseType: 'text' });
-      const blob = new Blob([res.data], { type: 'text/html' });
-      window.open(URL.createObjectURL(blob), '_blank');
-    } catch {
-      alert('Error al abrir la factura');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-gray-200 rounded w-48" />
-        <div className="h-64 bg-gray-100 rounded" />
-      </div>
-    );
-  }
-
+export default function AdminInvoicesLegacyPage() {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Facturas de Plataforma</h1>
-          <p className="text-sm text-gray-500 mt-1">{total} transacciones completadas</p>
+    <div className="max-w-2xl mx-auto py-10 space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+          <Receipt className="w-5 h-5" />
         </div>
-        <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-right">
-          <p className="text-xs text-gray-500 uppercase tracking-wider">Comisión total (página)</p>
-          <p className="text-lg font-bold text-gray-900">{formatEur(totalComision)}</p>
+        <h1 className="text-xl font-bold text-foreground">Facturas (legacy retirado)</h1>
+      </div>
+
+      <div className="bg-amber-50 border border-amber-200 rounded-card p-5 space-y-3">
+        <div className="flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-700 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-900">Este listado ha sido retirado</p>
+            <p className="text-xs text-amber-800 mt-1">
+              El módulo de facturación v1 usaba un IVA fijo del 10% que es
+              incorrecto para productos agroalimentarios. Desde Fase 5, las
+              facturas se generan automáticamente al firmar cada contrato
+              con el régimen fiscal correcto del vendedor (general 4%,
+              REAGP 12%, recargo de equivalencia, intracomunitario exento).
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              {['Nº Factura', 'Fecha', 'Producto', 'Vendedor', 'Comprador', 'Precio total', 'Comisión', '%', 'Estado', ''].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {invoices.map((inv) => (
-              <tr key={inv.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-mono text-xs">{inv.numero}</td>
-                <td className="px-4 py-3">{inv.fecha}</td>
-                <td className="px-4 py-3 font-medium">{inv.producto}</td>
-                <td className="px-4 py-3">
-                  <div>{inv.vendedor.empresa ?? inv.vendedor.nombre}</div>
-                  {inv.vendedor.cifNif && <div className="text-xs text-gray-400">{inv.vendedor.cifNif}</div>}
-                </td>
-                <td className="px-4 py-3">
-                  <div>{inv.comprador.empresa ?? inv.comprador.nombre}</div>
-                  {inv.comprador.cifNif && <div className="text-xs text-gray-400">{inv.comprador.cifNif}</div>}
-                </td>
-                <td className="px-4 py-3 text-right font-medium">{formatEur(inv.precioTotal)}</td>
-                <td className="px-4 py-3 text-right font-semibold text-green-700">{formatEur(inv.comisionPlataforma)}</td>
-                <td className="px-4 py-3 text-right text-gray-500">{(inv.comisionPorcentaje * 100).toFixed(2)}%</td>
-                <td className="px-4 py-3">
-                  <span className={[
-                    'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium',
-                    inv.estado === 'COMPLETADO' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700',
-                  ].join(' ')}>
-                    {inv.estado}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => openInvoice(inv.id)}
-                    className="text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
-                    title="Ver factura"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {invoices.length === 0 && (
-              <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-gray-400">
-                  No hay facturas todavía
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4 mt-4">
-          <button
-            onClick={() => fetchInvoices(page - 1)}
-            disabled={page <= 1}
-            className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-sm text-gray-600">
-            Página {page} de {totalPages}
-          </span>
-          <button
-            onClick={() => fetchInvoices(page + 1)}
-            disabled={page >= totalPages}
-            className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+      <div className="bg-card border border-border rounded-card p-5 space-y-3">
+        <h2 className="text-sm font-semibold text-foreground">¿Qué buscas?</h2>
+        <ul className="text-xs text-text-secondary space-y-2">
+          <li>
+            <strong className="text-foreground">Ver facturas individuales:</strong>{' '}
+            cada parte descarga sus facturas desde la pantalla del contrato
+            (botón &laquo;Descargar facturas&raquo; cuando contratoEstado=FIRMADO).
+          </li>
+          <li>
+            <strong className="text-foreground">Regenerar una factura tras un fallo asíncrono:</strong>{' '}
+            usa el endpoint <code className="text-[11px] bg-muted px-1 rounded">POST /admin/maintenance/regenerate-invoices/:matchId</code>.
+          </li>
+          <li>
+            <strong className="text-foreground">Auditar la cola de reembolsos pendientes</strong>{' '}
+            (webhooks llegados tras caducidad / revert de negociación): se
+            registran en la tabla <code className="text-[11px] bg-muted px-1 rounded">pending_refunds</code>.
+          </li>
+        </ul>
+        <div className="pt-2 border-t border-border">
+          <Link href="/admin/dashboard" className="text-xs text-primary-dark hover:underline">
+            ← Volver al panel
+          </Link>
         </div>
-      )}
+      </div>
     </div>
   );
 }

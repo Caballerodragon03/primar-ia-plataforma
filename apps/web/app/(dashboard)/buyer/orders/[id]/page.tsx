@@ -282,7 +282,7 @@ export default function OrderDetailPage() {
           )}
           {order.contratoPdfUrl && (
             <a href={order.contratoPdfUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="primary" size="sm"><Download className="w-4 h-4" /> Contract</Button>
+              <Button variant="primary" size="sm"><Download className="w-4 h-4" /> Contrato</Button>
             </a>
           )}
         </div>
@@ -432,7 +432,7 @@ export default function OrderDetailPage() {
                           {order.estado === 'CERRADO' ? (
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Completado
                               </span>
                               {m.transaccion?.id && (
                                 <button
@@ -447,7 +447,7 @@ export default function OrderDetailPage() {
                             <div className="flex items-center gap-1 flex-wrap">
                               {canPayThis && (
                                 <Button variant="primary" size="sm" onClick={() => openPaymentModal(m.id)}>
-                                  Pay
+                                  Pagar
                                 </Button>
                               )}
                               {['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
@@ -460,7 +460,7 @@ export default function OrderDetailPage() {
                               {['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && m.transaccion?.id && (
                                 <Link href={`/buyer/orders/${id}/delivery/${m.transaccion.id}`}>
                                   <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                                    <QrCode className="w-4 h-4" /> Confirm Delivery
+                                    <QrCode className="w-4 h-4" /> Confirmar entrega
                                   </Button>
                                 </Link>
                               )}
@@ -478,7 +478,7 @@ export default function OrderDetailPage() {
                                   onClick={() => openDisputeModal(m)}
                                   className="flex items-center gap-1 text-red-500 hover:text-red-700 hover:bg-red-50"
                                 >
-                                  <AlertTriangle className="w-3.5 h-3.5" /> Claim
+                                  <AlertTriangle className="w-3.5 h-3.5" /> Incidencia
                                 </Button>
                               )}
                             </div>
@@ -502,11 +502,11 @@ export default function OrderDetailPage() {
                   <div className="px-5 py-3 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-primary" />
-                      <h2 className="text-sm font-semibold text-foreground">Shipment from {sellerName}</h2>
+                      <h2 className="text-sm font-semibold text-foreground">Envío de {sellerName}</h2>
                     </div>
                     {info.qrUsado && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-[11px] font-medium bg-green-100 text-green-700">
-                        <CheckCircle2 className="w-3 h-3" /> Delivered
+                        <CheckCircle2 className="w-3 h-3" /> Entregado
                       </span>
                     )}
                   </div>
@@ -514,11 +514,11 @@ export default function OrderDetailPage() {
                   {/* Lot photos */}
                   {info.fotosLoteUrls.length > 0 && (
                     <div className="p-4 border-b border-border">
-                      <p className="text-xs font-medium text-foreground mb-2">📸 Lot preparation photos</p>
+                      <p className="text-xs font-medium text-foreground mb-2">📸 Fotos de preparación del lote</p>
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {info.fotosLoteUrls.map((url, i) => (
                           <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-border hover:shadow-soft-md transition-shadow">
-                            <img src={url} alt={`Lot photo ${i + 1}`} className="w-full h-20 object-cover" />
+                            <img src={url} alt={`Foto del lote ${i + 1}`} className="w-full h-20 object-cover" />
                           </a>
                         ))}
                       </div>
@@ -536,7 +536,7 @@ export default function OrderDetailPage() {
                     <div className="p-4 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-green-700">
                         <CheckCircle2 className="w-4 h-4" />
-                        <p className="text-sm font-medium">You confirmed delivery. Payment released.</p>
+                        <p className="text-sm font-medium">Confirmaste la entrega. Pago liberado.</p>
                       </div>
                       {info.hasRated ? (
                         <p className="text-xs text-muted-foreground">Ya has valorado esta transacción.</p>
@@ -547,16 +547,16 @@ export default function OrderDetailPage() {
                           className="flex items-center gap-1 text-yellow-600 border-yellow-300 hover:bg-yellow-50"
                           onClick={() => setRatingTx({ transaccionId: m.transaccion!.id, vendedorId: info.vendedorId })}
                         >
-                          <Star className="w-3.5 h-3.5" /> Rate Seller
+                          <Star className="w-3.5 h-3.5" /> Valorar al vendedor
                         </Button>
                       )}
                     </div>
                   )}
                   {!info.qrToken && !info.firmaVendedor && (
-                    <div className="p-4 text-xs text-muted-foreground">Waiting for the seller to sign the contract.</div>
+                    <div className="p-4 text-xs text-muted-foreground">Esperando a que el vendedor firme el contrato.</div>
                   )}
                   {!info.qrToken && info.firmaVendedor && (
-                    <div className="p-4 text-xs text-muted-foreground">Contract signed. QR code will appear once generated.</div>
+                    <div className="p-4 text-xs text-muted-foreground">Contrato firmado. El código QR aparecerá en cuanto se genere.</div>
                   )}
                 </div>
               );

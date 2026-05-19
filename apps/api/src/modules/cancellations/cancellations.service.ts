@@ -168,7 +168,12 @@ export class CancellationsService {
 
   async listSuspiciousCancellations(estado?: string, page = 1) {
     const pageSize = 50;
-    const where = estado ? { estado: estado as Prisma.EnumCancelacionEstadoFilter } : {};
+    // Phase 13 — cast to the schema enum string union directly (avoids
+    // dependence on Prisma-generated filter type names that change between
+    // Prisma versions).
+    const where = estado
+      ? { estado: estado as 'PENDIENTE' | 'INVESTIGADA' | 'AVISADO' | 'SUSPENDIDO' }
+      : {};
 
     const [rows, total] = await Promise.all([
       prisma.cancelacionSospechosa.findMany({

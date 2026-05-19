@@ -1,6 +1,46 @@
 import cron from 'node-cron';
-import { prisma } from '@primaria/database';
+import { prisma, Prisma } from '@primaria/database';
 import { sendCertExpiryEmail } from '../shared/emails/transactional.js';
+
+/**
+ * Phase 13 — Health-tracking wrapper for cron jobs.
+ *
+ * Wraps each cron function so its last execution (success | failure +
+ * payload) gets persisted in the CronRun table. /admin/cron-status reads
+ * this for an at-a-glance view of all jobs.
+ */
+async function trackCron(jobName: string, run: () => Promise<unknown | void>): Promise<void> {
+  const startedAt = new Date();
+  let status = 'success';
+  let result: unknown = null;
+  try {
+    result = (await run()) ?? null;
+  } catch (err) {
+    status = 'failure';
+    result = { error: err instanceof Error ? err.message : String(err) };
+  }
+  const resultJson = (result === null ? Prisma.JsonNull : (result as Prisma.InputJsonValue));
+  try {
+    await prisma.cronRun.upsert({
+      where: { jobName },
+      create: {
+        jobName,
+        status,
+        result: resultJson,
+        startedAt,
+        finishedAt: new Date(),
+      },
+      update: {
+        status,
+        result: resultJson,
+        startedAt,
+        finishedAt: new Date(),
+      },
+    });
+  } catch (e) {
+    console.error(`[CRON][${jobName}] health-track upsert failed:`, e);
+  }
+}
 
 // ─── Job 1: Certificate expiry alerts — daily at 08:00 ───────────────────────
 
@@ -212,19 +252,22 @@ async function runBypassScannerJob(): Promise<void> {
 // ─── Register all cron jobs ───────────────────────────────────────────────────
 
 export function startCronJobs(): void {
+  // All schedules go through trackCron so /admin/cron-status sees the
+  // latest run + result for every job.
+
   // Daily at 08:00 — certificate expiry alerts
   cron.schedule('0 8 * * *', () => {
-    void checkCertificateExpiry();
+    void trackCron('certificateExpiry', () => checkCertificateExpiry());
   });
 
   // Daily at 02:00 — clean expired tokens
   cron.schedule('0 2 * * *', () => {
-    void cleanExpiredTokens();
+    void trackCron('cleanExpiredTokens', () => cleanExpiredTokens());
   });
 
   // Weekly on Monday at 07:00 Madrid time — generate market sentiment report
   cron.schedule('0 7 * * 1', () => {
-    void runMarketDataJob();
+    void trackCron('weeklyMarketReport', () => runMarketDataJob());
   }, { timezone: 'Europe/Madrid' });
 
   // Hourly — expire seller signatures past their 48-business-hours deadline.
@@ -232,12 +275,12 @@ export function startCronJobs(): void {
   // `addBusinessHours`/`businessHoursUntil` (which assume Mon-Fri business
   // hours in local time) and avoids DST off-by-one drift on the container.
   cron.schedule('5 * * * *', () => {
-    void expireSellerSignatures();
+    void trackCron('expireSellerSignatures', () => expireSellerSignatures());
   }, { timezone: 'Europe/Madrid' });
 
   // Daily at 09:00 Madrid — AI bypass scanner reviews chat from last 24h.
   cron.schedule('0 9 * * *', () => {
-    void runBypassScannerJob();
+    void trackCron('bypassScan', () => runBypassScannerJob());
   }, { timezone: 'Europe/Madrid' });
 
   console.log('[CRON] All cron jobs registered');

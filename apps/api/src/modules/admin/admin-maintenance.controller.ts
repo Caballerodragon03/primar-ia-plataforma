@@ -33,6 +33,27 @@ export async function regenerateInvoicesController(req: Request, res: Response):
 }
 
 /**
+ * Phase 13 — Health overview of all cron jobs. Last run timestamp + status
+ * + result payload per job. Lets admin spot silent failures.
+ */
+export async function cronStatusController(_req: Request, res: Response): Promise<void> {
+  const runs = await prisma.cronRun.findMany({
+    orderBy: { jobName: 'asc' },
+  });
+  res.json({
+    success: true,
+    data: runs.map((r) => ({
+      jobName: r.jobName,
+      status: r.status,
+      result: r.result,
+      startedAt: r.startedAt.toISOString(),
+      finishedAt: r.finishedAt.toISOString(),
+      durationMs: r.finishedAt.getTime() - r.startedAt.getTime(),
+    })),
+  });
+}
+
+/**
  * Force-run the daily bypass scan on demand. Useful for dev/forensics or
  * when you want immediate review of recent chat traffic.
  */

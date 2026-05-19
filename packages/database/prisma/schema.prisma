@@ -912,6 +912,45 @@ model CancelacionSospechosa {
   @@map("cancelaciones_sospechosas")
 }
 
+// Phase 13 — Cola de reembolsos pendientes que el admin debe procesar
+// manualmente. Se llena automáticamente desde el webhook de Stripe cuando
+// recibe un pago para un contrato que ya no está en estado válido (porque
+// se canceló o caducó entre la apertura del Checkout y el webhook).
+model PendingRefund {
+  id              String   @id @default(cuid())
+  matchId         String   @map("match_id")
+  stripeChargeId  String   @unique @map("stripe_charge_id")
+  motivo          String
+  // Datos congelados para el admin (no joins): nombre y email del comprador.
+  compradorEmail  String   @map("comprador_email")
+  compradorNombre String   @map("comprador_nombre")
+  importeEur      Decimal  @map("importe_eur") @db.Decimal(10, 2)
+  resolvedAt      DateTime? @map("resolved_at")
+  resolvedBy      String?   @map("resolved_by")
+  notas           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([resolvedAt, createdAt])
+  @@map("pending_refunds")
+}
+
+// Phase 13 — Health-tracking de los cron jobs. Cada job persiste su última
+// ejecución (success/failure + resumen) para que admin/cron-status muestre
+// cuándo corrió y qué pasó por última vez. Una sola fila por jobName via
+// @@unique — el último resultado pisa al anterior.
+model CronRun {
+  id          String   @id @default(cuid())
+  jobName     String   @unique @map("job_name")
+  // 'success' | 'failure'
+  status      String
+  // JSON con el resumen del job (scanned, flagged, etc.) o el error.
+  result      Json?
+  startedAt   DateTime @map("started_at")
+  finishedAt  DateTime @map("finished_at")
+
+  @@map("cron_runs")
+}
+
 // Phase 12 — AEAT-compliant invoice counter, monotonic per (emisor, kind, year).
 // Used by invoice-v2-data to atomically increment the per-emisor serial number
 // for each invoice kind. Spanish tax law (Reglamento 1619/2012) requires

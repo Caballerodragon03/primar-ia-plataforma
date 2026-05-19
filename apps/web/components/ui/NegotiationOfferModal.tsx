@@ -74,6 +74,13 @@ export function NegotiationOfferModal({
   // Sync incoterm ↔ logística. When the user picks an incoterm, snap logística
   // to the derived value. When they pick logística, clear incoterm if it's
   // incompatible. Same rules as the new-lot / new-order forms.
+  //
+  // Phase 13 — track whether the user has explicitly touched the logística
+  // field. If they haven't, we still snap it for backend consistency but the
+  // DiffRow logic below treats it as "not changed by user" so we don't show
+  // a false-positive "Logística: A → B" chip on what was actually an
+  // incoterm-only change.
+  const [logisticaUserChanged, setLogisticaUserChanged] = useState(false);
   useEffect(() => {
     if (!incoterm) return;
     const derived = logisticaFromIncoterm(incoterm as IncotermType);
@@ -99,7 +106,11 @@ export function NegotiationOfferModal({
   // Detect changes per field.
   const precioChanged = precioKg !== '' && Number(precioKg) !== currentPrecioKg;
   const incotermChanged = incoterm !== '' && incoterm !== currentIncoterm;
-  const logisticaChanged = logistica !== '' && logistica !== currentLogistica;
+  // Phase 13 — only consider logística "changed" if the user touched it
+  // directly. The incoterm→logística sync effect would otherwise mark this
+  // true and produce a false "Logística: A → B" diff chip when the user
+  // only intended to change incoterm.
+  const logisticaChanged = logisticaUserChanged && logistica !== '' && logistica !== currentLogistica;
   const terminoChanged = terminoPago !== '' && terminoPago !== currentTerminoPago;
   const calibresChanged = editCalibres
     && calibres.length > 0
@@ -204,7 +215,7 @@ export function NegotiationOfferModal({
               )}
               <select
                 value={logistica}
-                onChange={(e) => setLogistica(e.target.value)}
+                onChange={(e) => { setLogistica(e.target.value); setLogisticaUserChanged(true); }}
                 className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none bg-card"
               >
                 <option value="">Sin cambio</option>

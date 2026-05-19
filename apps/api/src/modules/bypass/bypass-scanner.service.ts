@@ -157,6 +157,7 @@ export async function runBypassScan(): Promise<ScanResult> {
         result.flagged += 1;
       }
     } catch (err) {
+      // Phase 13 — log message id only (PII-free); don't echo contenido.
       console.error('[bypass-scanner] failed to analyze message', msg.id, err);
       result.errors += 1;
     }

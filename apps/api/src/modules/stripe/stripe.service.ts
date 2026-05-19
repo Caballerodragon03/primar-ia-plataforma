@@ -336,11 +336,11 @@ export class StripeService {
             console.error('[stripe] match_commission session missing metadata', session.id);
             break;
           }
+          const paymentIntentId = typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id ?? session.id;
           try {
             const { contractsService } = await import('../contracts/contracts.service.js');
-            const paymentIntentId = typeof session.payment_intent === 'string'
-              ? session.payment_intent
-              : session.payment_intent?.id ?? session.id;
             await contractsService.signMatchContractAsBuyerAfterPayment(
               matchId,
               buyerSignature,
@@ -348,9 +348,44 @@ export class StripeService {
               paymentIntentId,
             );
           } catch (err) {
-            // Caducó / contrato ya firmado / etc. — log and surface for admin.
-            // Refund handling for the caducó case is admin-managed for MVP.
+            // Phase 13 — when finalize fails (caducó, cancelled, already-FIRMADO
+            // race), persist a PendingRefund row so admin doesn't lose track.
+            // We still log for ops visibility, but the DB row is the canonical
+            // audit trail and surface in /admin/refunds (future).
             console.error('[stripe] commission webhook failed for match', matchId, err);
+            try {
+              const match = await prisma.match.findUnique({
+                where: { id: matchId },
+                select: {
+                  contratoEstado: true,
+                  comisionEstimada: true,
+                  pedido: {
+                    select: {
+                      comprador: { select: { email: true, nombre: true, apellidos: true } },
+                    },
+                  },
+                },
+              });
+              const c = match?.pedido?.comprador;
+              if (match && c) {
+                const ivaRate = 1.21;
+                const importe = Number(match.comisionEstimada ?? 0) * ivaRate;
+                await prisma.pendingRefund.upsert({
+                  where: { stripeChargeId: paymentIntentId },
+                  create: {
+                    matchId,
+                    stripeChargeId: paymentIntentId,
+                    motivo: `Webhook tras revert/caducidad — contratoEstado=${match.contratoEstado}: ${err instanceof Error ? err.message : 'unknown'}`.slice(0, 1000),
+                    compradorEmail: c.email,
+                    compradorNombre: `${c.nombre} ${c.apellidos}`.trim(),
+                    importeEur: importe,
+                  },
+                  update: {}, // idempotente — la primera entrada gana
+                });
+              }
+            } catch (refundErr) {
+              console.error('[stripe] failed to enqueue PendingRefund for match', matchId, refundErr);
+            }
           }
         } else if (session.mode === 'payment' && session.metadata?.matchId) {
           // Legacy v1 (pago seguro) flow — captures the full mercancía amount.
