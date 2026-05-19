@@ -260,7 +260,12 @@ export default function LotDetailPage() {
           </div>
 
           {/* Matches */}
-          <div className="bg-card rounded-card border border-border overflow-x-auto">
+          {/* Phase 14E — matches activos: tarjetas en vez de tabla con scroll.
+              La tabla anterior tenía min-w-[700px] + overflow-x-auto, lo cual
+              fuerza scroll horizontal en columnas con muchas acciones. Las
+              cards apilan info verticalmente y los botones de acción son
+              icon-only con tooltip → cabe sin scroll en cualquier ancho. */}
+          <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-text-primary">
@@ -273,70 +278,71 @@ export default function LotDetailPage() {
                 <p className="text-xs text-text-muted mt-1">La plataforma te notificará cuando se encuentre un match.</p>
               </div>
             ) : (
-              <table className="w-full text-sm min-w-[700px]">
-                <thead>
-                  <tr className="bg-muted/50">
-                    {['COMPRADOR', 'CANTIDAD (kg)', 'PRECIO (€/kg)', 'ESTADO', 'ACCIONES'].map((h) => (
-                      <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {lot.matches.map((m) => (
-                    <tr key={m.id} className="hover:bg-accent/50 transition-colors">
-                      <td className="px-4 py-2.5 font-medium">{m.pedido.comprador.nombre}</td>
-                      <td className="px-4 py-2.5">{Number(m.cantidadKg).toLocaleString('es-ES')}</td>
-                      <td className="px-4 py-2.5">€{Number(m.precioKg).toFixed(3)}</td>
-                      <td className="px-4 py-2.5"><StatusBadge status={m.estado} /></td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {m.transaccion?.id && (
-                            <Link href={`/seller/messages?tx=${m.transaccion.id}`}>
-                              <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                                <MessageSquare className="w-3.5 h-3.5" /> Chat
-                              </Button>
-                            </Link>
-                          )}
-                          {['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
-                            <Link href={`/seller/contracts/${m.id}`}>
-                              <Button variant="outline" size="sm" className="flex items-center gap-1">
-                                <FileText className="w-3.5 h-3.5" /> Contrato
-                              </Button>
-                            </Link>
-                          )}
-                          {m.transaccion?.id && ['PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
-                            <Link href={`/seller/lots/${id}/qr/${m.transaccion.id}`}>
-                              <Button variant="outline" size="sm" className="flex items-center gap-1">
-                                <QrCode className="w-3.5 h-3.5" /> QR y fotos
-                              </Button>
-                            </Link>
-                          )}
-                          {m.transaccion?.id && ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openDisputeModal(m)}
-                              className="flex items-center gap-1 text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <AlertTriangle className="w-3.5 h-3.5" /> Incidencia
-                            </Button>
-                          )}
-                          {m.transaccion?.id && m.estado === 'CONFIRMADO' && (
-                            <button
-                              onClick={async () => { try { const r = await api.get(`/invoices/seller/${m.transaccion!.id}/html`, { responseType: 'text' }); window.open(URL.createObjectURL(new Blob([r.data], { type: 'text/html' })), '_blank'); } catch { /* ignore */ } }}
-                              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
-                            >
-                              <Download className="w-3 h-3" /> Factura
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="divide-y divide-border">
+                {lot.matches.map((m) => (
+                  <div key={m.id} className="px-4 py-3 hover:bg-accent/40 transition-colors">
+                    {/* Fila superior: comprador + estado + datos */}
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-text-primary truncate">
+                          {m.pedido.comprador.nombre}
+                        </p>
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          {Number(m.cantidadKg).toLocaleString('es-ES')} kg · €{Number(m.precioKg).toFixed(3)}/kg
+                        </p>
+                      </div>
+                      <StatusBadge status={m.estado} />
+                    </div>
+
+                    {/* Fila inferior: acciones icon-only con tooltip */}
+                    <div className="flex items-center gap-1 mt-2 flex-wrap">
+                      {m.transaccion?.id && (
+                        <Link href={`/seller/messages?tx=${m.transaccion.id}`} title="Abrir chat">
+                          <Button variant="ghost" size="sm" className="!p-2" aria-label="Chat">
+                            <MessageSquare className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      )}
+                      {['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
+                        <Link href={`/seller/contracts/${m.id}`} title="Ver contrato">
+                          <Button variant="ghost" size="sm" className="!p-2" aria-label="Contrato">
+                            <FileText className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      )}
+                      {m.transaccion?.id && ['PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
+                        <Link href={`/seller/lots/${id}/qr/${m.transaccion.id}`} title="QR y fotos">
+                          <Button variant="ghost" size="sm" className="!p-2" aria-label="QR y fotos">
+                            <QrCode className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      )}
+                      {m.transaccion?.id && m.estado === 'CONFIRMADO' && (
+                        <button
+                          onClick={async () => { try { const r = await api.get(`/invoices/seller/${m.transaccion!.id}/html`, { responseType: 'text' }); window.open(URL.createObjectURL(new Blob([r.data], { type: 'text/html' })), '_blank'); } catch { /* ignore */ } }}
+                          title="Descargar factura"
+                          aria-label="Descargar factura"
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-button transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      )}
+                      {m.transaccion?.id && ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openDisputeModal(m)}
+                          title="Abrir incidencia"
+                          aria-label="Incidencia"
+                          className="!p-2 text-red-500 hover:text-red-700 hover:!bg-red-50 ml-auto"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
