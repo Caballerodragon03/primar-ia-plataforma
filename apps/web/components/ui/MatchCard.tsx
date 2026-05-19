@@ -35,6 +35,11 @@ export interface Match {
   };
   distanceKm?: number;
   coverage?: number;
+  // Phase 14J — kg restantes por calibre (lote del vendedor y pedido del
+  // comprador), descontando otros matches capacity-holding. Permite al
+  // modal de contribución mostrar el máximo real disponible.
+  loteRestantePorCalibre?: Record<string, number>;
+  pedidoRestantePorCalibre?: Record<string, number>;
 }
 
 interface MatchCardProps {

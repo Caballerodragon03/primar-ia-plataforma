@@ -883,6 +883,12 @@ export class MatchingService {
             direccionRecogida: true,
             coordenadasLat: true,
             coordenadasLng: true,
+            // Phase 14J — para descartar lotes 100% comprometidos y para
+            // poder calcular kg restantes por calibre en el lote.
+            matches: {
+              where: { estado: { in: CAPACITY_HOLDING_ESTADOS } },
+              select: { id: true, cantidadKg: true, calibresJson: true },
+            },
           },
         },
         pedido: {
@@ -899,6 +905,12 @@ export class MatchingService {
                 },
               },
             },
+            // Phase 14J — kg comprometidos en el pedido por OTROS matches
+            // para mostrar al vendedor cuánto queda por cubrir por calibre.
+            matches: {
+              where: { estado: { in: CAPACITY_HOLDING_ESTADOS } },
+              select: { id: true, cantidadKg: true, calibresJson: true },
+            },
           },
         },
       },
@@ -908,10 +920,87 @@ export class MatchingService {
           : { scoreMatching: 'desc' },
     });
 
-    return matches.map((m) => ({
-      ...m,
-      indiceRentabilidad: Math.round((m.scoreMatching ?? 0) * 100),
-    })) as MatchWithScore[];
+    // Phase 14J — filtra matches cuyo lote ya está 100% cubierto por matches
+    // capacity-holding. El estado del lote sigue siendo PARCIALMENTE_VENDIDO
+    // hasta que se complete la entrega, pero al vendedor ya no le quedan kg
+    // libres que ofrecer.
+    const filtered = matches.filter((m) => {
+      const totalKg = ((m.lote.calibres as unknown) as Array<{ cantidad_kg?: number }>)
+        .reduce((s, c) => s + Number(c.cantidad_kg ?? 0), 0);
+      const committedKg = (m.lote.matches ?? []).reduce(
+        (s, mm) => s + Number(mm.cantidadKg ?? 0),
+        0,
+      );
+      // Si el lote no tiene kg definidos, no podemos juzgar — lo dejamos.
+      if (totalKg <= 0) return true;
+      return committedKg < totalKg;
+    });
+
+    return filtered.map((m) => {
+      // Phase 14J — kg restantes por calibre, tanto del lote del vendedor
+      // como del pedido del comprador. Permite al modal de contribución
+      // mostrar el máximo real disponible (sin que el vendedor proponga
+      // más kg de los que le quedan ni que excedan lo que falta por
+      // cubrir del pedido).
+      const sumCalibres = (
+        ms: Array<{ id: string; calibresJson: unknown }>,
+        excludeId?: string,
+      ): Record<string, number> => {
+        const out: Record<string, number> = {};
+        for (const mm of ms) {
+          if (excludeId && mm.id === excludeId) continue;
+          const items = Array.isArray(mm.calibresJson)
+            ? (mm.calibresJson as Array<{ calibre?: string; cantidad_kg?: number }>)
+            : [];
+          for (const it of items) {
+            if (!it?.calibre) continue;
+            out[it.calibre] = (out[it.calibre] ?? 0) + Number(it.cantidad_kg ?? 0);
+          }
+        }
+        return out;
+      };
+
+      const loteCommittedPorCalibre = sumCalibres(m.lote.matches ?? [], m.id);
+      const pedidoCommittedPorCalibre = sumCalibres(
+        ((m.pedido as unknown) as { matches?: Array<{ id: string; calibresJson: unknown }> }).matches ?? [],
+        m.id,
+      );
+
+      const loteCalibres = ((m.lote.calibres as unknown) as Array<{ calibre?: string; cantidad_kg?: number }>) ?? [];
+      const pedidoCalibres = ((m.pedido.calibresSolicitados as unknown) as Array<{ calibre?: string; cantidad_kg?: number }>) ?? [];
+
+      const loteRestantePorCalibre: Record<string, number> = {};
+      for (const c of loteCalibres) {
+        if (!c.calibre) continue;
+        const total = Number(c.cantidad_kg ?? 0);
+        const used = loteCommittedPorCalibre[c.calibre] ?? 0;
+        loteRestantePorCalibre[c.calibre] = Math.max(0, total - used);
+      }
+
+      const pedidoRestantePorCalibre: Record<string, number> = {};
+      for (const c of pedidoCalibres) {
+        if (!c.calibre) continue;
+        const total = Number(c.cantidad_kg ?? 0);
+        const used = pedidoCommittedPorCalibre[c.calibre] ?? 0;
+        pedidoRestantePorCalibre[c.calibre] = Math.max(0, total - used);
+      }
+
+      // No exponemos la lista interna de matches al cliente.
+      const { matches: _loteMatches, ...loteRest } = m.lote;
+      void _loteMatches;
+      const pedidoFull = m.pedido as unknown as { matches?: unknown };
+      const { matches: _pedidoMatches, ...pedidoRest } = pedidoFull as { matches: unknown };
+      void _pedidoMatches;
+
+      return {
+        ...m,
+        lote: loteRest,
+        pedido: pedidoRest as typeof m.pedido,
+        indiceRentabilidad: Math.round((m.scoreMatching ?? 0) * 100),
+        loteRestantePorCalibre,
+        pedidoRestantePorCalibre,
+      };
+    }) as MatchWithScore[];
   }
 
   /**

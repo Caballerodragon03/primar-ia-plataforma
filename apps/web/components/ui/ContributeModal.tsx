@@ -26,7 +26,13 @@ interface CalibreContribucion {
   calibre: string;
   cantidadKg: number;
   precioMaxKg: number;
-  maxAllowed: number;
+  // Phase 14J — distintos topes que aplican: lo que pide el pedido en total,
+  // lo que aún queda libre en el pedido (descontando otros vendedores), y lo
+  // que aún queda libre en el lote del propio vendedor.
+  pedidoTotal: number;
+  pedidoRestante: number;
+  loteRestante: number;
+  maxAllowed: number; // min(pedidoRestante, loteRestante)
 }
 
 interface ContributeModalProps {
@@ -47,13 +53,25 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
     const solicitados = Array.isArray(match.pedido.calibresSolicitados)
       ? (match.pedido.calibresSolicitados as CalibresSolicitados[])
       : [];
+    const pedidoRest = match.pedidoRestantePorCalibre ?? {};
+    const loteRest = match.loteRestantePorCalibre ?? {};
     setCalibres(
-      solicitados.map((c) => ({
-        calibre: c.calibre,
-        cantidadKg: 0,
-        precioMaxKg: c.precio_max_kg,
-        maxAllowed: c.cantidad_kg,
-      }))
+      solicitados.map((c) => {
+        const pedidoTotal = c.cantidad_kg;
+        // Si no nos llega el restante (backend antiguo), asume todo libre.
+        const pedidoRestante = pedidoRest[c.calibre] ?? pedidoTotal;
+        const loteRestante = loteRest[c.calibre] ?? Infinity;
+        const maxAllowed = Math.max(0, Math.min(pedidoRestante, loteRestante));
+        return {
+          calibre: c.calibre,
+          cantidadKg: 0,
+          precioMaxKg: c.precio_max_kg,
+          pedidoTotal,
+          pedidoRestante,
+          loteRestante: Number.isFinite(loteRestante) ? loteRestante : pedidoTotal,
+          maxAllowed,
+        };
+      })
     );
     setError(null);
     setSuccess(false);
@@ -81,6 +99,7 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
   ).reduce((sum, c) => sum + c.cantidad_kg, 0);
 
   const hasContribution = calibres.some((c) => c.cantidadKg > 0);
+  const anyOverMax = calibres.some((c) => c.cantidadKg > c.maxAllowed);
 
   function updateCalibre(index: number, field: keyof CalibreContribucion, value: string | number) {
     setCalibres((prev) =>
@@ -213,26 +232,64 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
                 No calibers found for this order.
               </p>
             )}
-            {calibres.map((c, i) => (
-              <div key={c.calibre} className="space-y-3">
-                <p className="text-sm font-semibold text-text-primary">
-                  Caliber: {c.calibre}
-                </p>
-                <Input
-                  label="Quantity (kg)"
-                  type="number"
-                  id={`calibre-qty-${i}`}
-                  min={0}
-                  max={c.maxAllowed}
-                  step={0.01}
-                  value={c.cantidadKg === 0 ? '' : c.cantidadKg}
-                  onChange={(e) =>
-                    updateCalibre(i, 'cantidadKg', parseFloat(e.target.value) || 0)
-                  }
-                  hint={`Max order capacity: ${c.maxAllowed.toLocaleString()} kg`}
-                />
-              </div>
-            ))}
+            {calibres.map((c, i) => {
+              const sinKg = c.maxAllowed <= 0;
+              const exceedsMax = c.cantidadKg > c.maxAllowed;
+              const limitanteLote = c.loteRestante < c.pedidoRestante;
+              return (
+                <div key={c.calibre} className="space-y-2">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-sm font-semibold text-text-primary">
+                      Calibre: {c.calibre}
+                    </p>
+                    <span className={`text-[11px] font-medium ${sinKg ? 'text-red-600' : 'text-emerald-700'}`}>
+                      {sinKg ? 'Sin kg disponibles' : `${c.maxAllowed.toLocaleString('es-ES')} kg disponibles`}
+                    </span>
+                  </div>
+                  <Input
+                    label="Cantidad (kg)"
+                    type="number"
+                    id={`calibre-qty-${i}`}
+                    min={0}
+                    max={c.maxAllowed}
+                    step={0.01}
+                    value={c.cantidadKg === 0 ? '' : c.cantidadKg}
+                    onChange={(e) => {
+                      const raw = parseFloat(e.target.value) || 0;
+                      const clamped = Math.min(Math.max(0, raw), c.maxAllowed);
+                      updateCalibre(i, 'cantidadKg', clamped);
+                    }}
+                    disabled={sinKg}
+                  />
+                  {/* Phase 14J — desglose para que el vendedor entienda de
+                      dónde sale el máximo y pueda decidir cuánto poner. */}
+                  <div className="grid grid-cols-3 gap-2 text-[11px] text-text-secondary">
+                    <div className="bg-muted/40 rounded px-2 py-1">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pedido pide</div>
+                      <div className="font-medium text-text-primary">{c.pedidoTotal.toLocaleString('es-ES')} kg</div>
+                    </div>
+                    <div className="bg-muted/40 rounded px-2 py-1">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Falta cubrir</div>
+                      <div className="font-medium text-text-primary">{c.pedidoRestante.toLocaleString('es-ES')} kg</div>
+                    </div>
+                    <div className={`rounded px-2 py-1 ${limitanteLote ? 'bg-amber-50 border border-amber-200' : 'bg-muted/40'}`}>
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Te quedan en lote</div>
+                      <div className="font-medium text-text-primary">{c.loteRestante.toLocaleString('es-ES')} kg</div>
+                    </div>
+                  </div>
+                  {limitanteLote && !sinKg && (
+                    <p className="text-[11px] text-amber-700">
+                      El tope viene de tu lote, no del pedido.
+                    </p>
+                  )}
+                  {exceedsMax && (
+                    <p className="text-[11px] text-red-600">
+                      Excede el máximo permitido ({c.maxAllowed.toLocaleString('es-ES')} kg).
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Footer */}
@@ -264,7 +321,7 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
                   variant="primary"
                   size="sm"
                   loading={loading}
-                  disabled={success || !hasContribution}
+                  disabled={success || !hasContribution || anyOverMax}
                 >
                   Reserve My Slot
                 </Button>
