@@ -168,7 +168,27 @@ export class NegotiationsService {
       // Derive: snap logística to the unambiguous side (YO_ENVIO or OTRO_RECOGE).
       finalLogistica = logisticaFromIncoterm(proposedIncoterm);
     } else if (proposedLogistica && !proposedIncoterm) {
-      // Just write the logística — incoterm stays whatever the contract had.
+      // Just write the logística — but verify it's coherent with the
+      // currently-effective incoterm. If not, reject and force the user to
+      // include an incoterm change too (avoid leaving the match in an
+      // inconsistent state).
+      if (proposedLogistica !== 'INDIFERENTE') {
+        const currentMatch = await prisma.match.findUnique({
+          where: { id: matchId },
+          select: {
+            incotermFinal: true,
+            pedido: { select: { incoterm: true } },
+          },
+        });
+        const currentIncoterm = (currentMatch?.incotermFinal ?? currentMatch?.pedido?.incoterm ?? null) as Incoterm | null;
+        if (currentIncoterm && !isIncotermAllowedForLogistica(currentIncoterm, proposedLogistica)) {
+          throw new AppError(
+            `La nueva logística "${proposedLogistica}" no es compatible con el incoterm vigente ${currentIncoterm}. `
+            + `La propuesta debe incluir también un cambio de incoterm.`,
+            400,
+          );
+        }
+      }
       finalIncoterm = null;
     } else if (proposedIncoterm && proposedLogistica) {
       // Sanity: both present, must be compatible. The Zod schema enforces this
@@ -286,19 +306,25 @@ export class NegotiationsService {
       },
     });
 
-    // Regenerate the contract draft (fire-and-forget). Failures are logged
-    // but do not block the accept response — the user can manually request
-    // regeneration via POST /contracts/match/:id/regenerate-draft.
-    void (async () => {
-      try {
-        const { contractsService } = await import('../contracts/contracts.service.js');
-        await contractsService.generateContractDraft(matchId);
-      } catch (err) {
-        console.error('[negotiations] draft regeneration failed after accept:', err);
-      }
-    })();
+    // Regenerate the contract draft SYNCHRONOUSLY before responding. The
+    // regen also recomputes match.comisionEstimada from the new totals — if we
+    // returned before this completes and the buyer immediately hit
+    // "Firmar y pagar", Stripe Checkout would charge the OLD commission.
+    // Adding ~1-3s to the accept response is an acceptable trade for that.
+    let regenerated = true;
+    try {
+      const { contractsService } = await import('../contracts/contracts.service.js');
+      await contractsService.generateContractDraft(matchId);
+    } catch (err) {
+      regenerated = false;
+      console.error('[negotiations] draft regeneration failed after accept:', err);
+    }
 
-    return { accepted: true, contractRegenerationTriggered: true, sellerMustResign: mustResetSellerSign };
+    return {
+      accepted: true,
+      contractRegenerationTriggered: regenerated,
+      sellerMustResign: mustResetSellerSign,
+    };
   }
 
   async rejectOffer(transaccionId: string, userId: string, negociacionId: string) {

@@ -447,7 +447,7 @@ export default function SellerMatchContractPage() {
       )}
 
       {waitingForBuyer && (
-        <div className="bg-blue-50 border border-blue-200 rounded-card p-5 space-y-2">
+        <div className="bg-blue-50 border border-blue-200 rounded-card p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-blue-700" />
             <p className="text-sm font-semibold text-blue-900">Esperando al comprador</p>
@@ -456,6 +456,16 @@ export default function SellerMatchContractPage() {
             Ya has firmado. El comprador debe pagar la comisión y firmar antes de:{' '}
             <strong>{formatDateTime(info.firmaVendedorDeadline)}</strong>. Si no, el contrato caducará y tu firma se anulará automáticamente.
           </p>
+          {/* During the 48h waiting window the seller may still want to
+              renegotiate (e.g. drop the price) to give the buyer another
+              reason to close. Expose chat from this state too. */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(info.transaccionId ? `/seller/messages?tx=${info.transaccionId}` : '/seller/messages')}
+          >
+            Abrir chat con el comprador
+          </Button>
         </div>
       )}
 

@@ -19,15 +19,23 @@ export async function getContractInfo(req: Request, res: Response): Promise<void
   res.json({ success: true, data: info });
 }
 
-export async function signContract(req: Request, res: Response): Promise<void> {
-  const { transaccionId } = req.params as { transaccionId: string };
-  const { signatureData } = req.body as { signatureData: string };
-  if (!signatureData || typeof signatureData !== 'string' || signatureData.length > 500000) {
-    res.status(400).json({ success: false, error: 'Firma inválida o demasiado grande' });
-    return;
-  }
-  const result = await contractsService.signContract(transaccionId, req.user!.sub, signatureData);
-  res.json({ success: true, data: result });
+/**
+ * Legacy Phase-3 signing endpoint. Deprecated in favor of the match-level
+ * flow:
+ *   - Seller: POST /api/v1/contracts/match/:matchId/sign-seller
+ *   - Buyer: POST /api/v1/contracts/match/:matchId/buyer-checkout (signs
+ *     after Stripe confirms commission payment)
+ *
+ * Calling this endpoint would bypass the v2 state machine: it doesn't
+ * validate contratoEstado, doesn't enforce the seller-signs-first order,
+ * and doesn't trigger the commission webhook → no comisionPagadaEn, no
+ * invoices, no PDF final. Locked with 410 Gone to keep the surface clean.
+ */
+export async function signContract(_req: Request, res: Response): Promise<void> {
+  res.status(410).json({
+    success: false,
+    error: 'Este endpoint ha sido retirado. Usa /contracts/match/:matchId/sign-seller (vendedor) o /contracts/match/:matchId/buyer-checkout (comprador).',
+  });
 }
 
 export async function uploadLotPhotos(req: Request, res: Response): Promise<void> {
