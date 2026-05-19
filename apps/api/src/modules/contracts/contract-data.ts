@@ -132,16 +132,25 @@ function deriveSubscriptionTier(planComprador: string | null | undefined): Buyer
 }
 
 /**
- * Computes the buyer's last-30-days confirmed-platform volume (only matches
- * with estado CONFIRMADO are counted, matching the commission-tier policy).
+ * Computes the buyer's last-30-days confirmed-platform volume. Used to
+ * apply the volume discount on the commission percentage.
+ *
+ * Phase 11 — v2 flow never reaches estado=COMPLETADO automatically (the
+ * legacy QR flow did via captura). Now we count any transacción where the
+ * commission has been paid (comisionPagadaEn IS NOT NULL), which is the
+ * canonical signal that the operation closed on-platform. The legacy
+ * COMPLETADO matches are also counted via the OR clause for back-compat.
  */
 async function getBuyerMonthlyVolumeEur(buyerId: string): Promise<number> {
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const agg = await prisma.transaccion.aggregate({
     where: {
       compradorId: buyerId,
-      estado: 'COMPLETADO',
       updatedAt: { gte: since },
+      OR: [
+        { comisionPagadaEn: { not: null } },     // v2 flow — contract FIRMADO
+        { estado: 'COMPLETADO' },                // legacy flow
+      ],
     },
     _sum: { precioTotal: true },
   });

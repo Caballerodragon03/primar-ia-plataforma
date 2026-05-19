@@ -488,6 +488,29 @@ export class StripeService {
     const productoNombre = match.lote.producto?.nombre ?? 'Operación';
     const refOrden = match.pedido.id.slice(-6).toUpperCase();
 
+    // Phase 11 — race protection against the hourly expireSellerSignatures
+    // cron. There can be seconds between the initial deadline check and the
+    // Stripe API call; if the cron flips CADUCADO mid-flight, we'd charge a
+    // commission for a contract the seller's signature is about to vanish.
+    // Re-read the match state just before Stripe-API to minimise the window.
+    const recheck = await prisma.match.findUnique({
+      where: { id: matchId },
+      select: { contratoEstado: true, firmaVendedorDeadline: true },
+    });
+    if (!recheck || recheck.contratoEstado !== 'PENDIENTE_PAGO_COMPRADOR') {
+      throw new AppError(
+        'El contrato cambió de estado mientras se preparaba el pago. Recarga la página.',
+        409,
+      );
+    }
+    if (recheck.firmaVendedorDeadline && recheck.firmaVendedorDeadline.getTime() < Date.now()) {
+      await prisma.match.update({
+        where: { id: matchId },
+        data: { contratoEstado: 'CADUCADO' },
+      });
+      throw new AppError('El plazo de firma del vendedor ha caducado', 410);
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],

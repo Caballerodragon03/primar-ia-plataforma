@@ -84,6 +84,17 @@ export async function runBypassScan(): Promise<ScanResult> {
       // Don't waste tokens re-analyzing OFERTA-system messages (those carry
       // structured offer data, not free-form chat).
       tipo: 'TEXTO',
+      // Phase 11 — only scan messages from contracts that haven't been
+      // signed yet. Once FIRMADO, sharing phone numbers and addresses is
+      // legitimate (coordinating delivery), so flagging would be false
+      // positives. Also skip CADUCADO/CANCELADO (already terminal).
+      transaccion: {
+        match: {
+          contratoEstado: {
+            in: ['BORRADOR', 'PENDIENTE_FIRMA_VENDEDOR', 'PENDIENTE_PAGO_COMPRADOR'],
+          },
+        },
+      },
     },
     select: {
       id: true,

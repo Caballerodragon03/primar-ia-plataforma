@@ -204,10 +204,13 @@ export function startCronJobs(): void {
     void runMarketDataJob();
   }, { timezone: 'Europe/Madrid' });
 
-  // Hourly — expire seller signatures past their 48-business-hours deadline
+  // Hourly — expire seller signatures past their 48-business-hours deadline.
+  // Phase 11: explicit Madrid TZ keeps the comparison consistent with
+  // `addBusinessHours`/`businessHoursUntil` (which assume Mon-Fri business
+  // hours in local time) and avoids DST off-by-one drift on the container.
   cron.schedule('5 * * * *', () => {
     void expireSellerSignatures();
-  });
+  }, { timezone: 'Europe/Madrid' });
 
   // Daily at 09:00 Madrid — AI bypass scanner reviews chat from last 24h.
   cron.schedule('0 9 * * *', () => {

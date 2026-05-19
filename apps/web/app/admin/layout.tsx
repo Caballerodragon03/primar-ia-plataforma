@@ -68,14 +68,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <nav className="bg-white border-b border-[#E5E7EB] px-6">
         <div className="flex gap-6">
           {[
-            { label: 'Dashboard', href: '/admin/dashboard', icon: null },
-            { label: 'Users', href: '/admin/users', icon: null },
-            { label: 'Certificates', href: '/admin/certificates', icon: null },
+            { label: 'Panel', href: '/admin/dashboard', icon: null },
+            { label: 'Usuarios', href: '/admin/users', icon: null },
+            { label: 'Certificados', href: '/admin/certificates', icon: null },
             { label: 'Incidentes', href: '/admin/incidents', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
             { label: 'Riesgos', href: '/admin/risks', icon: <ShieldAlert className="w-3.5 h-3.5" /> },
             { label: 'Cancelaciones', href: '/admin/cancellations', icon: <XCircle className="w-3.5 h-3.5" /> },
             { label: 'Facturas', href: '/admin/invoices', icon: <Receipt className="w-3.5 h-3.5" /> },
-            { label: 'Bug Reports', href: '/admin/bug-reports', icon: <Bug className="w-3.5 h-3.5" /> },
+            { label: 'Incidencias técnicas', href: '/admin/bug-reports', icon: <Bug className="w-3.5 h-3.5" /> },
           ].map(({ label, href, icon }) => (
             <Link
               key={href}

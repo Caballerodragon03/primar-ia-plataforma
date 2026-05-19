@@ -26,6 +26,15 @@ const envSchema = z.object({
   STRIPE_PRICE_CENTRAL: z.string().default(''),
   GEMINI_API_KEY: z.string().default('placeholder'),
   GEMINI_MODEL: z.string().default('gemini-2.5-flash-lite'),
+  // Phase 11 — Primar-IA legal entity for invoices. Defaults are the same
+  // hardcoded values used until now; in production each MUST be overridden.
+  PRIMARIA_RAZON_SOCIAL: z.string().default('Primar-IA Technologies S.L.'),
+  PRIMARIA_CIFNIF: z.string().default('B12345678'),
+  PRIMARIA_DIRECCION: z.string().default('Calle Innovación 1'),
+  PRIMARIA_CIUDAD: z.string().default('Valencia'),
+  PRIMARIA_CODIGO_POSTAL: z.string().default('46001'),
+  PRIMARIA_PAIS: z.string().default('ES'),
+  PRIMARIA_EMAIL_FACTURACION: z.string().email().default('facturacion@primar-ia.com'),
 });
 
 const parsed = envSchema.safeParse(process.env);

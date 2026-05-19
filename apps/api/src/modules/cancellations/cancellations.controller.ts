@@ -11,10 +11,8 @@ import { AppError } from '../../middleware/error.middleware.js';
 
 export async function cancelMatchContract(req: Request, res: Response): Promise<void> {
   const matchId = req.params['matchId'] as string;
-  const { motivo } = req.body as { motivo?: string };
-  if (!motivo || typeof motivo !== 'string') {
-    throw new AppError('Falta el motivo de cancelación', 400);
-  }
+  // Zod (validateBody en contracts.routes) garantiza motivo string 5-500 chars.
+  const { motivo } = req.body as { motivo: string };
   const result = await cancellationsService.cancelMatch(matchId, req.user!.sub, { motivo });
   res.json({ success: true, data: result });
 }

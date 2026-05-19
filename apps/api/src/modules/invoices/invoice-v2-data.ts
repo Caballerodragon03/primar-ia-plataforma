@@ -13,6 +13,7 @@
  * commission snapshot, terms) and add invoice-specific bits per document.
  */
 import type { ContractData } from '../contracts/contract-data.js';
+import { env } from '../../config/env.js';
 
 export interface InvoiceLine {
   descripcion: string;
@@ -86,16 +87,19 @@ export interface InvoiceV2 {
 
 // ─── Primar-IA legal entity (hardcoded for MVP — should come from env later) ─
 
+// Phase 11 — read legal entity from env so production deployments can override
+// without code changes. Defaults match the previous hardcoded values for
+// dev/test continuity.
 const PRIMARIA_ENTITY: InvoicePartyV2 = {
-  razonSocial: 'Primar-IA Technologies S.L.',
-  cifNif: 'B12345678',
-  direccionFiscal: 'Calle Innovación 1',
-  ciudad: 'Valencia',
-  codigoPostal: '46001',
-  pais: 'ES',
+  razonSocial: env.PRIMARIA_RAZON_SOCIAL,
+  cifNif: env.PRIMARIA_CIFNIF,
+  direccionFiscal: env.PRIMARIA_DIRECCION,
+  ciudad: env.PRIMARIA_CIUDAD,
+  codigoPostal: env.PRIMARIA_CODIGO_POSTAL,
+  pais: env.PRIMARIA_PAIS,
 };
 
-const PRIMARIA_CONTACT_EMAIL = 'facturacion@primar-ia.com';
+const PRIMARIA_CONTACT_EMAIL = env.PRIMARIA_EMAIL_FACTURACION;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

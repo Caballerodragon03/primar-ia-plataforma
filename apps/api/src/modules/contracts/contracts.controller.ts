@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '@primaria/database';
+import { sanitizeSignature } from '@primaria/shared';
 import { contractsService } from './contracts.service.js';
 import { AppError } from '../../middleware/error.middleware.js';
 
@@ -220,22 +221,18 @@ export async function downloadMatchContract(req: Request, res: Response): Promis
 export async function startBuyerCommissionCheckout(req: Request, res: Response): Promise<void> {
   const matchId = (req.params as { matchId: string }).matchId;
   const userId = req.user!.sub;
-  const { signatureData, ack } = req.body as { signatureData: string; ack?: boolean };
-  if (!signatureData || typeof signatureData !== 'string' || signatureData.length > 500) {
-    throw new AppError('Firma inválida (texto entre 1 y 500 caracteres)', 400);
-  }
-  // Hard ack — the buyer must explicitly accept the irrevocability notice.
-  // The frontend shows a modal that requires checking a box to enable this.
-  if (ack !== true) {
-    throw new AppError('Debes aceptar el aviso de firma irrevocable antes de continuar', 400);
-  }
+  // Zod (validateBody) already enforces shape + length + ack=true. We sanitize
+  // here to strip control chars / zero-width Unicode before the value is
+  // persisted in Stripe metadata and the audit suffix is appended.
+  const { signatureData } = req.body as { signatureData: string };
   const ip =
     (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim()
     ?? req.socket.remoteAddress
     ?? null;
   // Stripe metadata values are limited to 500 chars and we only have 50 keys
   // — keep signature ≤ 480 to leave room for the audit suffix.
-  const trimmedSig = signatureData.trim().slice(0, 480);
+  const trimmedSig = sanitizeSignature(signatureData, 480);
+  if (trimmedSig.length < 1) throw new AppError('Firma inválida tras saneado', 400);
   const { stripeService } = await import('../stripe/stripe.service.js');
   const result = await stripeService.createCommissionCheckoutForMatch(
     matchId, userId, trimmedSig, ip,
@@ -252,10 +249,10 @@ export async function startBuyerCommissionCheckout(req: Request, res: Response):
 export async function signMatchAsSeller(req: Request, res: Response): Promise<void> {
   const matchId = (req.params as { matchId: string }).matchId;
   const userId = req.user!.sub;
-  const { signatureData } = req.body as { signatureData: string };
-  if (!signatureData || typeof signatureData !== 'string' || signatureData.length > 500) {
-    throw new AppError('Firma inválida (texto entre 1 y 500 caracteres)', 400);
-  }
+  // Zod validateBody enforced shape/length; sanitize for control chars too.
+  const raw = (req.body as { signatureData: string }).signatureData;
+  const signatureData = sanitizeSignature(raw, 500);
+  if (signatureData.length < 1) throw new AppError('Firma inválida tras saneado', 400);
   // Capture client IP for the audit trail (use x-forwarded-for if present
   // — common when behind a reverse proxy like Railway/Cloudflare).
   const ip =

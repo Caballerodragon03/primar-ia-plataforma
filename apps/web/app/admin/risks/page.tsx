@@ -10,7 +10,7 @@
  *   - DESCARTADO  (false positive)
  */
 import { useEffect, useState } from 'react';
-import { ShieldAlert, Loader2, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { api } from '@/lib/api';
 
 type Estado = 'PENDIENTE' | 'AVISADO' | 'BANEADO' | 'DESCARTADO';
@@ -76,6 +76,25 @@ export default function AdminRisksPage() {
   const [error, setError] = useState<string | null>(null);
   const [resolving, setResolving] = useState<string | null>(null);
   const [notas, setNotas] = useState<Record<string, string>>({});
+  const [scanRunning, setScanRunning] = useState(false);
+
+  async function handleRunScan() {
+    setScanRunning(true);
+    try {
+      const { data } = await api.post<{ data: { scanned: number; flagged: number; alreadyAlerted: number; errors: number } }>(
+        '/admin/maintenance/bypass-scan/run',
+      );
+      const r = data.data;
+      alert(`Scan completado.\nMensajes analizados: ${r.scanned}\nAlertas nuevas: ${r.flagged}\nYa alertados: ${r.alreadyAlerted}\nErrores: ${r.errors}`);
+      if (r.flagged > 0) void load(tab);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+        ?? 'No se pudo ejecutar el scan.';
+      alert(msg);
+    } finally {
+      setScanRunning(false);
+    }
+  }
 
   async function load(estado: Estado) {
     setLoading(true);
@@ -118,16 +137,27 @@ export default function AdminRisksPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
-          <ShieldAlert className="w-5 h-5" />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
+            <ShieldAlert className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Riesgos — Anti-bypass</h1>
+            <p className="text-xs text-text-secondary">
+              Alertas generadas por la IA al revisar el chat. Revisa y toma acción.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Riesgos — Anti-bypass</h1>
-          <p className="text-xs text-text-secondary">
-            Alertas generadas por la IA al revisar el chat. Revisa y toma acción.
-          </p>
-        </div>
+        <button
+          onClick={handleRunScan}
+          disabled={scanRunning}
+          className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:bg-muted disabled:opacity-50 flex items-center gap-1.5"
+          title="Forzar ejecución del scan de anti-bypass ahora (en lugar de esperar al cron diario 09:00 Madrid)"
+        >
+          {scanRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          Ejecutar scan ahora
+        </button>
       </div>
 
       {/* Tabs */}

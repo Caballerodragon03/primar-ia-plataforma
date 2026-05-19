@@ -236,11 +236,14 @@ export class NegotiationsService {
           matchUpdate['cantidadKg'] = newCantidadTotalKg;
         }
       }
-      // 3) If seller had already signed, revert contract to BORRADOR so the
-      //    new terms force a re-sign. The cron's deadline tracking remains
-      //    valid because we clear it explicitly here.
+      // 3) If seller had already signed, revert contract so the new terms
+      //    force a re-sign. We go to PENDIENTE_FIRMA_VENDEDOR (not BORRADOR)
+      //    so the seller's dashboard keeps the orange "Pendiente tu firma"
+      //    urgency badge — the contract already exists; we're just asking
+      //    for a fresh signature on the updated terms.
+      //    The cron's deadline tracking is cleared explicitly here.
       if (mustResetSellerSign) {
-        matchUpdate['contratoEstado'] = 'BORRADOR';
+        matchUpdate['contratoEstado'] = 'PENDIENTE_FIRMA_VENDEDOR';
         matchUpdate['firmaVendedorDeadline'] = null;
       }
       if (Object.keys(matchUpdate).length > 0) {
@@ -276,9 +279,16 @@ export class NegotiationsService {
           txPatch['cantidadKg'] = newCantidadTotalKg;
         }
         // Clear seller signature in the same atomic step.
+        // Also clear comisionStripeSessionId — if the buyer had opened a
+        // checkout session for the OLD price, the new terms make that
+        // session invalid; reusing it post-revert would charge the wrong
+        // amount. Stripe session expires on its own (24h TTL) but we
+        // forget the reference now so createCommissionCheckoutForMatch
+        // creates a fresh session with the updated commission.
         if (mustResetSellerSign) {
           txPatch['firmaVendedor'] = null;
           txPatch['firmaVendedorFecha'] = null;
+          txPatch['comisionStripeSessionId'] = null;
         }
         await tx.transaccion.update({
           where: { id: transaccionId },
