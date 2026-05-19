@@ -615,16 +615,52 @@ export default function PublishLotPage() {
             )}
           </div>
 
+          {/* Phase 14B — file upload real con POST /upload. Antes el handler
+              solo hacía console.log → fotosUrls quedaba siempre []. */}
           <div>
-            <p className="text-sm font-medium text-text-secondary mb-2">Upload Photos &amp; Videos</p>
+            <p className="text-sm font-medium text-text-secondary mb-2">Fotos del lote</p>
             <FileDropzone
               accept=".png,.jpg,.jpeg,.gif"
               maxSizeMB={10}
-              label="Upload lot photos"
-              onFileSelect={(file) => {
-                if (file) console.log('File selected:', file.name);
+              label="Subir foto del lote"
+              onFileSelect={async (file) => {
+                if (!file) return;
+                try {
+                  const form = new FormData();
+                  form.append('file', file);
+                  const res = await api.post<{ data: { url: string } }>('/upload', form, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                  });
+                  const url = res.data?.data?.url;
+                  if (url) {
+                    const current = watch('fotosUrls') ?? [];
+                    setValue('fotosUrls', [...current, url]);
+                  }
+                } catch (err) {
+                  console.error('[upload] foto del lote failed:', err);
+                  alert('No se pudo subir la foto. Inténtalo de nuevo.');
+                }
               }}
             />
+            {(watch('fotosUrls') ?? []).length > 0 && (
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {(watch('fotosUrls') ?? []).map((url: string, i: number) => (
+                  <div key={i} className="relative">
+                    <img src={url} alt={`Foto ${i + 1}`} className="w-full h-20 object-cover rounded border border-border" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cur = watch('fotosUrls') ?? [];
+                        setValue('fotosUrls', cur.filter((_: string, idx: number) => idx !== i));
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white text-[10px] rounded px-1.5 py-0.5 opacity-90 hover:opacity-100"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>

@@ -64,6 +64,7 @@ export class ValoracionesService {
 
   async getPending(userId: string, role: string): Promise<{
     transaccionId: string;
+    matchId: string;
     lotId: string;
     orderId: string;
     destinatarioId: string;
@@ -85,7 +86,10 @@ export class ValoracionesService {
         id: true,
         vendedorId: true,
         compradorId: true,
-        match: { select: { loteId: true, pedidoId: true } },
+        // Phase 14B — expose matchId so the seller "Valorar ahora" link
+        // navigates to the v2 contract page (/seller|buyer/contracts/[matchId])
+        // instead of the legacy QR/photos page.
+        match: { select: { id: true, loteId: true, pedidoId: true } },
       },
     });
 
@@ -93,6 +97,7 @@ export class ValoracionesService {
 
     return {
       transaccionId: tx.id,
+      matchId: tx.match.id,
       lotId: tx.match.loteId,
       orderId: tx.match.pedidoId,
       destinatarioId: isVendedor ? tx.compradorId : tx.vendedorId,

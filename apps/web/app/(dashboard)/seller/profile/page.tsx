@@ -76,6 +76,29 @@ export default function SellerProfilePage() {
   // Contracts / Incoterms state
   const [incotermData, setIncotermData] = useState<{ recommended: string; selected: string[] } | null>(null);
   const [selectedIncoterms, setSelectedIncoterms] = useState<string[]>([]);
+
+  // Phase 14B — empresa data del vendedor para la tab Company.
+  // Antes la tab mostraba '—' literal en todos los campos por no haber fetch.
+  interface CompanyData {
+    razonSocial: string | null;
+    cifNif: string | null;
+    formaJuridica: string | null;
+    direccionFiscal: string | null;
+    ciudad: string | null;
+    codigoPostal: string | null;
+    pais: string | null;
+    iban: string | null;
+    regimenFiscal: string | null;
+  }
+  const [company, setCompany] = useState<CompanyData | null>(null);
+  const [loadingCompany, setLoadingCompany] = useState(false);
+
+  const REGIMEN_FISCAL_LABELS_LOCAL: Record<string, string> = {
+    GENERAL: 'Régimen general',
+    AGRARIO: 'Régimen especial agrario (REAGP)',
+    RECARGO_EQUIVALENCIA: 'Recargo de equivalencia',
+    EXENTO: 'Exento (intracomunitario / exportación)',
+  };
   const [savingContracts, setSavingContracts] = useState(false);
   const [contractsSaved, setContractsSaved] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
@@ -104,6 +127,27 @@ export default function SellerProfilePage() {
   useEffect(() => {
     if (activeTab === 'documents') {
       fetchCertificates();
+    }
+    if (activeTab === 'company' && !company) {
+      // Phase 14B — fetch empresa info on first activation of the Company tab.
+      setLoadingCompany(true);
+      api.get('/auth/profile')
+        .then(({ data }) => {
+          const e = data.data?.empresa as Record<string, string | null> | null;
+          setCompany(e ? {
+            razonSocial: e['razonSocial'] ?? null,
+            cifNif: e['cifNif'] ?? null,
+            formaJuridica: e['formaJuridica'] ?? null,
+            direccionFiscal: e['direccionFiscal'] ?? null,
+            ciudad: e['ciudad'] ?? null,
+            codigoPostal: e['codigoPostal'] ?? null,
+            pais: e['pais'] ?? null,
+            iban: e['iban'] ?? null,
+            regimenFiscal: e['regimenFiscal'] ?? null,
+          } : null);
+        })
+        .catch(() => setCompany(null))
+        .finally(() => setLoadingCompany(false));
     }
     if (activeTab === 'contracts') {
       // Load from API first, fallback to localStorage
@@ -407,22 +451,38 @@ export default function SellerProfilePage() {
             </p>
           </div>
 
+          {/* Phase 14B — real fetch + render. Antes mostraba '—' hardcoded. */}
           <div className="bg-card rounded-card border border-border p-6 space-y-4">
-            {[
-              { label: 'Razón social', value: '—' },
-              { label: 'CIF / NIF', value: '—' },
-              { label: 'Forma jurídica', value: '—' },
-              { label: 'Dirección', value: '—' },
-              { label: 'Ciudad', value: '—' },
-              { label: 'Código postal', value: '—' },
-              { label: 'País', value: '—' },
-              { label: 'IBAN', value: 'Gestionado de forma segura por Stripe' },
-            ].map(({ label, value }) => (
-              <div key={label} className="grid grid-cols-2 gap-4 py-2 border-b border-border last:border-0">
-                <p className="text-xs text-muted-foreground font-medium">{label}</p>
-                <p className="text-sm text-foreground">{value}</p>
-              </div>
-            ))}
+            {loadingCompany ? (
+              <p className="text-sm text-muted-foreground">Cargando datos de la empresa…</p>
+            ) : !company ? (
+              <p className="text-sm text-muted-foreground">No hay datos de empresa registrados.</p>
+            ) : (
+              [
+                { label: 'Razón social', value: company.razonSocial ?? '—' },
+                { label: 'CIF / NIF', value: company.cifNif ?? '—' },
+                { label: 'Forma jurídica', value: company.formaJuridica ?? '—' },
+                { label: 'Dirección fiscal', value: company.direccionFiscal ?? '—' },
+                { label: 'Ciudad', value: company.ciudad ?? '—' },
+                { label: 'Código postal', value: company.codigoPostal ?? '—' },
+                { label: 'País', value: company.pais ?? '—' },
+                {
+                  label: 'IBAN cobro',
+                  value: company.iban ? `${company.iban.slice(0, 4)} **** **** **** ${company.iban.slice(-4)}` : '—',
+                },
+                {
+                  label: 'Régimen fiscal',
+                  value: company.regimenFiscal
+                    ? (REGIMEN_FISCAL_LABELS_LOCAL[company.regimenFiscal] ?? company.regimenFiscal)
+                    : '—',
+                },
+              ].map(({ label, value }) => (
+                <div key={label} className="grid grid-cols-2 gap-4 py-2 border-b border-border last:border-0">
+                  <p className="text-xs text-muted-foreground font-medium">{label}</p>
+                  <p className="text-sm text-foreground">{value}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

@@ -157,8 +157,26 @@ export default function CreateOrderPage() {
         values.variedadId === OTHER_VALUE && customVariety.trim()
           ? customVariety.trim()
           : undefined;
+      // Phase 14B — si noCalibre está marcado, colapsar el array de calibres
+      // a un único item placeholder UNCALIBRATED con la suma del peso/precio
+      // declarado. Antes el payload enviaba calibres vacíos → backend
+      // rechazaba con `calibre: ''` o lo persistía como string vacío.
+      let calibresSolicitados = values.calibresSolicitados;
+      if (values.noCalibre) {
+        const totalKg = values.calibresSolicitados.reduce((s, c) => s + Number(c.cantidad_kg || 0), 0);
+        const totalPrecio = values.calibresSolicitados.reduce((s, c) => s + Number(c.precio_max_kg || 0), 0);
+        const avgPrecio = values.calibresSolicitados.length > 0
+          ? totalPrecio / values.calibresSolicitados.length
+          : 0;
+        calibresSolicitados = [{
+          calibre: 'UNCALIBRATED',
+          cantidad_kg: totalKg,
+          precio_max_kg: avgPrecio,
+        }];
+      }
       const payload = {
         ...values,
+        calibresSolicitados,
         variedadId,
         variedadCustom,
         publicar: publish,

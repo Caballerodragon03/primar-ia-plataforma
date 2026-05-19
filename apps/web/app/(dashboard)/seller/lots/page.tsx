@@ -62,7 +62,7 @@ export default function MyLotsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [globalFilter, setGlobalFilter] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [pendingRating, setPendingRating] = useState<{ transaccionId: string; lotId: string; orderId: string; destinatarioId: string } | null>(null);
+  const [pendingRating, setPendingRating] = useState<{ transaccionId: string; matchId: string; lotId: string; orderId: string; destinatarioId: string } | null>(null);
 
   const fetchLots = useCallback(async (tab: string) => {
     setIsLoading(true);
@@ -107,7 +107,7 @@ export default function MyLotsPage() {
             Tienes una transacción pendiente de valorar.
           </p>
           <Link
-            href={`/seller/lots/${pendingRating.lotId}/qr/${pendingRating.transaccionId}`}
+            href={`/seller/contracts/${pendingRating.matchId}`}
             className="text-xs font-medium text-yellow-800 underline hover:no-underline flex-shrink-0"
           >
             Valorar ahora
