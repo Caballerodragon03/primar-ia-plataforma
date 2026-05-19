@@ -158,7 +158,7 @@ export default function LotDetailPage() {
           <XCircle className="w-10 h-10 text-red-400 mx-auto mb-2" />
           <p className="text-sm text-red-700">{error || 'Lote no encontrado.'}</p>
           <Link href="/seller/lots" className="text-sm text-primary-dark mt-3 inline-block hover:underline">
-            ← Back to My Lots
+            ← Volver a mis lotes
           </Link>
         </div>
       </div>
@@ -208,7 +208,7 @@ export default function LotDetailPage() {
           {/* Coverage */}
           <div className="bg-card rounded-card border border-border p-5">
             <h2 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-              <Package className="w-4 h-4" /> Coverage
+              <Package className="w-4 h-4" /> Cobertura
             </h2>
             <div className="flex items-center gap-4 mb-2">
               <CoverageBar percentage={displayCoverage} className="flex-1" />
@@ -217,8 +217,8 @@ export default function LotDetailPage() {
               </span>
             </div>
             <p className="text-xs text-text-secondary">
-              {lot.totalKg.toLocaleString('es-ES')} kg total ·{' '}
-              {Math.round((displayCoverage / 100) * lot.totalKg).toLocaleString('es-ES')} kg matched
+              {lot.totalKg.toLocaleString('es-ES')} kg totales ·{' '}
+              {Math.round((displayCoverage / 100) * lot.totalKg).toLocaleString('es-ES')} kg comprometidos
             </p>
           </div>
 
@@ -264,7 +264,7 @@ export default function LotDetailPage() {
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-text-primary">
-                Active Matches ({lot.matches.length})
+                Matches activos ({lot.matches.length})
               </h2>
             </div>
             {lot.matches.length === 0 ? (
@@ -309,7 +309,7 @@ export default function LotDetailPage() {
                           {m.transaccion?.id && ['PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
                             <Link href={`/seller/lots/${id}/qr/${m.transaccion.id}`}>
                               <Button variant="outline" size="sm" className="flex items-center gap-1">
-                                <QrCode className="w-3.5 h-3.5" /> QR & Photos
+                                <QrCode className="w-3.5 h-3.5" /> QR y fotos
                               </Button>
                             </Link>
                           )}
@@ -320,7 +320,7 @@ export default function LotDetailPage() {
                               onClick={() => openDisputeModal(m)}
                               className="flex items-center gap-1 text-red-500 hover:text-red-700 hover:bg-red-50"
                             >
-                              <AlertTriangle className="w-3.5 h-3.5" /> Claim
+                              <AlertTriangle className="w-3.5 h-3.5" /> Incidencia
                             </Button>
                           )}
                           {m.transaccion?.id && m.estado === 'CONFIRMADO' && (
@@ -346,12 +346,12 @@ export default function LotDetailPage() {
           {/* Details */}
           <div className="bg-card rounded-card border border-border p-4">
             <h2 className="text-sm font-semibold text-text-primary mb-3">Detalles</h2>
-            <InfoRow label="Product" value={lot.producto.nombre} />
-            <InfoRow label="Category" value={lot.producto.categoria} />
-            {lot.variedad && <InfoRow label="Variety" value={lot.variedad.nombre} />}
-            <InfoRow label="Type" value={lot.tipo === 'VENTA_DIRECTA' ? 'Venta directa' : 'Subasta'} />
+            <InfoRow label="Producto" value={lot.producto.nombre} />
+            <InfoRow label="Categoría" value={lot.producto.categoria} />
+            {lot.variedad && <InfoRow label="Variedad" value={lot.variedad.nombre} />}
+            <InfoRow label="Tipo" value={lot.tipo === 'VENTA_DIRECTA' ? 'Venta directa' : 'Subasta'} />
             <InfoRow
-              label="Availability"
+              label="Disponibilidad"
               value={
                 <span className="flex items-center gap-1 justify-end">
                   <Calendar className="w-3.5 h-3.5 text-text-muted" />
@@ -360,7 +360,7 @@ export default function LotDetailPage() {
               }
             />
             <InfoRow
-              label="Location"
+              label="Ubicación"
               value={
                 <span className="flex items-center gap-1 justify-end text-right">
                   <MapPin className="w-3.5 h-3.5 text-text-muted shrink-0" />
@@ -407,14 +407,14 @@ export default function LotDetailPage() {
                 loading={publishing}
                 onClick={handlePublish}
               >
-                Publish Lot
+                Publicar lote
               </Button>
             )}
 
             {canEdit && (
               <Link href={`/seller/lots/${id}/edit`}>
                 <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-2">
-                  <Pencil className="w-3.5 h-3.5" /> Edit Lot
+                  <Pencil className="w-3.5 h-3.5" /> Editar lote
                 </Button>
               </Link>
             )}
@@ -427,7 +427,7 @@ export default function LotDetailPage() {
                 loading={cancelling}
                 onClick={handleCancel}
               >
-                <Trash2 className="w-3.5 h-3.5" /> Cancel Lot
+                <Trash2 className="w-3.5 h-3.5" /> Cancelar lote
               </Button>
             )}
           </div>

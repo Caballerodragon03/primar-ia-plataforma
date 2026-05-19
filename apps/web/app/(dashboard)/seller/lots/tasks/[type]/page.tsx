@@ -48,10 +48,10 @@ interface TasksData {
 }
 
 const TYPE_CONFIG: Record<string, { title: string; icon: React.ReactNode; color: string }> = {
-  contracts: { title: 'Contracts to Countersign', icon: <FileText className="w-5 h-5" />, color: 'amber' },
-  photos:    { title: 'Shipment Prep & QR Code', icon: <QrCode className="w-5 h-5" />, color: 'blue' },
-  matches:   { title: 'Offers to Review', icon: <Sparkles className="w-5 h-5" />, color: 'green' },
-  expiry:    { title: 'Lots Past Availability Date', icon: <Clock className="w-5 h-5" />, color: 'red' },
+  contracts: { title: 'Contratos por firmar', icon: <FileText className="w-5 h-5" />, color: 'amber' },
+  photos:    { title: 'Preparación de envío y QR', icon: <QrCode className="w-5 h-5" />, color: 'blue' },
+  matches:   { title: 'Ofertas por revisar', icon: <Sparkles className="w-5 h-5" />, color: 'green' },
+  expiry:    { title: 'Lotes con disponibilidad caducada', icon: <Clock className="w-5 h-5" />, color: 'red' },
 };
 
 function shortLotId(id: string) {
@@ -129,7 +129,7 @@ export default function SellerTaskListPage() {
         <TaskList
           items={tasks.contracts}
           emptyMsg="No contracts pending your signature."
-          emptyCta={{ label: 'Publish a New Lot', href: '/seller/lots/new' }}
+          emptyCta={{ label: 'Publicar lote nuevo', href: '/seller/lots/new' }}
           renderItem={(item) => (
             <Link
               key={item.matchId}
@@ -154,7 +154,7 @@ export default function SellerTaskListPage() {
         <TaskList
           items={tasks.photos}
           emptyMsg="No shipments pending QR preparation or photo upload."
-          emptyCta={{ label: 'Publish a New Lot', href: '/seller/lots/new' }}
+          emptyCta={{ label: 'Publicar lote nuevo', href: '/seller/lots/new' }}
           renderItem={(item) => (
             <Link
               key={item.txId}
@@ -179,7 +179,7 @@ export default function SellerTaskListPage() {
         <TaskList
           items={tasks.matches ?? []}
           emptyMsg="No pending match offers to review."
-          emptyCta={{ label: 'Publish a New Lot', href: '/seller/lots/new' }}
+          emptyCta={{ label: 'Publicar lote nuevo', href: '/seller/lots/new' }}
           renderItem={(item) => (
             <Link
               key={item.matchId}
@@ -204,7 +204,7 @@ export default function SellerTaskListPage() {
         <TaskList
           items={tasks.expiredLots ?? []}
           emptyMsg="No lots past their availability date."
-          emptyCta={{ label: 'Publish a New Lot', href: '/seller/lots/new' }}
+          emptyCta={{ label: 'Publicar lote nuevo', href: '/seller/lots/new' }}
           renderItem={(item) => (
             <div
               key={item.lotId}

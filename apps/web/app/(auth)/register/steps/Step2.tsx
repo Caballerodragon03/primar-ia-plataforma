@@ -71,19 +71,19 @@ export function Step2({ onNext, onBack }: Step2Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Company Information */}
+      {/* Datos de la empresa */}
       <div>
-        <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Company Information</h3>
+        <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Datos de la empresa</h3>
         <div className="flex flex-col gap-4">
           <Input
-            label="Legal Name"
+            label="Razón social"
             placeholder="Frutas García S.L."
             required
             error={errors.razonSocial?.message}
             {...register('razonSocial')}
           />
           <Select
-            label="Legal Form"
+            label="Forma jurídica"
             options={LEGAL_FORM_OPTIONS}
             error={errors.formaJuridica?.message}
             {...register('formaJuridica')}
@@ -92,7 +92,7 @@ export function Step2({ onNext, onBack }: Step2Props) {
             label="CIF / NIF"
             placeholder="B12345678"
             required
-            hint="9 characters — letter + 8 digits (e.g. B12345678)"
+            hint="9 caracteres — letra + 8 dígitos (ej.: B12345678)"
             error={errors.cifNif?.message}
             {...register('cifNif', {
               onChange: (e: ChangeEvent<HTMLInputElement>) => {
@@ -103,12 +103,12 @@ export function Step2({ onNext, onBack }: Step2Props) {
         </div>
       </div>
 
-      {/* Address */}
+      {/* Dirección */}
       <div>
-        <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Address Information</h3>
+        <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Dirección fiscal</h3>
         <div className="flex flex-col gap-4">
           <Input
-            label="Street Address"
+            label="Calle y número"
             placeholder="Calle Mayor 1"
             required
             error={errors.direccionFiscal?.message}
@@ -116,40 +116,40 @@ export function Step2({ onNext, onBack }: Step2Props) {
           />
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="City"
+              label="Ciudad"
               placeholder="Valencia"
               error={errors.ciudad?.message}
               {...register('ciudad')}
             />
             <Input
-              label="Postal Code"
+              label="Código postal"
               placeholder="46001"
               error={errors.codigoPostal?.message}
               {...register('codigoPostal')}
             />
           </div>
           <Select
-            label="Country"
+            label="País"
             options={COUNTRY_OPTIONS}
             {...register('pais')}
           />
         </div>
       </div>
 
-      {/* Legal Contact */}
+      {/* Contacto legal */}
       <div>
-        <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Legal Contact Person</h3>
+        <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">Persona de contacto legal</h3>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="First Name"
+              label="Nombre"
               placeholder="Juan"
               required
               error={errors.nombre?.message}
               {...register('nombre')}
             />
             <Input
-              label="Last Name"
+              label="Apellidos"
               placeholder="García"
               required
               error={errors.apellidos?.message}
@@ -157,8 +157,8 @@ export function Step2({ onNext, onBack }: Step2Props) {
             />
           </div>
           <Input
-            label="Position / Title"
-            placeholder="CEO"
+            label="Cargo"
+            placeholder="Administrador único"
             required
             error={errors.cargoContactoLegal?.message}
             {...register('cargoContactoLegal')}
@@ -207,10 +207,10 @@ export function Step2({ onNext, onBack }: Step2Props) {
 
       <div className="flex gap-3 mt-2">
         <Button type="button" variant="outline" size="lg" className="flex-1" onClick={onBack}>
-          Back
+          Volver
         </Button>
         <Button type="button" variant="primary" size="lg" className="flex-1" onClick={handleNext}>
-          Continue
+          Continuar
         </Button>
       </div>
     </div>

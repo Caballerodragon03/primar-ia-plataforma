@@ -48,10 +48,10 @@ interface TasksData {
 }
 
 const TYPE_CONFIG: Record<string, { title: string; icon: React.ReactNode; color: string }> = {
-  contracts: { title: 'Contracts to Sign', icon: <FileText className="w-5 h-5" />, color: 'amber' },
-  offers: { title: 'Offers to Authorize', icon: <CreditCard className="w-5 h-5" />, color: 'blue' },
-  deliveries: { title: 'Deliveries to Confirm', icon: <Package className="w-5 h-5" />, color: 'green' },
-  expiry: { title: 'Orders Past Delivery Date', icon: <Clock className="w-5 h-5" />, color: 'red' },
+  contracts: { title: 'Contratos por firmar y pagar', icon: <FileText className="w-5 h-5" />, color: 'amber' },
+  offers: { title: 'Ofertas pendientes de autorizar', icon: <CreditCard className="w-5 h-5" />, color: 'blue' },
+  deliveries: { title: 'Entregas pendientes de confirmar', icon: <Package className="w-5 h-5" />, color: 'green' },
+  expiry: { title: 'Pedidos con fecha de entrega vencida', icon: <Clock className="w-5 h-5" />, color: 'red' },
 };
 
 function shortId(id: string) {
@@ -129,7 +129,7 @@ export default function BuyerTaskListPage() {
         <TaskList
           items={tasks.contracts}
           emptyMsg="No contracts pending your signature."
-          emptyCta={{ label: 'Create a New Order', href: '/buyer/orders/new' }}
+          emptyCta={{ label: 'Crear pedido nuevo', href: '/buyer/orders/new' }}
           renderItem={(item) => (
             <Link
               key={item.matchId}
@@ -154,7 +154,7 @@ export default function BuyerTaskListPage() {
         <TaskList
           items={tasks.offers}
           emptyMsg="No offers awaiting payment authorization."
-          emptyCta={{ label: 'Create a New Order', href: '/buyer/orders/new' }}
+          emptyCta={{ label: 'Crear pedido nuevo', href: '/buyer/orders/new' }}
           renderItem={(item) => (
             <Link
               key={item.matchId}
@@ -179,7 +179,7 @@ export default function BuyerTaskListPage() {
         <TaskList
           items={tasks.deliveries}
           emptyMsg="No deliveries pending confirmation."
-          emptyCta={{ label: 'Create a New Order', href: '/buyer/orders/new' }}
+          emptyCta={{ label: 'Crear pedido nuevo', href: '/buyer/orders/new' }}
           renderItem={(item) => (
             <Link
               key={item.txId}
@@ -204,7 +204,7 @@ export default function BuyerTaskListPage() {
         <TaskList
           items={tasks.expiredOrders ?? []}
           emptyMsg="No orders past their delivery date."
-          emptyCta={{ label: 'Create a New Order', href: '/buyer/orders/new' }}
+          emptyCta={{ label: 'Crear pedido nuevo', href: '/buyer/orders/new' }}
           renderItem={(item) => (
             <div
               key={item.orderId}

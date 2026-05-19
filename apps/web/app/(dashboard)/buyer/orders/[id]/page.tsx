@@ -88,7 +88,7 @@ function DeliveryConfirmInline({ transaccionId, onConfirmed }: { transaccionId: 
       await api.post(`/contracts/${transaccionId}/confirm-delivery`, { qrToken: code.trim() });
       onConfirmed();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Verification failed.';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'No se pudo verificar el código.';
       alert(msg);
     } finally {
       setConfirming(false);
@@ -103,7 +103,7 @@ function DeliveryConfirmInline({ transaccionId, onConfirmed }: { transaccionId: 
           type="text"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="Enter QR / verification code..."
+          placeholder="Introduce el código QR / verificación…"
           className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
           onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
         />
@@ -251,14 +251,14 @@ export default function OrderDetailPage() {
       {/* Back */}
       <Link href="/buyer/orders" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="w-4 h-4" />
-        Back to My Orders
+        Volver a mis pedidos
       </Link>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-foreground">Order #{shortId}: {productName}</h1>
+            <h1 className="text-2xl font-bold text-foreground">Pedido #{shortId}: {productName}</h1>
             <StatusBadge status={order.estado} />
           </div>
           <div className="flex items-center gap-2 mt-1">
@@ -307,7 +307,7 @@ export default function OrderDetailPage() {
             <p className="text-sm font-semibold text-amber-900">Payment pre-authorization available</p>
             <p className="text-xs text-amber-700 mt-0.5">
               {acceptedMatches.length} seller contribution{acceptedMatches.length > 1 ? 's' : ''} accepted.
-              Pre-authorize to secure the deal in escrow.
+              Preautoriza el pago para asegurar el cierre del pedido.
             </p>
           </div>
           <Button variant="primary" size="sm" onClick={() => openPaymentModal(acceptedMatches[0]!.id)}>
@@ -322,7 +322,7 @@ export default function OrderDetailPage() {
           <Lock className="w-5 h-5 text-green-600 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-green-900">Payment pre-authorized</p>
-            <p className="text-xs text-green-700 mt-0.5">Funds are held in escrow and will be released upon delivery.</p>
+            <p className="text-xs text-green-700 mt-0.5">El importe se libera al vendedor cuando confirmes la entrega.</p>
           </div>
         </div>
       )}
@@ -362,7 +362,7 @@ export default function OrderDetailPage() {
             <div className="px-5 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-foreground">
-                Seller Contributions ({order.matches.length})
+                Ofertas de vendedores ({order.matches.length})
               </h2>
             </div>
             {order.matches.length === 0 ? (

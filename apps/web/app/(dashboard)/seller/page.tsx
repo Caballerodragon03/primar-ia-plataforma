@@ -106,7 +106,7 @@ export default function SellerDashboard() {
     },
     n && n.pendingPhotos > 0 && {
       icon: <Camera className="w-5 h-5" />,
-      label: `Upload photos for ${n.pendingPhotos} shipment${n.pendingPhotos > 1 ? 's' : ''}`,
+      label: `Subir fotos de ${n.pendingPhotos} envío${n.pendingPhotos > 1 ? 's' : ''}`,
       desc: 'Both parties signed. Upload lot preparation photos before shipping.',
       href: n.pendingPhotos === 1 && n.firstPendingPhotosLotId && n.firstPendingPhotosTxId
         ? `/seller/lots/${n.firstPendingPhotosLotId}/qr/${n.firstPendingPhotosTxId}`
@@ -147,7 +147,7 @@ export default function SellerDashboard() {
         <Link href="/seller/lots/new">
           <Button variant="primary" size="md" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
-            Publish New Lot
+            Publicar lote nuevo
           </Button>
         </Link>
       </div>
@@ -191,7 +191,7 @@ export default function SellerDashboard() {
         <section className="mb-6">
           <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            Action Required
+            Acciones requeridas
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-stagger">
             {actionItems.map((item) => (
@@ -260,7 +260,7 @@ export default function SellerDashboard() {
               ) : topActiveLots.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-6 text-center text-sm text-secondary">
-                    Sin lotes activos. <Link href="/seller/lots/new" className="text-primary underline">Publish one</Link>
+                    Sin lotes activos. <Link href="/seller/lots/new" className="text-primary underline">Publica uno</Link>
                   </td>
                 </tr>
               ) : (

@@ -101,7 +101,7 @@ export default function BuyerDashboard() {
     },
     n && n.pendingOffers > 0 && {
       icon: <CreditCard className="w-5 h-5" />,
-      label: `Authorize payment for ${n.pendingOffers} offer${n.pendingOffers > 1 ? 's' : ''}`,
+      label: `Autorizar pago de ${n.pendingOffers} oferta${n.pendingOffers > 1 ? 's' : ''}`,
       desc: 'Pre-authorize payment to confirm the deal in escrow.',
       href: n.pendingOffers === 1 && n.firstPendingOfferOrderId
         ? `/buyer/orders/${n.firstPendingOfferOrderId}`
@@ -110,7 +110,7 @@ export default function BuyerDashboard() {
     },
     n && n.pendingDeliveries > 0 && {
       icon: <PackageCheck className="w-5 h-5" />,
-      label: `Confirm delivery of ${n.pendingDeliveries} shipment${n.pendingDeliveries > 1 ? 's' : ''}`,
+      label: `Confirmar entrega de ${n.pendingDeliveries} envío${n.pendingDeliveries > 1 ? 's' : ''}`,
       desc: 'Scan the QR code or enter the verification code to release payment.',
       href: n.pendingDeliveries === 1 && n.firstPendingDeliveryOrderId && n.firstPendingDeliveryTxId
         ? `/buyer/orders/${n.firstPendingDeliveryOrderId}/delivery/${n.firstPendingDeliveryTxId}`
@@ -144,7 +144,7 @@ export default function BuyerDashboard() {
         <Link href="/buyer/orders/new">
           <Button variant="primary" size="md" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
-            Create New Order
+            Crear pedido nuevo
           </Button>
         </Link>
       </div>
@@ -158,7 +158,7 @@ export default function BuyerDashboard() {
           icon={<Clock className="w-4 h-4" />}
         />
         <KPICard
-          label="Total Value"
+          label="Valor total"
           value={loading ? '—' : `€${totalValue.toLocaleString('es-ES', { maximumFractionDigits: 0 })}`}
           sub={loading ? 'Loading...' : 'Valor comprometido'}
           icon={<DollarSign className="w-4 h-4" />}
@@ -188,7 +188,7 @@ export default function BuyerDashboard() {
         <section className="mb-6">
           <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            Action Required
+            Acciones requeridas
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-stagger">
             {actionItems.map((item) => (

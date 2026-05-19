@@ -256,22 +256,22 @@ export default function SellerMatchesPage() {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium text-text-primary">
-                Incoterm filter
+                Filtro de incoterm
                 {incotermPrefs.recommended && (
                   <span className="ml-2 text-xs text-text-secondary">
-                    (Recommended: <span className="font-semibold text-primary">{incotermPrefs.recommended}</span>)
+                    (Recomendado: <span className="font-semibold text-primary">{incotermPrefs.recommended}</span>)
                   </span>
                 )}
               </span>
               <span className="text-xs text-text-secondary">
-                {incotermFilter.size} / {incotermPrefs.selected.length} selected
+                {incotermFilter.size} de {incotermPrefs.selected.length} seleccionados
               </span>
             </div>
             <button
               onClick={() => setShowIncotermFilter((v) => !v)}
               className="text-xs text-primary-dark hover:underline"
             >
-              {showIncotermFilter ? 'Hide' : 'Edit'}
+              {showIncotermFilter ? 'Ocultar' : 'Editar'}
             </button>
           </div>
 
@@ -305,7 +305,7 @@ export default function SellerMatchesPage() {
                 onClick={() => setIncotermFilter(new Set(incotermPrefs.selected))}
                 className="text-xs text-text-secondary hover:text-text-primary underline ml-1"
               >
-                Reset
+                Restablecer
               </button>
             </div>
           )}
@@ -319,14 +319,14 @@ export default function SellerMatchesPage() {
             <Star className="w-5 h-5 text-primary flex-shrink-0 fill-primary" />
             <div>
               <p className="font-semibold text-text-primary text-sm">
-                Automated Best Match
+                Mejor match automático
               </p>
               <p className="text-xs text-text-secondary">
-                Est. Potential Revenue:{' '}
+                Ingresos potenciales estimados:{' '}
                 <span className="font-bold text-text-primary">
                   €{totalProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
-                <span className="ml-1 text-text-secondary font-normal">(across all pending matches)</span>
+                <span className="ml-1 text-text-secondary font-normal">(sumando todos los matches pendientes)</span>
               </p>
             </div>
           </div>
@@ -385,7 +385,7 @@ export default function SellerMatchesPage() {
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <Star className="w-8 h-8 text-muted-foreground/50" />
             </div>
-            <p className="font-semibold text-text-primary mb-1">No matching orders yet.</p>
+            <p className="font-semibold text-text-primary mb-1">Todavía no hay pedidos que encajen.</p>
             <p className="text-sm text-text-secondary max-w-sm">
               No buyers match your current lot calibers. See what buyers are requesting below.
             </p>
@@ -395,7 +395,7 @@ export default function SellerMatchesPage() {
             <div className="bg-card border border-border rounded-card p-5 space-y-4">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-primary" />
-                <h3 className="font-semibold text-text-primary text-sm">What Buyers Are Requesting</h3>
+                <h3 className="font-semibold text-text-primary text-sm">Lo que están pidiendo los compradores</h3>
                 <span className="text-xs text-text-secondary">— update your lot calibers to get matched</span>
               </div>
               <div className="divide-y divide-border">
