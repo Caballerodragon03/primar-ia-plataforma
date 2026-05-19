@@ -90,7 +90,7 @@ export function TutorialsSection({ role }: TutorialsSectionProps) {
       setResettingId(id);
       try {
         await api.post(`/tutorials/${id}/reset`);
-        const dashboardHref = role === 'VENDEDOR' ? '/seller/dashboard' : '/buyer/dashboard';
+        const dashboardHref = role === 'VENDEDOR' ? '/seller' : '/buyer';
         window.location.assign(dashboardHref);
       } catch {
         setResettingId(null);

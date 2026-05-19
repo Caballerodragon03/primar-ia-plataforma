@@ -28,7 +28,7 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
   {
     key: 'inicio',
     kind: 'modal',
-    route: '/seller/dashboard',
+    route: '/seller',
     title: 'Modo prueba activado',
     content:
       'Vamos a recorrer el flujo COMPLETO de venta sobre la plataforma real. Te guiaré paso a paso, los formularios se autorrellenan con datos inventados y nada se guarda en la base de datos.',
@@ -37,7 +37,7 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
   {
     key: 'sidebar-lots',
     kind: 'spotlight',
-    route: '/seller/dashboard',
+    route: '/seller',
     target: '[data-tutorial="sidebar"]',
     placement: 'right',
     title: 'Navegar a "Mis lotes"',
@@ -178,7 +178,7 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
   {
     key: 'inicio',
     kind: 'modal',
-    route: '/buyer/dashboard',
+    route: '/buyer',
     title: 'Modo prueba activado',
     content:
       'Vamos a recorrer el flujo COMPLETO de compra sobre la plataforma real. Te guiaré paso a paso, los formularios se autorrellenan con datos inventados y nada se guarda en la base de datos.',
@@ -187,7 +187,7 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
   {
     key: 'sidebar-orders',
     kind: 'spotlight',
-    route: '/buyer/dashboard',
+    route: '/buyer',
     target: '[data-tutorial="sidebar"]',
     placement: 'right',
     title: 'Navegar a "Mis pedidos"',
