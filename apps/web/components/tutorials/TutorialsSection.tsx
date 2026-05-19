@@ -13,6 +13,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, Circle, PlayCircle, RotateCcw, Clock } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { SlideshowTutorial } from './SlideshowTutorial';
+import { CREAR_LOTE_SLIDES, HACER_PEDIDO_SLIDES } from './tutorialContent';
 
 interface TutorialItem {
   id: 'introduccion' | 'crear-lote' | 'hacer-pedido' | 'incidencia';
@@ -34,18 +36,18 @@ const CATALOG: TutorialItem[] = [
   },
   {
     id: 'crear-lote',
-    title: 'Crear tu primer lote',
-    description: 'De la cosecha al lote publicado: fotos, calibres, precios y certificados.',
-    estimatedMinutes: 2,
-    available: false,
+    title: 'Crear y vender un lote (flujo completo)',
+    description: 'Recorrido con datos simulados: publicar lote, recibir matches, firmar contrato, enviar y cobrar.',
+    estimatedMinutes: 3,
+    available: true,
     roleFilter: 'VENDEDOR',
   },
   {
     id: 'hacer-pedido',
-    title: 'Hacer tu primer pedido',
-    description: 'Cómo definir calibres, precio máximo, incoterms y plazo de entrega para que los matches sean buenos.',
-    estimatedMinutes: 2,
-    available: false,
+    title: 'Hacer un pedido (flujo completo)',
+    description: 'Recorrido con datos simulados: crear pedido, recibir ofertas, firmar contrato, pagar comisión, recibir mercancía.',
+    estimatedMinutes: 3,
+    available: true,
     roleFilter: 'COMPRADOR',
   },
   {
@@ -65,6 +67,7 @@ export function TutorialsSection({ role }: TutorialsSectionProps) {
   const [completed, setCompleted] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [activeSlideshow, setActiveSlideshow] = useState<'crear-lote' | 'hacer-pedido' | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -80,16 +83,37 @@ export function TutorialsSection({ role }: TutorialsSectionProps) {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  async function handleReset(id: string) {
-    setResettingId(id);
-    try {
-      await api.post(`/tutorials/${id}/reset`);
-      // Recargar la pantalla para que el dashboard vuelva a lanzar el
-      // tutorial (lo recoge el TutorialLauncher en /auth/profile).
-      window.location.assign('/');
-    } catch {
-      setResettingId(null);
+  // Phase 14M v2 — la introducción es spotlight global y necesita el
+  // layout del dashboard. Los demás tutoriales son slideshow inline
+  // que abrimos en la propia pantalla del perfil.
+  async function handleStart(id: string) {
+    if (id === 'introduccion') {
+      setResettingId(id);
+      try {
+        await api.post(`/tutorials/${id}/reset`);
+        const dashboardHref = role === 'VENDEDOR' ? '/seller/dashboard' : '/buyer/dashboard';
+        window.location.assign(dashboardHref);
+      } catch {
+        setResettingId(null);
+      }
+      return;
     }
+    if (id === 'crear-lote' || id === 'hacer-pedido') {
+      // Si ya estaba completado, lo desmarcamos para que pueda
+      // volver a empezarse limpio.
+      if (completed.includes(id)) {
+        try { await api.post(`/tutorials/${id}/reset`); } catch { /* ignore */ }
+      }
+      setActiveSlideshow(id);
+    }
+  }
+
+  async function handleSlideshowComplete(id: 'crear-lote' | 'hacer-pedido') {
+    try {
+      await api.post(`/tutorials/${id}/complete`);
+    } catch { /* ignore */ }
+    setActiveSlideshow(null);
+    void refresh();
   }
 
   const visible = CATALOG.filter((t) => !t.roleFilter || t.roleFilter === role);
@@ -147,7 +171,7 @@ export function TutorialsSection({ role }: TutorialsSectionProps) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => handleReset(t.id)}
+                    onClick={() => handleStart(t.id)}
                     loading={resettingId === t.id}
                     className="flex items-center gap-1"
                   >
@@ -160,7 +184,7 @@ export function TutorialsSection({ role }: TutorialsSectionProps) {
                     type="button"
                     variant="primary"
                     size="sm"
-                    onClick={() => handleReset(t.id)}
+                    onClick={() => handleStart(t.id)}
                     loading={resettingId === t.id}
                     className="flex items-center gap-1"
                   >
@@ -173,6 +197,25 @@ export function TutorialsSection({ role }: TutorialsSectionProps) {
           );
         })}
       </div>
+
+      {activeSlideshow === 'crear-lote' && (
+        <SlideshowTutorial
+          title="Tutorial · Crear y vender un lote"
+          subtitle="Recorrido completo con datos simulados"
+          slides={CREAR_LOTE_SLIDES}
+          onClose={() => setActiveSlideshow(null)}
+          onComplete={() => handleSlideshowComplete('crear-lote')}
+        />
+      )}
+      {activeSlideshow === 'hacer-pedido' && (
+        <SlideshowTutorial
+          title="Tutorial · Hacer un pedido"
+          subtitle="Recorrido completo con datos simulados"
+          slides={HACER_PEDIDO_SLIDES}
+          onClose={() => setActiveSlideshow(null)}
+          onComplete={() => handleSlideshowComplete('hacer-pedido')}
+        />
+      )}
     </div>
   );
 }
