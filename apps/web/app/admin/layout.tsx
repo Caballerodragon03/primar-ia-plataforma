@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
-import { LogOut, ShieldCheck, AlertTriangle, Receipt, Bug } from 'lucide-react';
+import { LogOut, ShieldCheck, ShieldAlert, AlertTriangle, Receipt, Bug } from 'lucide-react';
 import { ReportBugButton } from '@/components/feedback/ReportBugButton';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -72,6 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             { label: 'Users', href: '/admin/users', icon: null },
             { label: 'Certificates', href: '/admin/certificates', icon: null },
             { label: 'Incidentes', href: '/admin/incidents', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+            { label: 'Riesgos', href: '/admin/risks', icon: <ShieldAlert className="w-3.5 h-3.5" /> },
             { label: 'Facturas', href: '/admin/invoices', icon: <Receipt className="w-3.5 h-3.5" /> },
             { label: 'Bug Reports', href: '/admin/bug-reports', icon: <Bug className="w-3.5 h-3.5" /> },
           ].map(({ label, href, icon }) => (

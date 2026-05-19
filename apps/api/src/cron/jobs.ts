@@ -166,6 +166,26 @@ async function expireSellerSignatures(): Promise<void> {
   }
 }
 
+// ─── Job 5: AI bypass scanner (Phase 8) — daily at 09:00 Madrid ─────────────
+
+/**
+ * Daily Gemini-powered scan of last 24h of chat messages, flagging subtle
+ * bypass attempts the regex heuristic misses. Creates BypassAlert rows for
+ * the admin Risks tab. Idempotent via unique index on mensajeId.
+ */
+async function runBypassScannerJob(): Promise<void> {
+  console.log('[CRON] Bypass scan started');
+  try {
+    const { runBypassScan } = await import('../modules/bypass/bypass-scanner.service.js');
+    const r = await runBypassScan();
+    console.log(
+      `[CRON] Bypass scan done — scanned=${r.scanned} flagged=${r.flagged} alreadyAlerted=${r.alreadyAlerted} errors=${r.errors}`,
+    );
+  } catch (err) {
+    console.error('[CRON] Bypass scan failed:', err);
+  }
+}
+
 // ─── Register all cron jobs ───────────────────────────────────────────────────
 
 export function startCronJobs(): void {
@@ -188,6 +208,11 @@ export function startCronJobs(): void {
   cron.schedule('5 * * * *', () => {
     void expireSellerSignatures();
   });
+
+  // Daily at 09:00 Madrid — AI bypass scanner reviews chat from last 24h.
+  cron.schedule('0 9 * * *', () => {
+    void runBypassScannerJob();
+  }, { timezone: 'Europe/Madrid' });
 
   console.log('[CRON] All cron jobs registered');
 }

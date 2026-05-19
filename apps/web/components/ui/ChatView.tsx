@@ -439,7 +439,17 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                 );
               })()
             ) : (
-              <div className="px-4 py-3 border-t border-border flex items-end gap-2">
+              <>
+                {/* Phase 8 — Privacy reminder banner. Persistent reminder
+                    above the input so users learn the rule. The daily Gemini
+                    scanner enforces it; this is the education layer. */}
+                <div className="px-4 py-2 border-t border-border bg-blue-50/60 text-[11px] text-blue-900 flex items-start gap-1.5">
+                  <span aria-hidden>🔒</span>
+                  <span>
+                    Por tu seguridad: no compartas teléfono, email ni cierres la operación fuera de Primar-IA hasta firmar el contrato. Los mensajes son revisados por IA.
+                  </span>
+                </div>
+                <div className="px-4 py-3 border-t border-border flex items-end gap-2">
                 {/* Negotiate button */}
                 <button
                   type="button"
@@ -491,6 +501,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                   <Send className="w-5 h-5" />
                 </button>
               </div>
+              </>
             )}
           </>
         )}

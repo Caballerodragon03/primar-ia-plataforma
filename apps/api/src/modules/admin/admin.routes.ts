@@ -3,6 +3,8 @@ import { adminController } from './admin.controller.js';
 import { requireAuth, requireRole } from '../../middleware/auth.middleware.js';
 import { validateBody } from '../../middleware/validate.middleware.js';
 import { updateEstadoSchema } from './admin.schema.js';
+import { asyncHandler } from '../../shared/async-handler.js';
+import { listBypassAlerts, resolveBypassAlert } from '../bypass/bypass.controller.js';
 
 export const adminRouter = Router();
 
@@ -17,3 +19,7 @@ adminRouter.delete('/users/:id', adminController.deleteUser.bind(adminController
 adminRouter.get('/certificados', adminController.listCertificados.bind(adminController));
 adminRouter.post('/certificados/:id/verify', adminController.verifyCertificado.bind(adminController));
 adminRouter.get('/stats', adminController.getDashboardStats.bind(adminController));
+
+// Phase 8 — Anti-bypass risk review.
+adminRouter.get('/bypass-alerts', asyncHandler(listBypassAlerts));
+adminRouter.post('/bypass-alerts/:id/resolve', asyncHandler(resolveBypassAlert));
