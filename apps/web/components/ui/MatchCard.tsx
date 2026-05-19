@@ -73,7 +73,7 @@ export function MatchCard({ match, onContribute }: MatchCardProps) {
   const remainingPct = 100 - coveragePct;
 
   return (
-    <div className="bg-card rounded-card border border-border/50 p-5 flex gap-5 items-stretch shadow-soft hover-lift hover-glow group">
+    <div data-tutorial="match-card" className="bg-card rounded-card border border-border/50 p-5 flex gap-5 items-stretch shadow-soft hover-lift hover-glow group">
       {/* Left: Profitability Index */}
       <div className={cn(
         'flex flex-col items-center justify-center min-w-[80px] rounded-lg px-3 py-2',
@@ -140,6 +140,7 @@ export function MatchCard({ match, onContribute }: MatchCardProps) {
           size="sm"
           onClick={() => onContribute(match)}
           className="group-hover:shadow-soft"
+          data-tutorial="btn-contribuir"
         >
           Contribuir
         </Button>

@@ -220,7 +220,12 @@ export default function PublishLotPage() {
   useEffect(() => {
     function onAutofill(ev: Event) {
       const e = ev as CustomEvent<{ stepKey: string; data: Record<string, unknown> }>;
-      applyAutofill(e.detail?.data ?? {});
+      try {
+        applyAutofill(e.detail?.data ?? {});
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[tutorial autofill] error', err);
+      }
     }
     window.addEventListener('tutorial:autofill', onAutofill);
     return () => window.removeEventListener('tutorial:autofill', onAutofill);

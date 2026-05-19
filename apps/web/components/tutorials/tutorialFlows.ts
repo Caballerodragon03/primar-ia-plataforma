@@ -110,7 +110,7 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     kind: 'spotlight',
     route: '/seller/lots/new',
     target: '[data-tutorial="form-logistica"]',
-    placement: 'top',
+    placement: 'auto',
     title: 'Campo 4 · Dirección de recogida',
     content:
       'Es donde vives o donde está el lote físicamente. Se usa para calcular distancias a los compradores en el matching. Relleno con una dirección de ejemplo.',
@@ -121,7 +121,7 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     kind: 'spotlight',
     route: '/seller/lots/new',
     target: '[data-tutorial="form-logistica"]',
-    placement: 'top',
+    placement: 'auto',
     title: 'Campo 5 · Fechas de disponibilidad',
     content:
       'Desde cuándo está disponible la mercancía y hasta cuándo. Si pones un margen muy estrecho, perderás matches con compradores que prefieran fechas más amplias. Te he puesto un margen razonable (pasado mañana → +30 días).',
@@ -135,7 +135,7 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     kind: 'spotlight',
     route: '/seller/lots/new',
     target: '[data-tutorial="form-logistica"]',
-    placement: 'top',
+    placement: 'auto',
     title: 'Campo 6 · ¿Quién se encarga del envío?',
     content:
       'Tres opciones: "Yo envío" (CPT/DAP/DDP), "Que el comprador recoja" (EXW), o "Indiferente" (negocias en chat). Elegimos "Yo envío".',
@@ -146,7 +146,7 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     kind: 'spotlight',
     route: '/seller/lots/new',
     target: '[data-tutorial="form-logistica"]',
-    placement: 'top',
+    placement: 'auto',
     title: 'Campo 7 · Incoterm aceptado',
     content:
       'El incoterm define quién paga el transporte y cuándo pasa el riesgo. DAP = entregas en destino del comprador. Marco solo DAP, pero podrías aceptar varios.',
@@ -157,7 +157,7 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     kind: 'spotlight',
     route: '/seller/lots/new',
     target: '[data-tutorial="form-logistica"]',
-    placement: 'top',
+    placement: 'auto',
     title: 'Campo 8 · Términos de pago aceptados',
     content:
       'Cuándo te pagan: inmediato, 30 días fecha factura, 60 días… Marca los plazos que aceptas. Compradores con plazos más largos se filtran fuera. Marco "inmediato".',
@@ -187,19 +187,22 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     key: 'ver-matches',
     kind: 'spotlight',
     route: '/seller/matches',
-    target: 'body',
-    placement: 'center',
-    title: 'Matches con compradores',
+    target: '[data-tutorial="match-card"]',
+    placement: 'auto',
+    title: 'La tarjeta del match',
     content:
-      'Esta es la pantalla real de matches con un comprador simulado: "Frutas García S.L." pidiendo 1.000 kg de calibre 14 a 3,15 €/kg, match 84/100. Aquí ves toda la información del comprador y de su pedido antes de aceptar.',
+      'Esta es la tarjeta del comprador ficticio. Ves de un vistazo: índice de rentabilidad, producto+variedad, kg comprometidos, distancia, incoterm, y el botón "Contribuir" para aceptar.',
   },
   {
-    key: 'aceptar-match',
-    kind: 'modal',
-    title: 'Contribuir al pedido',
+    key: 'btn-contribuir',
+    kind: 'spotlight',
+    route: '/seller/matches',
+    target: '[data-tutorial="btn-contribuir"]',
+    placement: 'auto',
+    title: 'Pulsar "Contribuir"',
     content:
-      'Pulsarías "Contribuir al pedido" en la tarjeta. Se abre un modal donde indicas cuántos kg comprometes POR CALIBRE — tope = mínimo entre lo que tienes y lo que el comprador pide.',
-    note: 'Simulamos que aceptas 1.000 kg de calibre 14 a 3,15 €/kg.',
+      'Este botón abre un modal donde indicarías cuántos kg comprometes POR CALIBRE. El tope = mínimo entre lo que tienes en el lote y lo que el comprador pide. En modo prueba simulamos que aceptas 1.000 kg de calibre 14 a 3,15 €/kg.',
+    note: 'En real, al confirmar, Primar-IA genera automáticamente el borrador del contrato y te lleva a su pantalla.',
   },
 
   // ─── Contrato y firma ─────────────────────────────────────────────
@@ -208,27 +211,47 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     kind: 'modal',
     title: 'Borrador del contrato generado',
     content:
-      'Al aceptar, Primar-IA crea automáticamente el borrador del contrato y te lleva a su pantalla. Te llevo allí.',
+      'Al aceptar la contribución, Primar-IA crea automáticamente el borrador del contrato y te lleva a su pantalla. Te llevo allí.',
   },
   {
-    key: 'ver-contrato',
+    key: 'contrato-resumen',
     kind: 'spotlight',
     route: `/seller/contracts/tutorial-match-MX42`,
-    target: 'body',
-    placement: 'center',
-    title: 'Tu contrato (estado: PENDIENTE_FIRMA_VENDEDOR)',
+    target: '[data-tutorial="contract-resumen"]',
+    placement: 'auto',
+    title: 'Resumen de la operación',
     content:
-      'Esta es la pantalla real del contrato. Ves todas las condiciones acordadas, el PDF, el deadline de firma (48 h hábiles), la comisión estimada de Primar-IA y los datos del comprador. Aquí decides si firmar o negociar en chat.',
+      'Aquí ves las condiciones que se firman: producto + variedad, cantidad total, €/kg, importe total, incoterm, condiciones de pago, destino y los calibres concretos. Es lo que aparecerá en el PDF.',
+  },
+  {
+    key: 'contrato-comision',
+    kind: 'spotlight',
+    route: `/seller/contracts/tutorial-match-MX42`,
+    target: '[data-tutorial="contract-comision"]',
+    placement: 'auto',
+    title: 'Comisión Primar-IA',
+    content:
+      'Importante: la comisión la paga el COMPRADOR a Primar-IA, no tú. Tú recibes el 100% del importe acordado del comprador por transferencia según las condiciones del contrato.',
+  },
+  {
+    key: 'contrato-firmas',
+    kind: 'spotlight',
+    route: `/seller/contracts/tutorial-match-MX42`,
+    target: '[data-tutorial="contract-firmas"]',
+    placement: 'auto',
+    title: 'Estado de firmas',
+    content:
+      'Ves el estado de tu firma y la del comprador. Tienes 48 h hábiles para firmar el primero. Después, el comprador firma y paga la comisión, y el contrato pasa a FIRMADO.',
   },
   {
     key: 'firmar-vendedor',
     kind: 'spotlight',
     route: `/seller/contracts/tutorial-match-MX42`,
     target: '[data-tutorial="btn-firmar-vendedor"]',
-    placement: 'top',
-    title: 'Firmar como vendedor',
+    placement: 'auto',
+    title: 'Botón "Firmar contrato"',
     content:
-      'Este botón abre el panel de firma: dibujas tu rúbrica en el canvas o la tecleas. Al firmar, el contrato pasa a PENDIENTE_PAGO_COMPRADOR y queda esperando que el comprador firme y pague la comisión.',
+      'Este botón abre el panel de firma: dibujas tu rúbrica en el canvas o la tecleas. Al firmar, el contrato pasa a PENDIENTE_PAGO_COMPRADOR.',
     note: 'En modo prueba el botón está interceptado: si lo pulsas no pasa nada. Continúa para seguir.',
   },
   {
@@ -362,7 +385,7 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
     kind: 'spotlight',
     route: '/buyer/orders/new',
     target: '[data-tutorial="form-logistica"]',
-    placement: 'top',
+    placement: 'auto',
     title: 'Campo 4 · Destino final',
     content:
       'Dónde quieres recibir la mercancía. Se usa para que el vendedor calcule transporte si es él quien envía. Pongo "Mercabarna Barcelona".',
@@ -373,7 +396,7 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
     kind: 'spotlight',
     route: '/buyer/orders/new',
     target: '[data-tutorial="form-logistica"]',
-    placement: 'top',
+    placement: 'auto',
     title: 'Campo 5 · Fecha de entrega deseada',
     content:
       'Para cuándo necesitas la mercancía. Margen estrecho = menos matches. Margen amplio = más opciones. Pongo +21 días.',
@@ -384,7 +407,7 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
     kind: 'spotlight',
     route: '/buyer/orders/new',
     target: '[data-tutorial="form-logistica"]',
-    placement: 'top',
+    placement: 'auto',
     title: 'Campo 6 · ¿Quién se encarga del envío?',
     content:
       'Tres opciones: "Yo recojo" (EXW), "Que el vendedor envíe" (CPT/DAP/DDP), o "Indiferente". Elegimos que el vendedor envíe.',
@@ -395,7 +418,7 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
     kind: 'spotlight',
     route: '/buyer/orders/new',
     target: '[data-tutorial="form-logistica"]',
-    placement: 'top',
+    placement: 'auto',
     title: 'Campo 7 · Incoterm aceptado',
     content:
       'DAP = entrega en tu destino. Puedes marcar varios incoterms aceptables y el motor busca match con cualquiera.',
@@ -406,7 +429,7 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
     kind: 'spotlight',
     route: '/buyer/orders/new',
     target: '[data-tutorial="form-logistica"]',
-    placement: 'top',
+    placement: 'auto',
     title: 'Campo 8 · Términos de pago',
     content:
       'Cuándo pagas: contado, 30 días fecha factura, 60 días… El motor filtra vendedores incompatibles. Marco "30 días".',
@@ -436,11 +459,11 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
     key: 'ver-ofertas',
     kind: 'spotlight',
     route: `/buyer/orders/tutorial-pedido-PD7K9`,
-    target: 'body',
-    placement: 'center',
+    target: '[data-tutorial="ofertas-vendedores"]',
+    placement: 'auto',
     title: 'Ofertas de vendedores',
     content:
-      'Esta es la pantalla real del pedido. La sección "Ofertas de vendedores" muestra todos los que encajan con tu pedido. Aquí ves "Cooperativa El Naranjo" ofreciendo 1.500 kg de calibre 3 a 0,52 €/kg, con su puntuación y los datos del lote.',
+      'Esta sección muestra todos los vendedores compatibles. Cada tarjeta: vendedor, puntuación, kg comprometidos, €/kg, total y los botones para pagar / abrir chat / ver contrato / abrir incidencia.',
   },
   {
     key: 'aceptar-oferta',
@@ -459,14 +482,34 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
       'Al aceptar y cuando el vendedor firma, te llega notificación y revisas el borrador. Te llevo a la pantalla del contrato.',
   },
   {
-    key: 'ver-contrato-comprador',
+    key: 'contrato-resumen-comprador',
     kind: 'spotlight',
     route: `/buyer/contracts/tutorial-match-MX42`,
-    target: 'body',
-    placement: 'center',
-    title: 'Tu contrato como comprador',
+    target: '[data-tutorial="contract-resumen"]',
+    placement: 'auto',
+    title: 'Resumen de la operación',
     content:
-      'Esta es la pantalla real del contrato (lado comprador). Aquí ves todas las condiciones, el PDF descargable, la comisión que pagarás a Primar-IA y los datos del vendedor. Desde aquí firmas y pagas la comisión.',
+      'Aquí ves las condiciones que se firman: producto + variedad, cantidad total, €/kg, importe total, incoterm, condiciones de pago, destino y los calibres concretos. Es lo que aparecerá en el PDF.',
+  },
+  {
+    key: 'contrato-comision-comprador',
+    kind: 'spotlight',
+    route: `/buyer/contracts/tutorial-match-MX42`,
+    target: '[data-tutorial="contract-comision"]',
+    placement: 'auto',
+    title: 'Comisión Primar-IA',
+    content:
+      'Importante: esta es la única cantidad que pagas a Primar-IA. Es la comisión por la operación. El pago de la mercancía al vendedor lo gestionas TÚ por transferencia, según las condiciones del contrato.',
+  },
+  {
+    key: 'contrato-firmas-comprador',
+    kind: 'spotlight',
+    route: `/buyer/contracts/tutorial-match-MX42`,
+    target: '[data-tutorial="contract-firmas"]',
+    placement: 'auto',
+    title: 'Estado de firmas',
+    content:
+      'Aquí ves el estado de ambas firmas. Tras firmar tú y pagar la comisión, el contrato pasa a FIRMADO y el vendedor recibe la orden de enviar la mercancía.',
   },
   {
     key: 'firmar-pagar',

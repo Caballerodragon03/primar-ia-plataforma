@@ -360,7 +360,7 @@ export default function OrderDetailPage() {
           {/* Farmer contributions — Phase 14L: lista vertical de tarjetas
               (mismo formato que /seller/lots/[id]) para que quepa sin
               scroll horizontal y se entienda de un vistazo. */}
-          <div className="bg-card rounded-card border border-border shadow-soft">
+          <div data-tutorial="ofertas-vendedores" className="bg-card rounded-card border border-border shadow-soft">
             <div className="px-5 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-foreground">

@@ -267,7 +267,7 @@ export default function SellerMatchContractPage() {
 
       {/* Operation summary — what's being signed */}
       <div className="bg-card border border-border rounded-card divide-y divide-border shadow-soft">
-        <div className="p-5">
+        <div data-tutorial="contract-resumen" className="p-5">
           <h2 className="text-sm font-semibold text-foreground mb-3">Resumen de la operación</h2>
           <dl className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
             {info.producto && (
@@ -318,7 +318,7 @@ export default function SellerMatchContractPage() {
           </p>
         </div>
 
-        <div className="p-5">
+        <div data-tutorial="contract-comision" className="p-5">
           <h2 className="text-sm font-semibold text-foreground mb-3">Comisión Primar-IA</h2>
           <div className="grid grid-cols-2 gap-y-2 text-sm">
             <span className="text-text-secondary">Importe estimado</span>
@@ -353,7 +353,7 @@ export default function SellerMatchContractPage() {
         </div>
 
         {/* Signatures status */}
-        <div className="p-5">
+        <div data-tutorial="contract-firmas" className="p-5">
           <h2 className="text-sm font-semibold text-foreground mb-3">Estado de firmas</h2>
           <div className="space-y-3">
             <div className="flex items-center gap-3">

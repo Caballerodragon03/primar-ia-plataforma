@@ -194,7 +194,15 @@ export default function CreateOrderPage() {
   useEffect(() => {
     function onAutofill(ev: Event) {
       const e = ev as CustomEvent<{ stepKey: string; data: Record<string, unknown> }>;
-      applyAutofill(e.detail?.data ?? {});
+      try {
+        applyAutofill(e.detail?.data ?? {});
+      } catch (err) {
+        // Phase 14M v3.6 — proteger el render contra cualquier fallo del
+        // autofill (productos no cargados, enum inválido, etc.). Solo
+        // logueamos.
+        // eslint-disable-next-line no-console
+        console.warn('[tutorial autofill] error', err);
+      }
     }
     window.addEventListener('tutorial:autofill', onAutofill);
     return () => window.removeEventListener('tutorial:autofill', onAutofill);
