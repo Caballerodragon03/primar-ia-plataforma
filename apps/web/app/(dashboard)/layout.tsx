@@ -7,6 +7,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { ReportBugButton } from '@/components/feedback/ReportBugButton';
 import { Logo } from '@/components/brand/Logo';
+import { TutorialLauncher } from '@/components/tutorials/TutorialLauncher';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, _hydrated } = useAuthStore();
@@ -37,14 +38,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar />
+      <div data-tutorial="sidebar">
+        <Sidebar />
+      </div>
       <div className="flex-1 flex flex-col min-w-0">
-        <DashboardHeader />
-        <main id="main-content" className="flex-1 overflow-auto p-6 lg:p-8 animate-fade-in">
+        <div data-tutorial="header">
+          <DashboardHeader />
+        </div>
+        <main id="main-content" data-tutorial="main-content" className="flex-1 overflow-auto p-6 lg:p-8 animate-fade-in">
           {children}
         </main>
       </div>
       <ReportBugButton />
+      <TutorialLauncher />
     </div>
   );
 }

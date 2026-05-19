@@ -314,6 +314,7 @@ export class AuthService {
         estado: true,
         preferenciasIncoterm: true,
         preferenciasNotif: true,
+        tutorialesCompletados: true,
         empresa: {
           select: {
             razonSocial: true,

@@ -1,13 +1,15 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { Lock, Building2, User } from 'lucide-react';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Lock, Building2, User, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { TutorialsSection } from '@/components/tutorials/TutorialsSection';
 
-type Tab = 'account' | 'company';
+type Tab = 'account' | 'company' | 'tutoriales';
 
 // Phase 14L — datos de empresa del comprador. Antes la tab mostraba '—'
 // literal en todos los campos por no haber fetch (igual que pasaba con el
@@ -28,9 +30,11 @@ const LANGUAGE_OPTIONS = [
   { value: 'EN', label: 'Inglés (EN)' },
 ];
 
-export default function BuyerProfilePage() {
+function BuyerProfileContent() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<Tab>('account');
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') as Tab | null) ?? 'account';
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 
   // Account settings state
   const [phone, setPhone] = useState('');
@@ -125,6 +129,7 @@ export default function BuyerProfilePage() {
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'account', label: 'Cuenta', icon: User },
     { key: 'company', label: 'Datos de empresa', icon: Building2 },
+    { key: 'tutoriales', label: 'Tutoriales', icon: GraduationCap },
   ];
 
   return (
@@ -288,6 +293,18 @@ export default function BuyerProfilePage() {
           </div>
         </div>
       )}
+
+      {activeTab === 'tutoriales' && (
+        <TutorialsSection role="COMPRADOR" />
+      )}
     </div>
+  );
+}
+
+export default function BuyerProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <BuyerProfileContent />
+    </Suspense>
   );
 }

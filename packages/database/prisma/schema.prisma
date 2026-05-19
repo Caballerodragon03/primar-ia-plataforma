@@ -261,6 +261,9 @@ model User {
   idioma                  Idioma     @default(ES)
   preferenciasNotif       Json?      @map("preferencias_notificaciones")
   preferenciasIncoterm   Json?      @map("preferencias_incoterm")
+  // Phase 14M — IDs de tutoriales completados (array de strings).
+  // Default null = nada visto → al primer login se dispara "introduccion".
+  tutorialesCompletados   Json?      @map("tutoriales_completados")
   creditosCreacion        Int        @default(3) @map("creditos_creacion")
   proximaRegeneracionCredito DateTime? @map("proxima_regeneracion_credito")
   loginAttempts           Int        @default(0) @map("login_attempts")

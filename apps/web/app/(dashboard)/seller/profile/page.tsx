@@ -1,6 +1,8 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
-import { Lock, Building2, User, FileCheck2, Upload, FileText } from 'lucide-react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Lock, Building2, User, FileCheck2, Upload, FileText, GraduationCap } from 'lucide-react';
+import { TutorialsSection } from '@/components/tutorials/TutorialsSection';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -10,7 +12,7 @@ import { IncotermWizard } from '@/components/ui/IncotermWizard';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 
-type Tab = 'account' | 'company' | 'documents' | 'contracts';
+type Tab = 'account' | 'company' | 'documents' | 'contracts' | 'tutoriales';
 
 const INCOTERMS_INFO = [
   { code: 'EXW', name: 'Ex Works', scope: 'Nacional', desc: 'El comprador recoge en tu explotación y gestiona todo el transporte.' },
@@ -54,9 +56,11 @@ function formatDate(iso: string | null): string {
   }
 }
 
-export default function SellerProfilePage() {
+function SellerProfileContent() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<Tab>('account');
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') as Tab | null) ?? 'account';
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 
   // Account settings state
   const [phone, setPhone] = useState('');
@@ -311,6 +315,7 @@ export default function SellerProfilePage() {
     { key: 'company', label: 'Datos de empresa', icon: Building2 },
     { key: 'documents', label: 'Mis documentos', icon: FileCheck2 },
     { key: 'contracts', label: 'Incoterms', icon: FileText },
+    { key: 'tutoriales', label: 'Tutoriales', icon: GraduationCap },
   ];
 
   return (
@@ -693,6 +698,18 @@ export default function SellerProfilePage() {
           </form>
         </div>
       )}
+
+      {activeTab === 'tutoriales' && (
+        <TutorialsSection role="VENDEDOR" />
+      )}
     </div>
+  );
+}
+
+export default function SellerProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <SellerProfileContent />
+    </Suspense>
   );
 }
