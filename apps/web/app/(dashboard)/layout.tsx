@@ -10,6 +10,7 @@ import { Logo } from '@/components/brand/Logo';
 import { TutorialLauncher } from '@/components/tutorials/TutorialLauncher';
 import { TutorialRunner } from '@/components/tutorials/TutorialRunner';
 import { TutorialBanner } from '@/components/tutorials/TutorialBanner';
+import { TutorialErrorBoundary } from '@/components/tutorials/TutorialErrorBoundary';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, _hydrated } = useAuthStore();
@@ -50,7 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <DashboardHeader />
         </div>
         <main id="main-content" data-tutorial="main-content" className="flex-1 overflow-auto p-6 lg:p-8 animate-fade-in">
-          {children}
+          <TutorialErrorBoundary>{children}</TutorialErrorBoundary>
         </main>
       </div>
       </div>

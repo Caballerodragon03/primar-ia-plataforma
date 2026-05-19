@@ -281,10 +281,25 @@ function mockGetForUrl(url: string): unknown | null {
     return { success: true, data: null };
   }
   // Otros GETs que las páginas del flow podrían llamar pero que no
-  // necesitamos poblar — devolvemos lista vacía silenciosamente para
-  // que no caigan a backend.
+  // necesitamos poblar — devolvemos shape neutro para no caer a backend
+  // ni romper consumidores que esperan ciertos campos.
   if (url.startsWith('/scoring/') || url.startsWith('/disputes') || url.startsWith('/market/')) {
     return { success: true, data: [] };
+  }
+  // Phase 14M v3.7 — buyer/seller dashboard llaman aquí para badges de
+  // notificaciones. Devolvemos resumen vacío en lugar de mock para no
+  // confundir al usuario con números que no son reales.
+  if (url === '/matching/notifications/summary') {
+    return { success: true, data: { pendingMatches: 0, acceptedMatches: 0, pendingDeliveries: 0, pendingRatings: 0 } };
+  }
+  if (url === '/subscriptions/credits') {
+    return { success: true, data: { available: 99, max: 99, nextRegenAt: null, isFreeTier: false } };
+  }
+  if (url === '/subscriptions/current') {
+    return { success: true, data: { plan: 'FINCA', badge: null, hasActiveSubscription: true } };
+  }
+  if (url === '/subscriptions/usage') {
+    return { success: true, data: { lotesActivos: 0, maxLotes: -1, pedidosActivos: 0, maxPedidos: -1 } };
   }
   return null;
 }

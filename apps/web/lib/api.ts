@@ -25,17 +25,23 @@ api.interceptors.request.use((config) => {
     // Phase 14M v3 — Tutorial "modo prueba": si hay un flow activo,
     // intercepta mutaciones y GETs simulados antes de pegarle al
     // backend. Marcamos en la config para cortar en el response stage.
-    const mock = maybeShortCircuit(config);
-    if (mock) {
-      // adapter custom que devuelve la respuesta mockeada sin red.
-      config.adapter = async () => ({
-        data: mock.mockedData,
-        status: 200,
-        statusText: 'OK (tutorial-mode)',
-        headers: {},
-        config,
-        request: null,
-      });
+    // Phase 14M v3.7 — try/catch defensivo: si el store de tutoriales
+    // todavía no se ha hidratado (TDZ en producción), el interceptor
+    // simplemente deja pasar la petición al backend en vez de crashear.
+    try {
+      const mock = maybeShortCircuit(config);
+      if (mock) {
+        config.adapter = async () => ({
+          data: mock.mockedData,
+          status: 200,
+          statusText: 'OK (tutorial-mode)',
+          headers: {},
+          config,
+          request: null,
+        });
+      }
+    } catch {
+      // ignore — sin tutorial activo, pasa al backend.
     }
   }
   return config;
