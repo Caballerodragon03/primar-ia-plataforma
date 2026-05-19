@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth.store';
+import { maybeShortCircuit } from '@/lib/tutorialInterceptor';
 
 const API_URL = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
 
@@ -19,6 +20,22 @@ api.interceptors.request.use((config) => {
       localStorage.getItem('accessToken');
     if (token && config.headers) {
       config.headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Phase 14M v3 — Tutorial "modo prueba": si hay un flow activo,
+    // intercepta mutaciones y GETs simulados antes de pegarle al
+    // backend. Marcamos en la config para cortar en el response stage.
+    const mock = maybeShortCircuit(config);
+    if (mock) {
+      // adapter custom que devuelve la respuesta mockeada sin red.
+      config.adapter = async () => ({
+        data: mock.mockedData,
+        status: 200,
+        statusText: 'OK (tutorial-mode)',
+        headers: {},
+        config,
+        request: null,
+      });
     }
   }
   return config;

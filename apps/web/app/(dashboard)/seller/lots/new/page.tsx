@@ -157,6 +157,45 @@ export default function PublishLotPage() {
   const incotermsAceptados = watch('incotermsAceptados') ?? [];
   const terminosPagoAceptados = watch('terminosPagoAceptados') ?? [];
 
+  // Phase 14M v3 — escuchar el evento de autofill del tutorial guiado.
+  // Cuando el TutorialRunner avanza por los pasos del flow "crear-lote",
+  // dispara window CustomEvent('tutorial:autofill') con la data del paso
+  // actual. Aquí mapeamos esa data a setValue del react-hook-form.
+  useEffect(() => {
+    function onAutofill(ev: Event) {
+      const e = ev as CustomEvent<{ stepKey: string; data: Record<string, unknown> }>;
+      const data = e.detail?.data ?? {};
+      // Producto/variedad: como son IDs en la UI pero llegan como nombres,
+      // simplemente añadimos un proxy "tutorialProducto" en defaultValues
+      // si los productos están cargados.
+      if (typeof data['producto'] === 'string' && products.length > 0) {
+        const prod = products.find((p) => p.nombre.toLowerCase() === (data['producto'] as string).toLowerCase());
+        if (prod) {
+          setValue('productoId', prod.id);
+          if (typeof data['variedad'] === 'string') {
+            const v = prod.variedades.find((x) => x.nombre.toLowerCase() === (data['variedad'] as string).toLowerCase());
+            if (v) setValue('variedadId', v.id);
+            else setCustomVariety(data['variedad'] as string);
+          }
+        }
+      }
+      if (Array.isArray(data['calibres'])) {
+        setValue('calibres', data['calibres'] as { calibre: string; cantidad_kg: number; precio_min_kg?: number }[]);
+      }
+      if (typeof data['logistica'] === 'string') {
+        setValue('logistica', data['logistica'] as 'YO_ENVIO' | 'OTRO_RECOGE' | 'INDIFERENTE');
+      }
+      if (typeof data['incoterm'] === 'string') {
+        setValue('incotermsAceptados', [data['incoterm'] as string]);
+      }
+      if (typeof data['direccionRecogida'] === 'string') {
+        setValue('direccionRecogida', data['direccionRecogida'] as string);
+      }
+    }
+    window.addEventListener('tutorial:autofill', onAutofill);
+    return () => window.removeEventListener('tutorial:autofill', onAutofill);
+  }, [products, setValue]);
+
   // Incoterms disponibles según la opción de logística — el comprador no
   // puede elegir incoterms incompatibles con "Yo envío" o "Otro recoge".
   const availableIncoterms = useMemo(

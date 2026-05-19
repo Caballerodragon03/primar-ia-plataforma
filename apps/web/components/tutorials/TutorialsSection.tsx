@@ -13,8 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, Circle, PlayCircle, RotateCcw, Clock } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
-import { SlideshowTutorial } from './SlideshowTutorial';
-import { CREAR_LOTE_SLIDES, HACER_PEDIDO_SLIDES } from './tutorialContent';
+import { useTutorialStore } from '@/store/tutorial.store';
 
 interface TutorialItem {
   id: 'introduccion' | 'crear-lote' | 'hacer-pedido' | 'incidencia';
@@ -67,7 +66,7 @@ export function TutorialsSection({ role }: TutorialsSectionProps) {
   const [completed, setCompleted] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [resettingId, setResettingId] = useState<string | null>(null);
-  const [activeSlideshow, setActiveSlideshow] = useState<'crear-lote' | 'hacer-pedido' | null>(null);
+  const startTutorialFlow = useTutorialStore((s) => s.start);
 
   const refresh = useCallback(async () => {
     try {
@@ -99,21 +98,15 @@ export function TutorialsSection({ role }: TutorialsSectionProps) {
       return;
     }
     if (id === 'crear-lote' || id === 'hacer-pedido') {
-      // Si ya estaba completado, lo desmarcamos para que pueda
-      // volver a empezarse limpio.
+      // Si ya estaba completado, lo desmarcamos para volver a empezar.
       if (completed.includes(id)) {
         try { await api.post(`/tutorials/${id}/reset`); } catch { /* ignore */ }
       }
-      setActiveSlideshow(id);
+      // Activa el "modo prueba" y deja que el TutorialRunner del layout
+      // tome el control desde el primer paso. El runner navega solo a
+      // /seller/dashboard o /buyer/dashboard según el flow.
+      startTutorialFlow(id);
     }
-  }
-
-  async function handleSlideshowComplete(id: 'crear-lote' | 'hacer-pedido') {
-    try {
-      await api.post(`/tutorials/${id}/complete`);
-    } catch { /* ignore */ }
-    setActiveSlideshow(null);
-    void refresh();
   }
 
   const visible = CATALOG.filter((t) => !t.roleFilter || t.roleFilter === role);
@@ -198,24 +191,6 @@ export function TutorialsSection({ role }: TutorialsSectionProps) {
         })}
       </div>
 
-      {activeSlideshow === 'crear-lote' && (
-        <SlideshowTutorial
-          title="Tutorial · Crear y vender un lote"
-          subtitle="Recorrido completo con datos simulados"
-          slides={CREAR_LOTE_SLIDES}
-          onClose={() => setActiveSlideshow(null)}
-          onComplete={() => handleSlideshowComplete('crear-lote')}
-        />
-      )}
-      {activeSlideshow === 'hacer-pedido' && (
-        <SlideshowTutorial
-          title="Tutorial · Hacer un pedido"
-          subtitle="Recorrido completo con datos simulados"
-          slides={HACER_PEDIDO_SLIDES}
-          onClose={() => setActiveSlideshow(null)}
-          onComplete={() => handleSlideshowComplete('hacer-pedido')}
-        />
-      )}
     </div>
   );
 }

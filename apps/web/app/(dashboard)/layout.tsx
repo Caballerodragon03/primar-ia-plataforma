@@ -8,6 +8,8 @@ import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { ReportBugButton } from '@/components/feedback/ReportBugButton';
 import { Logo } from '@/components/brand/Logo';
 import { TutorialLauncher } from '@/components/tutorials/TutorialLauncher';
+import { TutorialRunner } from '@/components/tutorials/TutorialRunner';
+import { TutorialBanner } from '@/components/tutorials/TutorialBanner';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, _hydrated } = useAuthStore();
@@ -37,7 +39,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background flex-col">
+      <TutorialBanner />
+      <div className="flex flex-1 min-h-0">
       <div data-tutorial="sidebar">
         <Sidebar />
       </div>
@@ -49,8 +53,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+      </div>
       <ReportBugButton />
       <TutorialLauncher />
+      <TutorialRunner />
     </div>
   );
 }
