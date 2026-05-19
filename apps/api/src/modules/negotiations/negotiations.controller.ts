@@ -34,6 +34,18 @@ export class NegotiationsController {
     );
     res.json({ data: result });
   }
+
+  // Devuelve los calibres negociables (intersección lote↔pedido) con sus
+  // máximos por parte. Usado por el modal de propuesta para limitar el
+  // dropdown y el input de kg.
+  async context(req: Request, res: Response): Promise<void> {
+    const transaccionId = req.params['transaccionId'] as string;
+    const result = await negotiationsService.getNegotiationContext(
+      transaccionId,
+      req.user!.sub,
+    );
+    res.json({ data: result });
+  }
 }
 
 export const negotiationsController = new NegotiationsController();

@@ -38,6 +38,18 @@ interface CalibreItem {
   precio_kg?: number;
 }
 
+// Phase 14H — contexto de negociación (intersección de calibres lote↔pedido)
+// devuelto por GET /chat/:txId/offers/context. Usado para limitar el dropdown
+// y el max kg del input.
+interface ContextCalibre {
+  calibre: string;
+  maxKgVendedor: number;
+  maxKgComprador: number;
+  maxKg: number; // min(maxKgVendedor, maxKgComprador)
+  precioVendedorMinKg: number | null;
+  precioCompradorMaxKg: number | null;
+}
+
 interface NegotiationOfferModalProps {
   transaccionId: string;
   currentPrecioKg: number | null;
@@ -63,11 +75,9 @@ export function NegotiationOfferModal({
 }: NegotiationOfferModalProps) {
   // Local form state. Empty string means "no change to this field" except for
   // calibres which uses a separate edit-mode flag.
-  // Phase 14G — el precio se gestiona POR CALIBRE en la sección de calibres.
-  // Se conserva un campo "precio global" como atajo opcional para aplicar el
-  // mismo precio a todos los calibres de golpe (al editarlo, se rellena en
-  // todas las filas que aún no tengan precio_kg).
-  const [precioKg, setPrecioKg] = useState(currentPrecioKg != null ? currentPrecioKg.toFixed(4) : '');
+  // Phase 14H — el precio se gestiona POR CALIBRE en la sección de calibres
+  // (sin atajo global). El calibre se elige de un dropdown limitado a los
+  // calibres negociables del match (intersección lote↔pedido).
   const [incoterm, setIncoterm] = useState(currentIncoterm ?? '');
   const [logistica, setLogistica] = useState(currentLogistica ?? '');
   const [terminoPago, setTerminoPago] = useState(currentTerminoPago ?? '');
@@ -80,6 +90,34 @@ export function NegotiationOfferModal({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Phase 14H — calibres negociables del match (intersección lote↔pedido).
+  const [contextCalibres, setContextCalibres] = useState<ContextCalibre[]>([]);
+  const [contextLoaded, setContextLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get(`/chat/${transaccionId}/offers/context`)
+      .then((res) => {
+        if (cancelled) return;
+        const data = (res.data as { data?: { calibres?: ContextCalibre[] } })?.data;
+        setContextCalibres(data?.calibres ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setContextCalibres([]);
+      })
+      .finally(() => {
+        if (!cancelled) setContextLoaded(true);
+      });
+    return () => { cancelled = true; };
+  }, [transaccionId]);
+
+  const calibreOptions = useMemo(() => contextCalibres.map((c) => c.calibre), [contextCalibres]);
+  const ctxByCalibre = useMemo(() => {
+    const m = new Map<string, ContextCalibre>();
+    for (const c of contextCalibres) m.set(c.calibre, c);
+    return m;
+  }, [contextCalibres]);
 
   // Sync incoterm ↔ logística. When the user picks an incoterm, snap logística
   // to the derived value. When they pick logística, clear incoterm if it's
@@ -114,7 +152,6 @@ export function NegotiationOfferModal({
   );
 
   // Detect changes per field.
-  const precioChanged = precioKg !== '' && Number(precioKg) !== currentPrecioKg;
   const incotermChanged = incoterm !== '' && incoterm !== currentIncoterm;
   // Phase 13 — only consider logística "changed" if the user touched it
   // directly. The incoterm→logística sync effect would otherwise mark this
@@ -127,7 +164,15 @@ export function NegotiationOfferModal({
     && calibres.every((c) => c.calibre.trim().length > 0 && c.cantidad_kg > 0)
     && JSON.stringify(calibres) !== JSON.stringify(currentCalibres ?? []);
 
-  const hasChange = precioChanged || incotermChanged || logisticaChanged || terminoChanged || calibresChanged;
+  // Phase 14H — validar que los kg no excedan el máximo permitido por la
+  // intersección lote↔pedido del match.
+  const calibresOverMax = editCalibres && calibres.some((c) => {
+    const ctx = ctxByCalibre.get(c.calibre);
+    if (!ctx) return false;
+    return Number(c.cantidad_kg) > ctx.maxKg;
+  });
+
+  const hasChange = incotermChanged || logisticaChanged || terminoChanged || calibresChanged;
 
   function updateCalibre(idx: number, patch: Partial<CalibreItem>) {
     setCalibres((cs) => cs.map((c, i) => (i === idx ? { ...c, ...patch } : c)));
@@ -143,11 +188,14 @@ export function NegotiationOfferModal({
       setError('Debes cambiar al menos un término respecto al actual.');
       return;
     }
+    if (calibresOverMax) {
+      setError('Hay calibres con kg por encima del máximo permitido por el match.');
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
       const body: Record<string, unknown> = {};
-      if (precioChanged) body.precioKg = Number(precioKg);
       if (incotermChanged) body.incoterm = incoterm;
       if (logisticaChanged) body.logistica = logistica;
       if (terminoChanged) body.terminoPago = terminoPago;
@@ -195,46 +243,6 @@ export function NegotiationOfferModal({
         </div>
 
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-5">
-          {/* Price (global shortcut) — Phase 14G — apply to all calibres */}
-          <div>
-            <label className="block text-xs font-medium text-foreground mb-1">
-              Precio global por kg <span className="text-muted-foreground">(opcional — atajo)</span>
-            </label>
-            <div className="flex items-center gap-2">
-              {currentPrecioKg != null && (
-                <span className="text-xs text-muted-foreground line-through whitespace-nowrap">
-                  €{currentPrecioKg.toFixed(4)}
-                </span>
-              )}
-              <input
-                type="number"
-                step="0.0001"
-                min="0.0001"
-                value={precioKg}
-                onChange={(e) => setPrecioKg(e.target.value)}
-                placeholder="Nuevo precio/kg"
-                className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const v = Number(precioKg);
-                  if (!Number.isFinite(v) || v <= 0) return;
-                  if (!editCalibres) setEditCalibres(true);
-                  setCalibres((cs) => cs.map((c) => ({ ...c, precio_kg: v })));
-                }}
-                disabled={!precioKg || Number(precioKg) <= 0}
-                className="text-[11px] px-2 py-1.5 rounded border border-border text-text-secondary hover:bg-muted disabled:opacity-40 whitespace-nowrap"
-                title="Aplica este precio a todos los calibres"
-              >
-                Aplicar a todos
-              </button>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Para precios distintos por calibre, edítalos uno a uno abajo.
-            </p>
-          </div>
-
           {/* Logística */}
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">Logística</label>
@@ -361,58 +369,86 @@ export function NegotiationOfferModal({
                   <span>Precio €/kg</span>
                   <span />
                 </div>
-                {calibres.map((c, i) => (
-                  <div key={i} className="grid grid-cols-[5rem_1fr_5.5rem_1.5rem] gap-2 items-center">
-                    <input
-                      type="text"
-                      placeholder="3"
-                      value={c.calibre}
-                      onChange={(e) => updateCalibre(i, { calibre: e.target.value })}
-                      className="border border-border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
-                    />
-                    <input
-                      type="number"
-                      step="1"
-                      min="1"
-                      placeholder="kg"
-                      value={c.cantidad_kg || ''}
-                      onChange={(e) => updateCalibre(i, { cantidad_kg: Number(e.target.value) })}
-                      className="border border-border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
-                    />
-                    <input
-                      type="number"
-                      step="0.0001"
-                      min="0.0001"
-                      placeholder={currentPrecioKg?.toFixed(3) ?? '€/kg'}
-                      value={c.precio_kg ?? ''}
-                      onChange={(e) =>
-                        updateCalibre(i, {
-                          precio_kg: e.target.value === '' ? undefined : Number(e.target.value),
-                        })
-                      }
-                      className="border border-border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
-                      title="Precio por kg para este calibre. Si lo dejas vacío hereda el precio global."
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeCalibre(i)}
-                      disabled={calibres.length === 1}
-                      className="p-1 text-red-500 hover:bg-red-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+                {calibres.map((c, i) => {
+                  const ctx = ctxByCalibre.get(c.calibre);
+                  const overMax = ctx != null && Number(c.cantidad_kg) > ctx.maxKg;
+                  // Calibres disponibles para este row: los del match menos
+                  // los ya elegidos en otras filas (evita duplicados).
+                  const usedElsewhere = new Set(
+                    calibres.filter((_, j) => j !== i).map((cc) => cc.calibre),
+                  );
+                  const availableForRow = calibreOptions.filter(
+                    (opt) => opt === c.calibre || !usedElsewhere.has(opt),
+                  );
+                  return (
+                    <div key={i} className="space-y-1">
+                      <div className="grid grid-cols-[5rem_1fr_5.5rem_1.5rem] gap-2 items-center">
+                        <select
+                          value={c.calibre}
+                          onChange={(e) => updateCalibre(i, { calibre: e.target.value })}
+                          className="border border-border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none bg-card"
+                          disabled={!contextLoaded || calibreOptions.length === 0}
+                        >
+                          <option value="">—</option>
+                          {availableForRow.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          step="1"
+                          min="1"
+                          max={ctx?.maxKg ?? undefined}
+                          placeholder="kg"
+                          value={c.cantidad_kg || ''}
+                          onChange={(e) => updateCalibre(i, { cantidad_kg: Number(e.target.value) })}
+                          className={`border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none ${overMax ? 'border-red-400 bg-red-50' : 'border-border'}`}
+                        />
+                        <input
+                          type="number"
+                          step="0.0001"
+                          min="0.0001"
+                          placeholder={currentPrecioKg?.toFixed(3) ?? '€/kg'}
+                          value={c.precio_kg ?? ''}
+                          onChange={(e) =>
+                            updateCalibre(i, {
+                              precio_kg: e.target.value === '' ? undefined : Number(e.target.value),
+                            })
+                          }
+                          className="border border-border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none"
+                          title="Precio por kg para este calibre."
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeCalibre(i)}
+                          disabled={calibres.length === 1}
+                          className="p-1 text-red-500 hover:bg-red-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      {ctx && (
+                        <p className={`text-[10px] px-1 ${overMax ? 'text-red-500' : 'text-muted-foreground'}`}>
+                          Máx {ctx.maxKg.toLocaleString('es-ES')} kg
+                          {' '}(vendedor {ctx.maxKgVendedor.toLocaleString('es-ES')} / comprador {ctx.maxKgComprador.toLocaleString('es-ES')})
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
                 <button
                   type="button"
                   onClick={addCalibre}
-                  className="flex items-center gap-1 text-[11px] text-primary-dark hover:underline"
+                  disabled={calibres.length >= calibreOptions.length}
+                  className="flex items-center gap-1 text-[11px] text-primary-dark hover:underline disabled:opacity-40 disabled:no-underline"
                 >
                   <Plus className="w-3.5 h-3.5" /> Añadir calibre
                 </button>
-                <p className="text-[10px] text-muted-foreground">
-                  Precios vacíos heredan el precio global de la fila superior.
-                </p>
+                {contextLoaded && calibreOptions.length === 0 && (
+                  <p className="text-[10px] text-amber-600">
+                    No hay calibres negociables en este match.
+                  </p>
+                )}
               </div>
             )}
           </div>

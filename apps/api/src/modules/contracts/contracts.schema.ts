@@ -8,19 +8,26 @@
  */
 import { z } from 'zod';
 
-// Signatures are short text rubrics (≤500 chars). Caller upstream applies
-// `sanitizeSignature` before persisting; the schema only ensures shape.
-const signatureField = z
+// Seller signature can be a hand-drawn PNG (base64 dataURL ≈5-50 KB) or a
+// short text rubric. Allow up to 200 KB to cover hi-DPI canvas captures.
+const sellerSignatureField = z
+  .string()
+  .min(1, 'Firma vacía')
+  .max(200_000, 'Firma demasiado larga');
+
+// Buyer signature still flows through Stripe Checkout metadata (≤500 chars
+// per Stripe API), so keep the legacy short-text validation.
+const shortSignatureField = z
   .string()
   .min(1, 'Firma vacía')
   .max(500, 'Firma demasiado larga (máx. 500 caracteres)');
 
 export const signSellerSchema = z.object({
-  signatureData: signatureField,
+  signatureData: sellerSignatureField,
 });
 
 export const buyerCheckoutSchema = z.object({
-  signatureData: signatureField,
+  signatureData: shortSignatureField,
   ack: z.literal(true, {
     errorMap: () => ({ message: 'Debes aceptar el aviso de firma irrevocable' }),
   }),

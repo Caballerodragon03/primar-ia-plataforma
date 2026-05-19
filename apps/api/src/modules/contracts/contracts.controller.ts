@@ -261,7 +261,9 @@ export async function signMatchAsSeller(req: Request, res: Response): Promise<vo
   const userId = req.user!.sub;
   // Zod validateBody enforced shape/length; sanitize for control chars too.
   const raw = (req.body as { signatureData: string }).signatureData;
-  const signatureData = sanitizeSignature(raw, 500);
+  // Seller can sign by drawing on canvas (base64 PNG dataURL ~5-50 KB) or
+  // typing a short text rubric. Cap aligned with sellerSignatureField (200 KB).
+  const signatureData = sanitizeSignature(raw, 200_000);
   if (signatureData.length < 1) throw new AppError('Firma inválida tras saneado', 400);
   // Capture client IP for the audit trail (use x-forwarded-for if present
   // — common when behind a reverse proxy like Railway/Cloudflare).

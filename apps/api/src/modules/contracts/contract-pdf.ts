@@ -441,12 +441,27 @@ export function generateContractPdf(data: ContractData): Promise<Buffer> {
       // Signature box.
       doc.rect(x, signY + 42, signColW, 56).strokeColor(COLOR_RULE).lineWidth(0.7).stroke();
       if (firma.firma && firma.fecha) {
-        doc.fontSize(11).font('Helvetica-Oblique').fillColor(COLOR_ACCENT)
-          .text(firma.firma.length > 32 ? firma.firma.slice(0, 32) + '…' : firma.firma, x + 8, signY + 54);
+        // Si la firma viene como dataURL (canvas → base64 PNG), incrustar la
+        // imagen. Si es texto, renderizar como rúbrica en cursiva.
+        const isDataUrl = firma.firma.startsWith('data:image/');
+        if (isDataUrl) {
+          try {
+            const base64 = firma.firma.split(',')[1] ?? '';
+            const buf = Buffer.from(base64, 'base64');
+            doc.image(buf, x + 8, signY + 44, { fit: [signColW - 16, 36] });
+          } catch {
+            // Si la imagen está corrupta, fallback a etiqueta neutra.
+            doc.fontSize(10).font('Helvetica-Oblique').fillColor(COLOR_ACCENT)
+              .text('[firma manuscrita]', x + 8, signY + 56);
+          }
+        } else {
+          doc.fontSize(11).font('Helvetica-Oblique').fillColor(COLOR_ACCENT)
+            .text(firma.firma.length > 32 ? firma.firma.slice(0, 32) + '…' : firma.firma, x + 8, signY + 54);
+        }
         doc.fontSize(7.5).fillColor(COLOR_MUTED).font('Helvetica');
         doc.text(
           `Firmado el ${fmtDate(firma.fecha)}\n${firma.fecha.toISOString()}`,
-          x + 8, signY + 78,
+          x + 8, signY + 84,
           { width: signColW - 16 },
         );
       } else {

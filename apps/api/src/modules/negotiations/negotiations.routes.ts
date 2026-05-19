@@ -9,6 +9,11 @@ export const negotiationsRouter = Router({ mergeParams: true });
 
 negotiationsRouter.use(requireAuth, requireEstado('VERIFICADO_ACTIVO'));
 
+negotiationsRouter.get(
+  '/context',
+  asyncHandler((req, res) => negotiationsController.context(req, res))
+);
+
 negotiationsRouter.post(
   '/',
   validateBody(createOfertaSchema),

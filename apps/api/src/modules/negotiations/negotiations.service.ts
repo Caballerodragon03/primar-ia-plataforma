@@ -36,6 +36,66 @@ interface CalibreSnapshot {
 }
 
 export class NegotiationsService {
+  /**
+   * Phase 14H — Devuelve los calibres disponibles para esta negociación y
+   * los máximos de kg por calibre desde el lado vendedor y comprador.
+   * El modal de propuesta lo usa para limitar el desplegable de calibres
+   * (intersección de los que ambos manejan) y los inputs de kg al mínimo
+   * de las capacidades de ambos. Defensivo contra inputs imposibles.
+   */
+  async getNegotiationContext(transaccionId: string, userId: string): Promise<{
+    calibres: Array<{
+      calibre: string;
+      maxKgVendedor: number;
+      maxKgComprador: number;
+      maxKg: number; // min(vendedor, comprador) — el techo real
+      precioVendedorMinKg: number | null;
+      precioCompradorMaxKg: number | null;
+    }>;
+  }> {
+    await this.verifyParticipant(transaccionId, userId);
+    const tx = await prisma.transaccion.findUnique({
+      where: { id: transaccionId },
+      select: {
+        match: {
+          select: {
+            lote: { select: { calibres: true } },
+            pedido: { select: { calibresSolicitados: true } },
+          },
+        },
+      },
+    });
+    if (!tx?.match) {
+      throw new AppError('Match no disponible para esta transacción', 404);
+    }
+    type LoteC = { calibre: string; cantidad_kg: number; precio_min_kg?: number };
+    type PedC = { calibre: string; cantidad_kg: number; precio_max_kg?: number };
+    const loteCals = ((tx.match.lote.calibres as unknown) as LoteC[]) ?? [];
+    const pedCals = ((tx.match.pedido.calibresSolicitados as unknown) as PedC[]) ?? [];
+    // Intersección de calibres que ambos manejan, con max = min(lote, pedido).
+    const out: Array<{
+      calibre: string;
+      maxKgVendedor: number;
+      maxKgComprador: number;
+      maxKg: number;
+      precioVendedorMinKg: number | null;
+      precioCompradorMaxKg: number | null;
+    }> = [];
+    for (const lc of loteCals) {
+      const pc = pedCals.find((p) => p.calibre === lc.calibre);
+      if (!pc) continue; // solo calibres comunes
+      out.push({
+        calibre: lc.calibre,
+        maxKgVendedor: Number(lc.cantidad_kg ?? 0),
+        maxKgComprador: Number(pc.cantidad_kg ?? 0),
+        maxKg: Math.min(Number(lc.cantidad_kg ?? 0), Number(pc.cantidad_kg ?? 0)),
+        precioVendedorMinKg: lc.precio_min_kg != null ? Number(lc.precio_min_kg) : null,
+        precioCompradorMaxKg: pc.precio_max_kg != null ? Number(pc.precio_max_kg) : null,
+      });
+    }
+    return { calibres: out };
+  }
+
   private async verifyParticipant(transaccionId: string, userId: string) {
     const tx = await prisma.transaccion.findUnique({
       where: { id: transaccionId },
