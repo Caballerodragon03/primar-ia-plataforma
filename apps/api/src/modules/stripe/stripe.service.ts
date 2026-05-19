@@ -351,8 +351,10 @@ export class StripeService {
             // Phase 13 — when finalize fails (caducó, cancelled, already-FIRMADO
             // race), persist a PendingRefund row so admin doesn't lose track.
             // We still log for ops visibility, but the DB row is the canonical
-            // audit trail and surface in /admin/refunds (future).
-            console.error('[stripe] commission webhook failed for match', matchId, err);
+            // audit trail and surface in /admin/refunds.
+            // Phase 14A — redact err (may contain PII via Prisma error messages).
+            const { redactPII } = await import('@primaria/shared');
+            console.error('[stripe] commission webhook failed for match', matchId, redactPII(err));
             try {
               const match = await prisma.match.findUnique({
                 where: { id: matchId },

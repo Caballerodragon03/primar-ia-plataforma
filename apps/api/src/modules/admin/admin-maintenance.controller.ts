@@ -54,6 +54,63 @@ export async function cronStatusController(_req: Request, res: Response): Promis
 }
 
 /**
+ * Phase 14A — Lista la cola de PendingRefund que el webhook crea cuando un
+ * pago llega para un contrato ya no válido (CADUCADO, CANCELADO, revert).
+ * Admin debe procesar cada uno manualmente (refund via Stripe dashboard) y
+ * luego marcar resuelto vía resolvePendingRefundController.
+ */
+export async function listPendingRefundsController(req: Request, res: Response): Promise<void> {
+  const filter = (req.query['estado'] as string | undefined) ?? 'pendientes';
+  const where = filter === 'resueltos'
+    ? { resolvedAt: { not: null } }
+    : { resolvedAt: null };
+  const refunds = await prisma.pendingRefund.findMany({
+    where,
+    orderBy: [{ resolvedAt: 'asc' }, { createdAt: 'desc' }],
+    take: 200,
+  });
+  res.json({
+    success: true,
+    data: refunds.map((r) => ({
+      id: r.id,
+      matchId: r.matchId,
+      stripeChargeId: r.stripeChargeId,
+      motivo: r.motivo,
+      compradorEmail: r.compradorEmail,
+      compradorNombre: r.compradorNombre,
+      importeEur: Number(r.importeEur),
+      resolvedAt: r.resolvedAt?.toISOString() ?? null,
+      resolvedBy: r.resolvedBy,
+      notas: r.notas,
+      createdAt: r.createdAt.toISOString(),
+    })),
+  });
+}
+
+/**
+ * Marca un PendingRefund como resuelto tras que el admin haya hecho el refund
+ * manualmente en Stripe dashboard. Almacena adminId + notas para auditoría.
+ */
+export async function resolvePendingRefundController(req: Request, res: Response): Promise<void> {
+  const id = req.params['id'] as string;
+  const { notas } = req.body as { notas?: string };
+  const existing = await prisma.pendingRefund.findUnique({ where: { id } });
+  if (!existing) throw new AppError('Refund no encontrado', 404);
+  if (existing.resolvedAt) {
+    throw new AppError('Este refund ya está marcado como resuelto', 400);
+  }
+  await prisma.pendingRefund.update({
+    where: { id },
+    data: {
+      resolvedAt: new Date(),
+      resolvedBy: req.user!.sub,
+      notas: notas?.slice(0, 1000) ?? null,
+    },
+  });
+  res.json({ success: true, data: { id, resolved: true } });
+}
+
+/**
  * Force-run the daily bypass scan on demand. Useful for dev/forensics or
  * when you want immediate review of recent chat traffic.
  */

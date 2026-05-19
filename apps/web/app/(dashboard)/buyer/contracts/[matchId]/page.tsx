@@ -77,6 +77,10 @@ interface MatchContractInfo {
   recibidoEn: string | null;
   hasRatedCounterpart: boolean;
   counterpartId: string | null;
+  // Phase 14A — cancellation context
+  canceladoEn: string | null;
+  motivoCancelacion: string | null;
+  canceladoPorMi: boolean;
   isSeller: boolean;
   isBuyer: boolean;
 }
@@ -563,6 +567,38 @@ export default function BuyerMatchContractPage() {
           <div className="mt-3">
             <Button variant="outline" size="sm" onClick={() => router.push(info.transaccionId ? `/buyer/messages?tx=${info.transaccionId}` : '/buyer/messages')}>
               Abrir chat con el vendedor
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Phase 14A — render explícito del estado CANCELADO. */}
+      {info.contratoEstado === 'CANCELADO' && (
+        <div className="bg-red-50 border border-red-200 rounded-card p-5 space-y-2">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-red-700" />
+            <p className="text-sm font-semibold text-red-900">Contrato cancelado</p>
+          </div>
+          <p className="text-xs text-red-800">
+            {info.canceladoPorMi
+              ? `Cancelaste este contrato el ${formatDateTime(info.canceladoEn)}.`
+              : `El vendedor canceló este contrato el ${formatDateTime(info.canceladoEn)}.`}
+          </p>
+          {info.motivoCancelacion && (
+            <p className="text-xs text-red-800 italic">
+              <strong>Motivo:</strong> {info.motivoCancelacion}
+            </p>
+          )}
+          <div className="pt-2 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(info.transaccionId ? `/buyer/messages?tx=${info.transaccionId}` : '/buyer/messages')}
+            >
+              Abrir chat con el vendedor
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/buyer/orders')}>
+              Volver a mis pedidos
             </Button>
           </div>
         </div>

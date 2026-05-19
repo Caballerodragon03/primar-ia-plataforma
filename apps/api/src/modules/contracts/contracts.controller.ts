@@ -81,6 +81,11 @@ export async function getMatchContractInfo(req: Request, res: Response): Promise
       comisionEstimada: true,
       comisionPorcentaje: true,
       firmaVendedorDeadline: true,
+      // Phase 14A — surface cancellation context so the UI can render a
+      // meaningful CANCELADO state (motivo + autor + fecha).
+      canceladoPor: true,
+      canceladoEn: true,
+      motivoCancelacion: true,
       cantidadKg: true,
       precioKg: true,
       precioKgFinal: true,
@@ -185,6 +190,11 @@ export async function getMatchContractInfo(req: Request, res: Response): Promise
       enviadoEn: match.transaccion?.enviadoEn?.toISOString() ?? null,
       recibidoEn: match.transaccion?.recibidoEn?.toISOString() ?? null,
       hasRatedCounterpart: (match.transaccion?.valoraciones ?? []).some((v) => v.autorId === userId),
+      // Phase 14A — cancellation context (null unless contratoEstado=CANCELADO)
+      canceladoPor: match.canceladoPor,
+      canceladoEn: match.canceladoEn?.toISOString() ?? null,
+      motivoCancelacion: match.motivoCancelacion,
+      canceladoPorMi: match.canceladoPor === userId,
       counterpartId: match.lote.vendedorId === userId ? match.pedido.compradorId : match.lote.vendedorId,
       // Role-discriminator for frontend UI rendering
       isSeller: match.lote.vendedorId === userId,

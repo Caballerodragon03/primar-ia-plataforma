@@ -17,8 +17,15 @@ export async function cancelMatchContract(req: Request, res: Response): Promise<
   res.json({ success: true, data: result });
 }
 
+const VALID_CANCEL_ESTADOS = ['PENDIENTE', 'INVESTIGADA', 'AVISADO', 'SUSPENDIDO'] as const;
+
 export async function listSuspiciousCancellations(req: Request, res: Response): Promise<void> {
   const estado = req.query['estado'] as string | undefined;
+  // Phase 14A — validar estado contra whitelist (antes pasaba cualquier query
+  // string al filtro de Prisma → silenciosamente devolvía lista vacía).
+  if (estado && !VALID_CANCEL_ESTADOS.includes(estado as typeof VALID_CANCEL_ESTADOS[number])) {
+    throw new AppError(`Estado inválido. Valores aceptados: ${VALID_CANCEL_ESTADOS.join(', ')}`, 400);
+  }
   const page = Math.max(1, parseInt((req.query['page'] as string) ?? '1', 10) || 1);
   const result = await cancellationsService.listSuspiciousCancellations(estado, page);
   res.json({ success: true, data: result.data, meta: result.meta });

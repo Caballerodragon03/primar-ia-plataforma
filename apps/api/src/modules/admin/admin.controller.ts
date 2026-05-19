@@ -46,7 +46,11 @@ export class AdminController {
     try {
       const estado = typeof req.query['estado'] === 'string' ? req.query['estado'] : undefined;
       const userId = typeof req.query['userId'] === 'string' ? req.query['userId'] : undefined;
-      const certs = await adminService.listCertificados({ estado, userId });
+      // Phase 14A — el frontend manda &certType pero antes el controller no
+      // lo leía → filtro no-op. Ahora se reenvía al service que lo aplica
+      // como contains case-insensitive sobre numeroCertificado.
+      const certType = typeof req.query['certType'] === 'string' ? req.query['certType'] : undefined;
+      const certs = await adminService.listCertificados({ estado, userId, certType });
       // Map to frontend-expected shape
       const mapped = certs.map((c: Record<string, unknown>) => {
         const user = c.user as { nombre?: string; apellidos?: string; email?: string } | null;

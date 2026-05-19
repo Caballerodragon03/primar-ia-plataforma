@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
-import { LogOut, ShieldCheck, ShieldAlert, AlertTriangle, Receipt, Bug, XCircle, Clock } from 'lucide-react';
+import { LogOut, ShieldCheck, ShieldAlert, AlertTriangle, Receipt, Bug, XCircle, Clock, Banknote } from 'lucide-react';
 import { ReportBugButton } from '@/components/feedback/ReportBugButton';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -74,6 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             { label: 'Incidentes', href: '/admin/incidents', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
             { label: 'Riesgos', href: '/admin/risks', icon: <ShieldAlert className="w-3.5 h-3.5" /> },
             { label: 'Cancelaciones', href: '/admin/cancellations', icon: <XCircle className="w-3.5 h-3.5" /> },
+            { label: 'Refunds', href: '/admin/refunds', icon: <Banknote className="w-3.5 h-3.5" /> },
             { label: 'Facturas', href: '/admin/invoices', icon: <Receipt className="w-3.5 h-3.5" /> },
             { label: 'Incidencias técnicas', href: '/admin/bug-reports', icon: <Bug className="w-3.5 h-3.5" /> },
             { label: 'Cron status', href: '/admin/cron-status', icon: <Clock className="w-3.5 h-3.5" /> },

@@ -324,7 +324,7 @@ export default function SellerMatchesPage() {
               <p className="text-xs text-text-secondary">
                 Est. Potential Revenue:{' '}
                 <span className="font-bold text-text-primary">
-                  €{totalProfit.toLocaleString('en-EU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  €{totalProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className="ml-1 text-text-secondary font-normal">(across all pending matches)</span>
               </p>

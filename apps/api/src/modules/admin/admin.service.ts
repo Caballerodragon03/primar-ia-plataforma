@@ -216,8 +216,27 @@ ${notasAdmin ? `<p><strong>Motivo:</strong> ${escapeHtml(notasAdmin)}</p>` : ''}
     return updated;
   }
 
-  // ── Ban user (block email + CIF from re-registering, then delete account) ───
+  // ── Ban user (suspende cuenta + bloquea re-registro de email+CIF) ──────────
 
+  /**
+   * Phase 14A — Ban es ahora SUSPENDIDO (no DELETE).
+   *
+   * El DELETE original rompía:
+   *   - Trazabilidad fiscal: facturas históricas referenciaban userId →
+   *     CASCADE las dejaba huérfanas.
+   *   - Consistencia con flujo v2: bypass.controller y cancellations.service
+   *     escalan a estado=SUSPENDIDO, no a delete.
+   *
+   * Ahora la transacción:
+   *   1. Crea BannedEntry con email + CIF para que ese par no pueda
+   *      re-registrarse (verificado en register).
+   *   2. Marca user.estado=SUSPENDIDO (preserva todas las relaciones).
+   *   3. Borra TODOS los refresh tokens del usuario → no puede extender
+   *      sesión más allá del TTL del access token actual.
+   *   4. Invalida estadoCache → requireEstado bloquea en el siguiente
+   *      request (drift máximo: 0 segundos).
+   *   5. Envía email con motivo (fire-and-forget).
+   */
   async banUser(userId: string, adminId: string, reason?: string): Promise<void> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -234,14 +253,25 @@ ${notasAdmin ? `<p><strong>Motivo:</strong> ${escapeHtml(notasAdmin)}</p>` : ''}
           bannedBy: adminId,
         },
       });
-      await tx.user.delete({ where: { id: userId } });
+      await tx.user.update({
+        where: { id: userId },
+        data: { estado: 'SUSPENDIDO' },
+      });
+      await tx.refreshToken.deleteMany({
+        where: { userId },
+      });
     });
+
+    // Phase 14A — flush in-memory estado cache so the next request from the
+    // banned user hits requireEstado live-check immediately (no 30s drift).
+    const { invalidateEstadoCache } = await import('../../middleware/auth.middleware.js');
+    invalidateEstadoCache(userId);
 
     await sendEmail({
       to: user.email,
-      subject: 'Tu cuenta en Primar-IA ha sido cancelada',
+      subject: 'Tu cuenta en Primar-IA ha sido suspendida',
       html: `<h2>Hola ${user.nombre},</h2>
-<p>Tu cuenta en Primar-IA ha sido cancelada de forma permanente por incumplimiento de nuestros Términos y Condiciones.</p>
+<p>Tu cuenta en Primar-IA ha sido suspendida por incumplimiento de nuestros Términos y Condiciones.</p>
 ${reason ? `<p><strong>Motivo:</strong> ${escapeHtml(reason)}</p>` : ''}
 <p>Si consideras que se trata de un error, puedes ponerte en contacto con nosotros en info@primar-ia.com.</p>`,
     }).catch((err: Error) => console.error('[ADMIN] Ban email failed:', err.message));
@@ -274,11 +304,17 @@ ${reason ? `<p><strong>Motivo:</strong> ${escapeHtml(reason)}</p>` : ''}
   async listCertificados(filters?: {
     estado?: string;
     userId?: string;
+    certType?: string;
   }): Promise<Certificado[]> {
     return prisma.certificado.findMany({
       where: {
         ...(filters?.estado ? { estado: filters.estado as Certificado['estado'] } : {}),
         ...(filters?.userId ? { userId: filters.userId } : {}),
+        // Phase 14A — filter by certificado type (numeroCertificado field).
+        // Case-insensitive substring match so admin UI's text input is useful.
+        ...(filters?.certType
+          ? { numeroCertificado: { contains: filters.certType, mode: 'insensitive' } }
+          : {}),
       },
       include: {
         user: {

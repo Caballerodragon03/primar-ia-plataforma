@@ -68,12 +68,19 @@ export default function AdminCancellationsPage() {
   const [resolving, setResolving] = useState<string | null>(null);
   const [notas, setNotas] = useState<Record<string, string>>({});
 
-  async function load(estado: Estado) {
+  // Phase 14A — paginación
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  async function load(estado: Estado, p = 1) {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.get<{ data: Case[] }>(`/admin/cancellations?estado=${estado}`);
+      const { data } = await api.get<{ data: Case[]; meta?: { totalPages: number } }>(
+        `/admin/cancellations?estado=${estado}&page=${p}`,
+      );
       setCases(data.data ?? []);
+      setTotalPages(data.meta?.totalPages ?? 1);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
         ?? 'No se pudieron cargar los casos.';
@@ -83,7 +90,8 @@ export default function AdminCancellationsPage() {
     }
   }
 
-  useEffect(() => { void load(tab); }, [tab]);
+  useEffect(() => { setPage(1); void load(tab, 1); }, [tab]);
+  useEffect(() => { void load(tab, page); /* eslint-disable-next-line */ }, [page]);
 
   async function handleResolve(id: string, accion: 'INVESTIGADA' | 'AVISADO' | 'SUSPENDIDO') {
     if (accion === 'SUSPENDIDO') {
@@ -238,6 +246,28 @@ export default function AdminCancellationsPage() {
               )}
             </div>
           ))}
+          {/* Phase 14A — pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-3 pt-3">
+              <p className="text-xs text-text-secondary">Página {page} de {totalPages}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1 || loading}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:bg-muted disabled:opacity-40"
+                >
+                  ← Anterior
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages || loading}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-secondary hover:bg-muted disabled:opacity-40"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

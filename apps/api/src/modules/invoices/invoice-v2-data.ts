@@ -135,29 +135,38 @@ export async function invoiceNumberFor(
   emisorCif: string,
   year: number,
 ): Promise<string> {
-  // Use Prisma upsert + atomic increment in a transaction to guarantee no
-  // collision under concurrency. The @@unique on (emisorCif, kind, year)
-  // ensures the upsert is race-safe.
-  const counter = await prisma.$transaction(async (tx) => {
-    const existing = await tx.invoiceCounter.findUnique({
+  // Phase 14A — strict atomic increment with row-level lock. The previous
+  // implementation used findUnique+update which raced under concurrency:
+  // two transactions could read nextNumero=N, both write N+1, both return
+  // the same serial → duplicate AEAT invoice numbers (Reglamento 1619/2012
+  // requires strict correlativity).
+  //
+  // Postgres's `UPDATE ... SET nextNumero = nextNumero + 1` takes a row-level
+  // lock implicitly, so concurrent calls are serialized at the DB level
+  // without needing application-side Serializable isolation. We wrap upsert
+  // + update in a single transaction so the row is guaranteed to exist
+  // when update runs; the upsert is race-safe via @@unique.
+  return prisma.$transaction(async (tx) => {
+    // Ensure the counter row exists for this (emisorCif, kind, year) tuple.
+    // If two callers race here, the unique constraint forces one to retry
+    // via Prisma's built-in conflict handling on upsert.
+    await tx.invoiceCounter.upsert({
       where: { emisorCif_kind_year: { emisorCif, kind, year } },
+      create: { emisorCif, kind, year, nextNumero: 1 },
+      update: {},
     });
-    if (!existing) {
-      // First invoice for this series — create starting at 1.
-      const created = await tx.invoiceCounter.create({
-        data: { emisorCif, kind, year, nextNumero: 2 },
-      });
-      return 1;
-    }
-    const current = existing.nextNumero;
-    await tx.invoiceCounter.update({
-      where: { id: existing.id },
-      data: { nextNumero: current + 1 },
+    // Atomic increment + read post-increment value in a single SQL roundtrip.
+    // Row-locked by Postgres → safe under concurrency.
+    const updated = await tx.invoiceCounter.update({
+      where: { emisorCif_kind_year: { emisorCif, kind, year } },
+      data: { nextNumero: { increment: 1 } },
+      select: { nextNumero: true },
     });
-    return current;
+    // The pre-increment value is the serial assigned to THIS invoice.
+    const assigned = updated.nextNumero - 1;
+    const padded = String(assigned).padStart(6, '0');
+    return `FAC-${kind}-${year}-${padded}`;
   });
-  const padded = String(counter).padStart(6, '0');
-  return `FAC-${kind}-${year}-${padded}`;
 }
 
 // ─── Tax breakdown per régimen fiscal del vendedor ───────────────────────────
