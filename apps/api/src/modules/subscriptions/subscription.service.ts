@@ -224,12 +224,28 @@ export class SubscriptionService {
       throw new AppError('Tu plan de vendedor no permite crear pedidos', 403);
     }
 
-    const count = await prisma.pedido.count({
+    // Phase 14K — cuenta los pedidos que realmente ocupan slot (los mismos
+    // que aparecen en /subscriptions/usage). Un pedido TOTALMENTE_CUBIERTO
+    // sigue contando hasta que todas sus comisiones estén cobradas.
+    const pedidos = await prisma.pedido.findMany({
       where: {
         compradorId: userId,
-        estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] },
+        estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO', 'TOTALMENTE_CUBIERTO'] },
+      },
+      select: {
+        estado: true,
+        matches: {
+          where: { estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] } },
+          select: { transaccion: { select: { comisionPagadaEn: true } } },
+        },
       },
     });
+    const count = pedidos.reduce((n, p) => {
+      if (p.estado !== 'TOTALMENTE_CUBIERTO') return n + 1;
+      const pendiente = p.matches.length === 0
+        || p.matches.some((m) => !m.transaccion?.comisionPagadaEn);
+      return pendiente ? n + 1 : n;
+    }, 0);
 
     if (count >= (limits as { maxPedidosActivos: number }).maxPedidosActivos) {
       throw new AppError(
@@ -487,23 +503,71 @@ export class SubscriptionService {
     const { plan, limits } = await this.getLimitsForUser(userId);
 
     if (user.role === 'VENDEDOR') {
-      const lotesActivos = await prisma.lote.count({
+      // Phase 14K — los lotes ocupan slot hasta que la comisión del último
+      // match esté cobrada. Reflejamos eso con el desglose.
+      const lotes = await prisma.lote.findMany({
         where: { vendedorId: userId, estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] } },
+        select: { estado: true },
       });
+      const breakdown = {
+        buscando: lotes.filter((l) => l.estado === 'ACTIVO').length,
+        enTrato: lotes.filter((l) => l.estado === 'PARCIALMENTE_VENDIDO').length,
+      };
+      const lotesActivos = breakdown.buscando + breakdown.enTrato;
       const vendedorLimits = limits as typeof PLAN_LIMITS.COSECHA;
       return {
         plan,
         badge: vendedorLimits.badge,
         lotesActivos,
         maxLotes: vendedorLimits.maxLotesActivos === Infinity ? -1 : vendedorLimits.maxLotesActivos,
+        breakdownVendedor: breakdown,
         pedidosActivos: null,
         maxPedidos: null,
       };
     }
 
-    const pedidosActivos = await prisma.pedido.count({
-      where: { compradorId: userId, estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] } },
+    // Phase 14K — los pedidos ocupan slot mientras estén ACTIVO,
+    // PARCIALMENTE_CUBIERTO o TOTALMENTE_CUBIERTO con algún match cuya
+    // comisión todavía no esté cobrada. Una vez todos los matches del
+    // pedido tengan comisionPagadaEn, el slot se libera.
+    const pedidos = await prisma.pedido.findMany({
+      where: {
+        compradorId: userId,
+        estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO', 'TOTALMENTE_CUBIERTO'] },
+      },
+      select: {
+        estado: true,
+        matches: {
+          where: { estado: { in: ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'] } },
+          select: { transaccion: { select: { comisionPagadaEn: true } } },
+        },
+      },
     });
+
+    const breakdown = { buscando: 0, enTrato: 0, reservadoPendienteComision: 0 };
+    let pedidosActivos = 0;
+    for (const p of pedidos) {
+      if (p.estado === 'ACTIVO') {
+        breakdown.buscando += 1;
+        pedidosActivos += 1;
+        continue;
+      }
+      if (p.estado === 'PARCIALMENTE_CUBIERTO') {
+        breakdown.enTrato += 1;
+        pedidosActivos += 1;
+        continue;
+      }
+      // TOTALMENTE_CUBIERTO: cuenta sólo si queda al menos una comisión
+      // pendiente de cobro. Si todas las comisiones están pagadas, el
+      // pedido ya no consume slot (entrega en curso, libre para crear otro).
+      const algunaPendiente = p.matches.length === 0
+        || p.matches.some((m) => !m.transaccion?.comisionPagadaEn);
+      if (algunaPendiente) {
+        breakdown.reservadoPendienteComision += 1;
+        pedidosActivos += 1;
+      }
+    }
+
     const compradorLimits = limits as typeof PLAN_LIMITS.MERCADO;
     return {
       plan,
@@ -512,6 +576,7 @@ export class SubscriptionService {
       maxLotes: null,
       pedidosActivos,
       maxPedidos: compradorLimits.maxPedidosActivos === Infinity ? -1 : compradorLimits.maxPedidosActivos,
+      breakdownComprador: breakdown,
     };
   }
 

@@ -307,9 +307,9 @@ export default function SellerProfilePage() {
   };
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
-    { key: 'account', label: 'Account Settings', icon: User },
-    { key: 'company', label: 'Company Information', icon: Building2 },
-    { key: 'documents', label: 'My Documents', icon: FileCheck2 },
+    { key: 'account', label: 'Cuenta', icon: User },
+    { key: 'company', label: 'Datos de empresa', icon: Building2 },
+    { key: 'documents', label: 'Mis documentos', icon: FileCheck2 },
     { key: 'contracts', label: 'Incoterms', icon: FileText },
   ];
 
@@ -317,7 +317,7 @@ export default function SellerProfilePage() {
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-foreground">Perfil</h1>
-        <p className="text-sm text-muted-foreground">Manage your account, company details and certifications.</p>
+        <p className="text-sm text-muted-foreground">Gestiona tu cuenta, los datos de tu empresa y tus certificaciones.</p>
       </div>
 
       {/* Sub-nav tabs */}
@@ -443,11 +443,11 @@ export default function SellerProfilePage() {
           <div className="flex items-start gap-3 px-4 py-3 rounded-card bg-yellow-50 border border-primary/30">
             <Lock className="w-4 h-4 text-secondary mt-0.5 flex-shrink-0" />
             <p className="text-sm text-secondary">
-              Company information is locked once verified. Contact{' '}
+              Los datos de empresa quedan bloqueados una vez verificados. Escribe a{' '}
               <a href="mailto:support@primar-ia.com" className="underline font-medium">
                 support@primar-ia.com
               </a>{' '}
-              to request changes.
+              para solicitar cambios.
             </p>
           </div>
 

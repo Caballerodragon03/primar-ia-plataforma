@@ -357,8 +357,10 @@ export default function OrderDetailPage() {
             </table>
           </div>
 
-          {/* Farmer contributions */}
-          <div className="bg-card rounded-card border border-border shadow-soft overflow-x-auto">
+          {/* Farmer contributions — Phase 14L: lista vertical de tarjetas
+              (mismo formato que /seller/lots/[id]) para que quepa sin
+              scroll horizontal y se entienda de un vistazo. */}
+          <div className="bg-card rounded-card border border-border shadow-soft">
             <div className="px-5 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-foreground">
@@ -371,24 +373,21 @@ export default function OrderDetailPage() {
                 <p className="text-xs text-muted-foreground mt-1">La plataforma empareja tu pedido con lotes disponibles automáticamente.</p>
               </div>
             ) : (
-              <table className="w-full text-sm min-w-[800px]">
-                <thead>
-                  <tr className="bg-muted/50">
-                    {['VENDEDOR', 'PUNTUACIÓN', 'CANT (kg)', 'PRECIO (€/kg)', 'ESTADO', 'ACCIONES'].map((h) => (
-                      <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {order.matches.map((m) => {
-                    const kg = Number(m.cantidadKg);
-                    const price = Number(m.precioKg);
-                    const canPayThis = m.estado === 'ACEPTADO_VENDEDOR' && !order.stripePaymentIntentId;
-                    return (
-                      <tr key={m.id} className="hover:bg-accent/50">
-                        <td className="px-4 py-2.5 font-medium">
-                          <div className="flex flex-col gap-0.5">
-                            <span>{m.lote.vendedor.nombre} {m.lote.vendedor.apellidos}</span>
+              <ul className="divide-y divide-border/50">
+                {order.matches.map((m) => {
+                  const kg = Number(m.cantidadKg);
+                  const price = Number(m.precioKg);
+                  const canPayThis = m.estado === 'ACEPTADO_VENDEDOR' && !order.stripePaymentIntentId;
+                  const totalEur = kg > 0 && price > 0 ? kg * price : 0;
+                  const sellerName = `${m.lote.vendedor.nombre ?? ''} ${m.lote.vendedor.apellidos ?? ''}`.trim();
+                  const isLive = ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado);
+                  return (
+                    <li key={m.id} className="p-4 hover:bg-accent/30">
+                      {/* Header: vendedor + cantidad/precio + estado */}
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-foreground">{sellerName || 'Vendedor'}</span>
                             {m.lote.vendedor.scoreFiabilidad !== undefined && m.lote.vendedor.scoreStatus !== undefined && (
                               <ScoreBadge
                                 score={m.lote.vendedor.scoreFiabilidad ?? null}
@@ -396,99 +395,114 @@ export default function OrderDetailPage() {
                                 size="sm"
                               />
                             )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          {m.scoreMatching != null ? (
-                            <span className={[
-                              'inline-flex items-center px-2 py-0.5 rounded-badge text-[11px] font-semibold',
-                              m.scoreMatching >= 0.7 ? 'bg-green-100 text-green-700' :
-                              m.scoreMatching >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-muted text-muted-foreground',
-                            ].join(' ')}>
-                              {Math.round(m.scoreMatching * 100)}/100
-                            </span>
-                          ) : <span className="text-muted-foreground text-xs">—</span>}
-                        </td>
-                        <td className="px-4 py-2.5">{kg.toLocaleString('es-ES')}</td>
-                        <td className="px-4 py-2.5">{price > 0 ? `€${price.toFixed(3)}` : '—'}</td>
-                        <td className="px-4 py-2.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className={[
-                              'inline-flex items-center px-2 py-0.5 rounded-badge text-[11px] font-medium',
-                              m.estado === 'ACEPTADO_VENDEDOR' ? 'bg-green-100 text-green-700' :
-                              m.estado === 'PROPUESTO' ? 'bg-yellow-100 text-yellow-700' :
-                              m.estado === 'CONFIRMADO' ? 'bg-blue-100 text-blue-700' :
-                              'bg-muted text-muted-foreground',
-                            ].join(' ')}>
-                              {MATCH_STATE_LABELS[m.estado] ?? m.estado}
-                            </span>
-                            {m.estado === 'ACEPTADO_VENDEDOR' && (
-                              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0" title="Seller accepted — action required" />
+                            {m.scoreMatching != null && (
+                              <span className={[
+                                'inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-semibold',
+                                m.scoreMatching >= 0.7 ? 'bg-green-100 text-green-700' :
+                                m.scoreMatching >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-muted text-muted-foreground',
+                              ].join(' ')}>
+                                Match {Math.round(m.scoreMatching * 100)}/100
+                              </span>
                             )}
                           </div>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          {order.estado === 'CERRADO' ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Completado
-                              </span>
-                              {m.transaccion?.id && (
-                                <button
-                                  onClick={async () => { try { const r = await api.get(`/invoices/buyer/${m.transaccion!.id}/html`, { responseType: 'text' }); window.open(URL.createObjectURL(new Blob([r.data], { type: 'text/html' })), '_blank'); } catch { /* ignore */ } }}
-                                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
-                                >
-                                  <Download className="w-3 h-3" /> Factura
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {canPayThis && (
-                                <Button variant="primary" size="sm" onClick={() => openPaymentModal(m.id)}>
-                                  Pagar
-                                </Button>
-                              )}
-                              {['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
-                                <Link href={`/buyer/contracts/${m.id}`}>
-                                  <Button variant="outline" size="sm" className="flex items-center gap-1">
-                                    <FileText className="w-4 h-4" /> Contrato
-                                  </Button>
-                                </Link>
-                              )}
-                              {['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && m.transaccion?.id && (
-                                <Link href={`/buyer/orders/${id}/delivery/${m.transaccion.id}`}>
-                                  <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                                    <QrCode className="w-4 h-4" /> Confirmar entrega
-                                  </Button>
-                                </Link>
-                              )}
-                              {m.transaccion?.id && (
-                                <Link href={`/buyer/messages?tx=${m.transaccion.id}`}>
-                                  <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                                    <MessageSquare className="w-4 h-4" /> Chat
-                                  </Button>
-                                </Link>
-                              )}
-                              {m.transaccion?.id && ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openDisputeModal(m)}
-                                  className="flex items-center gap-1 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <AlertTriangle className="w-3.5 h-3.5" /> Incidencia
-                                </Button>
-                              )}
-                            </div>
+                          <div className="mt-1 flex items-baseline gap-2 flex-wrap text-xs text-text-secondary">
+                            <span>
+                              <span className="font-medium text-foreground">{kg.toLocaleString('es-ES')}</span> kg
+                            </span>
+                            <span aria-hidden>·</span>
+                            <span>
+                              {price > 0 ? <><span className="font-medium text-foreground">€{price.toFixed(3)}</span>/kg</> : '— €/kg'}
+                            </span>
+                            {totalEur > 0 && (
+                              <>
+                                <span aria-hidden>·</span>
+                                <span>
+                                  Total <span className="font-medium text-foreground">€{totalEur.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <span className={[
+                            'inline-flex items-center px-2 py-0.5 rounded-badge text-[11px] font-medium',
+                            m.estado === 'ACEPTADO_VENDEDOR' ? 'bg-green-100 text-green-700' :
+                            m.estado === 'PROPUESTO' ? 'bg-yellow-100 text-yellow-700' :
+                            m.estado === 'CONFIRMADO' ? 'bg-blue-100 text-blue-700' :
+                            'bg-muted text-muted-foreground',
+                          ].join(' ')}>
+                            {MATCH_STATE_LABELS[m.estado] ?? m.estado}
+                          </span>
+                          {m.estado === 'ACEPTADO_VENDEDOR' && (
+                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="El vendedor ha aceptado — acción requerida" />
                           )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        </div>
+                      </div>
+
+                      {/* Footer: acciones */}
+                      <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                        {order.estado === 'CERRADO' ? (
+                          <>
+                            <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Completado
+                            </span>
+                            {m.transaccion?.id && (
+                              <button
+                                onClick={async () => { try { const r = await api.get(`/invoices/buyer/${m.transaccion!.id}/html`, { responseType: 'text' }); window.open(URL.createObjectURL(new Blob([r.data], { type: 'text/html' })), '_blank'); } catch { /* ignore */ } }}
+                                className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
+                              >
+                                <Download className="w-3 h-3" /> Factura
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {canPayThis && (
+                              <Button variant="primary" size="sm" onClick={() => openPaymentModal(m.id)}>
+                                Pagar
+                              </Button>
+                            )}
+                            {isLive && (
+                              <Link href={`/buyer/contracts/${m.id}`} title="Ver contrato" aria-label="Ver contrato">
+                                <Button variant="outline" size="sm" className="!px-2">
+                                  <FileText className="w-4 h-4" />
+                                </Button>
+                              </Link>
+                            )}
+                            {isLive && m.transaccion?.id && (
+                              <Link href={`/buyer/orders/${id}/delivery/${m.transaccion.id}`} title="Confirmar entrega" aria-label="Confirmar entrega">
+                                <Button variant="ghost" size="sm" className="!px-2">
+                                  <QrCode className="w-4 h-4" />
+                                </Button>
+                              </Link>
+                            )}
+                            {m.transaccion?.id && (
+                              <Link href={`/buyer/messages?tx=${m.transaccion.id}`} title="Abrir chat" aria-label="Abrir chat">
+                                <Button variant="ghost" size="sm" className="!px-2">
+                                  <MessageSquare className="w-4 h-4" />
+                                </Button>
+                              </Link>
+                            )}
+                            {m.transaccion?.id && isLive && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openDisputeModal(m)}
+                                className="!px-2 ml-auto text-red-500 hover:text-red-700 hover:bg-red-50"
+                                title="Abrir incidencia"
+                                aria-label="Abrir incidencia"
+                              >
+                                <AlertTriangle className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
           {/* Inline delivery sections for matches with a transaction */}

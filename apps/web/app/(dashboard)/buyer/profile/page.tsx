@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Lock, Building2, User } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -8,6 +8,20 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 
 type Tab = 'account' | 'company';
+
+// Phase 14L — datos de empresa del comprador. Antes la tab mostraba '—'
+// literal en todos los campos por no haber fetch (igual que pasaba con el
+// vendedor en 14B).
+interface CompanyData {
+  razonSocial: string | null;
+  cifNif: string | null;
+  formaJuridica: string | null;
+  direccionFiscal: string | null;
+  ciudad: string | null;
+  codigoPostal: string | null;
+  pais: string | null;
+  iban: string | null;
+}
 
 const LANGUAGE_OPTIONS = [
   { value: 'ES', label: 'Español (ES)' },
@@ -24,6 +38,31 @@ export default function BuyerProfilePage() {
   const [savingAccount, setSavingAccount] = useState(false);
   const [accountSuccess, setAccountSuccess] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
+
+  // Company tab state (fetched lazily on first activation)
+  const [company, setCompany] = useState<CompanyData | null>(null);
+  const [loadingCompany, setLoadingCompany] = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== 'company' || company) return;
+    setLoadingCompany(true);
+    api.get('/auth/profile')
+      .then(({ data }) => {
+        const e = data.data?.empresa as Record<string, string | null> | null;
+        setCompany(e ? {
+          razonSocial: e['razonSocial'] ?? null,
+          cifNif: e['cifNif'] ?? null,
+          formaJuridica: e['formaJuridica'] ?? null,
+          direccionFiscal: e['direccionFiscal'] ?? null,
+          ciudad: e['ciudad'] ?? null,
+          codigoPostal: e['codigoPostal'] ?? null,
+          pais: e['pais'] ?? null,
+          iban: e['iban'] ?? null,
+        } : null);
+      })
+      .catch(() => setCompany(null))
+      .finally(() => setLoadingCompany(false));
+  }, [activeTab, company]);
 
   // Change password state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -84,8 +123,8 @@ export default function BuyerProfilePage() {
   };
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
-    { key: 'account', label: 'Account Settings', icon: User },
-    { key: 'company', label: 'Company Information', icon: Building2 },
+    { key: 'account', label: 'Cuenta', icon: User },
+    { key: 'company', label: 'Datos de empresa', icon: Building2 },
   ];
 
   return (
@@ -139,14 +178,14 @@ export default function BuyerProfilePage() {
           <form onSubmit={handleSaveAccount} className="bg-card rounded-card border border-border p-6 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Preferencias</h2>
             <Input
-              label="Phone"
+              label="Teléfono"
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+34 600 000 000"
             />
             <Select
-              label="Preferred Language"
+              label="Idioma preferido"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               options={LANGUAGE_OPTIONS}
@@ -159,7 +198,7 @@ export default function BuyerProfilePage() {
             )}
             <div className="flex justify-end">
               <Button type="submit" loading={savingAccount}>
-                Save Changes
+                Guardar cambios
               </Button>
             </div>
           </form>
@@ -171,21 +210,21 @@ export default function BuyerProfilePage() {
               <h2 className="text-sm font-semibold text-foreground">Cambiar contraseña</h2>
             </div>
             <Input
-              label="Current Password"
+              label="Contraseña actual"
               showPasswordToggle
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
             />
             <Input
-              label="New Password"
+              label="Nueva contraseña"
               showPasswordToggle
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
             />
             <Input
-              label="Confirm New Password"
+              label="Confirmar nueva contraseña"
               showPasswordToggle
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -204,7 +243,7 @@ export default function BuyerProfilePage() {
                 loading={savingPassword}
                 disabled={!currentPassword || !newPassword || !confirmPassword}
               >
-                Update Password
+                Actualizar contraseña
               </Button>
             </div>
           </form>
@@ -218,30 +257,34 @@ export default function BuyerProfilePage() {
           <div className="flex items-start gap-3 px-4 py-3 rounded-card bg-yellow-50 border border-primary/30">
             <Lock className="w-4 h-4 text-secondary mt-0.5 flex-shrink-0" />
             <p className="text-sm text-secondary">
-              Company information is locked once verified. Contact{' '}
+              Los datos de empresa quedan bloqueados una vez verificados. Escribe a{' '}
               <a href="mailto:support@primar-ia.com" className="underline font-medium">
                 support@primar-ia.com
               </a>{' '}
-              to request changes.
+              para solicitar cambios.
             </p>
           </div>
 
           <div className="bg-card rounded-card border border-border p-6 space-y-4">
-            {[
-              { label: 'Razón social', value: '—' },
-              { label: 'CIF / NIF', value: '—' },
-              { label: 'Forma jurídica', value: '—' },
-              { label: 'Dirección', value: '—' },
-              { label: 'Ciudad', value: '—' },
-              { label: 'Código postal', value: '—' },
-              { label: 'País', value: '—' },
-              { label: 'IBAN', value: 'Gestionado de forma segura por Stripe' },
-            ].map(({ label, value }) => (
-              <div key={label} className="grid grid-cols-2 gap-4 py-2 border-b border-border last:border-0">
-                <p className="text-xs text-muted-foreground font-medium">{label}</p>
-                <p className="text-sm text-foreground">{value}</p>
-              </div>
-            ))}
+            {loadingCompany ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Cargando…</p>
+            ) : (
+              [
+                { label: 'Razón social', value: company?.razonSocial ?? '—' },
+                { label: 'CIF / NIF', value: company?.cifNif ?? '—' },
+                { label: 'Forma jurídica', value: company?.formaJuridica ?? '—' },
+                { label: 'Dirección fiscal', value: company?.direccionFiscal ?? '—' },
+                { label: 'Ciudad', value: company?.ciudad ?? '—' },
+                { label: 'Código postal', value: company?.codigoPostal ?? '—' },
+                { label: 'País', value: company?.pais ?? '—' },
+                { label: 'IBAN', value: company?.iban ?? 'Gestionado de forma segura por Stripe' },
+              ].map(({ label, value }) => (
+                <div key={label} className="grid grid-cols-2 gap-4 py-2 border-b border-border last:border-0">
+                  <p className="text-xs text-muted-foreground font-medium">{label}</p>
+                  <p className="text-sm text-foreground">{value}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

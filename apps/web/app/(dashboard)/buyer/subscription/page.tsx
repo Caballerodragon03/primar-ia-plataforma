@@ -13,6 +13,12 @@ interface Credits {
   isFreeTier: boolean;
 }
 
+interface BreakdownComprador {
+  buscando: number;
+  enTrato: number;
+  reservadoPendienteComision: number;
+}
+
 interface SubscriptionData {
   plan: string;
   badge: string | null;
@@ -20,6 +26,7 @@ interface SubscriptionData {
   maxPedidos: number;
   hasActiveSubscription: boolean;
   credits: Credits | null;
+  breakdownComprador: BreakdownComprador | null;
 }
 
 export default function BuyerSubscriptionPage() {
@@ -37,7 +44,7 @@ export default function BuyerSubscriptionPage() {
       try {
         const [currentRes, usageRes] = await Promise.all([
           api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean } }>('/subscriptions/current'),
-          api.get<{ success: boolean; data: { pedidosActivos: number; maxPedidos: number; credits: Credits } }>('/subscriptions/usage'),
+          api.get<{ success: boolean; data: { pedidosActivos: number; maxPedidos: number; credits: Credits; breakdownComprador?: BreakdownComprador } }>('/subscriptions/usage'),
         ]);
         setData({
           plan: currentRes.data.data.plan,
@@ -46,6 +53,7 @@ export default function BuyerSubscriptionPage() {
           maxPedidos: usageRes.data.data.maxPedidos ?? -1,
           hasActiveSubscription: currentRes.data.data.hasActiveSubscription,
           credits: usageRes.data.data.credits ?? null,
+          breakdownComprador: usageRes.data.data.breakdownComprador ?? null,
         });
       } catch {
         setData({
@@ -55,6 +63,7 @@ export default function BuyerSubscriptionPage() {
           maxPedidos: 5,
           hasActiveSubscription: false,
           credits: null,
+          breakdownComprador: null,
         });
       } finally {
         setLoading(false);
@@ -157,6 +166,15 @@ export default function BuyerSubscriptionPage() {
               current={data.pedidosActivos}
               max={data.maxPedidos}
               label="Pedidos activos"
+              breakdown={
+                data.breakdownComprador
+                  ? [
+                      { label: 'buscando', value: data.breakdownComprador.buscando },
+                      { label: 'en trato', value: data.breakdownComprador.enTrato },
+                      { label: 'reservados (pdte. comisión)', value: data.breakdownComprador.reservadoPendienteComision },
+                    ]
+                  : undefined
+              }
             />
             <CreationCreditsCard credits={data.credits} itemLabel="pedido" />
           </div>

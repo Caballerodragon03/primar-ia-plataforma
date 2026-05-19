@@ -13,6 +13,11 @@ interface Credits {
   isFreeTier: boolean;
 }
 
+interface BreakdownVendedor {
+  buscando: number;
+  enTrato: number;
+}
+
 interface SubscriptionData {
   plan: string;
   badge: string | null;
@@ -20,6 +25,7 @@ interface SubscriptionData {
   maxLotes: number;
   hasActiveSubscription: boolean;
   credits: Credits | null;
+  breakdownVendedor: BreakdownVendedor | null;
 }
 
 export default function SellerSubscriptionPage() {
@@ -37,7 +43,7 @@ export default function SellerSubscriptionPage() {
       try {
         const [currentRes, usageRes] = await Promise.all([
           api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean } }>('/subscriptions/current'),
-          api.get<{ success: boolean; data: { lotesActivos: number; maxLotes: number; credits: Credits } }>('/subscriptions/usage'),
+          api.get<{ success: boolean; data: { lotesActivos: number; maxLotes: number; credits: Credits; breakdownVendedor?: BreakdownVendedor } }>('/subscriptions/usage'),
         ]);
         setData({
           plan: currentRes.data.data.plan,
@@ -46,6 +52,7 @@ export default function SellerSubscriptionPage() {
           maxLotes: usageRes.data.data.maxLotes ?? -1,
           hasActiveSubscription: currentRes.data.data.hasActiveSubscription,
           credits: usageRes.data.data.credits ?? null,
+          breakdownVendedor: usageRes.data.data.breakdownVendedor ?? null,
         });
       } catch {
         setData({
@@ -55,6 +62,7 @@ export default function SellerSubscriptionPage() {
           maxLotes: 3,
           hasActiveSubscription: false,
           credits: null,
+          breakdownVendedor: null,
         });
       } finally {
         setLoading(false);
@@ -157,6 +165,14 @@ export default function SellerSubscriptionPage() {
               current={data.lotesActivos}
               max={data.maxLotes}
               label="Lotes activos"
+              breakdown={
+                data.breakdownVendedor
+                  ? [
+                      { label: 'buscando', value: data.breakdownVendedor.buscando },
+                      { label: 'en trato', value: data.breakdownVendedor.enTrato },
+                    ]
+                  : undefined
+              }
             />
             <CreationCreditsCard credits={data.credits} itemLabel="lote" />
           </div>
