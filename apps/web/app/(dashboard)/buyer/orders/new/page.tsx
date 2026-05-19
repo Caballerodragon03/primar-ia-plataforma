@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -143,6 +143,74 @@ export default function CreateOrderPage() {
     api.get('/products').then(({ data }) => setProducts(data.data)).catch(() => {});
   }, []);
 
+  // Phase 14M v3 — autofill desde el TutorialRunner. Igual patrón que en
+  // /seller/lots/new: si el evento llega antes de que carguen los
+  // productos, encola la data y aplica cuando estén disponibles.
+  const pendingAutofill = useRef<Record<string, unknown> | null>(null);
+
+  function applyAutofill(data: Record<string, unknown>) {
+    if (typeof data['producto'] === 'string') {
+      if (products.length === 0) {
+        pendingAutofill.current = { ...(pendingAutofill.current ?? {}), ...data };
+        return;
+      }
+      const prod = products.find((p) => p.nombre.toLowerCase() === (data['producto'] as string).toLowerCase());
+      if (prod) setValue('productoId', prod.id, { shouldValidate: true });
+    }
+    if (typeof data['variedad'] === 'string') {
+      if (products.length === 0) {
+        pendingAutofill.current = { ...(pendingAutofill.current ?? {}), ...data };
+        return;
+      }
+      const allVarieties = products.flatMap((p) => p.variedades);
+      const v = allVarieties.find((x) => x.nombre.toLowerCase() === (data['variedad'] as string).toLowerCase());
+      if (v) setValue('variedadId', v.id, { shouldValidate: true });
+      else {
+        setValue('variedadId', OTHER_VALUE, { shouldValidate: true });
+        setCustomVariety(data['variedad'] as string);
+      }
+    }
+    if (Array.isArray(data['calibres'])) {
+      setValue('calibresSolicitados', data['calibres'] as { calibre: string; cantidad_kg: number; precio_max_kg: number }[], {
+        shouldValidate: true,
+      });
+    }
+    if (typeof data['logistica'] === 'string') {
+      setValue('logistica', data['logistica'] as 'YO_ENVIO' | 'OTRO_RECOGE' | 'INDIFERENTE', { shouldValidate: true });
+    }
+    if (typeof data['incoterm'] === 'string') {
+      setValue('incotermsAceptados', [data['incoterm'] as string], { shouldValidate: true });
+    }
+    if (typeof data['destinoFinal'] === 'string') {
+      setValue('destinoFinal', data['destinoFinal'] as string, { shouldValidate: true });
+    }
+    if (typeof data['fechaEntregaDeseada'] === 'string') {
+      setValue('fechaEntregaDeseada', data['fechaEntregaDeseada'] as string, { shouldValidate: true });
+    }
+    if (Array.isArray(data['terminosPagoAceptados'])) {
+      setValue('terminosPagoAceptados', data['terminosPagoAceptados'] as string[], { shouldValidate: true });
+    }
+  }
+
+  useEffect(() => {
+    function onAutofill(ev: Event) {
+      const e = ev as CustomEvent<{ stepKey: string; data: Record<string, unknown> }>;
+      applyAutofill(e.detail?.data ?? {});
+    }
+    window.addEventListener('tutorial:autofill', onAutofill);
+    return () => window.removeEventListener('tutorial:autofill', onAutofill);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
+  useEffect(() => {
+    if (products.length > 0 && pendingAutofill.current) {
+      const data = pendingAutofill.current;
+      pendingAutofill.current = null;
+      applyAutofill(data);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const varieties = selectedProduct?.variedades ?? [];
   const calibreOptions = selectedProduct?.calibresDisponibles ?? [];
@@ -201,7 +269,7 @@ export default function CreateOrderPage() {
       <form className="grid grid-cols-1 lg:grid-cols-2 gap-6" onSubmit={(e) => e.preventDefault()}>
         {/* Left: Commercial Details */}
         <section className="space-y-5">
-          <div className="bg-card rounded-card border border-border p-5 space-y-4">
+          <div data-tutorial="form-producto" className="bg-card rounded-card border border-border p-5 space-y-4">
             <h2 className="font-semibold text-text-primary">Detalles comerciales</h2>
 
             <div className="grid grid-cols-2 gap-4">
@@ -256,7 +324,7 @@ export default function CreateOrderPage() {
             />
 
             {/* Calibres */}
-            <div className="space-y-2">
+            <div data-tutorial="form-calibres" className="space-y-2">
               <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-xs font-medium text-text-secondary px-1">
                 <span>Caliber</span>
                 <span>Qty (kg)</span>
@@ -336,7 +404,7 @@ export default function CreateOrderPage() {
 
         {/* Right: Logistics & Terms */}
         <section className="space-y-5">
-          <div className="bg-card rounded-card border border-border p-5 space-y-4">
+          <div data-tutorial="form-logistica" className="bg-card rounded-card border border-border p-5 space-y-4">
             <h2 className="font-semibold text-text-primary">Logística y condiciones</h2>
 
             <div className="space-y-3">
@@ -515,6 +583,7 @@ export default function CreateOrderPage() {
               variant="primary"
               disabled={isSubmitting}
               onClick={handleSubmit((v) => onSubmit(v, true))}
+              data-tutorial="btn-publicar-pedido"
             >
               {isSubmitting ? 'Publicando...' : 'Publish Order'}
             </Button>

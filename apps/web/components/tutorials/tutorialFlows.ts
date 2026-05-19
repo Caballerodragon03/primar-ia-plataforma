@@ -6,8 +6,11 @@
  * disparamos para que el page receptor rellene los inputs con datos
  * inventados.
  *
- * Los pasos `kind: 'modal'` son saltos al exterior (Stripe, QR) que
- * no podemos simular sobre la UI real → modal explicativo.
+ * Los pasos `kind: 'modal'` son saltos al exterior (Stripe, QR) o
+ * confirmaciones globales que no necesitan apuntar a un elemento.
+ *
+ * Estrategia v3.1: rellenamos campo a campo (no todos a la vez) para
+ * que el usuario vea claramente qué hace cada apartado del formulario.
  */
 
 export interface FlowStep {
@@ -19,95 +22,166 @@ export interface FlowStep {
   title: string;
   content: string;
   note?: string;
-  // Cuando el paso tiene autofill, se dispara un evento
-  // `tutorial:autofill` con `detail.stepKey === key` y `detail.data`.
   autofill?: Record<string, unknown>;
 }
 
+// Fechas relativas a hoy: empieza pasado mañana, dura 30 días.
+const today = new Date();
+const fmt = (d: Date) => d.toISOString().slice(0, 10);
+const VENDEDOR_FECHA_DESDE = fmt(new Date(today.getTime() + 2 * 24 * 3600 * 1000));
+const VENDEDOR_FECHA_HASTA = fmt(new Date(today.getTime() + 32 * 24 * 3600 * 1000));
+const COMPRADOR_FECHA_ENTREGA = fmt(new Date(today.getTime() + 21 * 24 * 3600 * 1000));
+
 export const CREAR_LOTE_FLOW: FlowStep[] = [
+  // ─── Introducción ───────────────────────────────────────────────────
   {
     key: 'inicio',
     kind: 'modal',
     route: '/seller',
     title: 'Modo prueba activado',
     content:
-      'Vamos a recorrer el flujo COMPLETO de venta sobre la plataforma real. Te guiaré paso a paso, los formularios se autorrellenan con datos inventados y nada se guarda en la base de datos.',
+      'Vamos a recorrer el flujo COMPLETO de venta sobre la plataforma real. Iremos campo por campo, explicando cada uno, y rellenando con datos inventados. Nada se guarda en la base de datos.',
     note: 'Modo prueba — ninguna acción durante este tutorial persiste en producción.',
   },
   {
-    key: 'sidebar-lots',
+    key: 'nav-lots',
     kind: 'spotlight',
     route: '/seller',
     target: '[data-tutorial="sidebar"]',
     placement: 'right',
-    title: 'Navegar a "Mis lotes"',
+    title: 'Navega a "Mis lotes"',
     content:
-      'En el menú lateral pulsa en "Mis lotes". Te llevaré yo automáticamente al pulsar Continuar.',
+      'Todo empieza en "Mis lotes" del menú lateral. Pulsa Continuar y te llevo yo.',
   },
   {
-    key: 'open-lots',
+    key: 'btn-new-lote',
     kind: 'spotlight',
     route: '/seller/lots',
-    target: 'a[href$="/seller/lots/new"], button:has(+ [data-tutorial="publicar-lote"])',
+    target: '[data-tutorial="btn-nuevo-lote"]',
     placement: 'left',
     title: 'Publicar lote nuevo',
     content:
-      'Desde la lista de lotes pulsa en "Publicar lote nuevo" (arriba a la derecha) cuando quieras vender. Continúa para abrir el formulario.',
+      'Desde la lista de lotes pulsarías este botón "New Lot" arriba a la derecha. Continúa para abrir el formulario.',
   },
+
+  // ─── Formulario campo a campo ─────────────────────────────────────
   {
-    key: 'fill-producto',
+    key: 'campo-producto',
     kind: 'spotlight',
     route: '/seller/lots/new',
-    target: 'body',
-    placement: 'center',
-    title: 'Producto y variedad',
+    target: '[data-tutorial="form-producto"]',
+    placement: 'bottom',
+    title: 'Campo 1 · Producto',
     content:
-      'He autorrellenado producto=Aguacate y variedad=Hass. En real elegirías de los desplegables. Importante: los compradores filtran por variedad — sé específico.',
-    autofill: {
-      producto: 'Aguacate',
-      variedad: 'Hass',
-      temporada: '2026-primavera',
-    },
+      'Eliges el producto que vas a vender. En real abrirías el desplegable y elegirías de la lista. Voy a rellenarlo con "Aguacate".',
+    autofill: { producto: 'Aguacate' },
   },
   {
-    key: 'fill-calibres',
+    key: 'campo-variedad',
     kind: 'spotlight',
     route: '/seller/lots/new',
-    target: 'body',
-    placement: 'center',
-    title: 'Calibres y precio mínimo €/kg',
+    target: '[data-tutorial="form-producto"]',
+    placement: 'bottom',
+    title: 'Campo 2 · Variedad',
     content:
-      'Calibre 14: 2.000 kg a 3,20 €/kg mín. · Calibre 16: 2.000 kg a 2,80 €/kg · Calibre 18: 1.000 kg a 2,40 €/kg. El motor solo te empareja con compradores que paguen ≥ a tu mínimo.',
+      'La variedad es importante: los compradores filtran por ella. Un comprador pidiendo "Aguacate Hass" no matchea con "Aguacate Bacon". Si tu variedad no está, eliges "Other" y la escribes. Relleno "Hass".',
+    autofill: { variedad: 'Hass' },
+  },
+  {
+    key: 'campo-calibres',
+    kind: 'spotlight',
+    route: '/seller/lots/new',
+    target: '[data-tutorial="form-calibres"]',
+    placement: 'top',
+    title: 'Campo 3 · Calibres y cantidades',
+    content:
+      'Cada calibre (tamaño) tiene su precio. Vendes calibre 14 (más grande) más caro que el 18. Defines kg disponibles y precio mínimo €/kg por calibre. Relleno 3 calibres con sus kg.',
     autofill: {
       calibres: [
-        { calibre: '14', cantidad_kg: 2000, precio_min_kg: 3.2 },
-        { calibre: '16', cantidad_kg: 2000, precio_min_kg: 2.8 },
-        { calibre: '18', cantidad_kg: 1000, precio_min_kg: 2.4 },
+        { calibre: '14', cantidad_kg: 2000 },
+        { calibre: '16', cantidad_kg: 2000 },
+        { calibre: '18', cantidad_kg: 1000 },
       ],
     },
+    note: 'Si no calibras (a granel), marca la casilla "Non calibrated" y el sistema te pide solo el total.',
   },
   {
-    key: 'fill-incoterm',
+    key: 'campo-direccion',
     kind: 'spotlight',
     route: '/seller/lots/new',
-    target: 'body',
-    placement: 'center',
-    title: 'Logística e Incoterm',
+    target: '[data-tutorial="form-logistica"]',
+    placement: 'top',
+    title: 'Campo 4 · Dirección de recogida',
     content:
-      'Hemos elegido "Yo envío" + DAP (entrega en destino, riesgo del transporte por tu cuenta hasta llegar). Si no estás seguro de qué incoterm usar, el wizard te recomienda uno.',
+      'Es donde vives o donde está el lote físicamente. Se usa para calcular distancias a los compradores en el matching. Relleno con una dirección de ejemplo.',
+    autofill: { direccionRecogida: 'Carretera Vélez-Málaga 29700, Málaga' },
+  },
+  {
+    key: 'campo-fechas',
+    kind: 'spotlight',
+    route: '/seller/lots/new',
+    target: '[data-tutorial="form-logistica"]',
+    placement: 'top',
+    title: 'Campo 5 · Fechas de disponibilidad',
+    content:
+      'Desde cuándo está disponible la mercancía y hasta cuándo. Si pones un margen muy estrecho, perderás matches con compradores que prefieran fechas más amplias. Te he puesto un margen razonable (pasado mañana → +30 días).',
     autofill: {
-      logistica: 'YO_ENVIO',
-      incoterm: 'DAP',
-      direccionRecogida: 'Vélez-Málaga 29700',
+      fechaDisponibilidad: VENDEDOR_FECHA_DESDE,
+      fechaFinDisponibilidad: VENDEDOR_FECHA_HASTA,
     },
   },
   {
-    key: 'publicar',
+    key: 'campo-logistica',
+    kind: 'spotlight',
+    route: '/seller/lots/new',
+    target: '[data-tutorial="form-logistica"]',
+    placement: 'top',
+    title: 'Campo 6 · ¿Quién se encarga del envío?',
+    content:
+      'Tres opciones: "Yo envío" (CPT/DAP/DDP), "Que el comprador recoja" (EXW), o "Indiferente" (negocias en chat). Elegimos "Yo envío".',
+    autofill: { logistica: 'YO_ENVIO' },
+  },
+  {
+    key: 'campo-incoterm',
+    kind: 'spotlight',
+    route: '/seller/lots/new',
+    target: '[data-tutorial="form-logistica"]',
+    placement: 'top',
+    title: 'Campo 7 · Incoterm aceptado',
+    content:
+      'El incoterm define quién paga el transporte y cuándo pasa el riesgo. DAP = entregas en destino del comprador. Marco solo DAP, pero podrías aceptar varios.',
+    autofill: { incoterm: 'DAP' },
+  },
+  {
+    key: 'campo-termino-pago',
+    kind: 'spotlight',
+    route: '/seller/lots/new',
+    target: '[data-tutorial="form-logistica"]',
+    placement: 'top',
+    title: 'Campo 8 · Términos de pago aceptados',
+    content:
+      'Cuándo te pagan: contado, 30 días fecha factura, 60 días… Marca los plazos que aceptas. Compradores con plazos más largos se filtran fuera. Marco "contado".',
+    autofill: { terminosPagoAceptados: ['CONTADO'] },
+  },
+  {
+    key: 'btn-publicar',
+    kind: 'spotlight',
+    route: '/seller/lots/new',
+    target: '[data-tutorial="btn-publicar-lote"]',
+    placement: 'top',
+    title: 'Pulsa "Publish Lot"',
+    content:
+      'Al publicar, el motor de matching empareja tu lote con los pedidos activos al instante. Continúa, simulamos el envío y te llevo a ver los matches.',
+    note: 'En real este botón pega a POST /lots. En modo prueba está interceptado y nada se guarda.',
+  },
+
+  // ─── Match y aceptación ───────────────────────────────────────────
+  {
+    key: 'ir-matches',
     kind: 'modal',
     title: '¡Lote publicado!',
     content:
-      'Al pulsar "Publicar" el motor de matching cruza tus calibres, precios e incoterm con los pedidos activos. Saltamos esa parte y vamos directamente a ver los matches que aparecen.',
-    note: 'En real el botón pegaría a POST /lots. En modo prueba está interceptado.',
+      'El motor de matching ha encontrado a un comprador compatible. Vamos a verlo en tu pantalla de matches.',
   },
   {
     key: 'ver-matches',
@@ -115,118 +189,154 @@ export const CREAR_LOTE_FLOW: FlowStep[] = [
     route: '/seller/matches',
     target: 'body',
     placement: 'center',
-    title: 'Tus matches con compradores',
+    title: 'Matches con compradores',
     content:
-      'Cada tarjeta es un comprador que encaja con tu lote: ves su puntuación, kg solicitados, precio €/kg y match score. Puedes aceptar, negociar en chat, o rechazar.',
+      'Aquí ves los pedidos que encajan con tu lote: comprador, su puntuación, kg que pide, precio €/kg y match score. En modo prueba simulamos que aparece "Frutas García S.L." pidiendo 1.000 kg de calibre 14 a 3,15 €/kg.',
   },
   {
     key: 'aceptar-match',
     kind: 'modal',
-    title: 'Aceptar la contribución',
+    title: 'Contribuir al pedido',
     content:
-      'Imagina que pulsas "Contribuir al pedido" en la primera tarjeta. El modal te pregunta cuántos kg comprometes por calibre — tope = mínimo entre lo que tienes y lo que el comprador pide.',
-    note: 'En modo prueba simulamos que aceptas 1.000 kg de calibre 14 a 3,15 €/kg.',
+      'Pulsarías "Contribuir al pedido" en la tarjeta del comprador. Se abre un modal donde indicas cuántos kg comprometes POR CALIBRE — tope = mínimo entre lo que tienes y lo que el comprador pide.',
+    note: 'Simulamos que aceptas 1.000 kg de calibre 14 a 3,15 €/kg.',
+  },
+
+  // ─── Contrato y firma ─────────────────────────────────────────────
+  {
+    key: 'borrador-contrato',
+    kind: 'modal',
+    title: 'Borrador del contrato',
+    content:
+      'Primar-IA genera automáticamente el borrador del contrato con todas las condiciones acordadas (kg, €/kg, incoterm, plazo, calibres). Es un PDF descargable que puedes revisar antes de firmar.',
   },
   {
-    key: 'firmar-contrato',
+    key: 'firmar-vendedor',
     kind: 'modal',
-    title: 'Firmar el contrato',
+    title: 'Firmar como vendedor',
     content:
-      'Primar-IA genera el borrador automáticamente con los términos acordados. Tú firmas dibujando en un canvas (o tecleando rúbrica). Tienes 48 h hábiles para hacerlo, si no, el match caduca.',
-    note: 'Después firma el comprador y paga la comisión de la plataforma. Hasta ese pago el contrato no está FIRMADO.',
+      'Tienes 48 h hábiles para firmar. Firmas dibujando en un canvas o tecleando una rúbrica. Al firmar, el contrato pasa a estado PENDIENTE_PAGO_COMPRADOR.',
+    note: 'Si no firmas a tiempo, el match caduca y el lote queda libre otra vez.',
   },
   {
-    key: 'comprador-paga',
+    key: 'comprador-firma-paga',
     kind: 'modal',
-    title: 'El comprador paga la comisión',
+    title: 'El comprador firma y paga la comisión',
     content:
-      'El comprador recibe una notificación, firma y va a Stripe Checkout para pagar la comisión de la plataforma (no a ti — el pago de la mercancía es directo entre vosotros más tarde).',
-    note: 'Esta parte ocurre en el dominio de Stripe, así que en el tutorial no la simulamos visualmente.',
+      'El comprador recibe notificación, revisa, firma y va a Stripe Checkout para pagar la comisión de Primar-IA. Esta parte ocurre en dominio externo (Stripe), así que en el tutorial no la simulamos visualmente.',
+    note: 'Importante: tú NO pagas comisión a Primar-IA — la paga el comprador. Tú solo cobras la mercancía al comprador (fuera de la plataforma, según el plazo pactado).',
   },
+  {
+    key: 'contrato-firmado',
+    kind: 'modal',
+    title: 'Contrato FIRMADO',
+    content:
+      'Cuando el comprador completa el pago de la comisión, el contrato pasa a FIRMADO. Ya está todo cerrado legalmente. Te aparece el botón para marcar el envío.',
+  },
+
+  // ─── Envío y entrega ──────────────────────────────────────────────
   {
     key: 'marcar-enviado',
     kind: 'modal',
     title: 'Marcar como enviado',
     content:
-      'Cuando el camión sale, pulsas "Marcar como enviado" en la página del contrato. Primar-IA notifica al comprador y le genera un código QR para confirmar la entrega.',
+      'Cuando salga el camión, pulsarías "Marcar como enviado" en la página del contrato. Primar-IA genera un código QR que recibe el comprador para confirmar la entrega al llegar.',
   },
   {
-    key: 'recibido',
+    key: 'entrega-confirmada',
     kind: 'modal',
     title: 'Entrega confirmada',
     content:
-      'El comprador escanea el QR al recibir el camión. El sistema marca la operación como entregada y os habilita la valoración mutua (1-5 estrellas).',
+      'El comprador escanea el QR al recibir el camión y la operación queda como ENTREGADA. Os habilita la pantalla de valoración mutua.',
   },
   {
     key: 'cobrar',
     kind: 'modal',
     title: 'Cobrar la mercancía',
     content:
-      'El pago entre vosotros se hace fuera de la plataforma (transferencia bancaria) según el término que pactasteis: contado, 30 días, 60 días… Primar-IA solo intermedia el contrato y la comisión.',
+      'El pago de la mercancía se hace fuera de la plataforma (transferencia bancaria) según el término que pactasteis: contado, 30 d, 60 d… Primar-IA solo intermedia contrato y comisión, no cobra tu mercancía.',
+  },
+  {
+    key: 'valorar',
+    kind: 'modal',
+    title: 'Valoración mutua',
+    content:
+      'Tras la entrega, ambos os valoráis 1-5 estrellas. Si hubo incidencia (mercancía dañada, faltante…), abres una INCIDENCIA en lugar de valorar y la plataforma media.',
   },
   {
     key: 'final',
     kind: 'modal',
     title: '¡Operación completada!',
     content:
-      'Al cerrar sin incidencias subes tu puntuación de fiabilidad. Cuantas más operaciones cierres bien, mejor reputación tendrás — y mejores condiciones, badges y matches prioritarios desbloquearás.',
-    note: 'Modo prueba cerrado. Nada se ha guardado.',
+      'Cada operación cerrada sin incidencias mejora tu reputación. Más reputación = mejor matchmaker, más volumen, badges y prioridad. Modo prueba cerrado.',
+    note: 'Cierro el modo prueba y vuelvo al panel.',
   },
 ];
 
 export const HACER_PEDIDO_FLOW: FlowStep[] = [
+  // ─── Introducción ───────────────────────────────────────────────────
   {
     key: 'inicio',
     kind: 'modal',
     route: '/buyer',
     title: 'Modo prueba activado',
     content:
-      'Vamos a recorrer el flujo COMPLETO de compra sobre la plataforma real. Te guiaré paso a paso, los formularios se autorrellenan con datos inventados y nada se guarda en la base de datos.',
+      'Vamos a recorrer el flujo COMPLETO de compra sobre la plataforma real. Iremos campo por campo, explicando cada uno, y rellenando con datos inventados. Nada se guarda en la base de datos.',
     note: 'Modo prueba — ninguna acción durante este tutorial persiste en producción.',
   },
   {
-    key: 'sidebar-orders',
+    key: 'nav-orders',
     kind: 'spotlight',
     route: '/buyer',
     target: '[data-tutorial="sidebar"]',
     placement: 'right',
-    title: 'Navegar a "Mis pedidos"',
+    title: 'Navega a "Mis pedidos"',
     content:
-      'En el menú lateral pulsa en "Mis pedidos". Te llevaré automáticamente al pulsar Continuar.',
+      'Todo empieza en "Mis pedidos" del menú lateral. Pulsa Continuar y te llevo yo.',
   },
   {
-    key: 'open-orders',
+    key: 'btn-new-order',
     kind: 'spotlight',
     route: '/buyer/orders',
-    target: 'body',
-    placement: 'center',
+    target: '[data-tutorial="btn-nuevo-pedido"]',
+    placement: 'left',
     title: 'Crear pedido nuevo',
     content:
-      'Desde la lista de pedidos pulsa en "Crear pedido nuevo" arriba a la derecha cuando quieras lanzar una compra. Continúa para abrir el formulario.',
+      'Desde la lista de pedidos pulsarías este botón arriba a la derecha. Continúa para abrir el formulario.',
   },
+
+  // ─── Formulario campo a campo ─────────────────────────────────────
   {
-    key: 'fill-producto',
+    key: 'campo-producto',
     kind: 'spotlight',
     route: '/buyer/orders/new',
-    target: 'body',
-    placement: 'center',
-    title: 'Qué quieres comprar',
+    target: '[data-tutorial="form-producto"]',
+    placement: 'bottom',
+    title: 'Campo 1 · Producto',
     content:
-      'He autorrellenado producto=Naranja y variedad=Navelina. Si te da igual la variedad puedes dejarla abierta y aceptará lotes de cualquiera.',
-    autofill: {
-      producto: 'Naranja',
-      variedad: 'Navelina',
-    },
+      'Eliges qué quieres comprar del desplegable. En real abrirías el menú y seleccionarías. Voy a rellenarlo con "Naranja".',
+    autofill: { producto: 'Naranja' },
   },
   {
-    key: 'fill-calibres',
+    key: 'campo-variedad',
     kind: 'spotlight',
     route: '/buyer/orders/new',
-    target: 'body',
-    placement: 'center',
-    title: 'Calibres y precio máximo €/kg',
+    target: '[data-tutorial="form-producto"]',
+    placement: 'bottom',
+    title: 'Campo 2 · Variedad',
     content:
-      'Calibre 3: 3.000 kg máx 0,55 €/kg · Calibre 4: 2.000 kg máx 0,48 €/kg. El motor solo te trae lotes con precio mínimo ≤ a tu máximo.',
+      'Si te importa la variedad concreta (Navelina, Lanelate, Valencia…), la eliges. Si te da igual, deja "Other" o vacío y aceptará lotes de cualquiera. Voy a poner "Navelina".',
+    autofill: { variedad: 'Navelina' },
+  },
+  {
+    key: 'campo-calibres',
+    kind: 'spotlight',
+    route: '/buyer/orders/new',
+    target: '[data-tutorial="form-calibres"]',
+    placement: 'top',
+    title: 'Campo 3 · Calibres y precio máximo €/kg',
+    content:
+      'Cuántos kg necesitas por calibre y el precio máximo €/kg que aceptas pagar por cada uno. El motor solo trae lotes con precio mínimo ≤ a tu máximo. Relleno 2 calibres.',
     autofill: {
       calibres: [
         { calibre: '3', cantidad_kg: 3000, precio_max_kg: 0.55 },
@@ -235,87 +345,148 @@ export const HACER_PEDIDO_FLOW: FlowStep[] = [
     },
   },
   {
-    key: 'fill-incoterm',
+    key: 'campo-destino',
     kind: 'spotlight',
     route: '/buyer/orders/new',
-    target: 'body',
-    placement: 'center',
-    title: 'Logística e Incoterm',
+    target: '[data-tutorial="form-logistica"]',
+    placement: 'top',
+    title: 'Campo 4 · Destino final',
     content:
-      'Elegimos "Que el vendedor envíe" + DAP (te llega a tu almacén). Puedes marcar varios incoterms aceptables y el motor busca match con cualquiera de ellos.',
-    autofill: {
-      logistica: 'OTRO_ENVIA',
-      incoterm: 'DAP',
-      destinoFinal: 'Mercabarna Barcelona',
-    },
+      'Dónde quieres recibir la mercancía. Se usa para que el vendedor calcule transporte si es él quien envía. Pongo "Mercabarna Barcelona".',
+    autofill: { destinoFinal: 'Mercabarna Barcelona' },
   },
   {
-    key: 'fill-pago',
+    key: 'campo-fecha-entrega',
     kind: 'spotlight',
     route: '/buyer/orders/new',
-    target: 'body',
-    placement: 'center',
-    title: 'Plazo y término de pago',
+    target: '[data-tutorial="form-logistica"]',
+    placement: 'top',
+    title: 'Campo 5 · Fecha de entrega deseada',
     content:
-      'Entrega antes del 30/06/2026 y pago a 30 días fecha factura. Esto entra en el matching — vendedores incompatibles se filtran fuera.',
-    autofill: {
-      fechaEntregaDeseada: '2026-06-30',
-      terminoPago: '30D',
-    },
+      'Para cuándo necesitas la mercancía. Margen estrecho = menos matches. Margen amplio = más opciones. Pongo +21 días.',
+    autofill: { fechaEntregaDeseada: COMPRADOR_FECHA_ENTREGA },
   },
   {
-    key: 'publicar',
-    kind: 'modal',
-    title: '¡Pedido publicado!',
+    key: 'campo-logistica',
+    kind: 'spotlight',
+    route: '/buyer/orders/new',
+    target: '[data-tutorial="form-logistica"]',
+    placement: 'top',
+    title: 'Campo 6 · ¿Quién se encarga del envío?',
     content:
-      'Al pulsar "Crear pedido" el motor de matching busca lotes compatibles y aparece la lista de ofertas en /buyer/orders/[id]. Saltamos directamente ahí.',
-    note: 'En real el botón pegaría a POST /orders. En modo prueba está interceptado.',
+      'Tres opciones: "Yo recojo" (EXW), "Que el vendedor envíe" (CPT/DAP/DDP), o "Indiferente". Elegimos que el vendedor envíe.',
+    autofill: { logistica: 'OTRO_RECOGE' },
   },
+  {
+    key: 'campo-incoterm',
+    kind: 'spotlight',
+    route: '/buyer/orders/new',
+    target: '[data-tutorial="form-logistica"]',
+    placement: 'top',
+    title: 'Campo 7 · Incoterm aceptado',
+    content:
+      'DAP = entrega en tu destino. Puedes marcar varios incoterms aceptables y el motor busca match con cualquiera.',
+    autofill: { incoterm: 'DAP' },
+  },
+  {
+    key: 'campo-termino-pago',
+    kind: 'spotlight',
+    route: '/buyer/orders/new',
+    target: '[data-tutorial="form-logistica"]',
+    placement: 'top',
+    title: 'Campo 8 · Términos de pago',
+    content:
+      'Cuándo pagas: contado, 30 días fecha factura, 60 días… El motor filtra vendedores incompatibles. Marco "30 días".',
+    autofill: { terminosPagoAceptados: ['DIAS_30'] },
+  },
+  {
+    key: 'btn-publicar',
+    kind: 'spotlight',
+    route: '/buyer/orders/new',
+    target: '[data-tutorial="btn-publicar-pedido"]',
+    placement: 'top',
+    title: 'Pulsa "Publicar pedido"',
+    content:
+      'Al publicar, el motor de matching empareja tu pedido con lotes activos al instante. Continúa, simulamos el envío y te llevo a ver las ofertas.',
+    note: 'En real este botón pega a POST /orders. En modo prueba está interceptado y nada se guarda.',
+  },
+
+  // ─── Ofertas y aceptación ──────────────────────────────────────────
   {
     key: 'ver-ofertas',
-    kind: 'spotlight',
-    route: '/buyer/orders',
-    target: 'body',
-    placement: 'center',
-    title: 'Recibir ofertas de vendedores',
+    kind: 'modal',
+    title: 'Ofertas de vendedores',
     content:
-      'Cada vendedor compatible aparece como una oferta: vendedor, puntuación, kg comprometidos, €/kg y estado. Puedes aceptar tal cual o negociar en chat (mismo formato que el vendedor).',
+      'En la pantalla del pedido verías una sección "Ofertas de vendedores" con todos los que encajan. Cada tarjeta lleva: vendedor, puntuación, kg comprometidos, €/kg y estado.',
+    note: 'Simulamos que aparece "Cooperativa El Naranjo" ofreciendo 1.500 kg de calibre 3 a 0,52 €/kg.',
   },
   {
-    key: 'firmar-comprador',
+    key: 'aceptar-oferta',
     kind: 'modal',
-    title: 'Firmar el contrato',
+    title: 'Aceptar la oferta',
     content:
-      'Cuando el vendedor firma el borrador, te llega tu turno: revisas las condiciones, firmas con canvas o rúbrica y pasas al pago de la comisión.',
+      'Aceptas tal cual, o negocias en chat (mismo modal que el del vendedor: precio por calibre, kg, incoterm, plazo). Varios vendedores pueden contribuir al mismo pedido — la plataforma reparte por calibre.',
+  },
+
+  // ─── Contrato, firma y pago ────────────────────────────────────────
+  {
+    key: 'borrador-contrato',
+    kind: 'modal',
+    title: 'Borrador del contrato',
+    content:
+      'Cuando el vendedor firma, te llega notificación y revisas el borrador. Es un PDF con todas las condiciones acordadas (kg, €/kg, incoterm, plazo, calibres).',
   },
   {
-    key: 'pago-comision',
+    key: 'firmar-pagar',
     kind: 'modal',
-    title: 'Pagar la comisión de Primar-IA',
+    title: 'Firmar y pagar la comisión',
     content:
-      'Vas a Stripe Checkout y pagas la comisión de la plataforma (2-3% sobre el valor del contrato, con descuentos según tu plan). Esta es la ÚNICA cantidad que cobra Primar-IA.',
-    note: 'Esta parte ocurre en el dominio de Stripe, así que en el tutorial no la simulamos visualmente. El pago de la mercancía al vendedor lo haces TÚ fuera de la plataforma según el plazo pactado.',
+      'Firmas dibujando o tecleando rúbrica + vas a Stripe Checkout para pagar la comisión de Primar-IA (2-3% sobre el valor del contrato). Esta es la ÚNICA cantidad que cobra la plataforma.',
+    note: 'El pago de la mercancía al vendedor lo haces TÚ fuera de la plataforma según el término que pactasteis.',
   },
+  {
+    key: 'contrato-firmado',
+    kind: 'modal',
+    title: 'Contrato FIRMADO',
+    content:
+      'Pagada la comisión, el contrato pasa a FIRMADO. El vendedor recibe la orden de enviar la mercancía.',
+  },
+
+  // ─── Envío, entrega y cierre ───────────────────────────────────────
   {
     key: 'esperar-envio',
     kind: 'modal',
-    title: 'El vendedor envía la mercancía',
+    title: 'Esperar el envío',
     content:
-      'Cuando el vendedor marque el contrato como ENVIADO, recibes una notificación con un código QR. Lo escaneas al recibir el camión para confirmar la entrega.',
+      'Cuando el vendedor marque ENVIADO, recibirás una notificación con un código QR. Lo escaneas al recibir el camión.',
   },
   {
-    key: 'recibir',
+    key: 'recibir-qr',
     kind: 'modal',
-    title: 'Recibir y valorar',
+    title: 'Escanear QR al recibir',
     content:
-      'Tras escanear el QR, ambos os valoráis (1-5 estrellas) y la operación pasa a COMPLETADA. Si hubo problema (mercancía dañada, faltante…), abres una INCIDENCIA en lugar de valorar y la plataforma media.',
+      'Esto ocurre físicamente: el transportista llega, escaneas con el móvil o desde el dashboard. La operación pasa a ENTREGADA y se habilita la valoración mutua.',
+  },
+  {
+    key: 'pagar-vendedor',
+    kind: 'modal',
+    title: 'Pagar al vendedor',
+    content:
+      'Por transferencia bancaria, según el término que pactasteis: contado, 30 días, 60 días… Primar-IA solo intermedia contrato y comisión, no cobra ni paga la mercancía.',
+  },
+  {
+    key: 'valorar',
+    kind: 'modal',
+    title: 'Valoración mutua',
+    content:
+      'Tras la entrega, ambos os valoráis 1-5 estrellas. Si hubo problema (mercancía dañada, faltante, fuera de calibre…), abres una INCIDENCIA en lugar de valorar.',
   },
   {
     key: 'final',
     kind: 'modal',
     title: '¡Operación completada!',
     content:
-      'Al cerrar sin incidencias subes tu reputación como comprador. Eso desbloquea mejores vendedores que te aceptan, descuentos progresivos en comisión y más operaciones por mes.',
-    note: 'Modo prueba cerrado. Nada se ha guardado.',
+      'Cada operación cerrada sin incidencias mejora tu reputación como comprador — mejores vendedores te aceptan, mejores condiciones desbloqueas. Modo prueba cerrado.',
+    note: 'Cierro el modo prueba y vuelvo al panel.',
   },
 ];

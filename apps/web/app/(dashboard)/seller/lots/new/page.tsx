@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -157,44 +157,84 @@ export default function PublishLotPage() {
   const incotermsAceptados = watch('incotermsAceptados') ?? [];
   const terminosPagoAceptados = watch('terminosPagoAceptados') ?? [];
 
-  // Phase 14M v3 — escuchar el evento de autofill del tutorial guiado.
-  // Cuando el TutorialRunner avanza por los pasos del flow "crear-lote",
-  // dispara window CustomEvent('tutorial:autofill') con la data del paso
-  // actual. Aquí mapeamos esa data a setValue del react-hook-form.
+  // Phase 14M v3 — autofill desde el TutorialRunner. Los flows disparan
+  // window event 'tutorial:autofill' con la data del paso. Como products
+  // puede tardar en cargarse, guardamos la última data pendiente en un
+  // ref y la aplicamos cuando esté lista (o al recibir cada evento).
+  const pendingAutofill = useRef<Record<string, unknown> | null>(null);
+
+  function applyAutofill(data: Record<string, unknown>) {
+    if (typeof data['producto'] === 'string') {
+      if (products.length === 0) {
+        // products todavía no cargado → encolar y reintentar.
+        pendingAutofill.current = { ...(pendingAutofill.current ?? {}), ...data };
+        return;
+      }
+      const prod = products.find((p) => p.nombre.toLowerCase() === (data['producto'] as string).toLowerCase());
+      if (prod) setValue('productoId', prod.id, { shouldValidate: true });
+    }
+    if (typeof data['variedad'] === 'string') {
+      if (products.length === 0) {
+        pendingAutofill.current = { ...(pendingAutofill.current ?? {}), ...data };
+        return;
+      }
+      // Buscamos la variedad en TODOS los productos por si productoId aún
+      // no se ha propagado al watch().
+      const allVarieties = products.flatMap((p) => p.variedades);
+      const v = allVarieties.find((x) => x.nombre.toLowerCase() === (data['variedad'] as string).toLowerCase());
+      if (v) setValue('variedadId', v.id, { shouldValidate: true });
+      else {
+        setValue('variedadId', OTHER_VALUE, { shouldValidate: true });
+        setCustomVariety(data['variedad'] as string);
+      }
+    }
+    if (Array.isArray(data['calibres'])) {
+      setValue('calibres', data['calibres'] as { calibre: string; cantidad_kg: number; precio_min_kg?: number }[], {
+        shouldValidate: true,
+      });
+    }
+    if (typeof data['logistica'] === 'string') {
+      setValue('logistica', data['logistica'] as 'YO_ENVIO' | 'OTRO_RECOGE' | 'INDIFERENTE', { shouldValidate: true });
+    }
+    if (typeof data['incoterm'] === 'string') {
+      setValue('incotermsAceptados', [data['incoterm'] as string], { shouldValidate: true });
+    }
+    if (typeof data['direccionRecogida'] === 'string') {
+      setValue('direccionRecogida', data['direccionRecogida'] as string, { shouldValidate: true });
+    }
+    if (typeof data['fechaDisponibilidad'] === 'string') {
+      setValue('fechaDisponibilidad', data['fechaDisponibilidad'] as string, { shouldValidate: true });
+    }
+    if (typeof data['fechaFinDisponibilidad'] === 'string') {
+      setValue('fechaFinDisponibilidad', data['fechaFinDisponibilidad'] as string, { shouldValidate: true });
+    }
+    if (Array.isArray(data['terminosPagoAceptados'])) {
+      setValue('terminosPagoAceptados', data['terminosPagoAceptados'] as string[], { shouldValidate: true });
+    }
+    if (typeof data['comentariosAdicionales'] === 'string') {
+      setValue('comentariosAdicionales', data['comentariosAdicionales'] as string);
+    }
+  }
+
   useEffect(() => {
     function onAutofill(ev: Event) {
       const e = ev as CustomEvent<{ stepKey: string; data: Record<string, unknown> }>;
-      const data = e.detail?.data ?? {};
-      // Producto/variedad: como son IDs en la UI pero llegan como nombres,
-      // simplemente añadimos un proxy "tutorialProducto" en defaultValues
-      // si los productos están cargados.
-      if (typeof data['producto'] === 'string' && products.length > 0) {
-        const prod = products.find((p) => p.nombre.toLowerCase() === (data['producto'] as string).toLowerCase());
-        if (prod) {
-          setValue('productoId', prod.id);
-          if (typeof data['variedad'] === 'string') {
-            const v = prod.variedades.find((x) => x.nombre.toLowerCase() === (data['variedad'] as string).toLowerCase());
-            if (v) setValue('variedadId', v.id);
-            else setCustomVariety(data['variedad'] as string);
-          }
-        }
-      }
-      if (Array.isArray(data['calibres'])) {
-        setValue('calibres', data['calibres'] as { calibre: string; cantidad_kg: number; precio_min_kg?: number }[]);
-      }
-      if (typeof data['logistica'] === 'string') {
-        setValue('logistica', data['logistica'] as 'YO_ENVIO' | 'OTRO_RECOGE' | 'INDIFERENTE');
-      }
-      if (typeof data['incoterm'] === 'string') {
-        setValue('incotermsAceptados', [data['incoterm'] as string]);
-      }
-      if (typeof data['direccionRecogida'] === 'string') {
-        setValue('direccionRecogida', data['direccionRecogida'] as string);
-      }
+      applyAutofill(e.detail?.data ?? {});
     }
     window.addEventListener('tutorial:autofill', onAutofill);
     return () => window.removeEventListener('tutorial:autofill', onAutofill);
-  }, [products, setValue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
+  // Cuando products termine de cargar, drena cualquier autofill pendiente.
+  useEffect(() => {
+    if (products.length > 0 && pendingAutofill.current) {
+      const data = pendingAutofill.current;
+      pendingAutofill.current = null;
+      applyAutofill(data);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
 
   // Incoterms disponibles según la opción de logística — el comprador no
   // puede elegir incoterms incompatibles con "Yo envío" o "Otro recoge".
@@ -352,7 +392,7 @@ export default function PublishLotPage() {
 
       <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
         {/* Product Details */}
-        <section className="bg-card rounded-card border border-border p-5 space-y-4">
+        <section data-tutorial="form-producto" className="bg-card rounded-card border border-border p-5 space-y-4">
           <h2 className="font-semibold text-text-primary">Detalles del producto</h2>
           <div className="grid grid-cols-2 gap-4">
             <Select
@@ -385,7 +425,7 @@ export default function PublishLotPage() {
           </div>
 
           {/* Calibres table */}
-          <div className="space-y-2">
+          <div data-tutorial="form-calibres" className="space-y-2">
             <label className="flex items-center gap-2 text-sm text-text-secondary">
               <input type="checkbox" {...register('noCalibre')} className="rounded" />
               Non calibrated/weighted Lot
@@ -458,7 +498,7 @@ export default function PublishLotPage() {
         </section>
 
         {/* Logistics */}
-        <section className="bg-card rounded-card border border-border p-5 space-y-4">
+        <section data-tutorial="form-logistica" className="bg-card rounded-card border border-border p-5 space-y-4">
           <h2 className="font-semibold text-text-primary">Logística y disponibilidad</h2>
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
@@ -735,6 +775,7 @@ export default function PublishLotPage() {
             variant="primary"
             disabled={isSubmitting}
             onClick={handleSubmit((v) => onSubmit(v, true))}
+            data-tutorial="btn-publicar-lote"
           >
             {isSubmitting ? 'Publicando...' : 'Publish Lot'}
           </Button>

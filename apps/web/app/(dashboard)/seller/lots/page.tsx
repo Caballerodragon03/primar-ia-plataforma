@@ -92,7 +92,7 @@ export default function MyLotsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-text-primary">Mis Lotes</h1>
-        <Link href="/seller/lots/new">
+        <Link href="/seller/lots/new" data-tutorial="btn-nuevo-lote">
           <Button variant="primary" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
             New Lot

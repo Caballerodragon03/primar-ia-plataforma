@@ -127,7 +127,7 @@ export default function MyOrdersPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-text-primary">Mis Pedidos</h1>
-        <Link href="/buyer/orders/new">
+        <Link href="/buyer/orders/new" data-tutorial="btn-nuevo-pedido">
           <Button variant="primary" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
             New Order
