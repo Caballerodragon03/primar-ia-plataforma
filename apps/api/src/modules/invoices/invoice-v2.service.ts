@@ -95,11 +95,13 @@ export class InvoiceV2Service {
     // Build the canonical contract data (parties, calibres, commission split).
     const contract = await buildContractData(matchId, { esFinal: true });
 
-    // Generate the three documents in parallel. Each is a pure function of
-    // `contract` data so there's no race.
-    const platformInvoice = buildPlatformInvoice(contract, match.transaccion.comisionStripeChargeId);
-    const sellerInvoice = buildSellerInvoice(contract);
-    const receipt = buildPaymentReceipt(contract);
+    // Generate the three documents. Phase 12 — invoiceNumberFor is now async
+    // (monotonic counter per emisor in DB). Run sequentially to ensure each
+    // serial is assigned cleanly; the counter transaction is in any case
+    // short and contention is minimal at MVP scale.
+    const platformInvoice = await buildPlatformInvoice(contract, match.transaccion.comisionStripeChargeId);
+    const sellerInvoice = await buildSellerInvoice(contract);
+    const receipt = await buildPaymentReceipt(contract);
 
     const [platformBuf, sellerBuf, receiptBuf] = await Promise.all([
       generateInvoicePdf(platformInvoice),

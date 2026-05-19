@@ -14,6 +14,7 @@
  */
 import type { ContractData } from '../contracts/contract-data.js';
 import { env } from '../../config/env.js';
+import { prisma } from '@primaria/database';
 
 export interface InvoiceLine {
   descripcion: string;
@@ -117,17 +118,46 @@ function fmtMatchRef(matchId: string): string {
 }
 
 /**
- * Sequential-ish invoice numbers, stable per match+kind.
- * Format: FAC-{kind}-{year}-{matchSlice}.
+ * AEAT-compliant monotonic invoice numbering per (emisor, kind, year).
  *
- * Note: this isn't a strict per-emisor monotonic counter (Spanish AEAT
- * recommends that), but it's a deterministic + unique format suitable for
- * MVP. To upgrade, add a per-Empresa counter column and atomically increment
- * on issue.
+ * Spanish Reglamento 1619/2012 art. 6 requires strictly correlative
+ * numbering per series. We key on the emisor's CIF + kind + year and
+ * atomically increment via an upsert. Format: FAC-{kind}-{year}-{NNNNNN}
+ * (zero-padded 6 digits).
+ *
+ * Each invoice kind has its own series — Primar-IA's commission invoices
+ * (P) and each vendor's sale invoices (V) increment independently. The
+ * resguardo (R) is not technically a factura but we keep it monotonic
+ * for accounting consistency.
  */
-export function invoiceNumberFor(kind: 'P' | 'V' | 'R', match: ContractData): string {
-  const year = match.fechaGeneracion.getFullYear();
-  return `FAC-${kind}-${year}-${fmtMatchRef(match.matchId)}`;
+export async function invoiceNumberFor(
+  kind: 'P' | 'V' | 'R',
+  emisorCif: string,
+  year: number,
+): Promise<string> {
+  // Use Prisma upsert + atomic increment in a transaction to guarantee no
+  // collision under concurrency. The @@unique on (emisorCif, kind, year)
+  // ensures the upsert is race-safe.
+  const counter = await prisma.$transaction(async (tx) => {
+    const existing = await tx.invoiceCounter.findUnique({
+      where: { emisorCif_kind_year: { emisorCif, kind, year } },
+    });
+    if (!existing) {
+      // First invoice for this series — create starting at 1.
+      const created = await tx.invoiceCounter.create({
+        data: { emisorCif, kind, year, nextNumero: 2 },
+      });
+      return 1;
+    }
+    const current = existing.nextNumero;
+    await tx.invoiceCounter.update({
+      where: { id: existing.id },
+      data: { nextNumero: current + 1 },
+    });
+    return current;
+  });
+  const padded = String(counter).padStart(6, '0');
+  return `FAC-${kind}-${year}-${padded}`;
 }
 
 // ─── Tax breakdown per régimen fiscal del vendedor ───────────────────────────
@@ -232,10 +262,10 @@ function partyFromContract(p: ContractData['vendedor'] | ContractData['comprador
  * Factura #1 — Primar-IA → COMPRADOR por la comisión de intermediación.
  * Régimen general, IVA 21%.
  */
-export function buildPlatformInvoice(
+export async function buildPlatformInvoice(
   contract: ContractData,
   stripeChargeId: string | null,
-): InvoiceV2 {
+): Promise<InvoiceV2> {
   const lineas: InvoiceLine[] = [
     {
       descripcion:
@@ -252,7 +282,7 @@ export function buildPlatformInvoice(
   const ivaPct = 21;
   const ivaImporte = +(base * 0.21).toFixed(2);
   return {
-    numero: invoiceNumberFor('P', contract),
+    numero: await invoiceNumberFor('P', PRIMARIA_ENTITY.cifNif, contract.fechaGeneracion.getFullYear()),
     fecha: todayISO(),
     titulo: 'Factura',
     subtitulo: 'Comisión de intermediación',
@@ -287,7 +317,7 @@ export function buildPlatformInvoice(
  * Factura #2 — VENDEDOR → COMPRADOR por la mercancía.
  * IVA/IRPF según régimen fiscal del vendedor.
  */
-export function buildSellerInvoice(contract: ContractData): InvoiceV2 {
+export async function buildSellerInvoice(contract: ContractData): Promise<InvoiceV2> {
   // One line per calibre (transparent breakdown), or a single line if no
   // calibres were stored. Subtotals already in contract.calibres.
   const lineas: InvoiceLine[] = contract.calibres.length > 0
@@ -312,7 +342,7 @@ export function buildSellerInvoice(contract: ContractData): InvoiceV2 {
   const impuestos = buildSellerTaxBreakdown(contract.precioTotalMercancia, contract.vendedor.regimenFiscalCode);
 
   return {
-    numero: invoiceNumberFor('V', contract),
+    numero: await invoiceNumberFor('V', contract.vendedor.cifNif, contract.fechaGeneracion.getFullYear()),
     fecha: todayISO(),
     titulo: 'Factura',
     subtitulo: 'Venta de mercancía',
@@ -353,10 +383,10 @@ export function buildSellerInvoice(contract: ContractData): InvoiceV2 {
  * vendedor el importe de la mercancía. No es una factura — es un documento
  * informativo que el comprador puede llevar al banco.
  */
-export function buildPaymentReceipt(contract: ContractData): InvoiceV2 {
+export async function buildPaymentReceipt(contract: ContractData): Promise<InvoiceV2> {
   const total = contract.precioTotalMercancia;
   return {
-    numero: invoiceNumberFor('R', contract),
+    numero: await invoiceNumberFor('R', PRIMARIA_ENTITY.cifNif, contract.fechaGeneracion.getFullYear()),
     fecha: todayISO(),
     titulo: 'Resguardo de pago',
     subtitulo: 'Instrucciones de transferencia bancaria al vendedor',

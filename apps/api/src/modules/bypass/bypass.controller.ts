@@ -8,6 +8,7 @@
 import type { Request, Response } from 'express';
 import { prisma, BypassAlertEstado, UserEstado } from '@primaria/database';
 import { AppError } from '../../middleware/error.middleware.js';
+import { invalidateEstadoCache } from '../../middleware/auth.middleware.js';
 
 const VALID_ESTADOS: ReadonlyArray<BypassAlertEstado> = [
   'PENDIENTE', 'AVISADO', 'BANEADO', 'DESCARTADO',
@@ -21,7 +22,10 @@ export async function listBypassAlerts(req: Request, res: Response): Promise<voi
   const pageSize = 50;
   const page = Math.max(1, parseInt((req.query['page'] as string) ?? '1', 10) || 1);
 
-  const where = estado === 'TODOS' ? {} : { estado: estado as BypassAlertEstado };
+  // Phase 12 — removed dead "TODOS" branch (it would have been rejected by
+  // the earlier validation anyway). If admin needs cross-state browsing,
+  // expose a dedicated /admin/bypass-alerts/all endpoint.
+  const where = { estado: estado as BypassAlertEstado };
 
   const [alerts, total] = await Promise.all([
     prisma.bypassAlert.findMany({
@@ -136,6 +140,33 @@ export async function resolveBypassAlert(req: Request, res: Response): Promise<v
       });
     }
   });
+
+  // Phase 12 — flush the requireEstado cache so the ban takes effect on
+  // the user's NEXT request (not after the 30s TTL elapses).
+  if (accion === 'BANEADO') {
+    invalidateEstadoCache(alert.remitenteId);
+  }
+
+  // Phase 12 — email the banned user with the reason. Fire-and-forget so an
+  // email outage doesn't block the admin response.
+  if (accion === 'BANEADO') {
+    void (async () => {
+      try {
+        const u = await prisma.user.findUnique({
+          where: { id: alert.remitenteId },
+          select: { email: true, nombre: true },
+        });
+        if (!u) return;
+        const { sendUserBannedEmail } = await import('../../shared/emails/transactional.js');
+        await sendUserBannedEmail(u.email, u.nombre, {
+          motivo: 'bypass',
+          notasAdmin: notas?.slice(0, 300),
+        });
+      } catch (err) {
+        console.error('[email] sendUserBannedEmail failed', alert.remitenteId, err);
+      }
+    })();
+  }
 
   res.json({ success: true, data: { id, estado: accion } });
 }

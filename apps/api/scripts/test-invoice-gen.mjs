@@ -79,9 +79,9 @@ const fakeContract = {
 };
 
 async function main() {
-  const platform = buildPlatformInvoice(fakeContract, 'ch_test_xyz123');
-  const seller = buildSellerInvoice(fakeContract);
-  const receipt = buildPaymentReceipt(fakeContract);
+  const platform = await buildPlatformInvoice(fakeContract, 'ch_test_xyz123');
+  const seller = await buildSellerInvoice(fakeContract);
+  const receipt = await buildPaymentReceipt(fakeContract);
 
   const [pBuf, sBuf, rBuf] = await Promise.all([
     generateInvoicePdf(platform),

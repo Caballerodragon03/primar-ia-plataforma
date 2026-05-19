@@ -16,6 +16,7 @@ import { cancelMatchContract } from '../cancellations/cancellations.controller.j
 import { markShippedController, markReceivedController } from '../shipping/shipping.controller.js';
 import { asyncHandler } from '../../shared/async-handler.js';
 import { validateBody } from '../../middleware/validate.middleware.js';
+import { cancelRateLimiter } from '../../middleware/rateLimiter.middleware.js';
 import {
   signSellerSchema,
   buyerCheckoutSchema,
@@ -46,7 +47,9 @@ contractsRouter.post('/match/:matchId/sign-seller', validateBody(signSellerSchem
 // POST   /api/v1/contracts/match/:matchId/buyer-checkout
 contractsRouter.post('/match/:matchId/buyer-checkout', validateBody(buyerCheckoutSchema), asyncHandler(startBuyerCommissionCheckout));
 // POST   /api/v1/contracts/match/:matchId/cancel — Phase 9 cancellation
-contractsRouter.post('/match/:matchId/cancel', validateBody(cancelMatchSchema), asyncHandler(cancelMatchContract));
+//   Phase 12 — rate limited: 5 / 10min per user to kill the social-attack
+//   vector where a malicious user spams cancels against the same contraparte.
+contractsRouter.post('/match/:matchId/cancel', cancelRateLimiter, validateBody(cancelMatchSchema), asyncHandler(cancelMatchContract));
 // POST   /api/v1/contracts/match/:matchId/mark-shipped — Phase 10 seller
 contractsRouter.post('/match/:matchId/mark-shipped', validateBody(emptyShippingBodySchema), asyncHandler(markShippedController));
 // POST   /api/v1/contracts/match/:matchId/mark-received — Phase 10 buyer

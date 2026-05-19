@@ -511,6 +511,13 @@ export class StripeService {
       throw new AppError('El plazo de firma del vendedor ha caducado', 410);
     }
 
+    // Phase 12 — idempotency_key based on matchId + a salt of the current
+    // comisionEstimada. If the DB write of comisionStripeSessionId fails after
+    // Stripe creates the session, a retry would otherwise create a new
+    // session (orphan). With idempotency_key Stripe replays the same
+    // response and we re-persist the existing session ID. The salt ensures
+    // a NEW session is created when the commission changes (post-negotiation).
+    const idempotencyKey = `match-checkout:${matchId}:${Math.round(comisionImporte * 100)}`;
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
@@ -537,7 +544,7 @@ export class StripeService {
       // has fired and contract is FIRMADO.
       success_url: `${env.CORS_ORIGIN}/buyer/contracts/${matchId}?paid=1`,
       cancel_url: `${env.CORS_ORIGIN}/buyer/contracts/${matchId}?cancelled=1`,
-    });
+    }, { idempotencyKey });
     if (!session.url) throw new AppError('Stripe no devolvió URL', 500);
     // Persist session id so a duplicate POST reuses this same Checkout.
     // Guaranteed to have a transaccion thanks to the early guard above.

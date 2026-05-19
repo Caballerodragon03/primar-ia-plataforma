@@ -126,6 +126,40 @@ export class NegotiationsService {
       },
     });
 
+    // Phase 12 — notify the COUNTERPARTY by email so they don't depend on
+    // dashboard polling to see the new proposal. Fire-and-forget.
+    void (async () => {
+      try {
+        const tx = await prisma.transaccion.findUnique({
+          where: { id: transaccionId },
+          select: {
+            vendedorId: true,
+            compradorId: true,
+            vendedor: { select: { email: true, nombre: true, apellidos: true } },
+            comprador: { select: { email: true, nombre: true, apellidos: true } },
+            match: { select: { lote: { select: { producto: { select: { nombre: true } } } } } },
+          },
+        });
+        if (!tx) return;
+        const isInicSeller = tx.vendedorId === iniciadorId;
+        const receiver = isInicSeller ? tx.comprador : tx.vendedor;
+        const proposer = isInicSeller ? tx.vendedor : tx.comprador;
+        const { sendNegotiationOfferEmail } = await import('../../shared/emails/transactional.js');
+        // Summary same parts we built for the message.
+        const summary = parts.join(' · ');
+        await sendNegotiationOfferEmail(receiver.email, receiver.nombre, {
+          transaccionId,
+          productoNombre: tx.match?.lote?.producto?.nombre ?? 'tu operación',
+          proposerName: `${proposer.nombre} ${proposer.apellidos}`.trim(),
+          // From the receiver's POV: if initiator was seller, receiver is buyer.
+          isSeller: !isInicSeller,
+          summary,
+        });
+      } catch (err) {
+        console.error('[email] sendNegotiationOfferEmail failed for tx', transaccionId, err);
+      }
+    })();
+
     return { negociacion, mensaje };
   }
 

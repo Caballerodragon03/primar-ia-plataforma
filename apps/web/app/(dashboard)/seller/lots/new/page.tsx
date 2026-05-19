@@ -176,24 +176,41 @@ export default function PublishLotPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logistica]);
 
-  // Populate chips once we've resolved the profile. Two cases:
-  //   (a) recommendedIncoterm present → snap logística + select only that chip.
-  //       The seller may add more chips later via toggles.
-  //   (b) no recommendation → fallback to ALL incoterms (legacy default), so
-  //       the user has the broadest match surface.
+  // Populate chips once we've resolved the profile. Three cases:
+  //   (a) recommendedIncoterm present AND not previously dismissed → snap
+  //       logística + select only that chip. Seller may add more via toggles.
+  //   (b) recommendation present but DISMISSED → ALL incoterms + INDIFERENTE.
+  //   (c) no recommendation → ALL (legacy default).
   // Only runs once at first resolution; manual chip edits afterwards are preserved.
   useEffect(() => {
     if (!prefsResolved) return;
-    if (recommendedIncoterm && ALL_INCOTERMS.includes(recommendedIncoterm as IncotermType)) {
+    // Phase 12 — respect the "dismissed recommendation" flag persisted in
+    // localStorage on previous sessions. If user explicitly dismissed it,
+    // we don't re-apply on remount.
+    const dismissed = typeof window !== 'undefined'
+      && localStorage.getItem('primaria_incoterms_dismissed') === '1';
+    if (recommendedIncoterm && !dismissed && ALL_INCOTERMS.includes(recommendedIncoterm as IncotermType)) {
       const derivedLogistica = logisticaFromIncoterm(recommendedIncoterm as IncotermType);
       setValue('logistica', derivedLogistica);
       setValue('incotermsAceptados', [recommendedIncoterm]);
     } else {
-      // No recommendation → preserve INDIFERENTE + accept everything.
       setValue('incotermsAceptados', [...ALL_INCOTERMS]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefsResolved, recommendedIncoterm]);
+
+  /**
+   * Phase 12 — let the seller dismiss the recommendation chip permanently.
+   * Persisted in localStorage so future visits don't re-apply.
+   */
+  function dismissRecommendation() {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('primaria_incoterms_dismissed', '1');
+    }
+    setRecommendedIncoterm(null);
+    setValue('incotermsAceptados', [...ALL_INCOTERMS]);
+    setValue('logistica', 'INDIFERENTE');
+  }
 
   const toggleIncoterm = (it: IncotermType) => {
     const cur = incotermsAceptados;
@@ -452,9 +469,19 @@ export default function PublishLotPage() {
               <p className="text-xs font-medium text-text-secondary mb-2">
                 Incoterms aceptados <span className="text-text-muted">(elige uno o varios)</span>
                 {recommendedIncoterm && (
-                  <span className="ml-2 text-[11px] text-primary-dark">
-                    Recomendado por tu perfil: <strong>{recommendedIncoterm}</strong>
-                  </span>
+                  <>
+                    <span className="ml-2 text-[11px] text-primary-dark">
+                      Recomendado por tu perfil: <strong>{recommendedIncoterm}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={dismissRecommendation}
+                      className="ml-2 text-[11px] text-text-muted hover:text-text-secondary underline"
+                      title="Ocultar la recomendación y aceptar todos los incoterms por defecto"
+                    >
+                      No mostrar
+                    </button>
+                  </>
                 )}
               </p>
               <div className="flex flex-wrap gap-2">

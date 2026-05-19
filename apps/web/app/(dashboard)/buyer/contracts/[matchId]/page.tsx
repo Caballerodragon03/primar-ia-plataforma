@@ -112,6 +112,11 @@ export default function BuyerMatchContractPage() {
   const [downloading, setDownloading] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [pollingForWebhook, setPollingForWebhook] = useState(paidFlag);
+  // Phase 12 — escalated banner after ~2 min waiting for webhook. The polling
+  // loop still tries (extended), but the UX shifts from "esto suele tardar
+  // segundos" to "contacta soporte si persiste" so the user knows when to
+  // escalate.
+  const [paymentStuck, setPaymentStuck] = useState(false);
 
   // Modal state
   const [showSignModal, setShowSignModal] = useState(false);
@@ -157,8 +162,13 @@ export default function BuyerMatchContractPage() {
     }
     setPollingForWebhook(true);
     const start = Date.now();
+    // Phase 12 — poll for up to 2 minutes total. Flag `paymentStuck` at the
+    // 30s mark so the UI shows the "contacta soporte" CTA, but keep polling
+    // in case the webhook eventually arrives.
     const interval = setInterval(async () => {
-      if (Date.now() - start > 20_000) {
+      const elapsed = Date.now() - start;
+      if (elapsed > 30_000) setPaymentStuck(true);
+      if (elapsed > 120_000) {
         clearInterval(interval);
         setPollingForWebhook(false);
         return;
@@ -316,6 +326,24 @@ export default function BuyerMatchContractPage() {
             >
               Refrescar
             </Button>
+          </div>
+        </div>
+      )}
+      {/* Phase 12 — escalated banner after ~30s of polling without webhook. */}
+      {paymentInFlight && pollingForWebhook && paymentStuck && (
+        <div className="bg-red-50 border border-red-200 rounded-card p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-red-900">El pago tarda más de lo habitual</p>
+            <p className="text-xs text-red-800 mt-1">
+              Stripe ya nos confirmó el cobro pero la finalización está tardando más de lo normal. No reintentes — el pago está en curso. Si en unos minutos no ves el contrato firmado, contacta con soporte.
+            </p>
+            <a
+              href="mailto:soporte@primar-ia.com?subject=Pago%20procesando%20-%20Contrato"
+              className="inline-block mt-3 text-xs underline text-red-700 hover:text-red-900"
+            >
+              soporte@primar-ia.com
+            </a>
           </div>
         </div>
       )}

@@ -236,7 +236,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
       {/* Left panel — conversation list */}
       <div className="w-[240px] flex-shrink-0 border-r border-border flex flex-col">
         <div className="p-4 border-b border-border">
-          <h2 className="text-sm font-semibold text-foreground">Messages</h2>
+          <h2 className="text-sm font-semibold text-foreground">Mensajes</h2>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -250,7 +250,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
               ))}
             </div>
           ) : conversations.length === 0 ? (
-            <div className="p-4 text-center text-xs text-muted-foreground">No conversations yet</div>
+            <div className="p-4 text-center text-xs text-muted-foreground">Aún no tienes conversaciones</div>
           ) : (
             conversations.map((conv) => {
               const isSelected = conv.transaccionId === selectedId;
@@ -475,8 +475,8 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                   type="button"
                   disabled
                   className="p-2 text-muted-foreground/50 cursor-not-allowed flex-shrink-0"
-                  aria-label="Attach file (coming soon)"
-                  title="Attachments coming soon"
+                  aria-label="Adjuntar archivo (próximamente)"
+                  title="Adjuntar archivos próximamente"
                 >
                   <Paperclip className="w-5 h-5" />
                 </button>
@@ -486,7 +486,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
+                  placeholder="Escribe un mensaje… (Enter para enviar, Shift+Enter para nueva línea)"
                   rows={1}
                   className="flex-1 resize-none px-3 py-2.5 rounded-input border border-border text-sm text-foreground placeholder-gray-400 bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors min-h-[44px] max-h-[120px] overflow-y-auto"
                   style={{ height: 'auto' }}
@@ -506,7 +506,7 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
                       ? 'bg-primary text-foreground hover:opacity-90 cursor-pointer'
                       : 'bg-muted text-muted-foreground/50 cursor-not-allowed',
                   ].join(' ')}
-                  aria-label="Send message"
+                  aria-label="Enviar mensaje"
                 >
                   <Send className="w-5 h-5" />
                 </button>

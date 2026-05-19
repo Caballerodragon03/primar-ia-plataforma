@@ -1928,10 +1928,23 @@ export class MatchingService {
     if (lotes.length === 0) return [];
     const productIds = [...new Set(lotes.map((l) => l.productoId))];
 
-    // 2) Exclude pedidos already matched to ANY of the seller's lotes so the
-    //    "similar" list doesn't repeat what's already in the main matches grid.
+    // 2) Exclude pedidos already actively matched to ANY of the seller's
+    //    lotes — but ALLOW pedidos previously refused/cancelled, so the
+    //    vendedor can revisit if they changed their mind. Phase 12 fix:
+    //    previously we excluded ALL matches regardless of estado, which
+    //    suppressed valid re-engagement opportunities.
     const matchedPedidos = await prisma.match.findMany({
-      where: { lote: { vendedorId } },
+      where: {
+        lote: { vendedorId },
+        estado: {
+          notIn: [
+            // Re-show pedidos whose match was rejected — seller may want to
+            // reconsider with updated lot terms.
+            'RECHAZADO_VENDEDOR',
+            'CANCELADO',
+          ],
+        },
+      },
       select: { pedidoId: true },
     });
     const excludeIds = new Set(matchedPedidos.map((m) => m.pedidoId));
@@ -2110,6 +2123,23 @@ function computeSimilarDiff(lote: LoteSlim, pedido: PedidoSlim): SimilarDiff {
       label: `Faltan calibres: ${missing.map((c) => c.calibre).join(', ')}`,
       hint: `Añade estos calibres a tu lote para que encaje.`,
     });
+  }
+
+  // Phase 12 — Diff de cantidad agregada. Si el pedido pide mucho más que lo
+  // disponible en el lote, marca la brecha para que el vendedor sepa que
+  // tendría que ampliar el lote o cubrir parcialmente.
+  const loteKgTotal = loteCalibres.reduce((s, c) => s + Number(c.cantidad_kg ?? 0), 0);
+  const pedidoKgTotal = pedidoCalibres.reduce((s, c) => s + Number(c.cantidad_kg ?? 0), 0);
+  if (loteKgTotal > 0 && pedidoKgTotal > 0) {
+    const ratio = pedidoKgTotal / loteKgTotal;
+    if (ratio > 1.5) {
+      const deficit = pedidoKgTotal - loteKgTotal;
+      changes.push({
+        field: 'calibre', // reuse field; UI groups everything calibre-side
+        label: `Pide ${pedidoKgTotal.toLocaleString('es-ES')} kg, tu lote tiene ${loteKgTotal.toLocaleString('es-ES')} kg`,
+        hint: `Faltarían ${deficit.toLocaleString('es-ES')} kg en tu lote — sólo podrías cubrir parte.`,
+      });
+    }
   }
 
   // Precio: para los calibres que SÍ coinciden, hay gap si el max del comprador

@@ -912,6 +912,26 @@ model CancelacionSospechosa {
   @@map("cancelaciones_sospechosas")
 }
 
+// Phase 12 — AEAT-compliant invoice counter, monotonic per (emisor, kind, year).
+// Used by invoice-v2-data to atomically increment the per-emisor serial number
+// for each invoice kind. Spanish tax law (Reglamento 1619/2012) requires
+// strictly correlative numbering per series/emisor; the previous match-slice
+// scheme satisfied "unique" but not "correlative".
+model InvoiceCounter {
+  id          String   @id @default(cuid())
+  // CIF/NIF del emisor (Primar-IA o vendedor — invoice-v2 keys on this).
+  emisorCif   String   @map("emisor_cif")
+  // 'P' (Primar-IA commission) | 'V' (vendedor sale) | 'R' (resguardo).
+  kind        String
+  year        Int
+  // Next number to assign. Incrementado atómicamente con $transaction.
+  nextNumero  Int      @default(1) @map("next_numero")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([emisorCif, kind, year])
+  @@map("invoice_counters")
+}
+
 // Weekly auto-generated market report from mapa.gob.es boletín semanal
 model MarketReport {
   id          String   @id @default(cuid())

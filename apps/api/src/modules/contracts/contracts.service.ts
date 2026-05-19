@@ -144,7 +144,7 @@ export class ContractsService {
 
     // Auto-send a chat message to the buyer with the photos
     const photoCount = photoUrls.length;
-    const messageContent = `📸 ${photoCount} lot preparation photo${photoCount > 1 ? 's' : ''} uploaded. The shipment is being prepared.`;
+    const messageContent = `📸 ${photoCount} foto${photoCount > 1 ? 's' : ''} del lote subida${photoCount > 1 ? 's' : ''}. El envío se está preparando.`;
     await prisma.mensaje.create({
       data: {
         transaccionId,
@@ -443,7 +443,7 @@ export class ContractsService {
     signatureData: string,
     ipAddress: string | null,
   ): Promise<{ deadline: Date; contratoEstado: string }> {
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const match = await tx.match.findUnique({
         where: { id: matchId },
         include: {
@@ -512,6 +512,38 @@ export class ContractsService {
 
       return { deadline, contratoEstado: 'PENDIENTE_PAGO_COMPRADOR' };
     }, { isolationLevel: 'Serializable' });
+
+    // Phase 12 — email the buyer that the seller has signed, with the 48h
+    // business-hours deadline and a CTA back to /buyer/contracts/[matchId].
+    // Fire-and-forget so a Resend outage never blocks the API response.
+    void (async () => {
+      try {
+        const buyer = await prisma.match.findUnique({
+          where: { id: matchId },
+          select: {
+            comisionEstimada: true,
+            lote: { select: { producto: { select: { nombre: true } } } },
+            pedido: { select: { comprador: { select: { email: true, nombre: true } } } },
+          },
+        });
+        if (!buyer?.pedido.comprador) return;
+        const { sendSellerSignedEmail } = await import('../../shared/emails/transactional.js');
+        await sendSellerSignedEmail(
+          buyer.pedido.comprador.email,
+          buyer.pedido.comprador.nombre,
+          {
+            matchId,
+            productoNombre: buyer.lote.producto?.nombre ?? 'tu operación',
+            comisionEur: Number(buyer.comisionEstimada ?? 0),
+            deadlineIso: result.deadline.toISOString(),
+          },
+        );
+      } catch (err) {
+        console.error('[email] sendSellerSignedEmail failed for match', matchId, err);
+      }
+    })();
+
+    return result;
   }
 
   /**
@@ -603,6 +635,48 @@ export class ContractsService {
         await invoiceV2Service.generateAllForMatch(matchId);
       } catch (err) {
         console.error('[invoices] auto-generation failed for match', matchId, err);
+      }
+    })();
+
+    // Phase 12 — email both parties that the contract is fully finalized.
+    // Fire-and-forget alongside the invoice generation.
+    void (async () => {
+      try {
+        const data = await prisma.match.findUnique({
+          where: { id: matchId },
+          select: {
+            lote: {
+              select: {
+                vendedorId: true,
+                producto: { select: { nombre: true } },
+                vendedor: { select: { email: true, nombre: true } },
+              },
+            },
+            pedido: {
+              select: {
+                compradorId: true,
+                comprador: { select: { email: true, nombre: true } },
+              },
+            },
+          },
+        });
+        if (!data) return;
+        const productoNombre = data.lote.producto?.nombre ?? 'tu operación';
+        const { sendContractFinalizedEmail } = await import('../../shared/emails/transactional.js');
+        await Promise.allSettled([
+          sendContractFinalizedEmail(
+            data.lote.vendedor.email,
+            data.lote.vendedor.nombre,
+            { matchId, productoNombre, isSeller: true },
+          ),
+          sendContractFinalizedEmail(
+            data.pedido.comprador.email,
+            data.pedido.comprador.nombre,
+            { matchId, productoNombre, isSeller: false },
+          ),
+        ]);
+      } catch (err) {
+        console.error('[email] sendContractFinalizedEmail failed for match', matchId, err);
       }
     })();
 

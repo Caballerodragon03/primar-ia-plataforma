@@ -11,6 +11,7 @@
  */
 import { prisma, Prisma } from '@primaria/database';
 import { AppError } from '../../middleware/error.middleware.js';
+import { invalidateEstadoCache } from '../../middleware/auth.middleware.js';
 
 const THRESHOLD_COUNT = 3;
 const WINDOW_DAYS = 90;
@@ -263,6 +264,34 @@ export class CancellationsService {
         });
       }
     });
+
+    // Phase 12 — flush estado cache for both banned users so the ban hits
+    // their next request.
+    if (accion === 'SUSPENDIDO') {
+      invalidateEstadoCache(row.vendedorId);
+      invalidateEstadoCache(row.compradorId);
+    }
+
+    // Phase 12 — email both banned users with the reason. Fire-and-forget.
+    if (accion === 'SUSPENDIDO') {
+      void (async () => {
+        try {
+          const users = await prisma.user.findMany({
+            where: { id: { in: [row.vendedorId, row.compradorId] } },
+            select: { email: true, nombre: true },
+          });
+          const { sendUserBannedEmail } = await import('../../shared/emails/transactional.js');
+          await Promise.allSettled(users.map((u) =>
+            sendUserBannedEmail(u.email, u.nombre, {
+              motivo: 'cancelaciones',
+              notasAdmin: notas?.slice(0, 300),
+            }),
+          ));
+        } catch (err) {
+          console.error('[email] sendUserBannedEmail (cancelaciones) failed', err);
+        }
+      })();
+    }
 
     return { id, estado: accion };
   }

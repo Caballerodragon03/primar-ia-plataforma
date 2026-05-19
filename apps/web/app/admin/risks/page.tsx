@@ -12,9 +12,11 @@
 import { useEffect, useState } from 'react';
 import { ShieldAlert, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { api } from '@/lib/api';
+import { BYPASS_PATRON_LABELS_ES, type BypassAlertEstado, type BypassPatron } from '@primaria/shared';
 
-type Estado = 'PENDIENTE' | 'AVISADO' | 'BANEADO' | 'DESCARTADO';
-type Patron = 'phone' | 'email' | 'messaging' | 'location' | 'offer_off_platform' | 'other';
+// Phase 12 — local re-exports for brevity; types are canonical in @primaria/shared.
+type Estado = BypassAlertEstado;
+type Patron = BypassPatron;
 
 interface BypassAlert {
   id: string;
@@ -38,14 +40,7 @@ interface BypassAlert {
   productoNombre: string | null;
 }
 
-const PATRON_LABELS: Record<Patron, string> = {
-  phone: 'Teléfono',
-  email: 'Email',
-  messaging: 'Mensajería',
-  location: 'Reunión presencial',
-  offer_off_platform: 'Cierre fuera de plataforma',
-  other: 'Otro',
-};
+const PATRON_LABELS = BYPASS_PATRON_LABELS_ES;
 
 const PATRON_COLORS: Record<Patron, string> = {
   phone: 'bg-red-100 text-red-700 border-red-200',

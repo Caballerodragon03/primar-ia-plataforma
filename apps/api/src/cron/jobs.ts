@@ -141,7 +141,17 @@ async function expireSellerSignatures(): Promise<void> {
       contratoEstado: 'PENDIENTE_PAGO_COMPRADOR',
       firmaVendedorDeadline: { lte: now },
     },
-    select: { id: true, transaccion: { select: { id: true } } },
+    select: {
+      id: true,
+      transaccion: { select: { id: true } },
+      // Phase 12 — needed for the expiry email
+      lote: {
+        select: {
+          producto: { select: { nombre: true } },
+          vendedor: { select: { email: true, nombre: true } },
+        },
+      },
+    },
   });
   if (expired.length === 0) return;
   console.log(`[CRON] Expiring ${expired.length} seller signatures past deadline`);
@@ -160,6 +170,19 @@ async function expireSellerSignatures(): Promise<void> {
           }),
         ] : []),
       ]);
+      // Phase 12 — notify the seller so they don't have to discover it via
+      // the dashboard. Fire-and-forget per-match — if email fails for one,
+      // others still get notified.
+      try {
+        const { sendContractExpiredEmail } = await import('../shared/emails/transactional.js');
+        await sendContractExpiredEmail(
+          m.lote.vendedor.email,
+          m.lote.vendedor.nombre,
+          { matchId: m.id, productoNombre: m.lote.producto?.nombre ?? 'tu operación' },
+        );
+      } catch (emailErr) {
+        console.error('[CRON] expiry email failed for match', m.id, emailErr);
+      }
     } catch (err) {
       console.error('[CRON] Failed to expire match', m.id, err);
     }
