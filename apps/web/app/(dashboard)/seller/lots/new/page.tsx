@@ -147,7 +147,7 @@ export default function PublishLotPage() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'calibres' });
+  const { fields, append, remove, replace: replaceCalibres } = useFieldArray({ control, name: 'calibres' });
 
   const selectedProductId = watch('productoId');
   const selectedVariedadId = watch('variedadId');
@@ -189,9 +189,10 @@ export default function PublishLotPage() {
       }
     }
     if (Array.isArray(data['calibres'])) {
-      setValue('calibres', data['calibres'] as { calibre: string; cantidad_kg: number; precio_min_kg?: number }[], {
-        shouldValidate: true,
-      });
+      // useFieldArray necesita replace() para que su lista interna se
+      // sincronice. Si solo hacemos setValue, los inputs renderizados
+      // por field.map() no se refrescan.
+      replaceCalibres(data['calibres'] as { calibre: string; cantidad_kg: number }[]);
     }
     if (typeof data['logistica'] === 'string') {
       setValue('logistica', data['logistica'] as 'YO_ENVIO' | 'OTRO_RECOGE' | 'INDIFERENTE', { shouldValidate: true });

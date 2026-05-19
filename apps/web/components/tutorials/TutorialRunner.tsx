@@ -1,33 +1,31 @@
 'use client';
 
 /**
- * Phase 14M v3 — Orquestador del tour guiado en "modo prueba".
+ * Phase 14M v3.3 — Orquestador del tour guiado en "modo prueba".
  *
- * Suscrito al useTutorialStore: cada paso del flow lleva una ruta
- * (push si hay que navegar), un target CSS (para el spotlight), un
- * texto, y opcionalmente un evento de autofill que el page receptor
- * escucha vía window.addEventListener.
+ * Cambio clave vs v3.x previa: ahora hay UN ÚNICO Joyride que recibe
+ * TODOS los pasos del flow y avanza controlado vía `stepIndex`. Antes
+ * montábamos/desmontábamos un Joyride por paso y eso rompía el avance
+ * (la burbuja siguiente no salía sola).
  *
- * Pasos sin elemento UI (Stripe Checkout, QR físico) se renderizan
- * como modal explicativo en lugar de spotlight.
+ * Los pasos de tipo 'modal' (Stripe/QR/explicativos sin elemento UI)
+ * se renderizan como step de joyride con target='body' + placement='center'
+ * para que se vean centrados a pantalla completa.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
-import type { Step } from 'react-joyride';
-import { X } from 'lucide-react';
+import type { Step, EventData } from 'react-joyride';
 import { useTutorialStore } from '@/store/tutorial.store';
 import { CREAR_LOTE_FLOW, HACER_PEDIDO_FLOW, type FlowStep } from './tutorialFlows';
-import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 
 const Joyride = dynamic(() => import('react-joyride').then((m) => m.Joyride), { ssr: false });
 
 export function TutorialRunner() {
-  const { flow, step, next, end } = useTutorialStore();
+  const { flow, step, next, goto, end } = useTutorialStore();
   const router = useRouter();
   const pathname = usePathname();
-  const [waitingForRoute, setWaitingForRoute] = useState(false);
 
   const flowSteps = useMemo<FlowStep[]>(() => {
     if (flow === 'crear-lote') return CREAR_LOTE_FLOW;
@@ -35,29 +33,32 @@ export function TutorialRunner() {
     return [];
   }, [flow]);
 
-  const current: FlowStep | undefined = flowSteps[step];
+  const current = flowSteps[step];
 
-  // Navega a la ruta del paso si no estamos ahí.
+  // Si el paso actual exige otra ruta, navega ahí. Esto pasa entre
+  // /seller → /seller/lots → /seller/lots/new etc.
   useEffect(() => {
     if (!current) return;
     if (current.route && pathname !== current.route) {
-      setWaitingForRoute(true);
       router.push(current.route);
-    } else {
-      setWaitingForRoute(false);
-      // Dispatch autofill event si el paso lo pide.
-      if (current.autofill) {
-        // Pequeño delay para que el componente esté montado.
-        setTimeout(() => {
-          window.dispatchEvent(
-            new CustomEvent('tutorial:autofill', {
-              detail: { stepKey: current.key, data: current.autofill },
-            }),
-          );
-        }, 300);
-      }
     }
   }, [current, pathname, router]);
+
+  // Cuando estamos en la ruta correcta, dispara autofill si el paso lo
+  // pide. Pequeño delay para dar tiempo a montar la pantalla.
+  useEffect(() => {
+    if (!current) return;
+    if (current.route && pathname !== current.route) return;
+    if (!current.autofill) return;
+    const t = setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent('tutorial:autofill', {
+          detail: { stepKey: current.key, data: current.autofill },
+        }),
+      );
+    }, 350);
+    return () => clearTimeout(t);
+  }, [current, pathname]);
 
   // Persistir progreso al terminar.
   async function handleEnd() {
@@ -69,86 +70,78 @@ export function TutorialRunner() {
     end();
   }
 
-  if (!flow || !current) return null;
-  if (waitingForRoute) return null;
+  // Convertimos cada FlowStep a Step de joyride. Los pasos 'modal' usan
+  // body + center; los 'spotlight' usan el target real.
+  const joyrideSteps: Step[] = useMemo(() => {
+    return flowSteps.map((s) => {
+      const baseContent = s.note ? `${s.content}\n\n⚠️ ${s.note}` : s.content;
+      return {
+        target: s.kind === 'modal' ? 'body' : (s.target ?? 'body'),
+        title: s.title,
+        content: baseContent,
+        placement: s.kind === 'modal' ? 'center' : (s.placement ?? 'auto'),
+      };
+    });
+  }, [flowSteps]);
 
-  // Paso tipo modal explicativo (sin elemento UI).
-  if (current.kind === 'modal') {
-    return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-        <div className="relative z-10 bg-card rounded-2xl shadow-2xl w-full max-w-md p-6">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] uppercase tracking-wider text-primary-dark font-semibold">
-              Tutorial · paso {step + 1} de {flowSteps.length}
-            </p>
-            <button
-              onClick={() => void handleEnd()}
-              className="p-1 rounded hover:bg-muted text-muted-foreground"
-              aria-label="Salir del tutorial"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <h2 className="text-lg font-bold text-foreground mb-2">{current.title}</h2>
-          <p className="text-sm text-text-secondary leading-relaxed">{current.content}</p>
-          {current.note && (
-            <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-card px-3 py-2 mt-3">
-              {current.note}
-            </p>
-          )}
-          <div className="flex justify-between mt-5">
-            <Button type="button" variant="ghost" size="sm" onClick={() => void handleEnd()}>
-              Salir
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                if (step + 1 >= flowSteps.length) void handleEnd();
-                else next();
-              }}
-            >
-              {step + 1 >= flowSteps.length ? 'Terminar' : 'Continuar'}
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+  if (!flow || flowSteps.length === 0) return null;
+
+  function handleCallback(data: EventData) {
+    const { type, action, index, status } = data;
+    // Fin del tour (último paso o usuario salta).
+    if (status === 'finished' || status === 'skipped') {
+      void handleEnd();
+      return;
+    }
+    if (type === 'tour:end') {
+      void handleEnd();
+      return;
+    }
+    // El usuario pulsa Next o Back en una burbuja. Sincronizamos el
+    // store con el índice que reclama joyride.
+    if (type === 'step:after') {
+      if (action === 'next') {
+        const target = index + 1;
+        if (target >= flowSteps.length) void handleEnd();
+        else next();
+        return;
+      }
+      if (action === 'prev') {
+        goto(Math.max(0, index - 1));
+        return;
+      }
+      if (action === 'close' || action === 'skip') {
+        void handleEnd();
+        return;
+      }
+    }
+    // target_not_found: avanza igualmente para no atascar el tour.
+    if (type === 'error:target_not_found') {
+      const target = index + 1;
+      if (target >= flowSteps.length) void handleEnd();
+      else next();
+    }
   }
-
-  // Paso spotlight sobre la UI real.
-  const joyrideStep: Step = {
-    target: current.target ?? 'body',
-    title: current.title,
-    content: current.content,
-    placement: current.placement ?? 'auto',
-  };
 
   return (
     <Joyride
-      steps={[joyrideStep]}
+      steps={joyrideSteps}
+      stepIndex={step}
       run
-      // run-once: cada paso se desmonta y se vuelve a montar.
-      onEvent={(data) => {
-        if (data.type === 'tour:end' || data.status === 'finished' || data.status === 'skipped') {
-          if (step + 1 >= flowSteps.length) void handleEnd();
-          else next();
-        }
-      }}
+      continuous
+      onEvent={handleCallback}
       locale={{
         back: 'Atrás',
         close: 'Salir',
-        last: step + 1 >= flowSteps.length ? 'Terminar' : 'Continuar',
+        last: 'Terminar',
         next: 'Continuar',
         open: 'Abrir',
         skip: 'Salir del tutorial',
       }}
-      continuous
       options={{
-        buttons: ['skip', 'primary'],
+        buttons: ['skip', 'back', 'primary'],
         overlayClickAction: false,
+        scrollOffset: 80,
         primaryColor: '#d4a017',
         textColor: '#0f172a',
         backgroundColor: '#ffffff',

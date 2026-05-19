@@ -84,7 +84,7 @@ export default function CreateOrderPage() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'calibresSolicitados' });
+  const { fields, append, remove, replace: replaceCalibres } = useFieldArray({ control, name: 'calibresSolicitados' });
   const selectedProductId = watch('productoId');
   const selectedVariedadId = watch('variedadId');
   const watchedIncoterm = watch('incoterm');
@@ -171,9 +171,8 @@ export default function CreateOrderPage() {
       }
     }
     if (Array.isArray(data['calibres'])) {
-      setValue('calibresSolicitados', data['calibres'] as { calibre: string; cantidad_kg: number; precio_max_kg: number }[], {
-        shouldValidate: true,
-      });
+      // useFieldArray necesita replace() para refrescar la lista visible.
+      replaceCalibres(data['calibres'] as { calibre: string; cantidad_kg: number; precio_max_kg: number }[]);
     }
     if (typeof data['logistica'] === 'string') {
       setValue('logistica', data['logistica'] as 'YO_ENVIO' | 'OTRO_RECOGE' | 'INDIFERENTE', { shouldValidate: true });
