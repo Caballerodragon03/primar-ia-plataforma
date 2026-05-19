@@ -1895,6 +1895,257 @@ export class MatchingService {
 
     return { lots: result };
   }
+
+  // ─── Phase 7 — "Ofertas similares" (solo vendedor) ──────────────────────────
+  //
+  // For each active lote of the seller, find pedidos in the SAME producto that
+  // are NOT already matched to one of the seller's lotes. For each candidate,
+  // compute a structured diff vs the seller's best-matching lote so the UI can
+  // show chips like "Incoterm: DAP → necesita FCA" or "Calibre 5 falta".
+  //
+  // The buyer side intentionally has NO equivalent endpoint — buyers don't
+  // browse the marketplace; they only see offers vendors send them.
+
+  async getSimilarOffersForSeller(vendedorId: string): Promise<SimilarOfferDTO[]> {
+    // 1) Load the seller's active lotes with the fields needed for diffing.
+    const lotes = await prisma.lote.findMany({
+      where: {
+        vendedorId,
+        estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] },
+      },
+      select: {
+        id: true,
+        productoId: true,
+        variedadId: true,
+        calibres: true,
+        logistica: true,
+        incotermsAceptados: true,
+        terminosPagoAceptados: true,
+        coordenadasLat: true,
+        coordenadasLng: true,
+      },
+    });
+    if (lotes.length === 0) return [];
+    const productIds = [...new Set(lotes.map((l) => l.productoId))];
+
+    // 2) Exclude pedidos already matched to ANY of the seller's lotes so the
+    //    "similar" list doesn't repeat what's already in the main matches grid.
+    const matchedPedidos = await prisma.match.findMany({
+      where: { lote: { vendedorId } },
+      select: { pedidoId: true },
+    });
+    const excludeIds = new Set(matchedPedidos.map((m) => m.pedidoId));
+
+    // 3) Find active pedidos for those products.
+    const pedidos = await prisma.pedido.findMany({
+      where: {
+        productoId: { in: productIds },
+        estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] },
+        ...(excludeIds.size > 0 ? { id: { notIn: [...excludeIds] } } : {}),
+        // Exclude obviously expired pedidos so we don't waste seller attention.
+        fechaEntregaDeseada: { gte: new Date() },
+      },
+      include: {
+        producto: { select: { nombre: true } },
+        variedad: { select: { nombre: true } },
+        comprador: {
+          select: {
+            nombre: true,
+            apellidos: true,
+            empresa: { select: { razonSocial: true } },
+          },
+        },
+      },
+      take: 100,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // 4) For each pedido, find the seller's best lote candidate (same producto,
+    //    preferring same variedad) and compute the diff.
+    const out: SimilarOfferDTO[] = [];
+    for (const ped of pedidos) {
+      const sameProductLotes = lotes.filter((l) => l.productoId === ped.productoId);
+      if (sameProductLotes.length === 0) continue;
+      // Prefer a lote that also matches variedad (when buyer specified one),
+      // else fall back to the first lote of the same producto.
+      const lote = ped.variedadId
+        ? (sameProductLotes.find((l) => l.variedadId === ped.variedadId) ?? sameProductLotes[0]!)
+        : sameProductLotes[0]!;
+
+      const diff = computeSimilarDiff(lote, ped);
+      if (diff.changes.length === 0) continue; // Would be perfect — skip.
+
+      const empresa = ped.comprador?.empresa?.razonSocial ?? null;
+      const compradorNombre = `${ped.comprador?.nombre ?? ''} ${ped.comprador?.apellidos ?? ''}`.trim();
+
+      out.push({
+        pedidoId: ped.id,
+        loteId: lote.id,
+        productoNombre: ped.producto?.nombre ?? '',
+        variedadNombre: ped.variedad?.nombre ?? null,
+        compradorEmpresa: empresa,
+        compradorNombre: compradorNombre || 'N/D',
+        destinoFinal: ped.destinoFinal,
+        fechaEntregaDeseada: ped.fechaEntregaDeseada.toISOString(),
+        diff,
+      });
+    }
+
+    // 5) Rank: severity asc (so "easy" wins surface first), then most recent.
+    const severityOrder = { minor: 0, moderate: 1, major: 2 } as const;
+    out.sort((a, b) => severityOrder[a.diff.severity] - severityOrder[b.diff.severity]);
+    return out;
+  }
+}
+
+// ─── Phase 7 helpers (module-level so they're not class methods) ─────────────
+
+interface DiffChange {
+  field: 'calibre' | 'incoterm' | 'logistica' | 'precio' | 'terminoPago';
+  /** Short label for the chip, e.g. "Incoterm: DAP → FCA". */
+  label: string;
+  /** Short hint for the seller on what to do, e.g. "Acepta DAP en tu lote". */
+  hint: string;
+}
+
+interface SimilarDiff {
+  changes: DiffChange[];
+  severity: 'minor' | 'moderate' | 'major';
+}
+
+interface SimilarOfferDTO {
+  pedidoId: string;
+  loteId: string;
+  productoNombre: string;
+  variedadNombre: string | null;
+  compradorEmpresa: string | null;
+  compradorNombre: string;
+  destinoFinal: string | null;
+  fechaEntregaDeseada: string;
+  diff: SimilarDiff;
+}
+
+interface LoteSlim {
+  id: string;
+  calibres: unknown;
+  logistica: 'YO_ENVIO' | 'OTRO_RECOGE' | 'INDIFERENTE';
+  incotermsAceptados: unknown;
+  terminosPagoAceptados: unknown;
+}
+
+interface PedidoSlim {
+  incoterm: string;
+  calibresSolicitados: unknown;
+  logistica: 'YO_ENVIO' | 'OTRO_RECOGE' | 'INDIFERENTE';
+  incotermsAceptados: unknown;
+  terminosPagoAceptados: unknown;
+}
+
+function toArr<T>(json: unknown): T[] {
+  return Array.isArray(json) ? (json as T[]) : [];
+}
+
+/**
+ * Computes the structured diff between a seller's lote and a buyer's pedido
+ * that already share producto. Used to surface "ofertas similares" to the
+ * seller with actionable chips ("change incoterm" / "add calibre X").
+ */
+function computeSimilarDiff(lote: LoteSlim, pedido: PedidoSlim): SimilarDiff {
+  const changes: DiffChange[] = [];
+
+  // ── Incoterm: is the buyer's main incoterm acceptable to the seller? ──────
+  const sellerAcceptedIncoterms = toArr<string>(lote.incotermsAceptados);
+  const buyerAcceptedIncoterms = toArr<string>(pedido.incotermsAceptados);
+  // If the seller's accepted list is empty, treat as "accepts all" (legacy).
+  const sellerAcceptsAll = sellerAcceptedIncoterms.length === 0;
+  const intersect = sellerAcceptsAll
+    ? [pedido.incoterm, ...buyerAcceptedIncoterms]
+    : sellerAcceptedIncoterms.filter((i) =>
+        i === pedido.incoterm || buyerAcceptedIncoterms.includes(i),
+      );
+  if (intersect.length === 0) {
+    changes.push({
+      field: 'incoterm',
+      label: `Incoterm: pide ${pedido.incoterm}, no lo aceptas`,
+      hint: `Acepta ${pedido.incoterm} en tu lote para encajar.`,
+    });
+  }
+
+  // ── Logística: YO_ENVIO vs OTRO_RECOGE → fuerte; INDIFERENTE en cualquiera ok
+  if (
+    lote.logistica !== 'INDIFERENTE'
+    && pedido.logistica !== 'INDIFERENTE'
+    && lote.logistica !== pedido.logistica
+  ) {
+    changes.push({
+      field: 'logistica',
+      label: `Logística: ${lote.logistica} vs ${pedido.logistica}`,
+      hint: `Cambia tu logística a INDIFERENTE o ${pedido.logistica}.`,
+    });
+  }
+
+  // ── Términos de pago: intersección. Si vacía, conflicto. ─────────────────
+  const sellerPagos = toArr<string>(lote.terminosPagoAceptados);
+  const buyerPagos = toArr<string>(pedido.terminosPagoAceptados);
+  if (sellerPagos.length > 0 && buyerPagos.length > 0) {
+    const inter = sellerPagos.filter((t) => buyerPagos.includes(t));
+    if (inter.length === 0) {
+      changes.push({
+        field: 'terminoPago',
+        label: `Pago: tú aceptas [${sellerPagos.join(', ')}], pide [${buyerPagos.join(', ')}]`,
+        hint: `Amplía los términos de pago aceptados para incluir ${buyerPagos[0]}.`,
+      });
+    }
+  }
+
+  // ── Calibres: cuáles del pedido no están en el lote, y diff de precio ────
+  const loteCalibres = toArr<LoteCalibre>(lote.calibres);
+  const pedidoCalibres = toArr<PedidoCalibre>(pedido.calibresSolicitados);
+  const loteCalNames = new Set(loteCalibres.map((c) => c.calibre));
+
+  const missing = pedidoCalibres.filter((p) => !loteCalNames.has(p.calibre));
+  if (missing.length > 0) {
+    changes.push({
+      field: 'calibre',
+      label: `Faltan calibres: ${missing.map((c) => c.calibre).join(', ')}`,
+      hint: `Añade estos calibres a tu lote para que encaje.`,
+    });
+  }
+
+  // Precio: para los calibres que SÍ coinciden, hay gap si el max del comprador
+  // < el min del vendedor.
+  const matched = pedidoCalibres
+    .map((p) => ({ p, l: loteCalibres.find((l) => l.calibre === p.calibre) }))
+    .filter((x): x is { p: PedidoCalibre; l: LoteCalibre } => x.l != null);
+
+  const priceGaps: string[] = [];
+  for (const { p, l } of matched) {
+    if (l.precio_min_kg > p.precio_max_kg) {
+      const gap = l.precio_min_kg - p.precio_max_kg;
+      priceGaps.push(`cal.${p.calibre}: +€${gap.toFixed(2)}/kg`);
+    }
+  }
+  if (priceGaps.length > 0) {
+    changes.push({
+      field: 'precio',
+      label: `Precio: pide menos del que ofreces (${priceGaps.join(', ')})`,
+      hint: 'Considera bajar el precio mínimo o negociar en chat.',
+    });
+  }
+
+  // ── Severity heuristic ───────────────────────────────────────────────────
+  // - minor: 1 change, no calibre missing, no logística conflict
+  // - moderate: 2 changes total OR 1 with calibre missing
+  // - major: ≥3 changes OR price gap + logística conflict
+  const fields = new Set(changes.map((c) => c.field));
+  const hasMajor = fields.has('logistica') && (fields.has('precio') || fields.has('calibre'));
+  let severity: SimilarDiff['severity'];
+  if (changes.length === 0) severity = 'minor';
+  else if (changes.length >= 3 || hasMajor) severity = 'major';
+  else if (changes.length === 2 || fields.has('calibre')) severity = 'moderate';
+  else severity = 'minor';
+
+  return { changes, severity };
 }
 
 export const matchingService = new MatchingService();

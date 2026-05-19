@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { MatchCard, type Match } from '@/components/ui/MatchCard';
 import { ContributeModal } from '@/components/ui/ContributeModal';
 import { AutoDistributeModal } from '@/components/ui/AutoDistributeModal';
+import { SimilarOffersSection } from '@/components/ui/SimilarOffersSection';
 
 type Tab = 'best' | 'price' | 'distance' | 'newest';
 
@@ -427,6 +428,10 @@ export default function SellerMatchesPage() {
           ))}
         </div>
       )}
+
+      {/* Phase 7 — Ofertas similares. Solo visible para vendedores; los
+          compradores no tienen browse y por tanto no ven este componente. */}
+      {!loading && !error && <SimilarOffersSection />}
 
       {/* Contribute modal */}
       <ContributeModal

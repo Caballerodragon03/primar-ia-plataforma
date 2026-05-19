@@ -45,6 +45,18 @@ matchingRouter.get(
   asyncHandler(getAutoDistributePreview)
 );
 
+// Phase 7 — "Ofertas similares" — pedidos del mismo producto que no están
+// matcheados con los lotes del vendedor, con diffs computados.
+matchingRouter.get(
+  '/seller/similar-offers',
+  requireRole('VENDEDOR'),
+  asyncHandler(async (req, res) => {
+    const { matchingService } = await import('./matching.service.js');
+    const data = await matchingService.getSimilarOffersForSeller(req.user!.sub);
+    res.json({ success: true, data });
+  }),
+);
+
 // Market demand: calibres buyers are currently requesting for products the seller has lots for
 matchingRouter.get(
   '/seller/market-demand',
