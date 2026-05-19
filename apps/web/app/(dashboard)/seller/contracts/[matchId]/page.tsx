@@ -23,6 +23,7 @@ import {
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { CancelContractModal } from '@/components/ui/CancelContractModal';
+import { ShippingEventsSection } from '@/components/ui/ShippingEventsSection';
 
 interface CalibreItem { calibre: string; cantidad_kg: number; precio_min_kg?: number }
 
@@ -63,6 +64,11 @@ interface MatchContractInfo {
   firmaComprador: string | null;
   firmaCompradorFecha: string | null;
   comisionPagadaEn: string | null;
+  // Phase 10 — shipping events
+  enviadoEn: string | null;
+  recibidoEn: string | null;
+  hasRatedCounterpart: boolean;
+  counterpartId: string | null;
   isSeller: boolean;
   isBuyer: boolean;
 }
@@ -508,6 +514,19 @@ export default function SellerMatchContractPage() {
               El comprador pagó la comisión el {formatDateTime(info.comisionPagadaEn)}. Procede con la entrega y la cobranza según las condiciones acordadas.
             </p>
           </div>
+
+          {/* Phase 10 — Shipping tracking + ratings */}
+          <ShippingEventsSection
+            matchId={matchId}
+            transaccionId={info.transaccionId}
+            counterpartId={info.counterpartId}
+            isSeller={info.isSeller}
+            isBuyer={info.isBuyer}
+            enviadoEn={info.enviadoEn}
+            recibidoEn={info.recibidoEn}
+            hasRatedCounterpart={info.hasRatedCounterpart}
+            onChanged={loadInfo}
+          />
 
           {/* Phase 5 — auto-generated documents. The seller can download both
               invoices (their own to send to accounting, and the platform's for

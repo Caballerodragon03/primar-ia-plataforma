@@ -115,6 +115,13 @@ export async function getMatchContractInfo(req: Request, res: Response): Promise
           facturaPlataformaUrl: true,
           facturaVendedorUrl: true,
           resguardoPagoUrl: true,
+          // Phase 10 — shipping event tracking
+          enviadoEn: true,
+          recibidoEn: true,
+          // Phase 10 — has the current user already rated this transaction?
+          valoraciones: {
+            select: { autorId: true },
+          },
         },
       },
     },
@@ -173,6 +180,11 @@ export async function getMatchContractInfo(req: Request, res: Response): Promise
       resguardoPagoUrl: match.lote.vendedorId === userId
         ? null
         : (match.transaccion?.resguardoPagoUrl ?? null),
+      // Phase 10 — shipping events + rating status
+      enviadoEn: match.transaccion?.enviadoEn?.toISOString() ?? null,
+      recibidoEn: match.transaccion?.recibidoEn?.toISOString() ?? null,
+      hasRatedCounterpart: (match.transaccion?.valoraciones ?? []).some((v) => v.autorId === userId),
+      counterpartId: match.lote.vendedorId === userId ? match.pedido.compradorId : match.lote.vendedorId,
       // Role-discriminator for frontend UI rendering
       isSeller: match.lote.vendedorId === userId,
       isBuyer: match.pedido.compradorId === userId,

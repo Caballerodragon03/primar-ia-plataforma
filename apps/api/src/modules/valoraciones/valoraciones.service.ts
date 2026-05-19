@@ -7,7 +7,13 @@ export class ValoracionesService {
   async create(autorId: string, input: CreateValoracionInput): Promise<object> {
     const tx = await prisma.transaccion.findUnique({
       where: { id: input.transaccionId },
-      select: { vendedorId: true, compradorId: true, qrUsado: true, estado: true },
+      // Phase 10 — recibidoEn is the v2 gate (qrUsado is the legacy gate
+      // from Phase 3 QR/delivery flow). Either unlocks rating.
+      select: {
+        vendedorId: true, compradorId: true,
+        qrUsado: true, recibidoEn: true,
+        estado: true,
+      },
     });
     if (!tx) throw new AppError('Transacción no encontrada', 404);
 
@@ -15,7 +21,7 @@ export class ValoracionesService {
     const isComprador = tx.compradorId === autorId;
     if (!isVendedor && !isComprador) throw new AppError('No autorizado', 403);
 
-    if (!tx.qrUsado) {
+    if (!tx.qrUsado && !tx.recibidoEn) {
       throw new AppError('Solo puedes valorar una vez que la entrega ha sido confirmada', 400);
     }
 
@@ -65,10 +71,14 @@ export class ValoracionesService {
   } | null> {
     const isVendedor = role === 'VENDEDOR';
 
+    // Phase 10 — accept the v2 gate (recibidoEn) OR the legacy gate (qrUsado).
     const tx = await prisma.transaccion.findFirst({
       where: {
         ...(isVendedor ? { vendedorId: userId } : { compradorId: userId }),
-        qrUsado: true,
+        OR: [
+          { qrUsado: true },
+          { recibidoEn: { not: null } },
+        ],
         valoraciones: { none: { autorId: userId } },
       },
       select: {

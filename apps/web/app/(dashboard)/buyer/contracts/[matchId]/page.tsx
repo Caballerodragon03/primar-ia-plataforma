@@ -33,6 +33,7 @@ import {
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { CancelContractModal } from '@/components/ui/CancelContractModal';
+import { ShippingEventsSection } from '@/components/ui/ShippingEventsSection';
 
 interface CalibreItem { calibre: string; cantidad_kg: number; precio_max_kg?: number }
 
@@ -71,6 +72,11 @@ interface MatchContractInfo {
   firmaComprador: string | null;
   firmaCompradorFecha: string | null;
   comisionPagadaEn: string | null;
+  // Phase 10 — shipping events
+  enviadoEn: string | null;
+  recibidoEn: string | null;
+  hasRatedCounterpart: boolean;
+  counterpartId: string | null;
   isSeller: boolean;
   isBuyer: boolean;
 }
@@ -542,6 +548,19 @@ export default function BuyerMatchContractPage() {
               Comisión pagada el {formatDateTime(info.comisionPagadaEn)}. Ahora procede el pago del importe al vendedor según las condiciones del contrato.
             </p>
           </div>
+
+          {/* Phase 10 — Shipping tracking + ratings */}
+          <ShippingEventsSection
+            matchId={matchId}
+            transaccionId={info.transaccionId}
+            counterpartId={info.counterpartId}
+            isSeller={info.isSeller}
+            isBuyer={info.isBuyer}
+            enviadoEn={info.enviadoEn}
+            recibidoEn={info.recibidoEn}
+            hasRatedCounterpart={info.hasRatedCounterpart}
+            onChanged={loadInfo}
+          />
 
           {/* Phase 5 — auto-generated documents for the buyer */}
           {(info.facturaPlataformaUrl || info.facturaVendedorUrl || info.resguardoPagoUrl) && (
