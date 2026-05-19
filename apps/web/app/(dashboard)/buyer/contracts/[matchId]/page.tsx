@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { CancelContractModal } from '@/components/ui/CancelContractModal';
 
 interface CalibreItem { calibre: string; cantidad_kg: number; precio_max_kg?: number }
 
@@ -103,6 +104,7 @@ export default function BuyerMatchContractPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [pollingForWebhook, setPollingForWebhook] = useState(paidFlag);
 
   // Modal state
@@ -482,6 +484,13 @@ export default function BuyerMatchContractPage() {
             <Button variant="outline" onClick={() => router.push(info.transaccionId ? `/buyer/messages?tx=${info.transaccionId}` : '/buyer/messages')}>
               Modificar condiciones (chat)
             </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setShowCancelModal(true)}
+              className="text-red-600 hover:!bg-red-50"
+            >
+              Cancelar contrato
+            </Button>
           </div>
         </div>
       )}
@@ -658,6 +667,15 @@ export default function BuyerMatchContractPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Phase 9 — Cancel-contract modal */}
+      {showCancelModal && (
+        <CancelContractModal
+          matchId={matchId}
+          onClose={() => setShowCancelModal(false)}
+          onSuccess={() => { setShowCancelModal(false); void loadInfo(); }}
+        />
       )}
     </div>
   );

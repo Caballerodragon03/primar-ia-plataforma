@@ -12,6 +12,7 @@ import {
   signMatchAsSeller,
   startBuyerCommissionCheckout,
 } from './contracts.controller.js';
+import { cancelMatchContract } from '../cancellations/cancellations.controller.js';
 import { asyncHandler } from '../../shared/async-handler.js';
 
 export const contractsRouter = Router();
@@ -30,6 +31,8 @@ contractsRouter.post('/match/:matchId/regenerate-draft', asyncHandler(regenerate
 contractsRouter.post('/match/:matchId/sign-seller', asyncHandler(signMatchAsSeller));
 // POST   /api/v1/contracts/match/:matchId/buyer-checkout
 contractsRouter.post('/match/:matchId/buyer-checkout', asyncHandler(startBuyerCommissionCheckout));
+// POST   /api/v1/contracts/match/:matchId/cancel — Phase 9 cancellation
+contractsRouter.post('/match/:matchId/cancel', asyncHandler(cancelMatchContract));
 
 // ─── Existing transaccion-level endpoints (legacy QR/delivery flow) ─────────
 // GET /api/v1/contracts/:transaccionId — download PDF contract

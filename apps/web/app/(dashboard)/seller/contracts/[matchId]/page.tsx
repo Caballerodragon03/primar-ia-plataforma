@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { CancelContractModal } from '@/components/ui/CancelContractModal';
 
 interface CalibreItem { calibre: string; cantidad_kg: number; precio_min_kg?: number }
 
@@ -110,6 +111,7 @@ export default function SellerMatchContractPage() {
   const [showSignPad, setShowSignPad] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   async function loadInfo() {
     setLoading(true);
@@ -413,6 +415,13 @@ export default function SellerMatchContractPage() {
               >
                 Modificar condiciones (chat)
               </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setShowCancelModal(true)}
+                className="text-red-600 hover:!bg-red-50"
+              >
+                Cancelar contrato
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -459,13 +468,23 @@ export default function SellerMatchContractPage() {
           {/* During the 48h waiting window the seller may still want to
               renegotiate (e.g. drop the price) to give the buyer another
               reason to close. Expose chat from this state too. */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push(info.transaccionId ? `/seller/messages?tx=${info.transaccionId}` : '/seller/messages')}
-          >
-            Abrir chat con el comprador
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(info.transaccionId ? `/seller/messages?tx=${info.transaccionId}` : '/seller/messages')}
+            >
+              Abrir chat con el comprador
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCancelModal(true)}
+              className="text-red-600 hover:!bg-red-50"
+            >
+              Cancelar contrato
+            </Button>
+          </div>
         </div>
       )}
 
@@ -532,6 +551,15 @@ export default function SellerMatchContractPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Phase 9 — Cancel-contract modal */}
+      {showCancelModal && (
+        <CancelContractModal
+          matchId={matchId}
+          onClose={() => setShowCancelModal(false)}
+          onSuccess={() => { setShowCancelModal(false); void loadInfo(); }}
+        />
       )}
     </div>
   );
