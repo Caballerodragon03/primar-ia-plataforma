@@ -217,10 +217,14 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
     }
   };
 
-  // Get current terms from the latest offer card (for the "propose change" modal)
+  // Get current terms from the latest offer card (for the "propose change" modal).
+  // Phase 6 — also exposes logistica/terminoPago/calibres for the extended modal.
   const latestOfferMsg = [...messages].reverse().find((m) => m.tipo === 'OFERTA' && m.negociacion);
   const currentPrecioKg = latestOfferMsg?.negociacion?.currentPrecioKg ?? null;
   const currentIncoterm = latestOfferMsg?.negociacion?.currentIncoterm ?? null;
+  const currentLogistica = latestOfferMsg?.negociacion?.currentLogistica ?? null;
+  const currentTerminoPago = latestOfferMsg?.negociacion?.currentTerminoPago ?? null;
+  const currentCalibres = latestOfferMsg?.negociacion?.currentCalibres ?? null;
 
   const selectedConv = conversations.find((c) => c.transaccionId === selectedId);
 
@@ -498,6 +502,9 @@ export function ChatView({ role, initialTransaccionId }: ChatViewProps) {
           transaccionId={selectedId}
           currentPrecioKg={currentPrecioKg}
           currentIncoterm={currentIncoterm}
+          currentLogistica={currentLogistica}
+          currentTerminoPago={currentTerminoPago}
+          currentCalibres={currentCalibres}
           onClose={() => setShowOfferModal(false)}
           onSuccess={() => {
             setShowOfferModal(false);

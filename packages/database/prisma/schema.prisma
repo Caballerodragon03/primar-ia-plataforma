@@ -600,6 +600,13 @@ model Negociacion {
   iniciadorId     String             @map("iniciador_id")
   precioKg        Decimal?           @db.Decimal(10, 4) @map("precio_kg")
   incoterm        Incoterm?
+  // Phase 6 — campos extendidos para negociación estructurada v2.
+  // Cualquier subset de campos puede proponerse en una sola ofertación.
+  logistica       LogisticaPreferencia? @map("logistica")
+  terminoPago     TerminoPago?       @map("termino_pago")
+  // Snapshot opcional de calibres propuestos (mismo shape que match.calibresJson):
+  // [{ calibre: string, cantidad_kg: number }]. Si null → no se propone cambio.
+  calibresJson    Json?              @map("calibres_json")
   estado          NegociacionEstado  @default(PENDIENTE)
   parentId        String?            @map("parent_id")
   createdAt       DateTime           @default(now()) @map("created_at")

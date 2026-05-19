@@ -1,12 +1,49 @@
+/**
+ * Phase 6 — Structured negotiation service for the v2 matchmaker flow.
+ *
+ * A proposal may carry any subset of:
+ *   - precioKg, incoterm, logistica, terminoPago, calibres
+ *
+ * Acceptance writes to the Phase-4 v2 fields on the Match:
+ *   match.precioKgFinal, .incotermFinal, .logisticaFinal, .terminoPagoFinal,
+ *   .calibresJson  → these are what the contract PDF builder reads.
+ *
+ * Contract state machine guards:
+ *   - BORRADOR / PENDIENTE_FIRMA_VENDEDOR → negotiation is free, just regen
+ *     the draft after accept.
+ *   - PENDIENTE_PAGO_COMPRADOR → seller already signed. Accepting a proposal
+ *     means terms changed; we MUST invalidate the seller's signature and
+ *     revert estado to BORRADOR so the seller re-signs.
+ *   - FIRMADO → both parties signed + commission paid. Negotiation is blocked.
+ *   - CADUCADO / CANCELADO → blocked.
+ */
 import { prisma, Prisma } from '@primaria/database';
 import { AppError } from '../../middleware/error.middleware.js';
+import {
+  logisticaFromIncoterm,
+  isIncotermAllowedForLogistica,
+  type Incoterm,
+  type LogisticaPreferencia,
+  type TerminoPago,
+} from '@primaria/shared';
 import type { CreateOfertaInput } from './negotiations.schema.js';
+
+interface CalibreSnapshot {
+  calibre: string;
+  cantidad_kg: number;
+}
 
 export class NegotiationsService {
   private async verifyParticipant(transaccionId: string, userId: string) {
     const tx = await prisma.transaccion.findUnique({
       where: { id: transaccionId },
-      select: { vendedorId: true, compradorId: true, estado: true, qrUsado: true },
+      select: {
+        vendedorId: true,
+        compradorId: true,
+        estado: true,
+        qrUsado: true,
+        match: { select: { contratoEstado: true, id: true } },
+      },
     });
     if (!tx) throw new AppError('Transacción no encontrada', 404);
     if (tx.vendedorId !== userId && tx.compradorId !== userId) {
@@ -18,11 +55,19 @@ export class NegotiationsService {
     if (['CANCELADO', 'COMPLETADO', 'ENTREGADO'].includes(tx.estado)) {
       throw new AppError('No se puede negociar en esta transacción', 400);
     }
+    // Phase 6 — contract-state guards.
+    const contratoEstado = tx.match?.contratoEstado;
+    if (contratoEstado === 'FIRMADO') {
+      throw new AppError('No se puede negociar: el contrato ya está firmado por ambas partes', 400);
+    }
+    if (contratoEstado === 'CADUCADO' || contratoEstado === 'CANCELADO') {
+      throw new AppError('No se puede negociar: el contrato está caducado o cancelado', 400);
+    }
     return tx;
   }
 
   async createOffer(transaccionId: string, iniciadorId: string, input: CreateOfertaInput) {
-    const tx = await this.verifyParticipant(transaccionId, iniciadorId);
+    await this.verifyParticipant(transaccionId, iniciadorId);
 
     // If counter-offer, mark parent as SUPERADA
     if (input.parentId) {
@@ -51,15 +96,24 @@ export class NegotiationsService {
         transaccionId,
         iniciadorId,
         precioKg: precioKgDecimal,
-        incoterm: input.incoterm ?? null,
+        incoterm: (input.incoterm ?? null) as Incoterm | null,
+        logistica: (input.logistica ?? null) as LogisticaPreferencia | null,
+        terminoPago: (input.terminoPago ?? null) as TerminoPago | null,
+        calibresJson: input.calibres ? (input.calibres as unknown as Prisma.InputJsonValue) : Prisma.JsonNull,
         parentId: input.parentId ?? null,
       },
     });
 
-    // Build a preview for the message content
+    // Build a human-readable preview for the message bubble.
     const parts: string[] = [];
     if (input.precioKg !== undefined) parts.push(`Precio: €${input.precioKg.toFixed(4)}/kg`);
     if (input.incoterm) parts.push(`Incoterm: ${input.incoterm}`);
+    if (input.logistica) parts.push(`Logística: ${input.logistica}`);
+    if (input.terminoPago) parts.push(`Pago: ${input.terminoPago}`);
+    if (input.calibres) {
+      const totalKg = input.calibres.reduce((s, c) => s + c.cantidad_kg, 0);
+      parts.push(`Calibres: ${input.calibres.length} (${totalKg.toLocaleString('es-ES')} kg)`);
+    }
     const contenido = `💬 Propuesta de negociación — ${parts.join(' · ')}`;
 
     const mensaje = await prisma.mensaje.create({
@@ -76,7 +130,7 @@ export class NegotiationsService {
   }
 
   async acceptOffer(transaccionId: string, userId: string, negociacionId: string) {
-    await this.verifyParticipant(transaccionId, userId);
+    const txCtx = await this.verifyParticipant(transaccionId, userId);
 
     const neg = await prisma.negociacion.findUnique({
       where: { id: negociacionId },
@@ -85,6 +139,9 @@ export class NegotiationsService {
         iniciadorId: true,
         precioKg: true,
         incoterm: true,
+        logistica: true,
+        terminoPago: true,
+        calibresJson: true,
         estado: true,
       },
     });
@@ -98,58 +155,150 @@ export class NegotiationsService {
       throw new AppError('No puedes aceptar tu propia oferta', 400);
     }
 
-    // Apply changes
-    const txForMatch = await prisma.transaccion.findUnique({
-      where: { id: transaccionId },
-      select: { match: { select: { id: true, pedidoId: true, cantidadKg: true } } },
-    });
-    const match = txForMatch?.match ?? null;
-    if (!match) throw new AppError('Match no encontrado', 404);
+    const matchId = txCtx.match?.id;
+    if (!matchId) throw new AppError('Match no encontrado', 404);
+
+    // Derive a coherent (incoterm, logística) pair from the proposal. The user
+    // may have submitted only one; we snap the other.
+    const proposedIncoterm = neg.incoterm as Incoterm | null;
+    const proposedLogistica = neg.logistica as LogisticaPreferencia | null;
+    let finalIncoterm: Incoterm | null = proposedIncoterm;
+    let finalLogistica: LogisticaPreferencia | null = proposedLogistica;
+    if (proposedIncoterm && !proposedLogistica) {
+      // Derive: snap logística to the unambiguous side (YO_ENVIO or OTRO_RECOGE).
+      finalLogistica = logisticaFromIncoterm(proposedIncoterm);
+    } else if (proposedLogistica && !proposedIncoterm) {
+      // Just write the logística — incoterm stays whatever the contract had.
+      finalIncoterm = null;
+    } else if (proposedIncoterm && proposedLogistica) {
+      // Sanity: both present, must be compatible. The Zod schema enforces this
+      // at create time, but a stale offer could theoretically slip through.
+      if (!isIncotermAllowedForLogistica(proposedIncoterm, proposedLogistica)) {
+        throw new AppError(
+          `Combinación inválida: incoterm ${proposedIncoterm} no es compatible con logística ${proposedLogistica}`,
+          400,
+        );
+      }
+    }
+
+    // Calibres: parse JSON if present, recompute cantidadTotalKg.
+    const proposedCalibres = (neg.calibresJson as unknown as CalibreSnapshot[] | null) ?? null;
+    let newCantidadTotalKg: number | null = null;
+    if (proposedCalibres && proposedCalibres.length > 0) {
+      newCantidadTotalKg = proposedCalibres.reduce((s, c) => s + Number(c.cantidad_kg), 0);
+    }
+
+    // Whether the seller's signature must be invalidated (contract reverts to
+    // BORRADOR) — happens only when the seller had already signed.
+    const contratoEstado = txCtx.match?.contratoEstado;
+    const mustResetSellerSign = contratoEstado === 'PENDIENTE_PAGO_COMPRADOR';
 
     await prisma.$transaction(async (tx) => {
-      // Mark offer accepted
+      // 1) Mark this offer accepted.
       await tx.negociacion.update({
         where: { id: negociacionId },
         data: { estado: 'ACEPTADA' },
       });
 
-      // Update match price if changed
+      // 2) Write to match's v2 final fields (single update, only changed cols).
+      const matchUpdate: Record<string, unknown> = {};
       if (neg.precioKg !== null) {
-        const cantidadKg = match.cantidadKg ?? 0;
-        const newPrecioTotal = Number(neg.precioKg) * Number(cantidadKg);
-        await tx.match.update({
-          where: { id: match.id },
-          data: { precioKg: neg.precioKg },
+        matchUpdate['precioKgFinal'] = neg.precioKg;
+        // Keep legacy precioKg in sync so any old reader still sees current value.
+        matchUpdate['precioKg'] = neg.precioKg;
+      }
+      if (finalIncoterm !== null) matchUpdate['incotermFinal'] = finalIncoterm;
+      if (finalLogistica !== null) matchUpdate['logisticaFinal'] = finalLogistica;
+      if (neg.terminoPago !== null) matchUpdate['terminoPagoFinal'] = neg.terminoPago;
+      if (proposedCalibres) {
+        matchUpdate['calibresJson'] = proposedCalibres as unknown as Prisma.InputJsonValue;
+        if (newCantidadTotalKg !== null) {
+          matchUpdate['cantidadKg'] = newCantidadTotalKg;
+        }
+      }
+      // 3) If seller had already signed, revert contract to BORRADOR so the
+      //    new terms force a re-sign. The cron's deadline tracking remains
+      //    valid because we clear it explicitly here.
+      if (mustResetSellerSign) {
+        matchUpdate['contratoEstado'] = 'BORRADOR';
+        matchUpdate['firmaVendedorDeadline'] = null;
+      }
+      if (Object.keys(matchUpdate).length > 0) {
+        await tx.match.update({ where: { id: matchId }, data: matchUpdate });
+      }
+
+      // 4) Legacy compatibility: keep pedido.incoterm in sync if changed.
+      //    (Read by old code paths that don't yet know about incotermFinal.)
+      if (finalIncoterm !== null) {
+        const matchInfo = await tx.match.findUnique({
+          where: { id: matchId },
+          select: { pedidoId: true },
         });
+        if (matchInfo?.pedidoId) {
+          await tx.pedido.update({
+            where: { id: matchInfo.pedidoId },
+            data: { incoterm: finalIncoterm },
+          });
+        }
+      }
+
+      // 5) Update transaccion totals (precio + cantidad) so dashboards stay
+      //    consistent. precioTotal = cantidadKg * precioKg, both potentially
+      //    changed in this offer.
+      const matchAfter = await tx.match.findUnique({
+        where: { id: matchId },
+        select: { cantidadKg: true, precioKg: true },
+      });
+      if (matchAfter) {
+        const newTotal = Number(matchAfter.cantidadKg) * Number(matchAfter.precioKg);
+        const txPatch: Record<string, unknown> = { precioTotal: newTotal };
+        if (proposedCalibres && newCantidadTotalKg !== null) {
+          txPatch['cantidadKg'] = newCantidadTotalKg;
+        }
+        // Clear seller signature in the same atomic step.
+        if (mustResetSellerSign) {
+          txPatch['firmaVendedor'] = null;
+          txPatch['firmaVendedorFecha'] = null;
+        }
         await tx.transaccion.update({
           where: { id: transaccionId },
-          data: { precioTotal: newPrecioTotal },
+          data: txPatch,
         });
       }
+    }, { isolationLevel: 'Serializable' });
 
-      // Update incoterm if changed
-      if (neg.incoterm !== null) {
-        await tx.pedido.update({
-          where: { id: match.pedidoId },
-          data: { incoterm: neg.incoterm },
-        });
-      }
-    });
-
-    // Post a system message confirming acceptance
+    // Build a system message confirming acceptance.
     const partes: string[] = [];
     if (neg.precioKg !== null) partes.push(`Precio: €${Number(neg.precioKg).toFixed(4)}/kg`);
-    if (neg.incoterm) partes.push(`Incoterm: ${neg.incoterm}`);
+    if (finalIncoterm) partes.push(`Incoterm: ${finalIncoterm}`);
+    if (finalLogistica) partes.push(`Logística: ${finalLogistica}`);
+    if (neg.terminoPago) partes.push(`Pago: ${neg.terminoPago}`);
+    if (proposedCalibres) partes.push(`Calibres: ${proposedCalibres.length}`);
+    const suffix = mustResetSellerSign
+      ? ' — el vendedor deberá volver a firmar el contrato con las nuevas condiciones.'
+      : '';
     await prisma.mensaje.create({
       data: {
         transaccionId,
         remitenteId: userId,
-        contenido: `✅ Propuesta aceptada — ${partes.join(' · ')}`,
+        contenido: `✅ Propuesta aceptada — ${partes.join(' · ')}.${suffix}`,
         tipo: 'TEXTO',
       },
     });
 
-    return { accepted: true };
+    // Regenerate the contract draft (fire-and-forget). Failures are logged
+    // but do not block the accept response — the user can manually request
+    // regeneration via POST /contracts/match/:id/regenerate-draft.
+    void (async () => {
+      try {
+        const { contractsService } = await import('../contracts/contracts.service.js');
+        await contractsService.generateContractDraft(matchId);
+      } catch (err) {
+        console.error('[negotiations] draft regeneration failed after accept:', err);
+      }
+    })();
+
+    return { accepted: true, contractRegenerationTriggered: true, sellerMustResign: mustResetSellerSign };
   }
 
   async rejectOffer(transaccionId: string, userId: string, negociacionId: string) {

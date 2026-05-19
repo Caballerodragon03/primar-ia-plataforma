@@ -4,18 +4,30 @@ import { CheckCircle2, XCircle, ArrowRight, RefreshCw } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { NegotiationOfferModal } from './NegotiationOfferModal';
+import {
+  LOGISTICA_LABELS,
+  TERMINO_PAGO_LABELS,
+  type LogisticaPreferencia,
+  type TerminoPago as TerminoPagoType,
+} from '@primaria/shared';
 
-const INCOTERMS = ['EXW', 'FCA', 'FOB', 'CIF', 'DAP', 'DDP', 'FAS', 'CFR', 'CPT', 'CIP'] as const;
+interface CalibreItem { calibre: string; cantidad_kg: number }
 
 export interface NegotiacionData {
   id: string;
   estado: 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'SUPERADA';
   precioKg: number | null;
   incoterm: string | null;
+  logistica?: string | null;
+  terminoPago?: string | null;
+  calibres?: CalibreItem[] | null;
   iniciadorId: string;
   parentId: string | null;
   currentPrecioKg: number | null;
   currentIncoterm: string | null;
+  currentLogistica?: string | null;
+  currentTerminoPago?: string | null;
+  currentCalibres?: CalibreItem[] | null;
 }
 
 interface NegotiationCardProps {
@@ -23,6 +35,46 @@ interface NegotiationCardProps {
   negociacion: NegotiacionData;
   currentUserId: string;
   onActionDone: () => void;
+}
+
+/**
+ * Renders a single field diff "Current → Proposed". Used inline for each
+ * negotiable field so the user sees exactly what changes if they accept.
+ */
+function DiffRow({ label, current, proposed, pending }: {
+  label: string; current: string; proposed: string; pending: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <div className="flex-1">
+        <p className="text-muted-foreground text-[11px] uppercase tracking-wide">{label} actual</p>
+        <p className="font-medium text-muted-foreground">{current}</p>
+      </div>
+      <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+      <div className="flex-1 text-right">
+        <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Propuesto</p>
+        <p className={`font-bold ${pending ? 'text-yellow-700' : 'text-foreground'}`}>{proposed}</p>
+      </div>
+    </div>
+  );
+}
+
+function fmtCalibres(cs: CalibreItem[] | null | undefined): string {
+  if (!cs || cs.length === 0) return '—';
+  const totalKg = cs.reduce((s, c) => s + Number(c.cantidad_kg), 0);
+  return `${cs.length} cal. · ${totalKg.toLocaleString('es-ES')} kg`;
+}
+
+function calibresEqual(a: CalibreItem[] | null | undefined, b: CalibreItem[] | null | undefined): boolean {
+  const aa = a ?? [];
+  const bb = b ?? [];
+  if (aa.length !== bb.length) return false;
+  // Order matters here — the proposer keeps the seller's existing order.
+  for (let i = 0; i < aa.length; i++) {
+    if (aa[i]!.calibre !== bb[i]!.calibre) return false;
+    if (Number(aa[i]!.cantidad_kg) !== Number(bb[i]!.cantidad_kg)) return false;
+  }
+  return true;
 }
 
 export function NegotiationCard({
@@ -79,7 +131,7 @@ export function NegotiationCard({
   return (
     <>
       <div className={[
-        'rounded-xl border p-3.5 w-full max-w-[340px] space-y-3',
+        'rounded-xl border p-3.5 w-full max-w-[360px] space-y-3',
         negociacion.estado === 'SUPERADA' ? 'opacity-60' : '',
         isPending ? 'border-yellow-300 bg-yellow-50' : 'border-border bg-muted/50',
       ].join(' ')}>
@@ -93,44 +145,51 @@ export function NegotiationCard({
           </span>
         </div>
 
-        {/* Terms comparison */}
+        {/* Term diffs — one row per proposed field */}
         <div className="space-y-2">
           {negociacion.precioKg !== null && (
-            <div className="flex items-center gap-2 text-xs">
-              <div className="flex-1">
-                <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Precio actual</p>
-                <p className="font-medium text-muted-foreground">
-                  {negociacion.currentPrecioKg != null
-                    ? `€${negociacion.currentPrecioKg.toFixed(4)}/kg`
-                    : '—'}
-                </p>
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-              <div className="flex-1 text-right">
-                <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Propuesto</p>
-                <p className={`font-bold ${isPending ? 'text-yellow-700' : 'text-foreground'}`}>
-                  €{negociacion.precioKg.toFixed(4)}/kg
-                </p>
-              </div>
-            </div>
+            <DiffRow
+              label="Precio"
+              current={negociacion.currentPrecioKg != null ? `€${negociacion.currentPrecioKg.toFixed(4)}/kg` : '—'}
+              proposed={`€${negociacion.precioKg.toFixed(4)}/kg`}
+              pending={isPending}
+            />
           )}
-
           {negociacion.incoterm !== null && (
-            <div className="flex items-center gap-2 text-xs">
-              <div className="flex-1">
-                <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Incoterm actual</p>
-                <p className="font-medium text-muted-foreground">
-                  {negociacion.currentIncoterm ?? '—'}
-                </p>
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-              <div className="flex-1 text-right">
-                <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Propuesto</p>
-                <p className={`font-bold ${isPending ? 'text-yellow-700' : 'text-foreground'}`}>
-                  {negociacion.incoterm}
-                </p>
-              </div>
-            </div>
+            <DiffRow
+              label="Incoterm"
+              current={negociacion.currentIncoterm ?? '—'}
+              proposed={negociacion.incoterm}
+              pending={isPending}
+            />
+          )}
+          {negociacion.logistica && (
+            <DiffRow
+              label="Logística"
+              current={negociacion.currentLogistica
+                ? (LOGISTICA_LABELS[negociacion.currentLogistica as LogisticaPreferencia] ?? negociacion.currentLogistica)
+                : '—'}
+              proposed={LOGISTICA_LABELS[negociacion.logistica as LogisticaPreferencia] ?? negociacion.logistica}
+              pending={isPending}
+            />
+          )}
+          {negociacion.terminoPago && (
+            <DiffRow
+              label="Pago"
+              current={negociacion.currentTerminoPago
+                ? (TERMINO_PAGO_LABELS[negociacion.currentTerminoPago as TerminoPagoType] ?? negociacion.currentTerminoPago)
+                : '—'}
+              proposed={TERMINO_PAGO_LABELS[negociacion.terminoPago as TerminoPagoType] ?? negociacion.terminoPago}
+              pending={isPending}
+            />
+          )}
+          {negociacion.calibres && !calibresEqual(negociacion.calibres, negociacion.currentCalibres) && (
+            <DiffRow
+              label="Calibres"
+              current={fmtCalibres(negociacion.currentCalibres)}
+              proposed={fmtCalibres(negociacion.calibres)}
+              pending={isPending}
+            />
           )}
         </div>
 
@@ -184,6 +243,9 @@ export function NegotiationCard({
           transaccionId={transaccionId}
           currentPrecioKg={negociacion.currentPrecioKg}
           currentIncoterm={negociacion.currentIncoterm}
+          currentLogistica={negociacion.currentLogistica}
+          currentTerminoPago={negociacion.currentTerminoPago}
+          currentCalibres={negociacion.currentCalibres}
           parentId={negociacion.id}
           onClose={() => setShowCounter(false)}
           onSuccess={() => { setShowCounter(false); onActionDone(); }}

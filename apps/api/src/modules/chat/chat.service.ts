@@ -106,6 +106,9 @@ export class ChatService {
             estado: true,
             precioKg: true,
             incoterm: true,
+            logistica: true,
+            terminoPago: true,
+            calibresJson: true,
             iniciadorId: true,
             parentId: true,
           },
@@ -113,10 +116,23 @@ export class ChatService {
       },
     });
 
-    // Get current terms for reference in offer cards
+    // Get current effective terms for reference in offer cards. Use v2 final
+    // fields if present (Phase 4) and fall back to the legacy fields.
     const tx = await prisma.transaccion.findUnique({
       where: { id: transaccionId },
-      select: { match: { select: { precioKg: true, pedido: { select: { incoterm: true } } } } },
+      select: {
+        match: {
+          select: {
+            precioKg: true,
+            precioKgFinal: true,
+            incotermFinal: true,
+            logisticaFinal: true,
+            terminoPagoFinal: true,
+            calibresJson: true,
+            pedido: { select: { incoterm: true } },
+          },
+        },
+      },
     });
     const match = tx?.match ?? null;
 
@@ -145,10 +161,21 @@ export class ChatService {
             estado: m.negociacion.estado,
             precioKg: m.negociacion.precioKg !== null ? Number(m.negociacion.precioKg) : null,
             incoterm: m.negociacion.incoterm,
+            logistica: m.negociacion.logistica,
+            terminoPago: m.negociacion.terminoPago,
+            calibres: m.negociacion.calibresJson ?? null,
             iniciadorId: m.negociacion.iniciadorId,
             parentId: m.negociacion.parentId,
-            currentPrecioKg: match?.precioKg != null ? Number(match.precioKg) : null,
-            currentIncoterm: match?.pedido?.incoterm ?? null,
+            // Current effective terms — prefer v2 final fields.
+            currentPrecioKg: (() => {
+              const final = match?.precioKgFinal;
+              if (final != null) return Number(final);
+              return match?.precioKg != null ? Number(match.precioKg) : null;
+            })(),
+            currentIncoterm: match?.incotermFinal ?? match?.pedido?.incoterm ?? null,
+            currentLogistica: match?.logisticaFinal ?? null,
+            currentTerminoPago: match?.terminoPagoFinal ?? null,
+            currentCalibres: match?.calibresJson ?? null,
           }
         : null,
     }));
