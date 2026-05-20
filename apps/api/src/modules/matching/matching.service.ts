@@ -900,6 +900,9 @@ export class MatchingService {
                 id: true,
                 nombre: true,
                 apellidos: true,
+                // Phase 14M v3.16 — score para el ScoreBadge en MatchCard.
+                scoreFiabilidad: true,
+                scoreStatus: true,
                 empresa: {
                   select: { razonSocial: true },
                 },

@@ -123,7 +123,21 @@ export class OrdersService {
           },
           include: {
             lote: {
-              include: { vendedor: { select: { id: true, nombre: true, apellidos: true } } },
+              // Phase 14M v3.16 — incluir scoreFiabilidad + scoreStatus para
+              // que la tarjeta de la oferta del vendedor renderice el
+              // ScoreBadge (estrellas). Sin esto los datos llegaban como
+              // undefined y el front nunca pintaba las estrellas.
+              include: {
+                vendedor: {
+                  select: {
+                    id: true,
+                    nombre: true,
+                    apellidos: true,
+                    scoreFiabilidad: true,
+                    scoreStatus: true,
+                  },
+                },
+              },
             },
             transaccion: { select: { id: true } },
           },
