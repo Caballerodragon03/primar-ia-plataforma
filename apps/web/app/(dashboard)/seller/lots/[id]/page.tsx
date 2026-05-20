@@ -23,6 +23,7 @@ import {
 import { api } from '@/lib/api';
 import { Button, StatusBadge, CoverageBar } from '@/components/ui';
 import { DisputeModal } from '@/components/ui/DisputeModal';
+import { ScoreBadge } from '@/components/ui/ScoreBadge';
 
 type CalibreItem = { calibre: string; cantidad_kg: number; precio_min_kg: number };
 
@@ -33,7 +34,13 @@ type Match = {
   estado: string;
   pedido: {
     id: string;
-    comprador: { id: string; nombre: string };
+    comprador: {
+      id: string;
+      nombre: string;
+      apellidos?: string;
+      scoreFiabilidad?: number | null;
+      scoreStatus?: 'NEW_USER' | 'ACTIVE' | 'RESTRICTED';
+    };
   };
   transaccion?: { id: string } | null;
 };
@@ -284,9 +291,18 @@ export default function LotDetailPage() {
                     {/* Fila superior: comprador + estado + datos */}
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-text-primary truncate">
-                          {m.pedido.comprador.nombre}
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-medium text-text-primary truncate">
+                            {m.pedido.comprador.nombre}
+                          </p>
+                          {m.pedido.comprador.scoreStatus !== undefined && (
+                            <ScoreBadge
+                              score={m.pedido.comprador.scoreFiabilidad ?? null}
+                              status={m.pedido.comprador.scoreStatus}
+                              size="sm"
+                            />
+                          )}
+                        </div>
                         <p className="text-xs text-text-secondary mt-0.5">
                           {Number(m.cantidadKg).toLocaleString('es-ES')} kg · €{Number(m.precioKg).toFixed(3)}/kg
                         </p>
@@ -310,13 +326,11 @@ export default function LotDetailPage() {
                           </Button>
                         </Link>
                       )}
-                      {m.transaccion?.id && ['PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
-                        <Link href={`/seller/lots/${id}/qr/${m.transaccion.id}`} title="QR y fotos">
-                          <Button variant="ghost" size="sm" className="!p-2" aria-label="QR y fotos">
-                            <QrCode className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                      )}
+      {/* Phase 14M v3.19 — botón QR/fotos retirado. Era del flujo legacy
+                          v1 (escrow) donde el vendedor subía fotos del lote y
+                          generaba el QR manualmente. En el flujo v2 actual el
+                          QR se gestiona desde la propia pantalla de contrato
+                          tras "marcar como enviado". */}
                       {m.transaccion?.id && m.estado === 'CONFIRMADO' && (
                         <button
                           onClick={async () => { try { const r = await api.get(`/invoices/seller/${m.transaccion!.id}/html`, { responseType: 'text' }); window.open(URL.createObjectURL(new Blob([r.data], { type: 'text/html' })), '_blank'); } catch { /* ignore */ } }}

@@ -54,6 +54,7 @@ interface SellerNotifSummary {
   firstPendingContractMatchId?: string;
   firstPendingPhotosLotId?: string;
   firstPendingPhotosTxId?: string;
+  firstPendingPhotosMatchId?: string;
 }
 
 export default function SellerDashboard() {
@@ -106,10 +107,12 @@ export default function SellerDashboard() {
     },
     n && n.pendingPhotos > 0 && {
       icon: <Camera className="w-5 h-5" />,
-      label: `Subir fotos de ${n.pendingPhotos} envío${n.pendingPhotos > 1 ? 's' : ''}`,
-      desc: 'Both parties signed. Upload lot preparation photos before shipping.',
-      href: n.pendingPhotos === 1 && n.firstPendingPhotosLotId && n.firstPendingPhotosTxId
-        ? `/seller/lots/${n.firstPendingPhotosLotId}/qr/${n.firstPendingPhotosTxId}`
+      // Phase 14M v3.19 — antes decía "Subir fotos" (legacy v1). En v2
+      // la tarea es marcar como enviado en la pantalla del contrato.
+      label: `Marcar como enviado ${n.pendingPhotos} envío${n.pendingPhotos > 1 ? 's' : ''}`,
+      desc: 'El contrato ya está firmado y pagado. Marca la mercancía como enviada para que el comprador pueda confirmar la recepción.',
+      href: n.pendingPhotos === 1 && n.firstPendingPhotosMatchId
+        ? `/seller/contracts/${n.firstPendingPhotosMatchId}`
         : '/seller/lots/tasks/photos',
       color: 'blue',
     },

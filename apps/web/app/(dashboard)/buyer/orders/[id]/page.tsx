@@ -476,13 +476,10 @@ const openDisputeModal = (match: Match) => {
                                 </Button>
                               </Link>
                             )}
-                            {isLive && m.transaccion?.id && (
-                              <Link href={`/buyer/orders/${id}/delivery/${m.transaccion.id}`} title="Confirmar entrega" aria-label="Confirmar entrega">
-                                <Button variant="ghost" size="sm" className="!px-2">
-                                  <QrCode className="w-4 h-4" />
-                                </Button>
-                              </Link>
-                            )}
+                            {/* Phase 14M v3.19 — botón QR retirado. La
+                                confirmación de entrega ahora se hace desde la
+                                pantalla del contrato (mark-received tras el
+                                aviso del vendedor de envío). */}
                             {m.transaccion?.id && (
                               <Link href={`/buyer/messages?tx=${m.transaccion.id}`} title="Abrir chat" aria-label="Abrir chat">
                                 <Button variant="ghost" size="sm" className="!px-2">

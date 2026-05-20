@@ -1176,6 +1176,7 @@ export class MatchingService {
     firstPendingContractLotId?: string;
     firstPendingPhotosLotId?: string;
     firstPendingPhotosTxId?: string;
+    firstPendingPhotosMatchId?: string;
   }> {
     const unreadMessages = await prisma.mensaje.count({
       where: {
@@ -1291,15 +1292,16 @@ export class MatchingService {
         where: sellerPendingContractWhere,
         select: { id: true, loteId: true },
       }),
+      // Phase 14M v3.19 — contador "envíos pendientes" para el dashboard.
+      // Antes filtraba por qrToken (legacy v1 escrow). Ahora flujo v2:
+      // contrato FIRMADO + transaccion.enviadoEn null.
       prisma.transaccion.findMany({
         where: {
           vendedorId: userId,
-          firmaVendedor: { not: null },
-          firmaComprador: { not: null },
-          qrToken: { not: null },
-          qrUsado: false,
+          enviadoEn: null,
+          match: { contratoEstado: 'FIRMADO' },
         },
-        select: { id: true, fotosLoteUrls: true, match: { select: { loteId: true } } },
+        select: { id: true, match: { select: { id: true, loteId: true } } },
       }),
       prisma.match.count({
         where: {
@@ -1321,10 +1323,9 @@ export class MatchingService {
       }),
     ]);
 
-    const pendingPhotosTxs = signedTxsWithPhotos.filter((tx) => {
-      const urls = tx.fotosLoteUrls as string[] | null;
-      return !urls || (urls as string[]).length === 0;
-    });
+    // Phase 14M v3.19 — flujo v2: cada signedTxsWithPhotos es un envío
+    // pendiente; ya no necesitamos filtrar por fotosLoteUrls.
+    const pendingPhotosTxs = signedTxsWithPhotos;
     const pendingPhotos = pendingPhotosTxs.length;
     const firstPhotoPending = pendingPhotosTxs[0];
 
@@ -1341,6 +1342,10 @@ export class MatchingService {
       firstPendingContractMatchId: firstContract?.id,
       firstPendingPhotosLotId: firstPhotoPending?.match?.loteId,
       firstPendingPhotosTxId: firstPhotoPending?.id,
+      // Phase 14M v3.19 — match id para enlazar al contrato v2 (donde
+      // vive el botón "Marcar como enviado"), sustituyendo al legacy
+      // /seller/lots/:lotId/qr/:txId.
+      firstPendingPhotosMatchId: firstPhotoPending?.match?.id,
     };
   }
 

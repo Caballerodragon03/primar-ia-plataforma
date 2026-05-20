@@ -106,7 +106,21 @@ export class LotsService {
         matches: {
           where: { estado: { in: ACTIVE_MATCH_ESTADOS } },
           include: {
-            pedido: { include: { comprador: { select: { id: true, nombre: true } } } },
+            pedido: {
+              include: {
+                // Phase 14M v3.19 — añadir score para ScoreBadge en la
+                // lista de matches activos del lote (lado vendedor).
+                comprador: {
+                  select: {
+                    id: true,
+                    nombre: true,
+                    apellidos: true,
+                    scoreFiabilidad: true,
+                    scoreStatus: true,
+                  },
+                },
+              },
+            },
             transaccion: { select: { id: true } },
           },
         },
