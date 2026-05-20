@@ -8,7 +8,8 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { CoverageBar } from '@/components/ui/CoverageBar';
-import { PaymentModal } from '@/components/ui/PaymentModal';
+// Phase 14M v3.11 — PaymentModal (flujo escrow v1) retirado. El comprador
+// ahora paga solo la comisión vía /buyer/contracts/[matchId].
 import { DisputeModal } from '@/components/ui/DisputeModal';
 import { ScoreBadge } from '@/components/ui/ScoreBadge';
 import { RatingModal } from '@/components/RatingModal';
@@ -124,7 +125,7 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  // PaymentModal state retirado en v3.11
   const [selectedMatchId, setSelectedMatchId] = useState<string>('');
   const [cancelling, setCancelling] = useState(false);
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
@@ -193,12 +194,7 @@ export default function OrderDetailPage() {
     }
   };
 
-  const openPaymentModal = (matchId: string) => {
-    setSelectedMatchId(matchId);
-    setPaymentModalOpen(true);
-  };
-
-  const openDisputeModal = (match: Match) => {
+const openDisputeModal = (match: Match) => {
     if (!match.transaccion?.id || !order) return;
     const pName = order.variedad
       ? `${order.producto.nombre} — ${order.variedad.nombre}`
@@ -237,7 +233,9 @@ export default function OrderDetailPage() {
     : order.producto.nombre;
 
   const calibres = (order.calibresSolicitados ?? []) as CalibreItem[];
-  const logisticsCost = Number(order.costoLogisticaEstimado ?? 0);
+  // Phase 14M v3.12 — logisticsCost ya no se renderiza, queda solo
+  // como referencia interna para pedidos antiguos.
+  void order.costoLogisticaEstimado;
   const displayCoverage = ['CERRADO', 'TOTALMENTE_CUBIERTO'].includes(order.estado) ? 100 : order.coverage;
 
   // Only show pre-authorize for matches the seller has explicitly accepted
@@ -299,20 +297,26 @@ export default function OrderDetailPage() {
         </div>
       )}
 
-      {/* Pre-authorize banner */}
+      {/* Phase 14M v3.11 — banner v2: firmar contrato + pagar comisión.
+          Antes: "Pre-Authorize Payment" del flujo legacy v1 que cobraba
+          la mercancía completa vía Stripe. El modelo actual es solo
+          comisión a Primar-IA + pago de mercancía fuera por transferencia. */}
       {canPay && order.estado !== 'CERRADO' && (
         <div className="bg-amber-50 border border-amber-200 rounded-card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <Lock className="w-5 h-5 text-amber-500 shrink-0" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-amber-900">Payment pre-authorization available</p>
+            <p className="text-sm font-semibold text-amber-900">
+              {acceptedMatches.length} contribución{acceptedMatches.length > 1 ? 'es' : ''} de vendedor aceptada{acceptedMatches.length > 1 ? 's' : ''}
+            </p>
             <p className="text-xs text-amber-700 mt-0.5">
-              {acceptedMatches.length} seller contribution{acceptedMatches.length > 1 ? 's' : ''} accepted.
-              Preautoriza el pago para asegurar el cierre del pedido.
+              Firma el contrato y paga la comisión de Primar-IA para cerrar el acuerdo. El importe de la mercancía lo pagas al vendedor por transferencia según el plazo pactado.
             </p>
           </div>
-          <Button variant="primary" size="sm" onClick={() => openPaymentModal(acceptedMatches[0]!.id)}>
-            Pre-Authorize Payment
-          </Button>
+          <Link href={`/buyer/contracts/${acceptedMatches[0]!.id}`}>
+            <Button variant="primary" size="sm">
+              Firmar y pagar comisión
+            </Button>
+          </Link>
         </div>
       )}
 
@@ -459,9 +463,11 @@ export default function OrderDetailPage() {
                         ) : (
                           <>
                             {canPayThis && (
-                              <Button variant="primary" size="sm" onClick={() => openPaymentModal(m.id)}>
-                                Pagar
-                              </Button>
+                              <Link href={`/buyer/contracts/${m.id}`}>
+                                <Button variant="primary" size="sm">
+                                  Firmar y pagar comisión
+                                </Button>
+                              </Link>
                             )}
                             {isLive && (
                               <Link href={`/buyer/contracts/${m.id}`} title="Ver contrato" aria-label="Ver contrato">
@@ -593,7 +599,9 @@ export default function OrderDetailPage() {
                   label: 'Entrega antes de',
                   value: new Date(order.fechaEntregaDeseada).toLocaleDateString('es-ES'),
                 } : null,
-                logisticsCost > 0 ? { label: 'Logística est.', value: formatEur(logisticsCost) } : null,
+                // Phase 14M v3.12 — fila "Logística est." retirada: era
+                // un dato que el comprador introducía sin que Primar-IA lo
+                // usara para nada. Volverá cuando integremos transportistas.
               ].filter((x): x is { label: string; value: string } => x !== null).map(({ label, value }) => (
                 <div key={label} className="flex justify-between gap-2">
                   <dt className="text-xs text-muted-foreground shrink-0">{label}</dt>
@@ -632,20 +640,8 @@ export default function OrderDetailPage() {
         />
       )}
 
-      {/* Payment Modal */}
-      <PaymentModal
-        isOpen={paymentModalOpen}
-        onClose={() => setPaymentModalOpen(false)}
-        matchId={selectedMatchId}
-        orderSubtotal={
-          order.matches.find((m) => m.id === selectedMatchId)
-            ? Number(order.matches.find((m) => m.id === selectedMatchId)!.cantidadKg) *
-              Number(order.matches.find((m) => m.id === selectedMatchId)!.precioKg)
-            : 0
-        }
-        logisticsCost={logisticsCost}
-        onSuccess={handlePaymentSuccess}
-      />
+      {/* Phase 14M v3.11 — PaymentModal retirado. El pago de la comisión
+          se hace ahora desde /buyer/contracts/[matchId] (flujo v2). */}
     </div>
   );
 }

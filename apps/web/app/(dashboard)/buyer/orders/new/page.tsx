@@ -43,7 +43,10 @@ const schema = z.object({
   destinoFinal: z.string().min(2, 'Introduce el destino').optional(),
   frecuencia: z.string().optional(),
   transporte: z.enum(['own', 'external']).default('own'),
-  costoLogisticaEstimado: z.coerce.number().nonnegative().optional(),
+  // Phase 14M v3.12 — costoLogisticaEstimado retirado del formulario. Era
+  // un dato muerto: Primar-IA no toca el dinero de la logística y no
+  // entraba en matching ni en facturas. El campo sigue en el schema de
+  // backend por compatibilidad con pedidos antiguos.
   fechaEntregaDeseada: z.string().min(1, 'Selecciona una fecha'),
   notasAdicionales: z.string().max(1000).optional(),
   publicar: z.boolean().default(false),
@@ -537,9 +540,9 @@ export default function CreateOrderPage() {
             </div>
 
             <div>
-              <p className="text-sm font-medium text-text-secondary mb-2">Transportation</p>
+              <p className="text-sm font-medium text-text-secondary mb-2">Operador de transporte</p>
               <div className="space-y-2">
-                {['own', 'external'].map((val) => (
+                {(['own', 'external'] as const).map((val) => (
                   <label key={val} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
                     <input
                       type="radio"
@@ -547,24 +550,39 @@ export default function CreateOrderPage() {
                       {...register('transporte')}
                       className="accent-primary"
                     />
-                    {val === 'own' ? 'Use own operator' : 'Quote with external operator'}
+                    {val === 'own' ? 'Operador propio' : 'Cotizar con operador externo'}
                   </label>
                 ))}
               </div>
             </div>
 
-            <Input
-              type="number"
-              step="0.01"
-              label="Estimated Logistics Cost (€)"
-              placeholder="1200.00"
-              {...register('costoLogisticaEstimado')}
-            />
-
-            {/* Cost Summary */}
-            <div className="bg-muted/50 rounded-input p-4 space-y-1 text-sm">
-              <p className="font-medium text-text-primary">Logistics Cost Estimation</p>
-              <p className="text-text-muted text-xs">Fill in the calibers and quantities to see the estimated total.</p>
+            {/* Phase 14M v3.12 — Campo de logística estimada eliminado.
+                En su lugar, placeholder de feature futura: presupuesto
+                automático con transportistas integrados. Deshabilitado
+                hasta que tengamos el módulo conectado. */}
+            <div className="bg-card border border-dashed border-border rounded-input p-4 flex items-start gap-3 opacity-70">
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center">
+                <Truck className="w-4 h-4 text-amber-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-semibold text-foreground">Presupuestar logística con Primar-IA</p>
+                  <span className="text-[10px] font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-badge">
+                    Próximamente
+                  </span>
+                </div>
+                <p className="text-xs text-text-secondary mt-1">
+                  Pronto podrás pedir presupuesto de transporte directamente desde Primar-IA con transportistas integrados, sin salir de la plataforma.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled
+                className="text-xs px-3 py-1.5 rounded-button bg-muted text-muted-foreground cursor-not-allowed whitespace-nowrap"
+                title="Esta funcionalidad estará disponible próximamente"
+              >
+                Pedir presupuesto
+              </button>
             </div>
           </div>
         </section>
