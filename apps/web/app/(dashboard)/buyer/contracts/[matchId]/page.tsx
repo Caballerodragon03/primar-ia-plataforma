@@ -83,6 +83,9 @@ interface MatchContractInfo {
   canceladoPorMi: boolean;
   isSeller: boolean;
   isBuyer: boolean;
+  // Phase 14M v3.14 — true si hay sesión Stripe de comisión creada que
+  // todavía no se ha cerrado (pago en curso). Lo calcula el backend.
+  paymentInFlight?: boolean;
 }
 
 function formatEur(n: number | null): string {
@@ -276,13 +279,13 @@ export default function BuyerMatchContractPage() {
   const deadlineExpired = info.firmaVendedorDeadline
     ? new Date(info.firmaVendedorDeadline).getTime() < Date.now()
     : false;
-  // Anti double-charge: if Stripe redirected us back with ?paid=1, NEVER
-  // re-show the "Firmar y pagar" button — even if the webhook hasn't fired
-  // yet and the state still says PENDIENTE_PAGO_COMPRADOR. The user already
-  // paid; clicking again would create a second Checkout Session.
-  // The backend has its own protection (reuses the same session) but defense
-  // in depth: also block here.
-  const paymentInFlight = paidFlag && info.contratoEstado !== 'FIRMADO';
+  // Phase 14M v3.14 — paymentInFlight ahora viene del backend (mira si
+  // hay sesión Stripe creada y la comisión sin cobrar). Antes dependíamos
+  // solo del ?paid=1 de la URL, que se perdía al refrescar y dejaba que
+  // el comprador volviera a pulsar "Firmar y pagar". El paidFlag se
+  // mantiene como señal de "vienes de Stripe redirigido" para arrancar
+  // el polling inmediatamente.
+  const paymentInFlight = (info.paymentInFlight === true || paidFlag) && info.contratoEstado !== 'FIRMADO';
   const canSignAndPay = info.isBuyer && sellerSigned && !info.firmaComprador
     && info.contratoEstado === 'PENDIENTE_PAGO_COMPRADOR'
     && !deadlineExpired

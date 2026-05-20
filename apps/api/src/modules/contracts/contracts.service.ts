@@ -616,15 +616,23 @@ export class ContractsService {
       return { contractFinalUrl: tx?.contratoPdfUrl ?? null };
     }
 
-    // Generate the FINAL contract PDF (no watermark) outside the tx — PDF
-    // generation is heavy and we don't want to extend the Serializable lock.
-    let contractFinalUrl: string | null = null;
-    try {
-      const result = await this.generateContractFinal(matchId);
-      contractFinalUrl = result.url;
-    } catch (err) {
-      console.error('[contracts] generateContractFinal failed after buyer sign:', err);
-    }
+    // Phase 14M v3.14 — PDF final + facturas ahora son fire-and-forget.
+    // Antes el webhook hacía `await generateContractFinal` (heavy PDF +
+    // upload a R2, 5-15s) y se quedaba el handler bloqueado. Stripe
+    // tiene timeout de 30s para webhooks; si lo superas, reintenta y
+    // duplicas trabajo. Lo importante es que el estado DB ya está como
+    // FIRMADO (línea anterior), así que el polling del frontend ya
+    // detectará el cambio inmediatamente. El PDF final se genera en
+    // background; mientras tanto el comprador ve el contrato en estado
+    // FIRMADO con el draft URL.
+    const contractFinalUrl: string | null = null;
+    void (async () => {
+      try {
+        await this.generateContractFinal(matchId);
+      } catch (err) {
+        console.error('[contracts] generateContractFinal failed after buyer sign:', err);
+      }
+    })();
 
     // Phase 5 — fire-and-forget generation of the three invoice/receipt PDFs.
     // Failures are logged but do NOT roll back. Admin can regenerate manually

@@ -124,6 +124,12 @@ export async function getMatchContractInfo(req: Request, res: Response): Promise
           // Phase 10 — shipping event tracking
           enviadoEn: true,
           recibidoEn: true,
+          // Phase 14M v3.14 — flag para detectar pago en curso aunque
+          // el usuario haya refrescado y perdido el ?paid=1 de la URL.
+          // Si hay session ID pero la comisión no se ha cobrado, hay un
+          // pago en marcha (creó sesión y posiblemente ya pagó pero el
+          // webhook aún no la cerró).
+          comisionStripeSessionId: true,
           // Phase 10 — has the current user already rated this transaction?
           valoraciones: {
             select: { autorId: true },
@@ -196,6 +202,15 @@ export async function getMatchContractInfo(req: Request, res: Response): Promise
       motivoCancelacion: match.motivoCancelacion,
       canceladoPorMi: match.canceladoPor === userId,
       counterpartId: match.lote.vendedorId === userId ? match.pedido.compradorId : match.lote.vendedorId,
+      // Phase 14M v3.14 — paymentInFlight detectado desde backend (no
+      // depende del ?paid=1 de la URL que se pierde al refrescar).
+      // Es true cuando existe una sesión Stripe creada pero la comisión
+      // todavía no se ha registrado como pagada y el contrato sigue
+      // en PENDIENTE_PAGO_COMPRADOR.
+      paymentInFlight:
+        match.contratoEstado === 'PENDIENTE_PAGO_COMPRADOR'
+        && !!match.transaccion?.comisionStripeSessionId
+        && !match.transaccion?.comisionPagadaEn,
       // Role-discriminator for frontend UI rendering
       isSeller: match.lote.vendedorId === userId,
       isBuyer: match.pedido.compradorId === userId,
