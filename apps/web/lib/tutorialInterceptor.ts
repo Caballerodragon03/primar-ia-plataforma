@@ -105,6 +105,16 @@ function mockOrderDetail(): unknown {
       { calibre: '3', cantidad_kg: 3000, precio_max_kg: 0.55 },
       { calibre: '4', cantidad_kg: 2000, precio_max_kg: 0.48 },
     ],
+    // Phase 14M v3.10 — campos que el detalle de pedido accede sin guard
+    // (totalKg.toLocaleString, coverage, costoLogisticaEstimado, etc.).
+    totalKg: 5000,
+    coverage: 30,
+    cantidadKg: 5000,
+    costoLogisticaEstimado: 0,
+    stripePaymentIntentId: null,
+    contratoPdfUrl: null,
+    frecuencia: null,
+    notasAdicionales: null,
     destinoFinal: 'Mercabarna Barcelona',
     fechaEntregaDeseada: new Date(Date.now() + 21 * 24 * 3600 * 1000).toISOString(),
     incoterm: 'DAP',
