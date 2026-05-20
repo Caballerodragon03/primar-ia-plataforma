@@ -20,10 +20,19 @@ async function main() {
     await prisma.$connect();
     console.log('PostgreSQL connected');
 
-    // Test Redis connection
-    const redis = getRedis();
-    await redis.connect();
-    console.log('Redis connected');
+    // Phase 14M v3.8 — Redis no es bloqueante. Si la instancia de Redis
+    // está caída o reiniciándose, antes el API entero crashea en bucle
+    // (Startup failed: Connection is closed). Ahora intentamos conectar
+    // y, si falla, logueamos un warning y seguimos. Las funcionalidades
+    // que usan Redis (rate limit, caché) tienen fallbacks o degradan
+    // graciosamente; mejor servir el resto que tumbar todo.
+    try {
+      const redis = getRedis();
+      await redis.connect();
+      console.log('Redis connected');
+    } catch (err) {
+      console.warn('[startup] Redis no disponible, arrancando sin caché/rate-limit:', err);
+    }
 
     const server = app.listen(PORT, () => {
       console.log(`Primar-IA API running on http://localhost:${PORT}`);
