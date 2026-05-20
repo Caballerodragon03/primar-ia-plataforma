@@ -194,6 +194,14 @@ function mockContractInfo(): unknown {
     canceladoPorMi: false,
     isSeller,
     isBuyer: !isSeller,
+    // Phase 14M v3.9 — campos extra que la sección "Envío de [vendedor]"
+    // de /buyer/orders/[id] accede sin guard (info.fotosLoteUrls.length).
+    // Sin estos campos, undefined.length → crash → "Application error".
+    fotosLoteUrls: [],
+    qrToken: null,
+    qrUsado: false,
+    stripePaymentIntentId: null,
+    stripeCheckoutUrl: null,
   };
 }
 

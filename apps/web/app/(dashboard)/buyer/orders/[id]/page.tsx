@@ -526,7 +526,7 @@ export default function OrderDetailPage() {
                   </div>
 
                   {/* Lot photos */}
-                  {info.fotosLoteUrls.length > 0 && (
+                  {(info.fotosLoteUrls?.length ?? 0) > 0 && (
                     <div className="p-4 border-b border-border">
                       <p className="text-xs font-medium text-foreground mb-2">📸 Fotos de preparación del lote</p>
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
