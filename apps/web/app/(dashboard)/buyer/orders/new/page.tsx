@@ -42,7 +42,8 @@ const schema = z.object({
   incoterm: z.enum(ALL_INCOTERMS as unknown as [string, ...string[]]),
   destinoFinal: z.string().min(2, 'Introduce el destino').optional(),
   frecuencia: z.string().optional(),
-  transporte: z.enum(['own', 'external']).default('own'),
+  // Phase 14M v3.13 — `transporte` retirado del schema cliente. Era dato
+  // muerto (se escribía pero nunca se leía).
   // Phase 14M v3.12 — costoLogisticaEstimado retirado del formulario. Era
   // un dato muerto: Primar-IA no toca el dinero de la logística y no
   // entraba en matching ni en facturas. El campo sigue en el schema de
@@ -78,7 +79,6 @@ export default function CreateOrderPage() {
       calibresSolicitados: [{ calibre: '', cantidad_kg: 0, precio_max_kg: 0 }],
       incoterm: 'FOB',
       frecuencia: 'One-time',
-      transporte: 'own',
       noCalibre: false,
       publicar: false,
       logistica: 'INDIFERENTE',
@@ -539,24 +539,13 @@ export default function CreateOrderPage() {
               )}
             </div>
 
-            <div>
-              <p className="text-sm font-medium text-text-secondary mb-2">Operador de transporte</p>
-              <div className="space-y-2">
-                {(['own', 'external'] as const).map((val) => (
-                  <label key={val} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                    <input
-                      type="radio"
-                      value={val}
-                      {...register('transporte')}
-                      className="accent-primary"
-                    />
-                    {val === 'own' ? 'Operador propio' : 'Cotizar con operador externo'}
-                  </label>
-                ))}
-              </div>
-            </div>
+            {/* Phase 14M v3.13 — "Operador de transporte" retirado del
+                formulario. Se persistía en pedido.transporte pero NUNCA se
+                leía en contratos, facturas, matching ni en el render de
+                pedidos. La columna se mantiene en backend por compatibilidad
+                con pedidos antiguos. */}
 
-            {/* Phase 14M v3.12 — Campo de logística estimada eliminado.
+{/* Phase 14M v3.12 — Campo de logística estimada eliminado.
                 En su lugar, placeholder de feature futura: presupuesto
                 automático con transportistas integrados. Deshabilitado
                 hasta que tengamos el módulo conectado. */}
