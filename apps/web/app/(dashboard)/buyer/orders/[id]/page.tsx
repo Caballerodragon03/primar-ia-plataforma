@@ -572,11 +572,24 @@ const openDisputeModal = (match: Match) => {
                       )}
                     </div>
                   )}
+                  {/* Phase 14M v3.15 — Diferenciar los 3 estados pre-QR.
+                      Antes mostraba "Contrato firmado" en cuanto firmaba el
+                      vendedor, lo cual contradice el banner superior que
+                      pedía firmar+pagar al comprador. */}
                   {!info.qrToken && !info.firmaVendedor && (
-                    <div className="p-4 text-xs text-muted-foreground">Esperando a que el vendedor firme el contrato.</div>
+                    <div className="p-4 text-xs text-muted-foreground">
+                      Esperando a que el vendedor firme el contrato.
+                    </div>
                   )}
-                  {!info.qrToken && info.firmaVendedor && (
-                    <div className="p-4 text-xs text-muted-foreground">Contrato firmado. El código QR aparecerá en cuanto se genere.</div>
+                  {!info.qrToken && info.firmaVendedor && !info.firmaComprador && (
+                    <div className="p-4 text-xs text-amber-700 bg-amber-50 border-t border-amber-200">
+                      El vendedor ha firmado. Falta tu firma y el pago de la comisión para cerrar el acuerdo — usa el botón &laquo;Firmar y pagar comisión&raquo; de arriba.
+                    </div>
+                  )}
+                  {!info.qrToken && info.firmaVendedor && info.firmaComprador && (
+                    <div className="p-4 text-xs text-muted-foreground">
+                      Contrato firmado por ambas partes. El código QR aparecerá en cuanto el vendedor marque la mercancía como enviada.
+                    </div>
                   )}
                 </div>
               );
