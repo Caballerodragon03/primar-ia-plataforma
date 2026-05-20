@@ -567,7 +567,17 @@ export class ContractsService {
       });
       if (!match) throw new AppError('Match no encontrado', 404);
       if (match.contratoEstado === 'FIRMADO') {
-        // Idempotent — webhook may fire twice.
+        // Phase 14M v3.18 — auto-reparar match.estado por si la versión
+        // anterior del código (que solo actualizaba contratoEstado y
+        // dejaba match.estado colgado en PENDIENTE_PAGO) generó datos
+        // inconsistentes. Si el estado ya está en CONFIRMADO/COMPLETADO
+        // este update es no-op.
+        if (match.estado !== 'CONFIRMADO') {
+          await tx.match.update({
+            where: { id: matchId },
+            data: { estado: 'CONFIRMADO' },
+          });
+        }
         return { alreadyFinalized: true };
       }
       if (match.contratoEstado !== 'PENDIENTE_PAGO_COMPRADOR') {
@@ -602,7 +612,12 @@ export class ContractsService {
       });
       await tx.match.update({
         where: { id: matchId },
-        data: { contratoEstado: 'FIRMADO' },
+        // Phase 14M v3.18 — además de contratoEstado=FIRMADO, avanzamos
+        // match.estado a CONFIRMADO. Antes solo lo hacía el flujo escrow
+        // v1 (capturePayment, ya retirado) → con el flujo v2 (solo
+        // comisión) match.estado se quedaba en PENDIENTE_PAGO para
+        // siempre y la UI mostraba "Pendiente de pago" indefinidamente.
+        data: { contratoEstado: 'FIRMADO', estado: 'CONFIRMADO' },
       });
       return { alreadyFinalized: false };
     }, { isolationLevel: 'Serializable' });

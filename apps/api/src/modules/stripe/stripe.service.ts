@@ -633,6 +633,16 @@ export class StripeService {
       throw new AppError('No hay sesión de pago para reconciliar', 400);
     }
     if (match.contratoEstado === 'FIRMADO') {
+      // Phase 14M v3.18 — auto-reparar match.estado si quedó colgado
+      // en PENDIENTE_PAGO por el bug anterior. Sin esto, el dashboard
+      // del vendedor no genera la tarea "marcar enviado" porque el
+      // filtro depende de match.estado=CONFIRMADO.
+      if (match.estado !== 'CONFIRMADO') {
+        await prisma.match.update({
+          where: { id: matchId },
+          data: { estado: 'CONFIRMADO' },
+        });
+      }
       return { status: 'finalized', message: 'El contrato ya está FIRMADO. Refresca la página.' };
     }
     if (match.contratoEstado !== 'PENDIENTE_PAGO_COMPRADOR') {

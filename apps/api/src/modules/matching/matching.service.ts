@@ -1453,12 +1453,16 @@ export class MatchingService {
             pedido: { select: { id: true } },
           },
         }),
+        // Phase 14M v3.18 — flujo v2: tarea "confirmar entrega" para
+        // comprador. Antes filtraba por qrToken (legacy v1). Ahora la
+        // condición correcta: contrato FIRMADO + enviadoEn ya marcado
+        // por el vendedor + recibidoEn aún null.
         prisma.transaccion.findMany({
           where: {
             compradorId: userId,
-            qrToken: { not: null },
-            qrUsado: false,
-            firmaVendedor: { not: null },
+            enviadoEn: { not: null },
+            recibidoEn: null,
+            match: { contratoEstado: 'FIRMADO' },
           },
           include: {
             match: {
@@ -1561,13 +1565,15 @@ export class MatchingService {
           },
         },
       }),
+      // Phase 14M v3.18 — flujo v2: tarea "marcar enviado" para vendedor.
+      // Antes filtraba por qrToken (legacy v1 escrow) y nunca aparecía
+      // ninguna tarea de envío en el flujo de comisión solo. Ahora la
+      // condición correcta: contrato FIRMADO + transaccion.enviadoEn null.
       prisma.transaccion.findMany({
         where: {
           vendedorId: userId,
-          firmaVendedor: { not: null },
-          firmaComprador: { not: null },
-          qrToken: { not: null },
-          qrUsado: false,
+          enviadoEn: null,
+          match: { contratoEstado: 'FIRMADO' },
         },
         include: {
           match: {
@@ -1609,10 +1615,12 @@ export class MatchingService {
       }),
     ]);
 
-    const photoPending = pendingPhotos.filter((tx) => {
-      const urls = tx.fotosLoteUrls as string[] | null;
-      return !urls || urls.length === 0;
-    });
+    // Phase 14M v3.18 — pendingPhotos ahora es la lista de transacciones a
+    // marcar como enviadas (flujo v2). Antes filtraba por fotosLoteUrls
+    // vacío (legacy v1, fotos del lote en R2). Mantenemos el nombre del
+    // bucket "photos" en la API para no romper el front pero su
+    // semántica cambió: ahora son "marcar enviado".
+    const photoPending = pendingPhotos;
 
     type CalibreItem = { calibre: string; cantidad_kg: number };
     const computeCov = (calibres: unknown, committedKg: number) => {
