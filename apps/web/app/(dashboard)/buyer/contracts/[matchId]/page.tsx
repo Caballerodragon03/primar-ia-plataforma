@@ -323,16 +323,44 @@ export default function BuyerMatchContractPage() {
           <div className="flex-1">
             <p className="text-sm font-semibold text-amber-900">El pago se está finalizando</p>
             <p className="text-xs text-amber-800 mt-1">
-              Tu pago se ha enviado a Stripe pero aún no hemos recibido la confirmación final. No vuelvas a pulsar «Firmar y pagar» — ya está en curso. Refresca esta página en un minuto.
+              Tu pago se ha enviado a Stripe pero aún no hemos recibido la confirmación final. No vuelvas a pulsar «Firmar y pagar» — ya está en curso.
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3"
-              onClick={() => window.location.reload()}
-            >
-              Refrescar
-            </Button>
+            <p className="text-xs text-amber-800 mt-2">
+              Si llevas más de un minuto esperando, pulsa &laquo;Reconciliar con Stripe&raquo;: comprobamos directamente en Stripe el estado del pago y forzamos la finalización del contrato.
+            </p>
+            <div className="flex gap-2 mt-3 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.reload()}
+              >
+                Refrescar
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const { data } = await api.post(`/contracts/match/${matchId}/reconcile-commission`);
+                    const result = data?.data as { status: string; checkoutUrl?: string; message?: string };
+                    if (result?.status === 'finalized') {
+                      window.location.reload();
+                    } else if (result?.status === 'pending' && result.checkoutUrl) {
+                      window.location.href = result.checkoutUrl;
+                    } else {
+                      alert(result?.message ?? 'Sesión reabierta. Vuelve a pulsar Firmar y pagar.');
+                      window.location.reload();
+                    }
+                  } catch (err: unknown) {
+                    const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+                      ?? 'No se pudo reconciliar el pago. Contacta con soporte.';
+                    alert(msg);
+                  }
+                }}
+              >
+                Reconciliar con Stripe
+              </Button>
+            </div>
           </div>
         </div>
       )}

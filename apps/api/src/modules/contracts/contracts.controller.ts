@@ -334,3 +334,16 @@ export async function regenerateDraftContract(req: Request, res: Response): Prom
   const result = await contractsService.generateContractDraft(matchId);
   res.json({ success: true, data: result });
 }
+
+/**
+ * POST /api/v1/contracts/match/:matchId/reconcile-commission
+ * Phase 14M v3.17 — el comprador puede forzar la reconciliación del pago
+ * de comisión si el webhook no llegó. Consulta Stripe directamente.
+ */
+export async function reconcileCommissionPayment(req: Request, res: Response): Promise<void> {
+  const matchId = (req.params as { matchId: string }).matchId;
+  const userId = req.user!.sub;
+  const { stripeService } = await import('../stripe/stripe.service.js');
+  const result = await stripeService.reconcileCommissionPayment(matchId, userId);
+  res.json({ success: true, data: result });
+}

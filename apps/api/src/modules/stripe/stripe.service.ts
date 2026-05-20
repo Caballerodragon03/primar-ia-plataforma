@@ -591,6 +591,99 @@ export class StripeService {
     });
     return { url: session.url };
   }
+
+  /**
+   * Phase 14M v3.17 — Reconciliar manualmente el pago de comisión.
+   *
+   * Caso de uso: el comprador pagó en Stripe pero el webhook
+   * `checkout.session.completed` nunca llegó (o llegó y falló) — el
+   * contrato sigue en PENDIENTE_PAGO_COMPRADOR aunque el cargo está
+   * hecho. El frontend muestra "El pago se está finalizando…" indefinidamente.
+   *
+   * Este endpoint consulta la sesión directamente en Stripe y:
+   *   - Si está `complete + paid` → replica la lógica del webhook
+   *     (signMatchContractAsBuyerAfterPayment).
+   *   - Si está `open` → devuelve URL para continuar.
+   *   - Si está `expired` o `unpaid` → limpia el session id para que
+   *     el comprador pueda volver a crear sesión.
+   *
+   * Idempotente y seguro contra dobles cobros (la operación de finalizar
+   * es idempotente en el servicio de contratos).
+   */
+  async reconcileCommissionPayment(
+    matchId: string,
+    compradorId: string,
+  ): Promise<{ status: 'finalized' | 'pending' | 'reopened'; checkoutUrl?: string; message: string }> {
+    const match = await prisma.match.findUnique({
+      where: { id: matchId },
+      include: {
+        transaccion: true,
+        pedido: { select: { compradorId: true } },
+      },
+    });
+    if (!match) throw new AppError('Match no encontrado', 404);
+    if (match.pedido.compradorId !== compradorId) {
+      throw new AppError('No autorizado', 403);
+    }
+    if (!match.transaccion) {
+      throw new AppError('No existe transacción para este match', 500);
+    }
+    const sessionId = match.transaccion.comisionStripeSessionId;
+    if (!sessionId) {
+      throw new AppError('No hay sesión de pago para reconciliar', 400);
+    }
+    if (match.contratoEstado === 'FIRMADO') {
+      return { status: 'finalized', message: 'El contrato ya está FIRMADO. Refresca la página.' };
+    }
+    if (match.contratoEstado !== 'PENDIENTE_PAGO_COMPRADOR') {
+      throw new AppError(`Estado del contrato incompatible: ${match.contratoEstado}`, 400);
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    // Caso 1: pago completado en Stripe → replicar webhook.
+    if (session.status === 'complete' && session.payment_status === 'paid') {
+      const buyerSignature = session.metadata?.buyerSignature ?? '';
+      const buyerIp = session.metadata?.buyerIp || null;
+      if (!buyerSignature) {
+        throw new AppError('Sesión sin firma asociada — contacta con soporte', 500);
+      }
+      const paymentIntentId = typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id ?? session.id;
+      const { contractsService } = await import('../contracts/contracts.service.js');
+      await contractsService.signMatchContractAsBuyerAfterPayment(
+        matchId,
+        buyerSignature,
+        buyerIp,
+        paymentIntentId,
+      );
+      return {
+        status: 'finalized',
+        message: 'Pago reconciliado. El contrato ya está FIRMADO.',
+      };
+    }
+
+    // Caso 2: sesión abierta → devolver URL para que termine.
+    if (session.status === 'open' && session.url) {
+      return {
+        status: 'pending',
+        checkoutUrl: session.url,
+        message: 'La sesión sigue abierta. Continúa el pago en Stripe.',
+      };
+    }
+
+    // Caso 3: expirada / fallida / unpaid → limpiar marker para que el
+    // comprador pueda crear una nueva sesión.
+    await prisma.transaccion.update({
+      where: { id: match.transaccion.id },
+      data: { comisionStripeSessionId: null },
+    });
+    return {
+      status: 'reopened',
+      message: 'La sesión anterior expiró o no se completó. Puedes volver a pulsar Firmar y pagar comisión.',
+    };
+  }
 }
 
 export const stripeService = new StripeService();

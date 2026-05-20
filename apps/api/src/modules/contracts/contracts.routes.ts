@@ -11,6 +11,7 @@ import {
   regenerateDraftContract,
   signMatchAsSeller,
   startBuyerCommissionCheckout,
+  reconcileCommissionPayment,
 } from './contracts.controller.js';
 import { cancelMatchContract } from '../cancellations/cancellations.controller.js';
 import { markShippedController, markReceivedController } from '../shipping/shipping.controller.js';
@@ -46,6 +47,8 @@ contractsRouter.post('/match/:matchId/regenerate-draft', validateBody(regenerate
 contractsRouter.post('/match/:matchId/sign-seller', validateBody(signSellerSchema), asyncHandler(signMatchAsSeller));
 // POST   /api/v1/contracts/match/:matchId/buyer-checkout
 contractsRouter.post('/match/:matchId/buyer-checkout', validateBody(buyerCheckoutSchema), asyncHandler(startBuyerCommissionCheckout));
+// POST   /api/v1/contracts/match/:matchId/reconcile-commission — Phase 14M v3.17
+contractsRouter.post('/match/:matchId/reconcile-commission', asyncHandler(reconcileCommissionPayment));
 // POST   /api/v1/contracts/match/:matchId/cancel — Phase 9 cancellation
 //   Phase 12 — rate limited: 5 / 10min per user to kill the social-attack
 //   vector where a malicious user spams cancels against the same contraparte.
