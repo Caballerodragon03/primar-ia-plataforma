@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Plus, TrendingUp, Clock, DollarSign, RefreshCw, PenLine, CreditCard, PackageCheck, AlarmClock, MessageCircle, Leaf } from 'lucide-react';
+import { Plus, TrendingUp, Clock, DollarSign, RefreshCw, PenLine, CreditCard, PackageCheck, AlarmClock, MessageCircle, Leaf, Star } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { KPICard } from '@/components/ui/KPICard';
@@ -37,6 +37,9 @@ interface NotifSummary {
   firstPendingContractMatchId?: string;
   firstPendingDeliveryOrderId?: string;
   firstPendingDeliveryTxId?: string;
+  firstPendingDeliveryMatchId?: string;
+  pendingRatings?: number;
+  firstPendingRatingMatchId?: string;
 }
 
 const IN_PROGRESS_STATES = ['ACTIVO', 'PARCIALMENTE_CUBIERTO', 'TOTALMENTE_CUBIERTO'];
@@ -110,12 +113,25 @@ export default function BuyerDashboard() {
     },
     n && n.pendingDeliveries > 0 && {
       icon: <PackageCheck className="w-5 h-5" />,
-      label: `Confirmar entrega de ${n.pendingDeliveries} envío${n.pendingDeliveries > 1 ? 's' : ''}`,
-      desc: 'Scan the QR code or enter the verification code to release payment.',
-      href: n.pendingDeliveries === 1 && n.firstPendingDeliveryOrderId && n.firstPendingDeliveryTxId
-        ? `/buyer/orders/${n.firstPendingDeliveryOrderId}/delivery/${n.firstPendingDeliveryTxId}`
+      label: `Confirmar recepción de ${n.pendingDeliveries} envío${n.pendingDeliveries > 1 ? 's' : ''}`,
+      // Phase 14M v3.20 — texto v2 ("confirmar recepción", no "entrega
+      // con QR") y enlace al contrato donde vive el botón "Confirmar
+      // recepción". Antes apuntaba a /buyer/orders/.../delivery/...
+      // (legacy v1) que no existe en v2.
+      desc: 'El vendedor ha marcado el envío. Confirma que has recibido la mercancía.',
+      href: n.pendingDeliveries === 1 && n.firstPendingDeliveryMatchId
+        ? `/buyer/contracts/${n.firstPendingDeliveryMatchId}`
         : '/buyer/orders/tasks/deliveries',
       color: 'green',
+    },
+    n && (n.pendingRatings ?? 0) > 0 && {
+      icon: <Star className="w-5 h-5" />,
+      label: `Valorar al vendedor en ${n.pendingRatings} operación${(n.pendingRatings ?? 0) > 1 ? 'es' : ''}`,
+      desc: 'La mercancía ya fue recibida. Valora al vendedor para cerrar la operación.',
+      href: n.firstPendingRatingMatchId
+        ? `/buyer/contracts/${n.firstPendingRatingMatchId}`
+        : '/buyer/orders/tasks/deliveries',
+      color: 'yellow',
     },
     n && n.expiredOrders > 0 && {
       icon: <AlarmClock className="w-5 h-5" />,

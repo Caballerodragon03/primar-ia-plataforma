@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Plus, Package, GitMerge, CheckCircle2, RefreshCw, PenLine, Camera, Zap, AlarmClock, MessageCircle, Sprout } from 'lucide-react';
+import { Plus, Package, GitMerge, CheckCircle2, RefreshCw, PenLine, Camera, Zap, AlarmClock, MessageCircle, Sprout, Star } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { KPICard } from '@/components/ui/KPICard';
@@ -55,6 +55,8 @@ interface SellerNotifSummary {
   firstPendingPhotosLotId?: string;
   firstPendingPhotosTxId?: string;
   firstPendingPhotosMatchId?: string;
+  pendingRatings?: number;
+  firstPendingRatingMatchId?: string;
 }
 
 export default function SellerDashboard() {
@@ -122,6 +124,15 @@ export default function SellerDashboard() {
       desc: 'New buyers matched to your lots. Review and accept.',
       href: n.pendingMatches === 1 ? '/seller/matches' : '/seller/lots/tasks/matches',
       color: 'green',
+    },
+    n && (n.pendingRatings ?? 0) > 0 && {
+      icon: <Star className="w-5 h-5" />,
+      label: `Valorar al comprador en ${n.pendingRatings} operación${(n.pendingRatings ?? 0) > 1 ? 'es' : ''}`,
+      desc: 'La mercancía ya fue recibida. Valora al comprador para cerrar la operación.',
+      href: n.firstPendingRatingMatchId
+        ? `/seller/contracts/${n.firstPendingRatingMatchId}`
+        : '/seller/lots/tasks/photos',
+      color: 'yellow',
     },
     n && n.expiredLots > 0 && {
       icon: <AlarmClock className="w-5 h-5" />,

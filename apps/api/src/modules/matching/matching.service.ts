@@ -296,8 +296,16 @@ export async function recomputeLotState(
     nuevoEstado = lote.estado === 'BORRADOR' ? 'BORRADOR' : 'ACTIVO';
   } else {
     const fullyMatched = totalKg > 0 && committedKg >= totalKg;
+    // Phase 14M v3.20 — ENTREGADO también cuenta como "entregado" para
+    // pasar el lote a VENDIDO. Antes solo COMPLETADO (legacy v1) cerraba
+    // el lote; en el flujo v2 la transaccion va a ENTREGADO tras
+    // markReceived y nunca llegaba a COMPLETADO, así que el lote se
+    // quedaba en PARCIALMENTE_VENDIDO indefinidamente.
     const allDelivered = lote.matches.length > 0 &&
-      lote.matches.every((m) => m.transaccion?.estado === 'COMPLETADO');
+      lote.matches.every((m) =>
+        m.transaccion?.estado === 'COMPLETADO'
+        || m.transaccion?.estado === 'ENTREGADO',
+      );
     nuevoEstado = (fullyMatched && allDelivered) ? 'VENDIDO' : 'PARCIALMENTE_VENDIDO';
   }
 
@@ -1165,6 +1173,8 @@ export class MatchingService {
     pendingContracts: number;
     pendingPhotos: number;
     pendingDeliveries: number;
+    /** Phase 14M v3.20 — transacciones entregadas sin valorar por el user. */
+    pendingRatings?: number;
     expiredOrders: number;
     expiredLots: number;
     firstPendingOfferOrderId?: string;
@@ -1173,10 +1183,12 @@ export class MatchingService {
     firstPendingContractMatchId?: string;
     firstPendingDeliveryOrderId?: string;
     firstPendingDeliveryTxId?: string;
+    firstPendingDeliveryMatchId?: string;
     firstPendingContractLotId?: string;
     firstPendingPhotosLotId?: string;
     firstPendingPhotosTxId?: string;
     firstPendingPhotosMatchId?: string;
+    firstPendingRatingMatchId?: string;
   }> {
     const unreadMessages = await prisma.mensaje.count({
       where: {
@@ -1229,27 +1241,30 @@ export class MatchingService {
           where: buyerPendingContractWhere,
           select: { id: true, pedidoId: true },
         }),
+        // Phase 14M v3.20 — flujo v2: comprador confirma recepción
+        // cuando el vendedor ha marcado enviado.
         prisma.transaccion.findFirst({
           where: {
             compradorId: userId,
-            qrToken: { not: null },
-            qrUsado: false,
-            firmaVendedor: { not: null },
+            enviadoEn: { not: null },
+            recibidoEn: null,
+            match: { contratoEstado: 'FIRMADO' },
           },
-          select: { id: true, match: { select: { pedidoId: true } } },
+          select: { id: true, match: { select: { id: true, pedidoId: true } } },
         }),
       ]);
 
       const now = new Date();
-      const [pendingOffers, pendingContracts, pendingDeliveries, expiredOrders] = await Promise.all([
+      const [pendingOffers, pendingContracts, pendingDeliveries, expiredOrders, pendingRatings] = await Promise.all([
         prisma.match.count({ where: unauthorizedOfferWhere }),
         prisma.match.count({ where: buyerPendingContractWhere }),
+        // Phase 14M v3.20 — flujo v2: contador "confirmar recepción".
         prisma.transaccion.count({
           where: {
             compradorId: userId,
-            qrToken: { not: null },
-            qrUsado: false,
-            firmaVendedor: { not: null },
+            enviadoEn: { not: null },
+            recibidoEn: null,
+            match: { contratoEstado: 'FIRMADO' },
           },
         }),
         prisma.pedido.count({
@@ -1259,7 +1274,27 @@ export class MatchingService {
             fechaEntregaDeseada: { lt: now },
           },
         }),
+        // Phase 14M v3.20 — transacciones entregadas que el comprador
+        // todavía no ha valorado al vendedor.
+        prisma.transaccion.count({
+          where: {
+            compradorId: userId,
+            recibidoEn: { not: null },
+            valoraciones: { none: { autorId: userId } },
+          },
+        }),
       ]);
+
+      const firstRating = pendingRatings > 0
+        ? await prisma.transaccion.findFirst({
+            where: {
+              compradorId: userId,
+              recibidoEn: { not: null },
+              valoraciones: { none: { autorId: userId } },
+            },
+            select: { id: true, match: { select: { id: true } } },
+          })
+        : null;
 
       return {
         pendingOffers,
@@ -1268,6 +1303,7 @@ export class MatchingService {
         pendingContracts,
         pendingPhotos: 0,
         pendingDeliveries,
+        pendingRatings,
         expiredOrders,
         expiredLots: 0,
         firstPendingOfferOrderId: firstOffer?.pedidoId,
@@ -1275,6 +1311,8 @@ export class MatchingService {
         firstPendingContractMatchId: firstContract?.id,
         firstPendingDeliveryOrderId: firstDelivery?.match?.pedidoId,
         firstPendingDeliveryTxId: firstDelivery?.id,
+        firstPendingDeliveryMatchId: firstDelivery?.match?.id,
+        firstPendingRatingMatchId: firstRating?.match?.id,
       };
     }
 
@@ -1312,7 +1350,7 @@ export class MatchingService {
     ]);
 
     const now = new Date();
-    const [pendingContracts, expiredLots] = await Promise.all([
+    const [pendingContracts, expiredLots, pendingRatings, firstRatingTx] = await Promise.all([
       prisma.match.count({ where: sellerPendingContractWhere }),
       prisma.lote.count({
         where: {
@@ -1320,6 +1358,23 @@ export class MatchingService {
           estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] },
           fechaFinDisponibilidad: { not: null, lt: now },
         },
+      }),
+      // Phase 14M v3.20 — operaciones entregadas que el vendedor todavía
+      // no ha valorado al comprador.
+      prisma.transaccion.count({
+        where: {
+          vendedorId: userId,
+          recibidoEn: { not: null },
+          valoraciones: { none: { autorId: userId } },
+        },
+      }),
+      prisma.transaccion.findFirst({
+        where: {
+          vendedorId: userId,
+          recibidoEn: { not: null },
+          valoraciones: { none: { autorId: userId } },
+        },
+        select: { id: true, match: { select: { id: true } } },
       }),
     ]);
 
@@ -1336,16 +1391,15 @@ export class MatchingService {
       pendingContracts,
       pendingPhotos,
       pendingDeliveries: 0,
+      pendingRatings,
       expiredOrders: 0,
       expiredLots,
       firstPendingContractLotId: firstContract?.loteId,
       firstPendingContractMatchId: firstContract?.id,
       firstPendingPhotosLotId: firstPhotoPending?.match?.loteId,
       firstPendingPhotosTxId: firstPhotoPending?.id,
-      // Phase 14M v3.19 — match id para enlazar al contrato v2 (donde
-      // vive el botón "Marcar como enviado"), sustituyendo al legacy
-      // /seller/lots/:lotId/qr/:txId.
       firstPendingPhotosMatchId: firstPhotoPending?.match?.id,
+      firstPendingRatingMatchId: firstRatingTx?.match?.id,
     };
   }
 

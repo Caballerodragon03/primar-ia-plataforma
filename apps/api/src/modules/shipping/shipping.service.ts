@@ -101,6 +101,46 @@ export class ShippingService {
       },
     });
 
+    // Phase 14M v3.20 — si todos los matches del pedido tienen
+    // recibidoEn marcado, el pedido pasa a CERRADO y desaparece de la
+    // lista de pedidos activos del comprador. Sin esto, el pedido se
+    // quedaba en TOTALMENTE_CUBIERTO indefinidamente aunque la entrega
+    // estuviera confirmada.
+    const fullMatch = await prisma.match.findUnique({
+      where: { id: matchId },
+      select: {
+        pedidoId: true,
+        loteId: true,
+        pedido: {
+          select: {
+            matches: {
+              where: { estado: { in: ['CONFIRMADO', 'ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO'] } },
+              select: { transaccion: { select: { recibidoEn: true } } },
+            },
+          },
+        },
+      },
+    });
+    if (fullMatch?.pedido) {
+      const allReceived = fullMatch.pedido.matches.length > 0
+        && fullMatch.pedido.matches.every((m) => m.transaccion?.recibidoEn != null);
+      if (allReceived) {
+        await prisma.pedido.update({
+          where: { id: fullMatch.pedidoId },
+          data: { estado: 'CERRADO' },
+        });
+      }
+    }
+    // Recompute lot state: si todos los kg del lote están entregados,
+    // pasa a VENDIDO. Reutilizamos la función existente del matching
+    // module.
+    try {
+      const { recomputeLotState } = await import('../matching/matching.service.js');
+      if (fullMatch?.loteId) await recomputeLotState(fullMatch.loteId);
+    } catch (err) {
+      console.warn('[shipping] recomputeLotState failed:', err);
+    }
+
     return { recibidoEn: recibidoEn.toISOString() };
   }
 }
