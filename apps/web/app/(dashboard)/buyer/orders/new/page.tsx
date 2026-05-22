@@ -94,6 +94,7 @@ export default function CreateOrderPage() {
   const logistica = watch('logistica');
   const incotermsAceptados = watch('incotermsAceptados') ?? [];
   const terminosPagoAceptados = watch('terminosPagoAceptados') ?? [];
+  const noCalibre = watch('noCalibre');
 
   const availableIncoterms = useMemo(
     () => incotermsForLogistica(logistica as LogisticaPreferencia),
@@ -235,21 +236,18 @@ export default function CreateOrderPage() {
         values.variedadId === OTHER_VALUE && customVariety.trim()
           ? customVariety.trim()
           : undefined;
-      // Phase 14B — si noCalibre está marcado, colapsar el array de calibres
-      // a un único item placeholder UNCALIBRATED con la suma del peso/precio
-      // declarado. Antes el payload enviaba calibres vacíos → backend
-      // rechazaba con `calibre: ''` o lo persistía como string vacío.
+      // Phase 14M v3.31 — con la nueva UI cuando noCalibre está marcado solo
+      // hay un input de kg y un input de precio (calibresSolicitados.0). Se
+      // marca con calibre 'UNCALIBRATED' como sentinel para que el motor de
+      // matching lo trate como "sin calibrar" y solo case con vendedores
+      // también sin calibrar (regla v3.31 en meetsHardCriteria).
       let calibresSolicitados = values.calibresSolicitados;
       if (values.noCalibre) {
-        const totalKg = values.calibresSolicitados.reduce((s, c) => s + Number(c.cantidad_kg || 0), 0);
-        const totalPrecio = values.calibresSolicitados.reduce((s, c) => s + Number(c.precio_max_kg || 0), 0);
-        const avgPrecio = values.calibresSolicitados.length > 0
-          ? totalPrecio / values.calibresSolicitados.length
-          : 0;
+        const first = values.calibresSolicitados[0];
         calibresSolicitados = [{
           calibre: 'UNCALIBRATED',
-          cantidad_kg: totalKg,
-          precio_max_kg: avgPrecio,
+          cantidad_kg: Number(first?.cantidad_kg ?? 0),
+          precio_max_kg: Number(first?.precio_max_kg ?? 0),
         }];
       }
       const payload = {
@@ -334,68 +332,100 @@ export default function CreateOrderPage() {
             />
 
             {/* Calibres */}
+            {/* Phase 14M v3.31 — al marcar "Sin calibrar" se colapsa el grid
+                de calibres y solo se piden Kg + precio máximo. Antes el grid
+                seguía visible y el submit averaging silencioso. Ahora la UX
+                refleja el modelo de datos: un pedido sin calibrar es un solo
+                bucket {cantidad_kg, precio_max_kg}. */}
             <div data-tutorial="form-calibres" className="space-y-2">
-              <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-xs font-medium text-text-secondary px-1">
-                <span>Caliber</span>
-                <span>Qty (kg)</span>
-                <span>Selling Price (€/kg)</span>
-                <span />
-              </div>
-              {fields.map((field, idx) => (
-                <div key={field.id} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-start">
-                  {calibreOptions.length > 1 ? (
-                    <Select
-                      label=""
-                      {...register(`calibresSolicitados.${idx}.calibre`)}
-                      error={errors.calibresSolicitados?.[idx]?.calibre?.message}
-                    >
-                      <option value="">Select caliber...</option>
-                      {calibreOptions.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </Select>
-                  ) : (
-                    <Input
-                      placeholder="Caliber"
-                      {...register(`calibresSolicitados.${idx}.calibre`)}
-                      error={errors.calibresSolicitados?.[idx]?.calibre?.message}
-                    />
-                  )}
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="30000"
-                    {...register(`calibresSolicitados.${idx}.cantidad_kg`)}
-                    error={errors.calibresSolicitados?.[idx]?.cantidad_kg?.message}
-                  />
-                  <Input
-                    type="number"
-                    step="0.001"
-                    placeholder="0.70"
-                    {...register(`calibresSolicitados.${idx}.precio_max_kg`)}
-                    error={errors.calibresSolicitados?.[idx]?.precio_max_kg?.message}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => remove(idx)}
-                    disabled={fields.length === 1}
-                    className="p-2 text-muted-foreground hover:text-red-500 disabled:opacity-30 mt-0.5"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => append({ calibre: '', cantidad_kg: 0, precio_max_kg: 0 })}
-                className="text-sm text-primary-dark font-medium hover:underline flex items-center gap-1"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add another caliber
-              </button>
               <label className="flex items-center gap-2 text-sm text-text-secondary">
                 <input type="checkbox" {...register('noCalibre')} className="rounded" />
-                Non calibrated/weighted Lots
+                Sin calibrar (acepto cualquier calibre)
               </label>
+              {noCalibre ? (
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-text-secondary px-1">Quantity (kg)</p>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="30000"
+                      {...register('calibresSolicitados.0.cantidad_kg')}
+                      error={errors.calibresSolicitados?.[0]?.cantidad_kg?.message}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-text-secondary px-1">Max Price (€/kg)</p>
+                    <Input
+                      type="number"
+                      step="0.001"
+                      placeholder="0.70"
+                      {...register('calibresSolicitados.0.precio_max_kg')}
+                      error={errors.calibresSolicitados?.[0]?.precio_max_kg?.message}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-xs font-medium text-text-secondary px-1">
+                    <span>Caliber</span>
+                    <span>Qty (kg)</span>
+                    <span>Selling Price (€/kg)</span>
+                    <span />
+                  </div>
+                  {fields.map((field, idx) => (
+                    <div key={field.id} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-start">
+                      {calibreOptions.length > 1 ? (
+                        <Select
+                          label=""
+                          {...register(`calibresSolicitados.${idx}.calibre`)}
+                          error={errors.calibresSolicitados?.[idx]?.calibre?.message}
+                        >
+                          <option value="">Select caliber...</option>
+                          {calibreOptions.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </Select>
+                      ) : (
+                        <Input
+                          placeholder="Caliber"
+                          {...register(`calibresSolicitados.${idx}.calibre`)}
+                          error={errors.calibresSolicitados?.[idx]?.calibre?.message}
+                        />
+                      )}
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="30000"
+                        {...register(`calibresSolicitados.${idx}.cantidad_kg`)}
+                        error={errors.calibresSolicitados?.[idx]?.cantidad_kg?.message}
+                      />
+                      <Input
+                        type="number"
+                        step="0.001"
+                        placeholder="0.70"
+                        {...register(`calibresSolicitados.${idx}.precio_max_kg`)}
+                        error={errors.calibresSolicitados?.[idx]?.precio_max_kg?.message}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => remove(idx)}
+                        disabled={fields.length === 1}
+                        className="p-2 text-muted-foreground hover:text-red-500 disabled:opacity-30 mt-0.5"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => append({ calibre: '', cantidad_kg: 0, precio_max_kg: 0 })}
+                    className="text-sm text-primary-dark font-medium hover:underline flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add another caliber
+                  </button>
+                </>
+              )}
             </div>
 
             <div>

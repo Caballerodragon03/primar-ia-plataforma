@@ -64,6 +64,14 @@ function isUncalibratedLot(loteCalibres: LoteCalibre[]): boolean {
   return loteCalibres.length === 1 && loteCalibres[0]?.calibre === 'UNCALIBRATED';
 }
 
+// Phase 14M v3.31 — equivalente para pedidos. Un pedido "sin calibrar" es un
+// comprador que acepta cualquier calibre (un solo bucket con sentinel
+// UNCALIBRATED). Las reglas de matching tratan asimétricamente lote↔pedido
+// sin calibrar (ver meetsHardCriteria).
+function isUncalibratedPedido(pedidoCalibres: PedidoCalibre[]): boolean {
+  return pedidoCalibres.length === 1 && pedidoCalibres[0]?.calibre === 'UNCALIBRATED';
+}
+
 /**
  * Rentabilidad: precio ofrecido por el vendedor vs. precio máximo del comprador.
  * Rango: 0–1. Lotes sin calibrar → 0.5 (neutro, aparecen después de los calibrados).
@@ -415,8 +423,9 @@ async function computeClampedMatchCalibres(
   });
   const pedidoCommitted = sumCommittedPerCalibre(pedidoCommittedMatches);
 
-  // Uncalibrated: treat the lot as a single bucket, clamp to total buyer
-  // remaining capacity across all calibres.
+  // Uncalibrated lote (vendedor a granel): tratar el lote como un bucket
+  // único contra el pedido (que también debe ser uncalibrated — meetsHardCriteria
+  // ya lo garantiza). Clamp por kg totales.
   if (isUncalibratedLot(loteCalibres)) {
     const loteTotal = loteCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
     const loteUsed = Array.from(loteCommitted.values()).reduce((s, v) => s + v, 0);
@@ -432,6 +441,31 @@ async function computeClampedMatchCalibres(
     if (!first) return { calibres: [], total: 0 };
     return {
       calibres: [{ ...first, cantidad_kg: matched }],
+      total: matched,
+    };
+  }
+
+  // Phase 14M v3.31 — pedido uncalibrated + lote calibrado. El comprador
+  // acepta cualquier calibre, así que tomamos todos los calibres del lote
+  // cuyo precio_min_kg cabe en el precio_max_kg del buyer y sumamos. El
+  // resultado se guarda como un único bucket UNCALIBRATED para mantener
+  // coherencia en calibresJson del match (sin esto, la factura/contrato
+  // tendrían que reagrupar y sería frágil).
+  if (isUncalibratedPedido(pedidoCalibres)) {
+    const buyerBucket = pedidoCalibres[0];
+    if (!buyerBucket) return { calibres: [], total: 0 };
+    const buyerMaxPrice = buyerBucket.precio_max_kg;
+    const compatibleLoteKg = loteCalibres.reduce((s, lc) => {
+      if (lc.precio_min_kg > buyerMaxPrice) return s;
+      const rem = Math.max(0, lc.cantidad_kg - (loteCommitted.get(lc.calibre) ?? 0));
+      return s + rem;
+    }, 0);
+    const pedidoUsed = Array.from(pedidoCommitted.values()).reduce((s, v) => s + v, 0);
+    const pedidoRemaining = Math.max(0, buyerBucket.cantidad_kg - pedidoUsed);
+    const matched = Math.min(compatibleLoteKg, pedidoRemaining);
+    if (matched <= 0) return { calibres: [], total: 0 };
+    return {
+      calibres: [{ calibre: 'UNCALIBRATED', cantidad_kg: matched, precio_min_kg: 0 }],
       total: matched,
     };
   }
@@ -507,16 +541,34 @@ function meetsHardCriteria(
     return false;
   }
 
-  // 3. Calibre y precio compatibles (lotes sin calibrar se saltan esta comprobación)
+  // 3. Calibre y precio compatibles. Phase 14M v3.31 — semántica nueva
+  // para "Sin calibrar":
+  //
+  //   - LOTE sin calibrar = el vendedor no clasifica/calibra → SOLO casa con
+  //     pedidos sin calibrar (es decir, con compradores que también aceptan
+  //     mezcla). Un comprador que pidió calibre concreto no debe recibir
+  //     producto sin clasificar.
+  //   - PEDIDO sin calibrar = el comprador acepta cualquier mezcla → casa
+  //     con TODOS los lotes (calibrados o no). Se salta el chequeo de
+  //     price-fit por calibre porque no hay calibre concreto que cuadrar.
+  //   - Ambos calibrados → debe haber al menos un calibre común con precio
+  //     compatible (lc.precio_min_kg ≤ pc.precio_max_kg).
   const loteCalibres = toLoteCalibre(lote.calibres);
   const pedidoCalibres = toPedidoCalibre(pedido.calibresSolicitados);
-  if (!isUncalibratedLot(loteCalibres)) {
+  const loteUncal = isUncalibratedLot(loteCalibres);
+  const pedidoUncal = isUncalibratedPedido(pedidoCalibres);
+  if (loteUncal && !pedidoUncal) return false; // vendedor "a granel" solo va con compradores "a granel"
+  if (!loteUncal && !pedidoUncal) {
+    // Caso clásico: ambos calibrados → exigir intersección con price-fit.
     const hasPriceFit = pedidoCalibres.some((pc) => {
       const lc = loteCalibres.find((l) => l.calibre === pc.calibre);
       return lc != null && lc.precio_min_kg <= pc.precio_max_kg;
     });
     if (!hasPriceFit) return false;
   }
+  // Si pedido es uncalibrated (con o sin lote uncal) → no comprobamos
+  // price-fit por calibre. El precio se negocia/usa al nivel de
+  // precio_max_kg del bucket único del pedido.
 
   // 4. Fecha disponibilidad <= fecha entrega deseada
   if (lote.fechaDisponibilidad > pedido.fechaEntregaDeseada) return false;
