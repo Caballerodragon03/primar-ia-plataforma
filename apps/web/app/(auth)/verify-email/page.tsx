@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, XCircle, Loader2, MailCheck } from 'lucide-react';
@@ -17,7 +17,35 @@ import { Button } from '@/components/ui/Button';
  */
 type Status = 'loading' | 'success' | 'pending-admin' | 'error';
 
+// Phase 14M v3.34 — Next.js 14 exige que useSearchParams se ejecute dentro
+// de un <Suspense> boundary o falla el build con
+// "useSearchParams() should be wrapped in a suspense boundary". El default
+// export hace de wrapper y el VerifyEmailContent es el componente real.
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<VerifyEmailFallback />}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
+}
+
+function VerifyEmailFallback() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
+      <div className="w-full max-w-md">
+        <div className="flex justify-center mb-6">
+          <Logo />
+        </div>
+        <div className="bg-card border border-border rounded-card p-8 shadow-soft text-center space-y-4">
+          <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+          <h1 className="text-xl font-bold text-foreground">Verificando tu cuenta…</h1>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VerifyEmailContent() {
   const params = useSearchParams();
   const token = params.get('token');
   const [status, setStatus] = useState<Status>('loading');
