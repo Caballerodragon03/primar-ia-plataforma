@@ -116,6 +116,35 @@ export class AuthService {
       throw new AppError('Credenciales invalidas', 401);
     }
 
+    // Phase 14M v3.32 — gate de estado en el login. Antes cualquier usuario
+    // registrado (incluso EMAIL_NO_VERIFICADO o PENDIENTE_VERIFICACION) podía
+    // generar tokens y entrar; aunque los endpoints sensibles los bloqueaban
+    // con requireEstado, la sensación es de "entré sin que me aprobasen".
+    // Ahora rechazamos el login con mensaje claro según el estado.
+    if (user.estado === 'EMAIL_NO_VERIFICADO') {
+      throw new AppError(
+        'Verifica tu email antes de iniciar sesión. Revisa tu bandeja de entrada para el enlace de verificación.',
+        403,
+      );
+    }
+    if (user.estado === 'EMAIL_VERIFICADO' || user.estado === 'PENDIENTE_VERIFICACION' || user.estado === 'PENDIENTE_ACLARACION') {
+      throw new AppError(
+        'Tu cuenta está pendiente de aprobación por un administrador. Te avisaremos por email cuando esté activa.',
+        403,
+      );
+    }
+    if (user.estado === 'RECHAZADO') {
+      throw new AppError('Tu cuenta ha sido rechazada. Contacta con soporte para más información.', 403);
+    }
+    if (user.estado === 'SUSPENDIDO') {
+      throw new AppError('Tu cuenta está suspendida. Contacta con soporte.', 403);
+    }
+    // En este punto solo VERIFICADO_ACTIVO debería pasar. Cualquier otro
+    // estado futuro requiere decisión explícita aquí — fail-closed.
+    if (user.estado !== 'VERIFICADO_ACTIVO') {
+      throw new AppError('Tu cuenta no está activa.', 403);
+    }
+
     // Reset login attempts on success
     await prisma.user.update({
       where: { id: user.id },
