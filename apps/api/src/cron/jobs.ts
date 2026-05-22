@@ -265,10 +265,22 @@ export function startCronJobs(): void {
     void trackCron('cleanExpiredTokens', () => cleanExpiredTokens());
   });
 
-  // Weekly on Monday at 07:00 Madrid time — generate market sentiment report
-  cron.schedule('0 7 * * 1', () => {
+  // Daily at 07:30 Madrid — generate market sentiment report. Switched from
+  // weekly (Mondays) to daily because Railway redeploys mid-week kill the
+  // node-cron in-process scheduler, dropping the once-a-week trigger. Daily
+  // runs are safe: generateWeeklyReport is idempotent — if a report already
+  // exists for the current ISO week it returns { generated: false, reason:
+  // 'Already exists' } and we just record that in CronRun. As a bonus this
+  // also catches up when MAPA publishes the weekly boletín a few days late.
+  cron.schedule('30 7 * * *', () => {
     void trackCron('weeklyMarketReport', () => runMarketDataJob());
   }, { timezone: 'Europe/Madrid' });
+
+  // Catch-up on boot: deploys land at unpredictable times, so if today's
+  // scheduled run already passed (or this week's report is still missing
+  // entirely) we kick off a generation attempt in the background. The
+  // function is idempotent — duplicate runs short-circuit cheaply.
+  void trackCron('weeklyMarketReport', () => runMarketDataJob());
 
   // Hourly — expire seller signatures past their 48-business-hours deadline.
   // Phase 11: explicit Madrid TZ keeps the comparison consistent with
