@@ -116,20 +116,17 @@ export class AuthService {
       throw new AppError('Credenciales invalidas', 401);
     }
 
-    // Phase 14M v3.32 — gate de estado en el login. Antes cualquier usuario
-    // registrado (incluso EMAIL_NO_VERIFICADO o PENDIENTE_VERIFICACION) podía
-    // generar tokens y entrar; aunque los endpoints sensibles los bloqueaban
-    // con requireEstado, la sensación es de "entré sin que me aprobasen".
-    // Ahora rechazamos el login con mensaje claro según el estado.
+    // Phase 14M v3.35 — gate de estado en el login (revisado de v3.32):
+    //   - EMAIL_NO_VERIFICADO  → bloqueado (debe pasar por el email primero).
+    //   - RECHAZADO/SUSPENDIDO → bloqueado.
+    //   - EMAIL_VERIFICADO, PENDIENTE_VERIFICACION, PENDIENTE_ACLARACION,
+    //     VERIFICADO_ACTIVO     → PERMITIDO entrar. La plataforma muestra
+    //     un banner de "estamos revisando" y requireEstado('VERIFICADO_ACTIVO')
+    //     bloquea las acciones de operar (publicar lote, crear pedido,
+    //     contribuir, firmar contrato, etc.) hasta aprobación admin.
     if (user.estado === 'EMAIL_NO_VERIFICADO') {
       throw new AppError(
         'Verifica tu email antes de iniciar sesión. Revisa tu bandeja de entrada para el enlace de verificación.',
-        403,
-      );
-    }
-    if (user.estado === 'EMAIL_VERIFICADO' || user.estado === 'PENDIENTE_VERIFICACION' || user.estado === 'PENDIENTE_ACLARACION') {
-      throw new AppError(
-        'Tu cuenta está pendiente de aprobación por un administrador. Te avisaremos por email cuando esté activa.',
         403,
       );
     }
@@ -139,11 +136,10 @@ export class AuthService {
     if (user.estado === 'SUSPENDIDO') {
       throw new AppError('Tu cuenta está suspendida. Contacta con soporte.', 403);
     }
-    // En este punto solo VERIFICADO_ACTIVO debería pasar. Cualquier otro
-    // estado futuro requiere decisión explícita aquí — fail-closed.
-    if (user.estado !== 'VERIFICADO_ACTIVO') {
-      throw new AppError('Tu cuenta no está activa.', 403);
-    }
+    // Pasan: EMAIL_VERIFICADO, PENDIENTE_VERIFICACION, PENDIENTE_ACLARACION,
+    // VERIFICADO_ACTIVO. Si aparece un estado nuevo en el enum lo permitimos
+    // por defecto (fail-open en login pero los endpoints sensibles requieren
+    // VERIFICADO_ACTIVO, así que no hay riesgo de privilegio).
 
     // Reset login attempts on success
     await prisma.user.update({
@@ -187,6 +183,12 @@ export class AuthService {
     if (emailToken.expiresAt < new Date()) throw new AppError('Token expirado', 400);
     if (emailToken.tipo !== 'EMAIL_VERIFICATION') throw new AppError('Token invalido', 400);
 
+    // Phase 14M v3.35 — antes los compradores pasaban automáticamente a
+    // VERIFICADO_ACTIVO al confirmar el email, mientras los vendedores
+    // necesitaban aprobación admin. Ahora ambos roles esperan al admin:
+    // tras confirmar el email pasan a EMAIL_VERIFICADO, pueden hacer login
+    // y ver la plataforma, pero requireEstado('VERIFICADO_ACTIVO') bloquea
+    // las acciones de publicar/crear lote o pedido hasta aprobación.
     await prisma.$transaction([
       prisma.emailToken.update({
         where: { id: emailToken.id },
@@ -194,11 +196,7 @@ export class AuthService {
       }),
       prisma.user.update({
         where: { id: emailToken.userId },
-        data: {
-          estado: emailToken.user.role === 'COMPRADOR'
-            ? 'VERIFICADO_ACTIVO'
-            : 'PENDIENTE_VERIFICACION',
-        },
+        data: { estado: 'EMAIL_VERIFICADO' },
       }),
     ]);
 

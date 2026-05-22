@@ -65,9 +65,11 @@ function VerifyEmailContent() {
         if (cancelled) return;
         const r = (data?.data?.role ?? data?.role ?? null) as string | null;
         setRole(r);
-        // Compradores: VERIFICADO_ACTIVO inmediato → ya pueden hacer login.
-        // Vendedores: PENDIENTE_VERIFICACION → necesitan aprobación admin.
-        setStatus(r === 'VENDEDOR' ? 'pending-admin' : 'success');
+        // Phase 14M v3.35 — ambos roles ahora pasan por aprobación admin
+        // (antes los compradores eran auto-VERIFICADO_ACTIVO). Tras
+        // confirmar el email pueden hacer login pero el banner del
+        // dashboard les indicará que están en espera.
+        setStatus('pending-admin');
       } catch (err: unknown) {
         if (cancelled) return;
         const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
@@ -113,12 +115,12 @@ function VerifyEmailContent() {
               <MailCheck className="w-12 h-12 text-yellow-500 mx-auto" />
               <h1 className="text-xl font-bold text-foreground">Email confirmado</h1>
               <p className="text-sm text-text-secondary">
-                Hemos confirmado tu email. Como vendedor, tu cuenta está pendiente de aprobación
-                manual por un administrador (revisamos certificados y empresa). Te avisaremos por
-                email cuando esté activa — suele tardar menos de 24 h hábiles.
+                Hemos confirmado tu email. Tu cuenta está pendiente de aprobación manual por un
+                administrador — suele tardar menos de 24 h hábiles. Te avisaremos por email
+                cuando esté activa. Mientras tanto puedes hacer login y navegar la plataforma.
               </p>
               <Link href="/login">
-                <Button variant="outline" className="w-full mt-2">Volver al inicio</Button>
+                <Button variant="primary" className="w-full mt-2">Iniciar sesión</Button>
               </Link>
             </>
           )}

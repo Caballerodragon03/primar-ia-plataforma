@@ -11,6 +11,7 @@ import { TutorialLauncher } from '@/components/tutorials/TutorialLauncher';
 import { TutorialRunner } from '@/components/tutorials/TutorialRunner';
 import { TutorialBanner } from '@/components/tutorials/TutorialBanner';
 import { TutorialErrorBoundary } from '@/components/tutorials/TutorialErrorBoundary';
+import { PendingApprovalBanner } from '@/components/layout/PendingApprovalBanner';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, _hydrated } = useAuthStore();
@@ -50,6 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div data-tutorial="header">
           <DashboardHeader />
         </div>
+        <PendingApprovalBanner />
         <main id="main-content" data-tutorial="main-content" className="flex-1 overflow-auto p-6 lg:p-8 animate-fade-in">
           <TutorialErrorBoundary>{children}</TutorialErrorBoundary>
         </main>

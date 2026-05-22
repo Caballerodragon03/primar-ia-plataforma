@@ -25,8 +25,13 @@ import {
 
 const OTHER_VALUE = '__other__';
 
+// Phase 14M v3.35 — calibre.min(1) hace que noCalibre falle la validación
+// (el form no renderiza el input de calibre cuando se marca, así que queda
+// como string vacío). Permitimos calibre vacío aquí; el submit lo rellena
+// con 'UNCALIBRATED' cuando noCalibre está marcado. La verdad fuente es el
+// superRefine de abajo, que valida según el modo.
 const calibreSchema = z.object({
-  calibre: z.string().min(1, 'Requerido'),
+  calibre: z.string(),
   cantidad_kg: z.coerce.number().positive('Debe ser positivo'),
 });
 
@@ -45,6 +50,21 @@ const schema = z.object({
   logistica: z.enum(['YO_ENVIO', 'OTRO_RECOGE', 'INDIFERENTE']).default('INDIFERENTE'),
   incotermsAceptados: z.array(z.string()).min(1, 'Selecciona al menos un incoterm'),
   terminosPagoAceptados: z.array(z.enum(ALL_TERMINOS_PAGO as unknown as [string, ...string[]])).min(1, 'Selecciona al menos un término de pago'),
+}).superRefine((data, ctx) => {
+  // Si NO es sin calibrar, exigimos calibre no-vacío en cada fila.
+  // Si lo es, ignoramos el campo calibre — el submit lo rellena con
+  // 'UNCALIBRATED' antes de mandar al backend.
+  if (!data.noCalibre) {
+    data.calibres.forEach((c, idx) => {
+      if (!c.calibre || c.calibre.trim().length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['calibres', idx, 'calibre'],
+          message: 'Requerido',
+        });
+      }
+    });
+  }
 });
 
 type FormValues = z.infer<typeof schema>;
