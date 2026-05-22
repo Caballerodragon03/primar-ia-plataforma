@@ -1317,12 +1317,15 @@ export class MatchingService {
     }
 
     // VENDEDOR
-    // Phase 4 — seller pending contracts: the buyer hasn't signed yet (the
-    // seller signs FIRST in v2 flow). States BORRADOR and PENDIENTE_FIRMA_VENDEDOR
-    // both require seller action.
+    // Phase 14M v3.27 — pending contracts: solo PENDIENTE_FIRMA_VENDEDOR
+    // requiere acción real del vendedor. BORRADOR es el estado por defecto
+    // que se crea con el match auto-generado y NO implica que el vendedor
+    // tenga que firmar nada todavía (de hecho ni siquiera ha aceptado la
+    // propuesta). Contarlos confunde al vendedor mostrando un task
+    // "Firmar 1 contrato" cuando no hay nada que firmar.
     const sellerPendingContractWhere = {
       lote: { vendedorId: userId },
-      contratoEstado: { in: ['BORRADOR', 'PENDIENTE_FIRMA_VENDEDOR'] as Array<'BORRADOR' | 'PENDIENTE_FIRMA_VENDEDOR'> },
+      contratoEstado: { in: ['PENDIENTE_FIRMA_VENDEDOR'] as Array<'PENDIENTE_FIRMA_VENDEDOR'> },
     };
 
     const [firstContract, signedTxsWithPhotos, pendingMatches] = await Promise.all([
@@ -1341,10 +1344,18 @@ export class MatchingService {
         },
         select: { id: true, match: { select: { id: true, loteId: true } } },
       }),
+      // Phase 14M v3.27 — antes contaba matches con pedidos ya cubiertos /
+      // cerrados / cancelados, mostrando notifs fantasma "1 match to review"
+      // cuando el comprador ya tenía el pedido cubierto al 100 %. Excluimos
+      // también matches escondidos por el delay de plan free (visibleDesde
+      // > now) para que el contador refleje solo matches en los que el
+      // vendedor PUEDE actuar ahora mismo.
       prisma.match.count({
         where: {
           lote: { vendedorId: userId, estado: { not: 'VENDIDO' } },
           estado: { in: ['PROPUESTO', 'ENVIADO_VENDEDOR'] },
+          visibleDesde: { lte: new Date() },
+          pedido: { estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] } },
         },
       }),
     ]);
@@ -1609,11 +1620,15 @@ export class MatchingService {
 
     // VENDEDOR
     const [pendingContracts, pendingPhotos, pendingMatchOffers, expiredLotsRaw] = await Promise.all([
-      // Phase 4 — seller must sign first (BORRADOR or PENDIENTE_FIRMA_VENDEDOR)
+      // Phase 14M v3.27 — solo PENDIENTE_FIRMA_VENDEDOR (no BORRADOR). Mismo
+      // motivo que en getNotificationsSummary: BORRADOR es el default tras
+      // crear el match en el motor, no implica que el vendedor tenga que
+      // firmar nada todavía. Aparecía como task "Firmar contrato" desde el
+      // momento en que el sistema sugería el match.
       prisma.match.findMany({
         where: {
           lote: { vendedorId: userId },
-          contratoEstado: { in: ['BORRADOR', 'PENDIENTE_FIRMA_VENDEDOR'] },
+          contratoEstado: { in: ['PENDIENTE_FIRMA_VENDEDOR'] },
         },
         include: {
           lote: { include: { producto: true } },
@@ -1644,10 +1659,15 @@ export class MatchingService {
           comprador: { select: { nombre: true, apellidos: true } },
         },
       }),
+      // Phase 14M v3.27 — match offers a revisar: excluimos pedidos
+      // cubiertos/cerrados/cancelados y matches escondidos por delay free.
+      // Antes mostraba "1 match to review" del pedido ya cubierto al 100%.
       prisma.match.findMany({
         where: {
           lote: { vendedorId: userId },
           estado: { in: ['PROPUESTO', 'ENVIADO_VENDEDOR'] },
+          visibleDesde: { lte: now },
+          pedido: { estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] } },
         },
         include: {
           lote: { include: { producto: true } },
