@@ -37,10 +37,22 @@ export default function SellerSubscriptionPage() {
 
   const success = searchParams.get('success');
   const cancelled = searchParams.get('cancelled');
+  const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
     async function fetchData() {
       try {
+        // If Stripe just redirected back, reconcile against the checkout
+        // session BEFORE reading /current — otherwise the page may render
+        // the old plan because the webhook hasn't landed yet. Failures are
+        // non-fatal: the webhook will eventually catch up.
+        if (success === 'true' && sessionId) {
+          try {
+            await api.post('/subscriptions/reconcile-checkout', { sessionId });
+          } catch {
+            /* ignore — webhook fallback */
+          }
+        }
         const [currentRes, usageRes] = await Promise.all([
           api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean } }>('/subscriptions/current'),
           api.get<{ success: boolean; data: { lotesActivos: number; maxLotes: number; credits: Credits; breakdownVendedor?: BreakdownVendedor } }>('/subscriptions/usage'),

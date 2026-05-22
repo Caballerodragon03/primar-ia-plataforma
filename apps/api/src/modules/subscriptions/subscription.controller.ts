@@ -88,6 +88,23 @@ export class SubscriptionController {
       next(err);
     }
   }
+
+  // Frontend calls this immediately after Stripe redirects back with
+  // ?success=true&session_id=… so the new plan reflects without waiting
+  // for the webhook. See SubscriptionService.reconcileFromCheckoutSession
+  // for the IDOR guard.
+  async reconcileCheckout(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.sub as string;
+      const sessionId = typeof req.body?.sessionId === 'string'
+        ? req.body.sessionId
+        : (typeof req.query['session_id'] === 'string' ? (req.query['session_id'] as string) : '');
+      const result = await subscriptionService.reconcileFromCheckoutSession(userId, sessionId);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const subscriptionController = new SubscriptionController();

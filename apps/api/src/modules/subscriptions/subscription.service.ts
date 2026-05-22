@@ -304,7 +304,11 @@ export class SubscriptionService {
       customer: stripeCustomerId,
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${env.CORS_ORIGIN}/${roleSegment}/subscription?success=true`,
+      // {CHECKOUT_SESSION_ID} is substituted by Stripe at redirect. We use it
+      // from the frontend to call POST /subscriptions/reconcile-checkout so
+      // the new plan is reflected even if Stripe's webhook hasn't arrived yet
+      // when the browser returns.
+      success_url: `${env.CORS_ORIGIN}/${roleSegment}/subscription?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${env.CORS_ORIGIN}/${roleSegment}/subscription?cancelled=true`,
       metadata: { userId: user.id, plan },
     });
@@ -370,51 +374,91 @@ export class SubscriptionService {
 
   // ─── Webhook handler ─────────────────────────────────────────────────────
 
+  /**
+   * Applies a successful checkout.session.completed to local DB. Extracted
+   * from the webhook handler so the new reconcile-checkout endpoint can
+   * reuse the EXACT same upsert logic (avoids drift between webhook path
+   * and on-demand reconciliation). Idempotent: safe to call twice.
+   */
+  private async applyCheckoutSessionToDb(session: Stripe.Checkout.Session): Promise<{ applied: boolean; userId?: string }> {
+    if (session.mode !== 'subscription') return { applied: false };
+    if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
+      // Not actually paid yet (e.g. user is on Stripe but webhook is stale).
+      return { applied: false };
+    }
+
+    const userId = session.metadata?.userId;
+    const plan = session.metadata?.plan as AnyPlan | undefined;
+    if (!userId || !plan) return { applied: false };
+
+    const subscriptionId = typeof session.subscription === 'string'
+      ? session.subscription
+      : (session.subscription as Stripe.Subscription | null)?.id ?? null;
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (!user) return { applied: false };
+
+    await prisma.suscripcion.upsert({
+      where: { userId },
+      create: {
+        userId,
+        stripeSubscriptionId: subscriptionId,
+        stripeCustomerId: typeof session.customer === 'string' ? session.customer : session.customer?.toString() ?? null,
+        stripePriceId: PLAN_LIMITS[plan].stripePriceId,
+        estado: 'ACTIVA',
+        fechaInicio: new Date(),
+        ...(user.role === 'VENDEDOR'
+          ? { planVendedor: plan as VendedorPlan }
+          : { planComprador: plan as CompradorPlan }),
+      },
+      update: {
+        stripeSubscriptionId: subscriptionId,
+        stripePriceId: PLAN_LIMITS[plan].stripePriceId,
+        estado: 'ACTIVA',
+        cancelledAt: null,
+        ...(user.role === 'VENDEDOR'
+          ? { planVendedor: plan as VendedorPlan, planComprador: null }
+          : { planComprador: plan as CompradorPlan, planVendedor: null }),
+      },
+    });
+
+    // User just upgraded → unhide their delayed matches (fire-and-forget).
+    void this.unhideMatchesForUser(userId);
+    return { applied: true, userId };
+  }
+
+  /**
+   * On-demand reconciliation. Called by the frontend right after Stripe
+   * redirects back with ?success=true&session_id=…, so the new plan shows
+   * up immediately even if checkout.session.completed hasn't reached us
+   * yet. Verifies the session belongs to the calling user (defence
+   * against IDOR via guessed session IDs) and then reuses the same upsert
+   * the webhook would have run.
+   */
+  async reconcileFromCheckoutSession(userId: string, sessionId: string): Promise<{ reconciled: boolean; plan?: AnyPlan }> {
+    if (!sessionId || typeof sessionId !== 'string') {
+      throw new AppError('session_id requerido', 400);
+    }
+    let session: Stripe.Checkout.Session;
+    try {
+      session = await stripe.checkout.sessions.retrieve(sessionId);
+    } catch {
+      throw new AppError('Sesión de Stripe no encontrada', 404);
+    }
+    // IDOR guard: only the user who started the checkout can reconcile it.
+    if (session.metadata?.userId !== userId) {
+      throw new AppError('No autorizado para esta sesión', 403);
+    }
+    const { applied } = await this.applyCheckoutSessionToDb(session);
+    const plan = session.metadata?.plan as AnyPlan | undefined;
+    return { reconciled: applied, plan };
+  }
+
   async handleSubscriptionWebhook(event: Stripe.Event): Promise<void> {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.mode !== 'subscription') return;
-
-        const userId = session.metadata?.userId;
-        const plan = session.metadata?.plan as AnyPlan | undefined;
-        if (!userId || !plan) return;
-
-        const subscriptionId = typeof session.subscription === 'string'
-          ? session.subscription
-          : (session.subscription as Stripe.Subscription | null)?.id ?? null;
-
-        const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
-        if (!user) return;
-
-        await prisma.suscripcion.upsert({
-          where: { userId },
-          create: {
-            userId,
-            stripeSubscriptionId: subscriptionId,
-            stripeCustomerId: typeof session.customer === 'string' ? session.customer : session.customer?.toString() ?? null,
-            stripePriceId: PLAN_LIMITS[plan].stripePriceId,
-            estado: 'ACTIVA',
-            fechaInicio: new Date(),
-            ...(user.role === 'VENDEDOR'
-              ? { planVendedor: plan as VendedorPlan }
-              : { planComprador: plan as CompradorPlan }),
-          },
-          update: {
-            stripeSubscriptionId: subscriptionId,
-            stripePriceId: PLAN_LIMITS[plan].stripePriceId,
-            estado: 'ACTIVA',
-            cancelledAt: null,
-            ...(user.role === 'VENDEDOR'
-              ? { planVendedor: plan as VendedorPlan, planComprador: null }
-              : { planComprador: plan as CompradorPlan, planVendedor: null }),
-          },
-        });
-
-        // User just upgraded to a paid plan → unhide any previously-delayed
-        // matches where they were the bottleneck (fire-and-forget; failures
-        // don't roll back the upgrade).
-        void this.unhideMatchesForUser(userId);
+        await this.applyCheckoutSessionToDb(session);
         break;
       }
 

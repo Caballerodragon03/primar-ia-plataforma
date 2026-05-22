@@ -38,10 +38,20 @@ export default function BuyerSubscriptionPage() {
 
   const success = searchParams.get('success');
   const cancelled = searchParams.get('cancelled');
+  const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
     async function fetchData() {
       try {
+        // Reconcile against Stripe before reading /current so the new plan
+        // shows even if the webhook hasn't landed yet. See seller page.
+        if (success === 'true' && sessionId) {
+          try {
+            await api.post('/subscriptions/reconcile-checkout', { sessionId });
+          } catch {
+            /* ignore — webhook fallback */
+          }
+        }
         const [currentRes, usageRes] = await Promise.all([
           api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean } }>('/subscriptions/current'),
           api.get<{ success: boolean; data: { pedidosActivos: number; maxPedidos: number; credits: Credits; breakdownComprador?: BreakdownComprador } }>('/subscriptions/usage'),
