@@ -443,6 +443,32 @@ export class ContractsService {
     signatureData: string,
     ipAddress: string | null,
   ): Promise<{ deadline: Date; contratoEstado: string }> {
+    // Phase 14M v3.29 — garantiza que el draft se haya generado antes de
+    // que el vendedor firme. Si generateContractDraft falló silenciosamente
+    // tras contributeToOrder (fire-and-forget), comisionEstimada queda null
+    // y el comprador no puede pagar después. generateContractDraft es
+    // idempotente (early-return si el borrador ya existe).
+    const preCheck = await prisma.match.findUnique({
+      where: { id: matchId },
+      select: { contratoBorradorUrl: true, comisionEstimada: true, lote: { select: { vendedorId: true } } },
+    });
+    if (preCheck && preCheck.lote.vendedorId === userId) {
+      if (!preCheck.contratoBorradorUrl || !preCheck.comisionEstimada) {
+        try {
+          await this.generateContractDraft(matchId);
+        } catch (err) {
+          console.error('[contracts] pre-sign draft generation failed:', err);
+          // Si no podemos generar el draft no permitimos firmar — sin
+          // comisionEstimada el comprador no puede pagar y el contrato se
+          // queda colgado en PENDIENTE_PAGO_COMPRADOR.
+          throw new AppError(
+            'No se pudo preparar el borrador del contrato. Reintenta en unos segundos o contacta con soporte.',
+            500,
+          );
+        }
+      }
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const match = await tx.match.findUnique({
         where: { id: matchId },

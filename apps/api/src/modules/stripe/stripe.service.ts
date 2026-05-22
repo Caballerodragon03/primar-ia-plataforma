@@ -532,9 +532,29 @@ export class StripeService {
       }
     }
 
-    const comisionImporte = Number(match.comisionEstimada ?? 0);
+    let comisionImporte = Number(match.comisionEstimada ?? 0);
     if (comisionImporte <= 0) {
-      throw new AppError('Comisión no calculada para este contrato', 500);
+      // Phase 14M v3.29 — el draft no se generó cuando debía (probablemente
+      // generateContractDraft falló silenciosamente al ser fire-and-forget
+      // tras contributeToOrder). Recalculamos ahora antes de mandar al
+      // usuario al error genérico, así el flujo se autorepara.
+      try {
+        const { contractsService } = await import('../contracts/contracts.service.js');
+        await contractsService.generateContractDraft(matchId);
+        const refreshed = await prisma.match.findUnique({
+          where: { id: matchId },
+          select: { comisionEstimada: true },
+        });
+        comisionImporte = Number(refreshed?.comisionEstimada ?? 0);
+      } catch (err) {
+        console.error('[stripe] failed to regenerate draft for missing commission', matchId, err);
+      }
+      if (comisionImporte <= 0) {
+        throw new AppError(
+          'No se pudo calcular la comisión del contrato. Recarga la página o contacta con soporte.',
+          500,
+        );
+      }
     }
     const ivaPercent = 0.21;
     const importeIva = Math.round(comisionImporte * ivaPercent * 100); // cents
