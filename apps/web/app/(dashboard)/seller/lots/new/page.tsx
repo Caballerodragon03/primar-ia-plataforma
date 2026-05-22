@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Plus, Trash2, MapPin, Truck, Wallet, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button, Input, Select, FileDropzone, IncotermWizard } from '@/components/ui';
+import { ExistingEntityBanner } from '@/components/ui/ExistingEntityBanner';
 import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
 import {
   ALL_INCOTERMS,
@@ -395,6 +396,15 @@ export default function PublishLotPage() {
       <h1 className="text-2xl font-bold text-text-primary">Publicar nuevo lote</h1>
 
       <FreeTierMatchingNotice itemKind="lote" subscriptionHref="/seller/subscription" />
+
+      {/* Phase 14M v3.33 — sugiere editar un lote existente con el mismo
+          producto+variedad antes de crear un duplicado. Aparece solo si
+          hay coincidencias activas; se puede descartar para seguir creando. */}
+      <ExistingEntityBanner
+        kind="lot"
+        productoId={selectedProductId}
+        variedadId={selectedVariedadId}
+      />
 
       <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
         {/* Product Details */}

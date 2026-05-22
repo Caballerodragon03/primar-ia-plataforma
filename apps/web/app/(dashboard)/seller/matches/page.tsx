@@ -93,6 +93,73 @@ function computeTotalProfit(matches: Match[]): number {
   }, 0);
 }
 
+/**
+ * Phase 14M v3.33 — agrupado por fruta → variedad. Cuando hay 4+ matches,
+ * los agrupamos en "Producto → Variedad" para que el vendedor no se pierda
+ * en scroll. Con menos de 4, mantenemos el render plano (la jerarquía sería
+ * over-engineering).
+ */
+const GROUP_THRESHOLD = 4;
+
+type GroupedMatches = Array<{
+  producto: string;
+  variedades: Array<{ variedad: string; items: Match[] }>;
+}>;
+
+function groupMatches(matches: Match[]): GroupedMatches {
+  const byProducto = new Map<string, Map<string, Match[]>>();
+  for (const m of matches) {
+    const prod = m.pedido.producto?.nombre ?? 'Sin producto';
+    const vari = m.pedido.variedad?.nombre ?? 'Sin variedad';
+    if (!byProducto.has(prod)) byProducto.set(prod, new Map());
+    const vMap = byProducto.get(prod)!;
+    if (!vMap.has(vari)) vMap.set(vari, []);
+    vMap.get(vari)!.push(m);
+  }
+  return Array.from(byProducto.entries()).map(([producto, vMap]) => ({
+    producto,
+    variedades: Array.from(vMap.entries()).map(([variedad, items]) => ({ variedad, items })),
+  }));
+}
+
+function MatchesList({ matches, onContribute }: { matches: Match[]; onContribute: (m: Match) => void }) {
+  // < threshold → render plano para no fragmentar visualmente listas cortas.
+  if (matches.length < GROUP_THRESHOLD) {
+    return (
+      <div className="space-y-3 animate-stagger">
+        {matches.map((m) => (
+          <MatchCard key={m.id} match={m} onContribute={onContribute} />
+        ))}
+      </div>
+    );
+  }
+  const grouped = groupMatches(matches);
+  return (
+    <div className="space-y-6 animate-stagger">
+      {grouped.map(({ producto, variedades }) => (
+        <section key={producto} className="space-y-3">
+          <div className="flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur-sm py-1.5 z-10 border-b border-border">
+            <h2 className="text-base font-bold text-foreground">{producto}</h2>
+            <span className="text-xs text-text-secondary">
+              · {variedades.reduce((s, v) => s + v.items.length, 0)} match{variedades.reduce((s, v) => s + v.items.length, 0) === 1 ? '' : 'es'}
+            </span>
+          </div>
+          {variedades.map(({ variedad, items }) => (
+            <div key={`${producto}::${variedad}`} className="space-y-3">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider px-1">
+                {variedad} <span className="text-text-muted normal-case font-normal">({items.length})</span>
+              </p>
+              {items.map((m) => (
+                <MatchCard key={m.id} match={m} onContribute={onContribute} />
+              ))}
+            </div>
+          ))}
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export default function SellerMatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -457,11 +524,7 @@ export default function SellerMatchesPage() {
       )}
 
       {!loading && !error && sorted.length > 0 && (
-        <div className="space-y-3 animate-stagger">
-          {sorted.map((match) => (
-            <MatchCard key={match.id} match={match} onContribute={handleContribute} />
-          ))}
-        </div>
+        <MatchesList matches={sorted} onContribute={handleContribute} />
       )}
 
       {/* Phase 7 — Ofertas similares. Solo visible para vendedores; los

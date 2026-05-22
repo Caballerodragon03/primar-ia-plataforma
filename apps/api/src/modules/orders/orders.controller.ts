@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { ordersService } from './orders.service.js';
 import { createOrderSchema, updateOrderSchema } from './orders.schema.js';
 import { prisma } from '@primaria/database';
+import { AppError } from '../../middleware/error.middleware.js';
 
 export async function createOrder(req: Request, res: Response): Promise<void> {
   const data = createOrderSchema.parse(req.body);
@@ -35,6 +36,19 @@ export async function cancelOrder(req: Request, res: Response): Promise<void> {
     ? 'El pedido ha sido cerrado parcialmente. Las contribuciones ya comprometidas se mantienen y el pedido se guarda como completo con la cantidad comprometida.'
     : 'Pedido cancelado';
   res.json({ success: true, message, data: result });
+}
+
+/**
+ * Phase 14M v3.33 — listado ligero de pedidos activos del comprador con un
+ * producto+variedad concretos. Usado por /buyer/orders/new para sugerir
+ * editar uno existente en lugar de crear un duplicado.
+ */
+export async function listExistingByProduct(req: Request, res: Response): Promise<void> {
+  const productoId = typeof req.query['productoId'] === 'string' ? req.query['productoId'] : '';
+  const variedadId = typeof req.query['variedadId'] === 'string' ? req.query['variedadId'] : null;
+  if (!productoId) throw new AppError('productoId requerido', 400);
+  const orders = await ordersService.listExistingByProduct(req.user!.sub, productoId, variedadId);
+  res.json({ success: true, data: orders });
 }
 
 export async function getBuyerAnalytics(req: Request, res: Response): Promise<void> {

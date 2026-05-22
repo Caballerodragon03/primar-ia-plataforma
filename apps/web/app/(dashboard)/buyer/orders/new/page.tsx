@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Plus, Trash2, Truck, Wallet, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button, Input, Select } from '@/components/ui';
+import { ExistingEntityBanner } from '@/components/ui/ExistingEntityBanner';
 import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
 import {
   ALL_INCOTERMS,
@@ -273,6 +274,14 @@ export default function CreateOrderPage() {
       <h1 className="text-2xl font-bold text-text-primary"> Crear Pedido</h1>
 
       <FreeTierMatchingNotice itemKind="pedido" subscriptionHref="/buyer/subscription" />
+
+      {/* Phase 14M v3.33 — sugiere editar un pedido existente con el mismo
+          producto+variedad antes de crear un duplicado. */}
+      <ExistingEntityBanner
+        kind="order"
+        productoId={selectedProductId}
+        variedadId={selectedVariedadId}
+      />
 
       <form className="grid grid-cols-1 lg:grid-cols-2 gap-6" onSubmit={(e) => e.preventDefault()}>
         {/* Left: Commercial Details */}

@@ -97,6 +97,50 @@ export class LotsService {
     });
   }
 
+  /**
+   * Phase 14M v3.33 — devuelve los lotes del vendedor que tienen el mismo
+   * producto + variedad y siguen activos (ACTIVO o PARCIALMENTE_VENDIDO).
+   * Lo usa el formulario "Nuevo lote" para sugerir editar uno existente
+   * en lugar de crear un duplicado.
+   *
+   * variedadId null = se interpreta como "cualquier variedad" — match cuando
+   * el lote tampoco tiene variedad o cuando coincide exactamente.
+   */
+  async listExistingByProduct(vendedorId: string, productoId: string, variedadId: string | null) {
+    const lots = await prisma.lote.findMany({
+      where: {
+        vendedorId,
+        productoId,
+        estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] },
+        ...(variedadId
+          ? { OR: [{ variedadId }, { variedadId: null }] }
+          : {}),
+      },
+      include: {
+        producto: { select: { nombre: true } },
+        variedad: { select: { nombre: true } },
+        matches: {
+          where: { estado: { in: ACTIVE_MATCH_ESTADOS } },
+          select: { cantidadKg: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return lots.map((lote) => {
+      const committedKg = lote.matches.reduce((s, m) => s + Number(m.cantidadKg), 0);
+      const { totalKg, coverage } = computeCoverage(lote.calibres, committedKg);
+      return {
+        id: lote.id,
+        producto: lote.producto.nombre,
+        variedad: lote.variedad?.nombre ?? null,
+        estado: lote.estado,
+        totalKg,
+        coverage,
+        fechaDisponibilidad: lote.fechaDisponibilidad,
+      };
+    });
+  }
+
   async getById(id: string, vendedorId: string) {
     const now = new Date();
     // Phase 14M v3.25 — surface delayed (free-tier) matches the seller

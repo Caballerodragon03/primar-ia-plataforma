@@ -97,6 +97,13 @@ export function MatchCard({ match, onContribute }: MatchCardProps) {
           {match.pedido.variedad && (
             <p className="text-sm text-muted-foreground">{match.pedido.variedad.nombre}</p>
           )}
+          {/* Phase 14M v3.33 — chip "Tu lote" para distinguir matches que
+              comparten producto+variedad+comprador pero vienen de lotes
+              distintos del mismo vendedor (caso real cuando publicas 2
+              lotes del mismo producto separados para no liarte). */}
+          <p className="text-[11px] text-text-muted mt-1">
+            Tu lote: <span className="font-mono">#{match.loteId.slice(-6).toUpperCase()}</span>
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">

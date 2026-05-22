@@ -38,6 +38,19 @@ export async function cancelLot(req: Request, res: Response): Promise<void> {
   res.json({ success: true, message, data: result });
 }
 
+/**
+ * Phase 14M v3.33 — listado ligero de lotes activos del vendedor con un
+ * producto+variedad concretos. Usado por /seller/lots/new para sugerir
+ * editar uno existente en lugar de crear un duplicado.
+ */
+export async function listExistingByProduct(req: Request, res: Response): Promise<void> {
+  const productoId = typeof req.query['productoId'] === 'string' ? req.query['productoId'] : '';
+  const variedadId = typeof req.query['variedadId'] === 'string' ? req.query['variedadId'] : null;
+  if (!productoId) throw new AppError('productoId requerido', 400);
+  const lots = await lotsService.listExistingByProduct(req.user!.sub, productoId, variedadId);
+  res.json({ success: true, data: lots });
+}
+
 export async function getAnalytics(req: Request, res: Response): Promise<void> {
   const vendedorId = req.user!.sub;
 

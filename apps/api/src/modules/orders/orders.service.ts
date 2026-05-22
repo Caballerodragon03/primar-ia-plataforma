@@ -108,6 +108,46 @@ export class OrdersService {
     });
   }
 
+  /**
+   * Phase 14M v3.33 — pedidos del comprador con mismo producto + variedad
+   * todavía abiertos (ACTIVO/PARCIALMENTE_CUBIERTO). Sugerencia en el
+   * formulario de "Nuevo pedido" para evitar duplicados.
+   */
+  async listExistingByProduct(compradorId: string, productoId: string, variedadId: string | null) {
+    const orders = await prisma.pedido.findMany({
+      where: {
+        compradorId,
+        productoId,
+        estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] },
+        ...(variedadId
+          ? { OR: [{ variedadId }, { variedadId: null }] }
+          : {}),
+      },
+      include: {
+        producto: { select: { nombre: true } },
+        variedad: { select: { nombre: true } },
+        matches: {
+          where: { estado: { in: ACTIVE_MATCH_ESTADOS } },
+          select: { cantidadKg: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return orders.map((order) => {
+      const committedKg = order.matches.reduce((s, m) => s + Number(m.cantidadKg), 0);
+      const { totalKg, coverage } = computeOrderCoverage(order.calibresSolicitados, committedKg);
+      return {
+        id: order.id,
+        producto: order.producto.nombre,
+        variedad: order.variedad?.nombre ?? null,
+        estado: order.estado,
+        totalKg,
+        coverage,
+        fechaEntregaDeseada: order.fechaEntregaDeseada,
+      };
+    });
+  }
+
   async getById(id: string, compradorId: string) {
     const now = new Date();
     // Phase 14M v3.25 — count any matches generated for this order that
