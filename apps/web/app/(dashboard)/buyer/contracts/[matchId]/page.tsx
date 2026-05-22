@@ -157,10 +157,14 @@ export default function BuyerMatchContractPage() {
     }
   }, [info, matchId, router]);
 
-  // After Stripe redirects back with ?paid=1 the webhook may not have fired
-  // yet. Poll the info endpoint every 2s for up to 20s waiting for
-  // contratoEstado=FIRMADO. Stop as soon as we see it (or when the user
-  // navigates away — useEffect cleanup).
+  // Phase 14M v3.28 — Stripe redirects back faster than its webhook arrives.
+  // Antes: solo hacíamos polling cada 2s esperando que el webhook llegase
+  // y actualizase la DB. UX malo cuando el webhook tarda 5-30s (Railway
+  // cold start + PDF gen heredada del flujo). Ahora hacemos un reconcile
+  // proactivo INMEDIATAMENTE al volver con ?paid=1, en paralelo al
+  // polling. reconcile-commission consulta Stripe directamente y aplica
+  // la misma lógica que el webhook, así que con 1 round-trip (~500ms)
+  // tenemos contratoEstado=FIRMADO sin esperar al webhook.
   useEffect(() => {
     if (!paidFlag) return;
     if (info?.contratoEstado === 'FIRMADO') {
@@ -168,10 +172,29 @@ export default function BuyerMatchContractPage() {
       return;
     }
     setPollingForWebhook(true);
+
+    // Reconcile proactivo — fire-and-forget. Si el webhook ya llegó esto
+    // devuelve {finalized} pero no hace nada nuevo (idempotente). Si el
+    // webhook NO llegó, esto fuerza la finalización en una sola llamada.
+    let cancelled = false;
+    (async () => {
+      try {
+        await api.post(`/contracts/match/${matchId}/reconcile-commission`);
+        if (cancelled) return;
+        // Refresh info inmediatamente para mostrar el FIRMADO.
+        const { data } = await api.get(`/contracts/match/${matchId}/info`);
+        if (cancelled) return;
+        setInfo(data.data);
+        if (data.data?.contratoEstado === 'FIRMADO') {
+          setPollingForWebhook(false);
+        }
+      } catch { /* silent — el polling sigue como fallback */ }
+    })();
+
     const start = Date.now();
-    // Phase 12 — poll for up to 2 minutes total. Flag `paymentStuck` at the
-    // 30s mark so the UI shows the "contacta soporte" CTA, but keep polling
-    // in case the webhook eventually arrives.
+    // Phase 12 — fallback polling. Tras el reconcile inicial casi nunca
+    // hace falta, pero si Stripe está lento o el reconcile falla, el
+    // polling lo recupera.
     const interval = setInterval(async () => {
       const elapsed = Date.now() - start;
       if (elapsed > 30_000) setPaymentStuck(true);
@@ -182,6 +205,7 @@ export default function BuyerMatchContractPage() {
       }
       try {
         const { data } = await api.get(`/contracts/match/${matchId}/info`);
+        if (cancelled) return;
         setInfo(data.data);
         if (data.data?.contratoEstado === 'FIRMADO') {
           clearInterval(interval);
@@ -189,7 +213,10 @@ export default function BuyerMatchContractPage() {
         }
       } catch { /* silent */ }
     }, 2000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paidFlag, info?.contratoEstado, matchId]);
 
