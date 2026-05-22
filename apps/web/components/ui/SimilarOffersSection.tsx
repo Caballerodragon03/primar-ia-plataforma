@@ -160,26 +160,30 @@ export function SimilarOffersSection() {
                     Entrega: {fmtDate(o.fechaEntregaDeseada)}
                   </p>
                 </div>
-                <Link
-                  href={`/seller/lots/${o.loteId}/edit`}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-primary-dark hover:underline"
-                >
-                  Ajustar mi lote
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
               </div>
 
-              {/* Diff chips */}
-              <div className={`mt-3 flex flex-wrap gap-1.5 pl-1 border-l-2 ${style.border}`}>
+              {/* Phase 14M v3.34 — diff chips cada uno con su botón "Ajustar"
+                  específico. Antes había un solo link "Ajustar mi lote" que
+                  llevaba al edit genérico y el vendedor tenía que adivinar
+                  qué tocar. Ahora cada chip explica el diff Y lleva
+                  directamente al edit enfocado en ese campo concreto. */}
+              <div className={`mt-3 space-y-1.5 pl-3 border-l-2 ${style.border}`}>
                 {o.diff.changes.map((c, i) => (
-                  <span
-                    key={i}
-                    title={c.hint}
-                    className="ml-1.5 inline-flex items-center gap-1 text-[11px] bg-card border border-border rounded-badge px-2 py-0.5 text-text-secondary"
-                  >
-                    <span className="font-medium text-text-primary">{FIELD_LABELS[c.field]}:</span>
-                    {c.label.replace(`${FIELD_LABELS[c.field]}: `, '')}
-                  </span>
+                  <div key={i} className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-baseline gap-1.5 flex-wrap text-[12px]">
+                      <span className="font-semibold text-text-primary">{FIELD_LABELS[c.field]}:</span>
+                      <span className="text-text-secondary" title={c.hint}>
+                        {c.label.replace(`${FIELD_LABELS[c.field]}: `, '')}
+                      </span>
+                    </div>
+                    <Link
+                      href={`/seller/lots/${o.loteId}/edit?focus=${c.field}&pedidoId=${o.pedidoId}`}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary-dark hover:bg-primary/10 px-2 py-1 rounded-badge transition-colors"
+                    >
+                      Ajustar {FIELD_LABELS[c.field].toLowerCase()}
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
                 ))}
               </div>
             </div>
