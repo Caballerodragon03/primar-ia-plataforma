@@ -117,7 +117,7 @@ export default function BuyerAnalyticsPage() {
         />
         <KPICard
           label="Avg. Price / kg"
-          value={hasMatches ? `€${data.avgPrecioKg.toFixed(3)}` : '—'}
+          value={hasMatches ? `${data.avgPrecioKg.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg` : '—'}
           sub="Media ponderada"
           icon={<CheckCircle2 className="w-4 h-4 text-green-500" />}
         />

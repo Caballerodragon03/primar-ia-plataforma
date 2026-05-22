@@ -87,13 +87,13 @@ export default function SellerAnalyticsPage() {
         />
         <KPICard
           label="Total Value"
-          value={hasMatches ? `€${data.totalValor.toLocaleString('es-ES', { maximumFractionDigits: 0 })}` : '—'}
+          value={hasMatches ? `${data.totalValor.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €` : '—'}
           sub="De matches confirmados"
           icon={<DollarSign className="w-4 h-4" />}
         />
         <KPICard
           label="Avg. Price / kg"
-          value={hasMatches ? `€${data.avgPrecioKg.toFixed(3)}` : '—'}
+          value={hasMatches ? `${data.avgPrecioKg.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg` : '—'}
           sub="En todos los calibres"
           icon={<TrendingUp className="w-4 h-4" />}
         />

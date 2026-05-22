@@ -71,6 +71,7 @@ interface Report {
   resumen: string;
   highlights: Highlights | null;
   fuenteUrl: string;
+  createdAt: string;
 }
 
 const WINDOWS = [
@@ -135,7 +136,14 @@ export function MarketDashboard() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-text-muted">Semana {report.semana} · {report.periodo}</p>
+              <p className="text-xs text-text-muted">
+                Semana {report.semana} · {report.periodo}
+                {report.createdAt && (
+                  <span className="ml-2 text-[10px] text-text-muted/70">
+                    · Generado el {new Date(report.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  </span>
+                )}
+              </p>
             </div>
             <a
               href={report.fuenteUrl}
@@ -274,7 +282,7 @@ function ProductRow({
         className="w-full grid grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_auto] gap-3 px-3 py-3 text-sm text-left items-center"
       >
         <div className="font-medium text-foreground col-span-2 md:col-span-1">{row.producto}</div>
-        <div className="text-right font-semibold text-foreground">{row.avgPrice.toFixed(3)} €/kg</div>
+        <div className="text-right font-semibold text-foreground">{row.avgPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg</div>
         <div className={`text-right font-medium ${deltaColor} flex items-center justify-end gap-1`}>
           <DeltaIcon className="w-3.5 h-3.5" />
           {delta === null ? '—' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}%`}
@@ -400,7 +408,7 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
     <div className="space-y-5">
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <Kpi label="Precio actual" value={`${lastPrice.toFixed(3)} €/kg`} />
+        <Kpi label="Precio actual" value={`${lastPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg`} />
         <Kpi
           label="Var. en periodo"
           value={`${periodDelta >= 0 ? '+' : ''}${periodDelta.toFixed(1)}%`}
@@ -420,9 +428,9 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
             <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
               <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v.toFixed(2)}€`} width={50} />
+              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} width={60} />
               <Tooltip
-                formatter={(v: number) => [`${v.toFixed(3)} €/kg`, 'Precio medio']}
+                formatter={(v: number) => [`${v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg`, 'Precio medio']}
                 contentStyle={{ fontSize: 12 }}
               />
               <Line type="monotone" dataKey="avgPrice" stroke={SECONDARY} strokeWidth={2} dot={{ r: 2 }} />
@@ -446,9 +454,9 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
                   <XAxis dataKey="calibre" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v.toFixed(2)}€`} width={50} />
+                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} width={60} />
                   <Tooltip
-                    formatter={(v: number) => [`${v.toFixed(3)} €/kg`, 'Precio medio']}
+                    formatter={(v: number) => [`${v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg`, 'Precio medio']}
                     contentStyle={{ fontSize: 12 }}
                   />
                   <Bar dataKey="avgPrice" fill={PRIMARY} />
@@ -469,7 +477,7 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
                   {detail.calibreBreakdown.map((c) => (
                     <tr key={c.calibre} className="border-b border-border/40 last:border-0">
                       <td className="py-1.5 px-3 font-medium text-foreground">{c.calibre || '—'}</td>
-                      <td className="py-1.5 px-3 text-right">{c.avgPrice.toFixed(3)} €/kg</td>
+                      <td className="py-1.5 px-3 text-right">{c.avgPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg</td>
                       <td className="py-1.5 px-3 text-right text-text-secondary">
                         {c.totalKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg
                       </td>
