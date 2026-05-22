@@ -1317,15 +1317,15 @@ export class MatchingService {
     }
 
     // VENDEDOR
-    // Phase 14M v3.27 — pending contracts: solo PENDIENTE_FIRMA_VENDEDOR
-    // requiere acción real del vendedor. BORRADOR es el estado por defecto
-    // que se crea con el match auto-generado y NO implica que el vendedor
-    // tenga que firmar nada todavía (de hecho ni siquiera ha aceptado la
-    // propuesta). Contarlos confunde al vendedor mostrando un task
-    // "Firmar 1 contrato" cuando no hay nada que firmar.
+    // Phase 14M v3.30 — además del v3.27 (solo PENDIENTE_FIRMA_VENDEDOR),
+    // excluimos pedidos ya cubiertos al 100 % o cerrados. Caso real: el
+    // motor genera matches sobrantes cuando el pedido del comprador ya
+    // está TOTALMENTE_CUBIERTO por otros matches firmados y pagados — el
+    // vendedor no tiene nada que firmar ahí, sería un contrato muerto.
     const sellerPendingContractWhere = {
       lote: { vendedorId: userId },
       contratoEstado: { in: ['PENDIENTE_FIRMA_VENDEDOR'] as Array<'PENDIENTE_FIRMA_VENDEDOR'> },
+      pedido: { estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] as Array<'ACTIVO' | 'PARCIALMENTE_CUBIERTO'> } },
     };
 
     const [firstContract, signedTxsWithPhotos, pendingMatches] = await Promise.all([
@@ -1620,15 +1620,16 @@ export class MatchingService {
 
     // VENDEDOR
     const [pendingContracts, pendingPhotos, pendingMatchOffers, expiredLotsRaw] = await Promise.all([
-      // Phase 14M v3.27 — solo PENDIENTE_FIRMA_VENDEDOR (no BORRADOR). Mismo
-      // motivo que en getNotificationsSummary: BORRADOR es el default tras
-      // crear el match en el motor, no implica que el vendedor tenga que
-      // firmar nada todavía. Aparecía como task "Firmar contrato" desde el
-      // momento en que el sistema sugería el match.
+      // Phase 14M v3.30 — solo PENDIENTE_FIRMA_VENDEDOR Y pedido no cubierto.
+      // Si el pedido ya está al 100 % por otros matches firmados+pagados, el
+      // motor a veces deja sobrantes en estado PENDIENTE_FIRMA_VENDEDOR. No
+      // tiene sentido pedir al vendedor que firme un contrato sobrante: la
+      // cobertura del comprador ya está completa.
       prisma.match.findMany({
         where: {
           lote: { vendedorId: userId },
           contratoEstado: { in: ['PENDIENTE_FIRMA_VENDEDOR'] },
+          pedido: { estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] } },
         },
         include: {
           lote: { include: { producto: true } },

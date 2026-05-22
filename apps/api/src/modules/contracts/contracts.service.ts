@@ -369,15 +369,38 @@ export class ContractsService {
     const filename = `borrador-${Date.now()}.pdf`;
     const url = await this.uploadContractToR2(matchId, filename, buffer);
 
-    await prisma.match.update({
-      where: { id: matchId },
-      data: {
-        contratoBorradorUrl: url,
-        contratoEstado: 'PENDIENTE_FIRMA_VENDEDOR',
-        comisionEstimada: data.comision.importe,
-        comisionPorcentaje: data.comision.porcentajeFinal,
-      },
-    });
+    // Phase 14M v3.30 — si el match estaba en un estado más avanzado
+    // (PENDIENTE_PAGO_COMPRADOR) y por algún motivo no tenía draft, al
+    // regenerar volvemos a PENDIENTE_FIRMA_VENDEDOR. Pero la firma del
+    // vendedor en transaccion puede haber quedado de un intento anterior:
+    // hay que limpiarla para que el vendedor vea correctamente que tiene
+    // que volver a firmar y no le aparezca como "ya firmado" en el view.
+    await prisma.$transaction([
+      prisma.match.update({
+        where: { id: matchId },
+        data: {
+          contratoBorradorUrl: url,
+          contratoEstado: 'PENDIENTE_FIRMA_VENDEDOR',
+          comisionEstimada: data.comision.importe,
+          comisionPorcentaje: data.comision.porcentajeFinal,
+          // Si el match había avanzado más allá, también reseteamos el
+          // deadline para que el cron de caducidad no le caiga encima.
+          firmaVendedorDeadline: null,
+        },
+      }),
+      prisma.transaccion.updateMany({
+        where: { matchId },
+        data: {
+          firmaVendedor: null,
+          firmaVendedorFecha: null,
+          // Phase 14M v3.30 — defensivo: si el buyer tenía firma o sesión
+          // de Stripe abierta, también las invalidamos.
+          firmaComprador: null,
+          firmaCompradorFecha: null,
+          comisionStripeSessionId: null,
+        },
+      }),
+    ]);
 
     return { url, reference: data.reference };
   }
