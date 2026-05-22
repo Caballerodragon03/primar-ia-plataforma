@@ -29,6 +29,11 @@ interface DataTableProps<T> {
   onGlobalFilterChange?: (value: string) => void;
   isLoading?: boolean;
   emptyMessage?: string;
+  // Phase 14M v3.25 — opcional: callback invocado al hacer click en cualquier
+  // celda de la fila (excepto si el click viene de un elemento interactivo
+  // anidado). Permite navegar al detalle del lote/pedido desde cualquier
+  // parte de la caja, no solo desde el ID.
+  onRowClick?: (row: T) => void;
 }
 
 export function DataTable<T>({
@@ -42,6 +47,7 @@ export function DataTable<T>({
   onGlobalFilterChange,
   isLoading = false,
   emptyMessage = 'No se encontraron resultados.',
+  onRowClick,
 }: DataTableProps<T>) {
   const [internalFilter, setInternalFilter] = useState('');
   const filter = onGlobalFilterChange ? globalFilter : internalFilter;
@@ -137,7 +143,19 @@ export function DataTable<T>({
                 table.getRowModel().rows.map((row, idx) => (
                   <tr
                     key={row.id}
-                    className="hover:bg-accent/50 transition-colors duration-150 animate-fade-in"
+                    onClick={onRowClick ? (e) => {
+                      // Solo navegar si el click NO viene de un elemento
+                      // interactivo dentro de la fila (link, button, input).
+                      // Si el usuario pulsa el ID que ya es un <Link>, el
+                      // Link maneja la navegación y aquí no hacemos nada.
+                      const target = e.target as HTMLElement;
+                      if (target.closest('a, button, input, select, textarea, [role="button"]')) return;
+                      onRowClick(row.original as T);
+                    } : undefined}
+                    className={cn(
+                      'hover:bg-accent/50 transition-colors duration-150 animate-fade-in',
+                      onRowClick && 'cursor-pointer',
+                    )}
                     style={{ animationDelay: `${Math.min(idx * 40, 400)}ms`, animationFillMode: 'backwards' }}
                   >
                     {row.getVisibleCells().map((cell) => (

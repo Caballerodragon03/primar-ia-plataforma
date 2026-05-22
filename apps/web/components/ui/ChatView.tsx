@@ -140,11 +140,28 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
   }, [autoOpenOffer, selectedId, loadingConvs]);
   const [sendError, setSendError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  // Tracks whether the user is currently near the bottom of the chat.
+  // We only auto-scroll on new messages when this is true; otherwise we
+  // respect their scroll position (so reading older messages isn't
+  // interrupted by polling or by the other party sending mid-read).
+  const isNearBottomRef = useRef(true);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = useCallback((force = false) => {
+    if (!force && !isNearBottomRef.current) return;
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  // Update isNearBottomRef as the user scrolls. "Near bottom" = within 80px
+  // of the end, so flicking the scrollbar to read a recent message doesn't
+  // disable auto-follow forever.
+  const handleScroll = useCallback(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    isNearBottomRef.current = distance < 80;
   }, []);
 
   const fetchConversations = useCallback(async () => {
@@ -162,6 +179,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
     try {
       const res = await api.get<{ data: Message[] }>(`/chat/${transaccionId}/messages`);
       setMessages(res.data.data ?? []);
+      // Polling/refetch — respect the user's scroll position.
       scrollToBottom();
     } catch (err) {
       console.error('[chat] fetchMessages failed:', err);
@@ -180,12 +198,25 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
     // mid-fetch, the in-flight response should not call setMessages on the
     // now-unmounted/stale effect.
     let cancelled = false;
+    // First load of a conversation: force scroll-to-bottom because the
+    // user just selected it; polling refreshes after that respect their
+    // scroll position.
+    let firstLoad = true;
     const safeFetch = async (id: string) => {
       try {
         const res = await api.get<{ data: Message[] }>(`/chat/${id}/messages`);
         if (cancelled) return;
         setMessages(res.data.data ?? []);
-        scrollToBottom();
+        if (firstLoad) {
+          // ScrollIntoView needs the messages to be rendered first.
+          requestAnimationFrame(() => {
+            isNearBottomRef.current = true;
+            scrollToBottom(true);
+          });
+          firstLoad = false;
+        } else {
+          scrollToBottom();
+        }
       } catch (err) {
         if (!cancelled) console.error('[chat] fetchMessages failed:', err);
       }
@@ -213,8 +244,13 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
     try {
       await api.post(`/chat/${selectedId}/messages`, { contenido: text.trim() });
       setText('');
+      // Mark as near-bottom before the refetch so the user's own message
+      // is always scrolled into view, even if they were reading older
+      // messages a moment before.
+      isNearBottomRef.current = true;
       await fetchMessages(selectedId);
       await fetchConversations();
+      scrollToBottom(true);
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       const apiMsg =
@@ -376,7 +412,11 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            <div
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
+            >
               {messages.length === 0 ? (
                 <p className="text-center text-xs text-muted-foreground mt-8">No messages yet. Say hello!</p>
               ) : (

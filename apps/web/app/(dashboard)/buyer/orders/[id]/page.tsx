@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, AlertTriangle, Download, Edit2, X, QrCode, Zap, Lock, MessageSquare, FileText, CheckCircle2, Package, Star } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Download, Edit2, X, XCircle, QrCode, Zap, Lock, MessageSquare, FileText, CheckCircle2, Package, Star } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -49,6 +49,9 @@ interface OrderDetail {
   coverage: number;
   totalKg: number;
   matches: Match[];
+  // Phase 14M v3.25 — número de matches generados que aún no son visibles
+  // (delayed por el plan free). El banner amarillo lo usa para nudge upsell.
+  hiddenMatchesCount?: number;
 }
 
 interface ContractInfo {
@@ -71,7 +74,10 @@ function formatEur(amount: number): string {
 const MATCH_STATE_LABELS: Record<string, string> = {
   PROPUESTO: 'Propuesto',
   ENVIADO_VENDEDOR: 'Enviado al vendedor',
-  ACEPTADO_VENDEDOR: 'Aceptado',
+  // Para el comprador, "ACEPTADO_VENDEDOR" significa que el vendedor le ha
+  // hecho una propuesta concreta — no que él la haya aceptado. Renombramos
+  // para evitar confusión (el seller view usa otro label).
+  ACEPTADO_VENDEDOR: 'Propuesta',
   RECHAZADO_VENDEDOR: 'Rechazado',
   PENDIENTE_PAGO: 'Pendiente de pago',
   CONFIRMADO: 'Confirmado',
@@ -133,6 +139,9 @@ export default function OrderDetailPage() {
   const [disputeOrderInfo, setDisputeOrderInfo] = useState<{ product: string; seller: string; kg: number } | undefined>(undefined);
   const [txInfoMap, setTxInfoMap] = useState<Record<string, ContractInfo>>({});
   const [ratingTx, setRatingTx] = useState<{ transaccionId: string; vendedorId: string } | null>(null);
+  // Track which match is being rejected (X button) so we can disable it
+  // while the request is in-flight.
+  const [rejectingMatchId, setRejectingMatchId] = useState<string | null>(null);
 
   const fetchOrder = useCallback(async () => {
     setIsLoading(true);
@@ -191,6 +200,27 @@ export default function OrderDetailPage() {
         ?? 'No se pudo cancelar el pedido.';
       setError(errMsg);
       setCancelling(false);
+    }
+  };
+
+  // Phase 14M v3.25 — reject (X) a vendor's proposal from the buyer side.
+  // Reuses the existing /contracts/match/:id/cancel endpoint, which sets
+  // contratoEstado=CANCELADO and records canceladoPor=buyerId. The matching
+  // engine won't re-create this specific lote↔pedido match (only PROPUESTO /
+  // ENVIADO_VENDEDOR are upsertable; CANCELADO is terminal).
+  const handleRejectMatch = async (matchId: string) => {
+    if (!confirm('¿Rechazar esta propuesta? El vendedor dejará de verla en sus ofertas.')) return;
+    setRejectingMatchId(matchId);
+    try {
+      await api.post(`/contracts/match/${matchId}/cancel`, {
+        motivo: 'Propuesta rechazada por el comprador desde la vista de pedido.',
+      });
+      await fetchOrder();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'No se pudo rechazar la propuesta.';
+      alert(msg);
+    } finally {
+      setRejectingMatchId(null);
     }
   };
 
@@ -286,6 +316,29 @@ const openDisputeModal = (match: Match) => {
         </div>
       </div>
 
+      {/* Phase 14M v3.25 — banner CTA para plan free: hay matches generados
+          ocultos por el delay de 24h. Convierte la espera en oportunidad de
+          upsell. Lo mostramos cuando hiddenMatchesCount>0 (backend computa
+          esto consultando visibleDesde > now). */}
+      {(order.hiddenMatchesCount ?? 0) > 0 && order.estado !== 'CERRADO' && (
+        <Link
+          href="/buyer/subscription"
+          className="block bg-yellow-50 border border-yellow-200 rounded-card p-4 hover:bg-yellow-100 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Lock className="w-5 h-5 text-yellow-600 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-yellow-900">
+                Tienes {order.hiddenMatchesCount} match{(order.hiddenMatchesCount ?? 0) > 1 ? 'es' : ''} pendiente{(order.hiddenMatchesCount ?? 0) > 1 ? 's' : ''} de mostrar
+              </p>
+              <p className="text-xs text-yellow-700 mt-0.5">
+                Tu plan actual aplica 24 h de retraso a los nuevos matches. Suscríbete para verlos al instante →
+              </p>
+            </div>
+          </div>
+        </Link>
+      )}
+
       {/* Closed order banner */}
       {order.estado === 'CERRADO' && (
         <div className="bg-green-50 border border-green-200 rounded-card p-4 flex items-center gap-3">
@@ -364,21 +417,30 @@ const openDisputeModal = (match: Match) => {
           {/* Farmer contributions — Phase 14L: lista vertical de tarjetas
               (mismo formato que /seller/lots/[id]) para que quepa sin
               scroll horizontal y se entienda de un vistazo. */}
+          {/* Phase 14M v3.25 — el comprador SOLO ve matches donde el vendedor
+              ha actuado (estado >= ACEPTADO_VENDEDOR). Los PROPUESTO son
+              sugerencias automáticas del sistema antes de que el vendedor
+              decida — no debería aparecer al comprador como "oferta". */}
+          {(() => {
+            const visibleMatches = order.matches.filter(
+              (m) => m.estado !== 'PROPUESTO' && m.estado !== 'ENVIADO_VENDEDOR',
+            );
+            return (
           <div data-tutorial="ofertas-vendedores" className="bg-card rounded-card border border-border shadow-soft">
             <div className="px-5 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-foreground">
-                Ofertas de vendedores ({order.matches.length})
+                Ofertas de vendedores ({visibleMatches.length})
               </h2>
             </div>
-            {order.matches.length === 0 ? (
+            {visibleMatches.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-sm text-muted-foreground">Sin contribuciones aún.</p>
-                <p className="text-xs text-muted-foreground mt-1">La plataforma empareja tu pedido con lotes disponibles automáticamente.</p>
+                <p className="text-sm text-muted-foreground">Sin propuestas aún.</p>
+                <p className="text-xs text-muted-foreground mt-1">Cuando un vendedor te haga una propuesta concreta aparecerá aquí.</p>
               </div>
             ) : (
               <ul className="divide-y divide-border/50">
-                {order.matches.map((m) => {
+                {visibleMatches.map((m) => {
                   const kg = Number(m.cantidadKg);
                   const price = Number(m.precioKg);
                   const canPayThis = m.estado === 'ACEPTADO_VENDEDOR' && !order.stripePaymentIntentId;
@@ -439,7 +501,25 @@ const openDisputeModal = (match: Match) => {
                             {MATCH_STATE_LABELS[m.estado] ?? m.estado}
                           </span>
                           {m.estado === 'ACEPTADO_VENDEDOR' && (
-                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="El vendedor ha aceptado — acción requerida" />
+                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="El vendedor ha hecho una propuesta — acción requerida" />
+                          )}
+                          {/* X button: only when the buyer can still walk
+                              away from this proposal (pre-payment). After
+                              PENDIENTE_PAGO/CONFIRMADO the contract is in
+                              motion and the regular cancel/dispute flows
+                              kick in. */}
+                          {m.estado === 'ACEPTADO_VENDEDOR' && !canPayThis ? null : null}
+                          {m.estado === 'ACEPTADO_VENDEDOR' && (
+                            <button
+                              type="button"
+                              onClick={() => handleRejectMatch(m.id)}
+                              disabled={rejectingMatchId === m.id}
+                              className="inline-flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors"
+                              title="Rechazar propuesta"
+                              aria-label="Rechazar propuesta"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
                           )}
                         </div>
                       </div>
@@ -508,6 +588,8 @@ const openDisputeModal = (match: Match) => {
               </ul>
             )}
           </div>
+            );
+          })()}
           {/* Inline delivery sections for matches with a transaction */}
           {order.matches
             .filter((m) => m.transaccion?.id && txInfoMap[m.transaccion.id])

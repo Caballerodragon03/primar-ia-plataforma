@@ -110,10 +110,12 @@ export function DisputeModal({
         evidenciasUrls: evidenceUrls,
       });
       setStep('success');
+      // Phase 14M v3.25 — extendido de 2.5s a 6s para que dé tiempo a leer
+      // la confirmación con calma; antes desaparecía demasiado rápido.
       setTimeout(() => {
         handleClose();
         onSuccess?.();
-      }, 2500);
+      }, 6000);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
         ?? 'Failed to open claim. Please try again.';

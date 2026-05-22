@@ -61,6 +61,8 @@ type Lot = {
   comentariosAdicionales?: string | null;
   createdAt: string;
   matches: Match[];
+  // Phase 14M v3.25 — matches generados pero ocultos por plan free (24h).
+  hiddenMatchesCount?: number;
 };
 
 const ESTADO_ICON: Record<string, React.ReactNode> = {
@@ -207,6 +209,26 @@ export default function LotDetailPage() {
         <div className="p-3 bg-red-50 border border-red-200 rounded-input text-sm text-red-700">
           {error}
         </div>
+      )}
+
+      {/* Phase 14M v3.25 — upsell banner para plan free con matches retrasados */}
+      {(lot.hiddenMatchesCount ?? 0) > 0 && (
+        <Link
+          href="/seller/subscription"
+          className="block bg-yellow-50 border border-yellow-200 rounded-card p-4 hover:bg-yellow-100 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Zap className="w-5 h-5 text-yellow-600 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-yellow-900">
+                Tienes {lot.hiddenMatchesCount} match{(lot.hiddenMatchesCount ?? 0) > 1 ? 'es' : ''} pendiente{(lot.hiddenMatchesCount ?? 0) > 1 ? 's' : ''} de mostrar
+              </p>
+              <p className="text-xs text-yellow-700 mt-0.5">
+                Tu plan actual aplica 24 h de retraso a los nuevos matches. Suscríbete para verlos al instante →
+              </p>
+            </div>
+          </div>
+        </Link>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

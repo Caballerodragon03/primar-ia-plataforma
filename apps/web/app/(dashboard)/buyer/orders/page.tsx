@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 import { AlertCircle, Plus, Star } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -84,6 +85,7 @@ const columns = [
 ];
 
 export default function MyOrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [activeTab, setActiveTab] = useState('all');
   const [globalFilter, setGlobalFilter] = useState('');
@@ -161,6 +163,7 @@ export default function MyOrdersPage() {
         searchPlaceholder="Buscar por ID de pedido o producto..."
         isLoading={isLoading}
         emptyMessage="Sin pedidos. Crea tu primer pedido para empezar."
+        onRowClick={(row) => router.push(`/buyer/orders/${row.id}`)}
       />
     </div>
   );

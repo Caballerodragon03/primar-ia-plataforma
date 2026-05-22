@@ -98,6 +98,16 @@ export class LotsService {
   }
 
   async getById(id: string, vendedorId: string) {
+    const now = new Date();
+    // Phase 14M v3.25 — surface delayed (free-tier) matches the seller
+    // can't see yet, so we can show a "suscríbete para verlos ya" CTA.
+    const hiddenMatchesCount = await prisma.match.count({
+      where: {
+        loteId: id,
+        estado: { in: ['PROPUESTO', 'ENVIADO_VENDEDOR', ...ACTIVE_MATCH_ESTADOS] },
+        visibleDesde: { gt: now },
+      },
+    });
     const lote = await prisma.lote.findUnique({
       where: { id },
       include: {
@@ -131,7 +141,7 @@ export class LotsService {
 
     const committedKg = lote.matches.reduce((s, m) => s + Number(m.cantidadKg), 0);
     const { totalKg, coverage } = computeCoverage(lote.calibres, committedKg);
-    return { ...lote, totalKg, coverage };
+    return { ...lote, totalKg, coverage, hiddenMatchesCount };
   }
 
   async update(id: string, vendedorId: string, data: UpdateLotInput) {

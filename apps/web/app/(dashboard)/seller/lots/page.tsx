@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 import { Plus, Star } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -58,6 +59,7 @@ const columns = [
 ];
 
 export default function MyLotsPage() {
+  const router = useRouter();
   const [lots, setLots] = useState<LotRow[]>([]);
   const [activeTab, setActiveTab] = useState('all');
   const [globalFilter, setGlobalFilter] = useState('');
@@ -126,6 +128,7 @@ export default function MyLotsPage() {
         searchPlaceholder="Buscar por ID de lote o producto..."
         isLoading={isLoading}
         emptyMessage="Sin lotes. Publica tu primer lote para empezar a vender."
+        onRowClick={(row) => router.push(`/seller/lots/${row.id}`)}
       />
     </div>
   );

@@ -109,6 +109,18 @@ export class OrdersService {
   }
 
   async getById(id: string, compradorId: string) {
+    const now = new Date();
+    // Phase 14M v3.25 — count any matches generated for this order that
+    // are still hidden by the free-tier delay (visibleDesde > now). The
+    // frontend uses this to show a "tienes N propuestas tras el delay,
+    // suscríbete para verlas ya" banner.
+    const hiddenMatchesCount = await prisma.match.count({
+      where: {
+        pedidoId: id,
+        estado: { in: ['PROPUESTO', 'ENVIADO_VENDEDOR', ...ACTIVE_MATCH_ESTADOS] },
+        visibleDesde: { gt: now },
+      },
+    });
     const order = await prisma.pedido.findUnique({
       where: { id },
       include: {
@@ -119,7 +131,7 @@ export class OrdersService {
             estado: {
               in: ['PROPUESTO', 'ENVIADO_VENDEDOR', ...ACTIVE_MATCH_ESTADOS],
             },
-            visibleDesde: { lte: new Date() },
+            visibleDesde: { lte: now },
           },
           include: {
             lote: {
@@ -152,7 +164,7 @@ export class OrdersService {
       .filter((m) => ACTIVE_MATCH_ESTADOS.includes(m.estado as MatchEstado))
       .reduce((s, m) => s + Number(m.cantidadKg), 0);
     const { totalKg, coverage } = computeOrderCoverage(order.calibresSolicitados, committedKg);
-    return { ...order, totalKg, coverage };
+    return { ...order, totalKg, coverage, hiddenMatchesCount };
   }
 
   async update(id: string, compradorId: string, data: UpdateOrderInput) {
