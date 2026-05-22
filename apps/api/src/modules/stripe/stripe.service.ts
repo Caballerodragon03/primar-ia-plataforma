@@ -261,14 +261,33 @@ export class StripeService {
     return updated;
   }
 
-  async handleWebhook(rawBody: Buffer, sig: string): Promise<void> {
-    let event: Stripe.Event;
+  /**
+   * Phase 14M v3.26 — split out signature verification so the controller
+   * can ack Stripe with 200 BEFORE running the expensive event processing.
+   * Stripe's webhook delivery times out at ~30 s; with the old in-line
+   * `await handleWebhook(...)` pattern, anything slow (PDF generation,
+   * cold start on Railway, downstream API timeout) caused Stripe to mark
+   * the delivery as Error and retry, even though we eventually finished
+   * the work. Result: lots of red error rows in the Stripe dashboard and
+   * confusion about whether payments succeeded.
+   */
+  verifyWebhookEvent(rawBody: Buffer, sig: string): Stripe.Event {
     try {
-      event = stripe.webhooks.constructEvent(rawBody, sig, env.STRIPE_WEBHOOK_SECRET);
+      return stripe.webhooks.constructEvent(rawBody, sig, env.STRIPE_WEBHOOK_SECRET);
     } catch {
       throw new AppError('Webhook signature inválida', 400);
     }
+  }
 
+  async handleWebhook(rawBody: Buffer, sig: string): Promise<void> {
+    // Backwards-compatible wrapper for older callers/tests. New code should
+    // call verifyWebhookEvent + processWebhookEvent separately so the HTTP
+    // response can be sent before the processing finishes.
+    const event = this.verifyWebhookEvent(rawBody, sig);
+    await this.processWebhookEvent(event);
+  }
+
+  async processWebhookEvent(event: Stripe.Event): Promise<void> {
     switch (event.type) {
       case 'account.updated': {
         const account = event.data.object as Stripe.Account;

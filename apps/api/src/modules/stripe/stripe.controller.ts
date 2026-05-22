@@ -42,8 +42,30 @@ export async function getStatus(req: Request, res: Response): Promise<void> {
 export async function stripeWebhook(req: Request, res: Response): Promise<void> {
   const sig = req.headers['stripe-signature'] as string;
   if (!sig) throw new AppError('Falta Stripe-Signature header', 400);
-  await stripeService.handleWebhook(req.body as Buffer, sig);
+
+  // Phase 14M v3.26 — Fast-ack pattern. Verify signature synchronously (fast)
+  // and respond 200 to Stripe BEFORE running the heavy event processing
+  // (PDF gen, DB writes, downstream APIs). Stripe times out at 30 s and
+  // retries on non-2xx; without fast-ack we were timing out on cold start
+  // and on commission flows that include PDF generation, painting the
+  // Stripe dashboard red with false-positive errors. Reconcile flows
+  // (subscription session_id, commission match reconcile) already cover
+  // the case where the async processing crashes mid-flight.
+  let event;
+  try {
+    event = stripeService.verifyWebhookEvent(req.body as Buffer, sig);
+  } catch (err) {
+    console.error('[stripe] webhook signature verification failed:', err);
+    res.status(400).json({ received: false, error: 'bad signature' });
+    return;
+  }
   res.json({ received: true });
+
+  // Fire-and-forget processing. Errors are logged but don't propagate to
+  // Stripe — we've already acked.
+  stripeService.processWebhookEvent(event).catch((err) => {
+    console.error(`[stripe] webhook processing failed for ${event.type} (${event.id}):`, err);
+  });
 }
 
 export async function createPaymentCheckout(req: Request, res: Response): Promise<void> {
