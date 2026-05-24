@@ -26,8 +26,14 @@ import {
 
 const OTHER_VALUE = '__other__';
 
+// Phase 14M v3.36 — calibre.min(1) hacía que noCalibre fallase la
+// validación cliente (cuando el checkbox "Sin calibrar" está marcado el
+// form solo renderiza Kg + precio máx; el campo calibre queda vacío).
+// Igual que en /seller/lots/new (v3.35): calibre pasa a z.string() y un
+// superRefine en el schema raíz exige no-vacío solo cuando !noCalibre.
+// El submit rellena 'UNCALIBRATED' antes de mandar al backend.
 const calibreSchema = z.object({
-  calibre: z.string().min(1, 'Requerido'),
+  calibre: z.string(),
   cantidad_kg: z.coerce.number().positive('Debe ser positivo'),
   precio_max_kg: z.coerce.number().positive('Debe ser positivo'),
 });
@@ -55,6 +61,21 @@ const schema = z.object({
   logistica: z.enum(['YO_ENVIO', 'OTRO_RECOGE', 'INDIFERENTE']).default('INDIFERENTE'),
   incotermsAceptados: z.array(z.string()).min(1, 'Selecciona al menos un incoterm'),
   terminosPagoAceptados: z.array(z.enum(ALL_TERMINOS_PAGO as unknown as [string, ...string[]])).min(1, 'Selecciona al menos un término de pago'),
+}).superRefine((data, ctx) => {
+  // Si NO es sin calibrar, exigimos calibre no-vacío en cada fila. Si lo
+  // es, ignoramos el campo calibre — el submit lo rellena con 'UNCALIBRATED'
+  // antes de mandar al backend.
+  if (!data.noCalibre) {
+    data.calibresSolicitados.forEach((c, idx) => {
+      if (!c.calibre || c.calibre.trim().length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['calibresSolicitados', idx, 'calibre'],
+          message: 'Requerido',
+        });
+      }
+    });
+  }
 });
 
 type FormValues = z.infer<typeof schema>;
