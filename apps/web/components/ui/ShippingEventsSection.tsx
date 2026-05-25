@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { RatingModal } from '@/components/RatingModal';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 
 interface Props {
   matchId: string;
@@ -27,9 +28,9 @@ interface Props {
   onChanged: () => void;
 }
 
-function fmtDateTime(iso: string | null): string {
+function fmtDateTime(iso: string | null, locale: 'es' | 'en'): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+  return new Date(iso).toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 export function ShippingEventsSection({
@@ -43,6 +44,8 @@ export function ShippingEventsSection({
   hasRatedCounterpart,
   onChanged,
 }: Props) {
+  const t = useT();
+  const { locale } = useLocale();
   const [submitting, setSubmitting] = useState<'ship' | 'receive' | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
 
@@ -57,7 +60,7 @@ export function ShippingEventsSection({
       onChanged();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-        ?? 'No se pudo marcar el envío.';
+        ?? t('shipping.markShippedFail');
       alert(msg);
     } finally {
       setSubmitting(null);
@@ -70,7 +73,7 @@ export function ShippingEventsSection({
       onChanged();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-        ?? 'No se pudo confirmar la recepción.';
+        ?? t('shipping.confirmReceivedFail');
       alert(msg);
     } finally {
       setSubmitting(null);
@@ -79,7 +82,7 @@ export function ShippingEventsSection({
 
   return (
     <div className="bg-card border border-border rounded-card p-5 space-y-4">
-      <h2 className="text-sm font-semibold text-foreground">Seguimiento de la entrega</h2>
+      <h2 className="text-sm font-semibold text-foreground">{t('shipping.title')}</h2>
 
       {/* Timeline */}
       <div className="space-y-3">
@@ -90,11 +93,11 @@ export function ShippingEventsSection({
             {enviadoEn ? <CheckCircle2 className="w-4 h-4" /> : <Truck className="w-4 h-4" />}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">Envío</p>
+            <p className="text-sm font-medium text-foreground">{t('shipping.shipmentLabel')}</p>
             <p className="text-xs text-text-secondary">
               {enviadoEn
-                ? `Marcado por el vendedor el ${fmtDateTime(enviadoEn)}`
-                : 'Pendiente — el vendedor confirmará el envío de la mercancía'}
+                ? t('shipping.shipmentMarked').replace('{date}', fmtDateTime(enviadoEn, locale))
+                : t('shipping.shipmentPending')}
             </p>
           </div>
         </div>
@@ -106,11 +109,11 @@ export function ShippingEventsSection({
             {recibidoEn ? <CheckCircle2 className="w-4 h-4" /> : <PackageCheck className="w-4 h-4" />}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">Recepción</p>
+            <p className="text-sm font-medium text-foreground">{t('shipping.receiptLabel')}</p>
             <p className="text-xs text-text-secondary">
               {recibidoEn
-                ? `Confirmada por el comprador el ${fmtDateTime(recibidoEn)}`
-                : 'Pendiente — el comprador confirmará la recepción cuando reciba la mercancía'}
+                ? t('shipping.receiptMarked').replace('{date}', fmtDateTime(recibidoEn, locale))
+                : t('shipping.receiptPending')}
             </p>
           </div>
         </div>
@@ -127,7 +130,7 @@ export function ShippingEventsSection({
             className="flex items-center gap-2"
           >
             {submitting === 'ship' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
-            Marcar como enviado
+            {t('shipping.markShipped')}
           </Button>
         )}
         {canMarkReceived && (
@@ -139,7 +142,7 @@ export function ShippingEventsSection({
             className="flex items-center gap-2"
           >
             {submitting === 'receive' ? <Loader2 className="w-4 h-4 animate-spin" /> : <PackageCheck className="w-4 h-4" />}
-            Confirmar recepción
+            {t('shipping.confirmReceived')}
           </Button>
         )}
         {canRate && (
@@ -150,18 +153,18 @@ export function ShippingEventsSection({
             className="flex items-center gap-2"
           >
             <Star className="w-4 h-4" />
-            Valorar a la contraparte
+            {t('shipping.rateCounterpart')}
           </Button>
         )}
         {hasRatedCounterpart && (
           <p className="text-xs text-text-secondary flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-            Ya has valorado esta operación
+            {t('shipping.alreadyRated')}
           </p>
         )}
         {isSeller && enviadoEn && !recibidoEn && (
           <p className="text-xs text-text-secondary">
-            Esperando a que el comprador confirme la recepción. Podrás valorarle cuando lo haga.
+            {t('shipping.waitingBuyerReceipt')}
           </p>
         )}
       </div>
@@ -187,7 +190,7 @@ export function ShippingEventsSection({
           href={`/${isSeller ? 'seller' : 'buyer'}/messages?tx=${transaccionId}`}
           className="text-xs text-primary-dark hover:underline inline-block"
         >
-          Abrir chat para coordinar la entrega →
+          {t('shipping.openChat')}
         </Link>
       )}
     </div>

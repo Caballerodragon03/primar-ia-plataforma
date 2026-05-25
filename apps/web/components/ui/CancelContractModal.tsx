@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { XCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 interface CancelContractModalProps {
   matchId: string;
@@ -21,6 +22,7 @@ interface CancelContractModalProps {
 }
 
 export function CancelContractModal({ matchId, onClose, onSuccess }: CancelContractModalProps) {
+  const t = useT();
   const [motivo, setMotivo] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -29,11 +31,11 @@ export function CancelContractModal({ matchId, onClose, onSuccess }: CancelContr
   async function handleCancel() {
     const trimmed = motivo.trim();
     if (trimmed.length < 5) {
-      setError('Describe el motivo (al menos 5 caracteres).');
+      setError(t('cancelModal.reasonMin'));
       return;
     }
     if (!confirmed) {
-      setError('Confirma que entiendes que la cancelación es definitiva.');
+      setError(t('cancelModal.ackRequired'));
       return;
     }
     setSubmitting(true);
@@ -43,7 +45,7 @@ export function CancelContractModal({ matchId, onClose, onSuccess }: CancelContr
       onSuccess();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-        ?? 'No se pudo cancelar el contrato.';
+        ?? t('cancelModal.fail');
       setError(msg);
       setSubmitting(false);
     }
@@ -54,31 +56,31 @@ export function CancelContractModal({ matchId, onClose, onSuccess }: CancelContr
       <div className="bg-card rounded-card border border-border shadow-xl max-w-md w-full p-6 space-y-5">
         <div className="flex items-center gap-2">
           <XCircle className="w-5 h-5 text-red-600" />
-          <h3 className="text-base font-bold text-foreground">Cancelar contrato</h3>
+          <h3 className="text-base font-bold text-foreground">{t('cancelModal.title')}</h3>
         </div>
 
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-red-700 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-red-900 leading-relaxed">
-            Al cancelar, este contrato pasará al estado CANCELADO. Si hay firmas en curso o un plazo de pago abierto, se anularán. La otra parte recibirá un mensaje en el chat con tu motivo.
+            {t('cancelModal.warning')}
           </p>
         </div>
 
         <div className="space-y-2">
           <label className="block text-xs font-medium text-foreground">
-            Motivo de la cancelación
+            {t('cancelModal.reasonLabel')}
           </label>
           <textarea
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            placeholder="Ej: hemos llegado a un acuerdo distinto con otra parte..."
+            placeholder={t('cancelModal.reasonPh')}
             maxLength={500}
             rows={3}
             disabled={submitting}
             className="w-full px-3 py-2 border border-border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <p className="text-[11px] text-text-secondary">
-            {motivo.length}/500 caracteres
+            {motivo.length}/500 {t('cancelModal.charCount')}
           </p>
         </div>
 
@@ -91,7 +93,7 @@ export function CancelContractModal({ matchId, onClose, onSuccess }: CancelContr
             className="mt-0.5 w-4 h-4 accent-red-600"
           />
           <span className="text-xs text-foreground leading-relaxed">
-            Entiendo que la cancelación es definitiva y que cancelaciones repetidas con la misma contraparte serán revisadas por Primar-IA.
+            {t('cancelModal.ack')}
           </span>
         </label>
 
@@ -99,7 +101,7 @@ export function CancelContractModal({ matchId, onClose, onSuccess }: CancelContr
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" onClick={onClose} disabled={submitting}>
-            No cancelar
+            {t('cancelModal.no')}
           </Button>
           <Button
             variant="primary"
@@ -108,7 +110,7 @@ export function CancelContractModal({ matchId, onClose, onSuccess }: CancelContr
             className="flex items-center gap-2 !bg-red-600 hover:!bg-red-700"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-            Confirmar cancelación
+            {t('cancelModal.yes')}
           </Button>
         </div>
       </div>

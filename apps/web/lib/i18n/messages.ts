@@ -760,6 +760,107 @@ export type MessageKey =
   | 'editLot.availableFrom'
   | 'editLot.comments'
   | 'editLot.commentsPh'
+  // ─── cancel contract modal ───────────────────────────────────────────────
+  | 'cancelModal.title'
+  | 'cancelModal.warning'
+  | 'cancelModal.reasonLabel'
+  | 'cancelModal.reasonPh'
+  | 'cancelModal.charCount'
+  | 'cancelModal.ack'
+  | 'cancelModal.reasonMin'
+  | 'cancelModal.ackRequired'
+  | 'cancelModal.fail'
+  | 'cancelModal.no'
+  | 'cancelModal.yes'
+  // ─── rating modal ────────────────────────────────────────────────────────
+  | 'rating.title'
+  | 'rating.close'
+  | 'rating.alreadyRated'
+  | 'rating.successMsg'
+  | 'rating.allRequired'
+  | 'rating.submitFail'
+  | 'rating.commentLabel'
+  | 'rating.commentPh'
+  | 'rating.cancel'
+  | 'rating.submit'
+  | 'rating.starsAria'
+  | 'rating.eje.calidad'
+  | 'rating.eje.puntualidadDelivery'
+  | 'rating.eje.empaquetado'
+  | 'rating.eje.comunicacion'
+  | 'rating.eje.profesionalidad'
+  | 'rating.eje.puntualidadPago'
+  // ─── shipping events section ─────────────────────────────────────────────
+  | 'shipping.title'
+  | 'shipping.shipmentLabel'
+  | 'shipping.shipmentMarked'
+  | 'shipping.shipmentPending'
+  | 'shipping.receiptLabel'
+  | 'shipping.receiptMarked'
+  | 'shipping.receiptPending'
+  | 'shipping.markShipped'
+  | 'shipping.markShippedFail'
+  | 'shipping.confirmReceived'
+  | 'shipping.confirmReceivedFail'
+  | 'shipping.rateCounterpart'
+  | 'shipping.alreadyRated'
+  | 'shipping.waitingBuyerReceipt'
+  | 'shipping.openChat'
+  // ─── dispute modal ───────────────────────────────────────────────────────
+  | 'dispute.title'
+  | 'dispute.filingAsBuyer'
+  | 'dispute.filingAsSeller'
+  | 'dispute.product'
+  | 'dispute.buyerCounterpart'
+  | 'dispute.sellerCounterpart'
+  | 'dispute.selectPromptBuyer'
+  | 'dispute.selectPromptSeller'
+  | 'dispute.describeLabel'
+  | 'dispute.describeMin'
+  | 'dispute.describePhSeller'
+  | 'dispute.describePhBuyer'
+  | 'dispute.reviewNote'
+  | 'dispute.reviewNoteBuyer'
+  | 'dispute.reviewNoteSeller'
+  | 'dispute.evidenceLabel'
+  | 'dispute.uploading'
+  | 'dispute.addEvidence'
+  | 'dispute.uploadFail'
+  | 'dispute.submitFail'
+  | 'dispute.successTitle'
+  | 'dispute.successDesc'
+  | 'dispute.back'
+  | 'dispute.submit'
+  | 'dispute.cancel'
+  | 'dispute.continue'
+  | 'dispute.problemBuyer.calidad.label'
+  | 'dispute.problemBuyer.calidad.desc'
+  | 'dispute.problemBuyer.cantidad.label'
+  | 'dispute.problemBuyer.cantidad.desc'
+  | 'dispute.problemBuyer.empaquetado.label'
+  | 'dispute.problemBuyer.empaquetado.desc'
+  | 'dispute.problemBuyer.calibres.label'
+  | 'dispute.problemBuyer.calibres.desc'
+  | 'dispute.problemBuyer.productoDif.label'
+  | 'dispute.problemBuyer.productoDif.desc'
+  | 'dispute.problemBuyer.retraso.label'
+  | 'dispute.problemBuyer.retraso.desc'
+  | 'dispute.problemBuyer.otro.label'
+  | 'dispute.problemBuyer.otro.desc'
+  | 'dispute.problemSeller.pago.label'
+  | 'dispute.problemSeller.pago.desc'
+  | 'dispute.problemSeller.noResponde.label'
+  | 'dispute.problemSeller.noResponde.desc'
+  | 'dispute.problemSeller.rechazo.label'
+  | 'dispute.problemSeller.rechazo.desc'
+  | 'dispute.problemSeller.logistica.label'
+  | 'dispute.problemSeller.logistica.desc'
+  | 'dispute.problemSeller.datos.label'
+  | 'dispute.problemSeller.datos.desc'
+  | 'dispute.problemSeller.cancelacion.label'
+  | 'dispute.problemSeller.cancelacion.desc'
+  | 'dispute.problemSeller.otro.label'
+  | 'dispute.problemSeller.otro.desc'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -1507,6 +1608,103 @@ export const messages: Record<Locale, Messages> = {
     'editLot.availableFrom': 'Disponible desde',
     'editLot.comments': 'Comentarios adicionales',
     'editLot.commentsPh': 'Notas opcionales…',
+    'cancelModal.title': 'Cancelar contrato',
+    'cancelModal.warning': 'Al cancelar, este contrato pasará al estado CANCELADO. Si hay firmas en curso o un plazo de pago abierto, se anularán. La otra parte recibirá un mensaje en el chat con tu motivo.',
+    'cancelModal.reasonLabel': 'Motivo de la cancelación',
+    'cancelModal.reasonPh': 'Ej: hemos llegado a un acuerdo distinto con otra parte…',
+    'cancelModal.charCount': 'caracteres',
+    'cancelModal.ack': 'Entiendo que la cancelación es definitiva y que cancelaciones repetidas con la misma contraparte serán revisadas por Primar-IA.',
+    'cancelModal.reasonMin': 'Describe el motivo (al menos 5 caracteres).',
+    'cancelModal.ackRequired': 'Confirma que entiendes que la cancelación es definitiva.',
+    'cancelModal.fail': 'No se pudo cancelar el contrato.',
+    'cancelModal.no': 'No cancelar',
+    'cancelModal.yes': 'Confirmar cancelación',
+    'rating.title': 'Valorar transacción',
+    'rating.close': 'Cerrar',
+    'rating.alreadyRated': 'Ya has valorado esta transacción.',
+    'rating.successMsg': 'Valoración enviada. Gracias.',
+    'rating.allRequired': 'Por favor, valora todos los criterios.',
+    'rating.submitFail': 'No se pudo enviar la valoración. Inténtalo de nuevo.',
+    'rating.commentLabel': 'Comentario (opcional)',
+    'rating.commentPh': 'Comparte tu experiencia…',
+    'rating.cancel': 'Cancelar',
+    'rating.submit': 'Enviar valoración',
+    'rating.starsAria': '{n} estrellas',
+    'rating.eje.calidad': 'Calidad del producto',
+    'rating.eje.puntualidadDelivery': 'Puntualidad en la entrega',
+    'rating.eje.empaquetado': 'Empaquetado',
+    'rating.eje.comunicacion': 'Comunicación',
+    'rating.eje.profesionalidad': 'Profesionalidad',
+    'rating.eje.puntualidadPago': 'Puntualidad en el pago',
+    'shipping.title': 'Seguimiento de la entrega',
+    'shipping.shipmentLabel': 'Envío',
+    'shipping.shipmentMarked': 'Marcado por el vendedor el {date}',
+    'shipping.shipmentPending': 'Pendiente — el vendedor confirmará el envío de la mercancía',
+    'shipping.receiptLabel': 'Recepción',
+    'shipping.receiptMarked': 'Confirmada por el comprador el {date}',
+    'shipping.receiptPending': 'Pendiente — el comprador confirmará la recepción cuando reciba la mercancía',
+    'shipping.markShipped': 'Marcar como enviado',
+    'shipping.markShippedFail': 'No se pudo marcar el envío.',
+    'shipping.confirmReceived': 'Confirmar recepción',
+    'shipping.confirmReceivedFail': 'No se pudo confirmar la recepción.',
+    'shipping.rateCounterpart': 'Valorar a la contraparte',
+    'shipping.alreadyRated': 'Ya has valorado esta operación',
+    'shipping.waitingBuyerReceipt': 'Esperando a que el comprador confirme la recepción. Podrás valorarle cuando lo haga.',
+    'shipping.openChat': 'Abrir chat para coordinar la entrega →',
+    'dispute.title': 'Abrir reclamación',
+    'dispute.filingAsBuyer': 'Reclamación como comprador',
+    'dispute.filingAsSeller': 'Reclamación como vendedor',
+    'dispute.product': 'Producto',
+    'dispute.buyerCounterpart': 'Comprador',
+    'dispute.sellerCounterpart': 'Vendedor',
+    'dispute.selectPromptBuyer': '¿Qué problema hay con este pedido?',
+    'dispute.selectPromptSeller': '¿Qué incidencia tienes con esta transacción?',
+    'dispute.describeLabel': 'Describe el problema',
+    'dispute.describeMin': '(mínimo 20 caracteres)',
+    'dispute.describePhBuyer': 'Explica qué pasó en detalle. Incluye cantidades, fechas y cualquier otra información relevante…',
+    'dispute.describePhSeller': 'Explica la situación en detalle. Incluye fechas, intentos de comunicación y cualquier contexto relevante…',
+    'dispute.reviewNote': 'Nuestro equipo revisará tu reclamación en 48 horas. Ambas partes serán notificadas y podrán aportar pruebas.',
+    'dispute.reviewNoteBuyer': 'Los fondos permanecen en escrow durante el proceso.',
+    'dispute.reviewNoteSeller': 'Serás notificado de cualquier resolución.',
+    'dispute.evidenceLabel': 'Evidencias (hasta 6 archivos)',
+    'dispute.uploading': 'Subiendo…',
+    'dispute.addEvidence': 'Añadir foto o PDF',
+    'dispute.uploadFail': 'No se pudo subir el archivo.',
+    'dispute.submitFail': 'No se pudo abrir la reclamación. Inténtalo de nuevo.',
+    'dispute.successTitle': 'Reclamación enviada',
+    'dispute.successDesc': 'Nuestro equipo revisará tu reclamación en 48 horas. Te notificaremos de cualquier novedad.',
+    'dispute.back': '← Atrás',
+    'dispute.submit': 'Enviar reclamación',
+    'dispute.cancel': 'Cancelar',
+    'dispute.continue': 'Continuar →',
+    'dispute.problemBuyer.calidad.label': 'Problema de calidad',
+    'dispute.problemBuyer.calidad.desc': 'El producto no cumple con la calidad acordada',
+    'dispute.problemBuyer.cantidad.label': 'Cantidad incorrecta',
+    'dispute.problemBuyer.cantidad.desc': 'He recibido menos kg de los acordados',
+    'dispute.problemBuyer.empaquetado.label': 'Problema de empaquetado',
+    'dispute.problemBuyer.empaquetado.desc': 'El producto llegó dañado o mal empaquetado',
+    'dispute.problemBuyer.calibres.label': 'Calibres incorrectos',
+    'dispute.problemBuyer.calibres.desc': 'He recibido calibres distintos a los pedidos',
+    'dispute.problemBuyer.productoDif.label': 'Producto diferente',
+    'dispute.problemBuyer.productoDif.desc': 'He recibido un producto distinto al pedido',
+    'dispute.problemBuyer.retraso.label': 'Retraso en la entrega',
+    'dispute.problemBuyer.retraso.desc': 'El producto no ha llegado en el plazo acordado',
+    'dispute.problemBuyer.otro.label': 'Otro problema',
+    'dispute.problemBuyer.otro.desc': 'Otro problema no listado arriba',
+    'dispute.problemSeller.pago.label': 'Pago no recibido',
+    'dispute.problemSeller.pago.desc': 'El pago no se ha liberado tras confirmar la entrega',
+    'dispute.problemSeller.noResponde.label': 'El comprador no responde',
+    'dispute.problemSeller.noResponde.desc': 'El comprador no responde a mensajes ni a la confirmación de entrega',
+    'dispute.problemSeller.rechazo.label': 'Rechazo injustificado',
+    'dispute.problemSeller.rechazo.desc': 'El comprador ha rechazado la entrega sin motivo válido',
+    'dispute.problemSeller.logistica.label': 'Problema logístico / acceso',
+    'dispute.problemSeller.logistica.desc': 'No he podido completar la entrega por logística o acceso',
+    'dispute.problemSeller.datos.label': 'Datos de entrega incorrectos',
+    'dispute.problemSeller.datos.desc': 'La dirección o el contacto de entrega son erróneos',
+    'dispute.problemSeller.cancelacion.label': 'Cancelación injusta del comprador',
+    'dispute.problemSeller.cancelacion.desc': 'El comprador canceló tras tener el lote ya preparado y enviado',
+    'dispute.problemSeller.otro.label': 'Otra incidencia',
+    'dispute.problemSeller.otro.desc': 'Otro problema no listado arriba',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -2248,6 +2446,103 @@ export const messages: Record<Locale, Messages> = {
     'editLot.availableFrom': 'Available from',
     'editLot.comments': 'Additional comments',
     'editLot.commentsPh': 'Optional notes…',
+    'cancelModal.title': 'Cancel contract',
+    'cancelModal.warning': "By cancelling, this contract will move to CANCELLED. Any in-progress signatures or open payment deadlines will be voided. The other party will receive a chat message with your reason.",
+    'cancelModal.reasonLabel': 'Reason for cancellation',
+    'cancelModal.reasonPh': "e.g. we reached a different deal with another party…",
+    'cancelModal.charCount': 'characters',
+    'cancelModal.ack': 'I understand that cancellation is final and that repeated cancellations with the same counterpart will be reviewed by Primar-IA.',
+    'cancelModal.reasonMin': 'Describe the reason (at least 5 characters).',
+    'cancelModal.ackRequired': 'Confirm you understand the cancellation is final.',
+    'cancelModal.fail': 'Could not cancel the contract.',
+    'cancelModal.no': 'Do not cancel',
+    'cancelModal.yes': 'Confirm cancellation',
+    'rating.title': 'Rate transaction',
+    'rating.close': 'Close',
+    'rating.alreadyRated': "You've already rated this transaction.",
+    'rating.successMsg': 'Rating submitted. Thank you.',
+    'rating.allRequired': 'Please rate all criteria.',
+    'rating.submitFail': 'Could not submit the rating. Try again.',
+    'rating.commentLabel': 'Comment (optional)',
+    'rating.commentPh': 'Share your experience…',
+    'rating.cancel': 'Cancel',
+    'rating.submit': 'Submit rating',
+    'rating.starsAria': '{n} stars',
+    'rating.eje.calidad': 'Product quality',
+    'rating.eje.puntualidadDelivery': 'Delivery punctuality',
+    'rating.eje.empaquetado': 'Packaging',
+    'rating.eje.comunicacion': 'Communication',
+    'rating.eje.profesionalidad': 'Professionalism',
+    'rating.eje.puntualidadPago': 'Payment punctuality',
+    'shipping.title': 'Delivery tracking',
+    'shipping.shipmentLabel': 'Shipment',
+    'shipping.shipmentMarked': 'Marked by the seller on {date}',
+    'shipping.shipmentPending': "Pending — the seller will confirm when the goods are shipped",
+    'shipping.receiptLabel': 'Receipt',
+    'shipping.receiptMarked': 'Confirmed by the buyer on {date}',
+    'shipping.receiptPending': "Pending — the buyer will confirm receipt when the goods arrive",
+    'shipping.markShipped': 'Mark as shipped',
+    'shipping.markShippedFail': 'Could not mark the shipment.',
+    'shipping.confirmReceived': 'Confirm receipt',
+    'shipping.confirmReceivedFail': 'Could not confirm receipt.',
+    'shipping.rateCounterpart': 'Rate the counterpart',
+    'shipping.alreadyRated': "You've already rated this deal",
+    'shipping.waitingBuyerReceipt': "Waiting for the buyer to confirm receipt. You'll be able to rate them once they do.",
+    'shipping.openChat': 'Open chat to coordinate delivery →',
+    'dispute.title': 'Open a claim',
+    'dispute.filingAsBuyer': 'Filing as buyer',
+    'dispute.filingAsSeller': 'Filing as seller',
+    'dispute.product': 'Product',
+    'dispute.buyerCounterpart': 'Buyer',
+    'dispute.sellerCounterpart': 'Seller',
+    'dispute.selectPromptBuyer': 'What is the issue with this order?',
+    'dispute.selectPromptSeller': 'What issue are you experiencing with this transaction?',
+    'dispute.describeLabel': 'Describe the issue',
+    'dispute.describeMin': '(min. 20 characters)',
+    'dispute.describePhBuyer': 'Explain what happened in detail. Include quantities, dates, and any other relevant information…',
+    'dispute.describePhSeller': 'Explain the situation in detail. Include dates, communication attempts, and any relevant context…',
+    'dispute.reviewNote': 'Our team will review your claim within 48 hours. Both parties will be notified and can provide evidence.',
+    'dispute.reviewNoteBuyer': 'Funds remain in escrow during the process.',
+    'dispute.reviewNoteSeller': 'You will be notified of any resolution.',
+    'dispute.evidenceLabel': 'Evidence (up to 6 files)',
+    'dispute.uploading': 'Uploading…',
+    'dispute.addEvidence': 'Add photo or PDF',
+    'dispute.uploadFail': 'Failed to upload file.',
+    'dispute.submitFail': 'Failed to open claim. Please try again.',
+    'dispute.successTitle': 'Claim submitted',
+    'dispute.successDesc': "Our team will review your claim within 48 hours. You'll be notified of any updates.",
+    'dispute.back': '← Back',
+    'dispute.submit': 'Submit claim',
+    'dispute.cancel': 'Cancel',
+    'dispute.continue': 'Continue →',
+    'dispute.problemBuyer.calidad.label': 'Quality issue',
+    'dispute.problemBuyer.calidad.desc': 'Product does not meet the agreed quality standards',
+    'dispute.problemBuyer.cantidad.label': 'Wrong quantity',
+    'dispute.problemBuyer.cantidad.desc': 'Received fewer kg than agreed',
+    'dispute.problemBuyer.empaquetado.label': 'Packaging issue',
+    'dispute.problemBuyer.empaquetado.desc': 'Product arrived damaged or poorly packaged',
+    'dispute.problemBuyer.calibres.label': 'Wrong calibres',
+    'dispute.problemBuyer.calibres.desc': 'Received calibres different from what was ordered',
+    'dispute.problemBuyer.productoDif.label': 'Different product',
+    'dispute.problemBuyer.productoDif.desc': 'Received a product different from what was ordered',
+    'dispute.problemBuyer.retraso.label': 'Delivery delay',
+    'dispute.problemBuyer.retraso.desc': 'Product has not arrived within the agreed timeframe',
+    'dispute.problemBuyer.otro.label': 'Other issue',
+    'dispute.problemBuyer.otro.desc': 'Other problem not listed above',
+    'dispute.problemSeller.pago.label': 'Payment not received',
+    'dispute.problemSeller.pago.desc': 'Payment has not been released after confirmed delivery',
+    'dispute.problemSeller.noResponde.label': 'Buyer not responding',
+    'dispute.problemSeller.noResponde.desc': 'The buyer is not responding to messages or delivery confirmation',
+    'dispute.problemSeller.rechazo.label': 'Unjustified rejection',
+    'dispute.problemSeller.rechazo.desc': 'The buyer rejected the delivery without valid reason',
+    'dispute.problemSeller.logistica.label': 'Logistics / access issue',
+    'dispute.problemSeller.logistica.desc': 'Unable to complete delivery due to logistics or access problems',
+    'dispute.problemSeller.datos.label': 'Incorrect delivery data',
+    'dispute.problemSeller.datos.desc': 'The delivery address or contact information provided is wrong',
+    'dispute.problemSeller.cancelacion.label': 'Buyer cancelled unfairly',
+    'dispute.problemSeller.cancelacion.desc': 'The buyer cancelled after the lot was already prepared and dispatched',
+    'dispute.problemSeller.otro.label': 'Other issue',
+    'dispute.problemSeller.otro.desc': 'Other problem not listed above',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",

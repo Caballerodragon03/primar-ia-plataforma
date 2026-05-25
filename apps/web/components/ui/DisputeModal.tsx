@@ -4,27 +4,31 @@ import { useState, useRef } from 'react';
 import { X, AlertTriangle, Upload, CheckCircle2, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from './Button';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 /* ─── Problem types by role ───────────────────────────────────────── */
 
-const BUYER_PROBLEM_TYPES = [
-  { value: 'CALIDAD', label: 'Quality issue', desc: 'Product does not meet the agreed quality standards', icon: '🔍' },
-  { value: 'CANTIDAD', label: 'Wrong quantity', desc: 'Received fewer kg than agreed', icon: '⚖️' },
-  { value: 'EMPAQUETADO', label: 'Packaging issue', desc: 'Product arrived damaged or poorly packaged', icon: '📦' },
-  { value: 'CALIBRES', label: 'Wrong calibers', desc: 'Received calibers different from what was ordered', icon: '📏' },
-  { value: 'PRODUCTO_DIFERENTE', label: 'Different product', desc: 'Received a product different from what was ordered', icon: '🔄' },
-  { value: 'RETRASO_ENTREGA', label: 'Delivery delay', desc: 'Product has not arrived within the agreed timeframe', icon: '🕐' },
-  { value: 'OTRO', label: 'Other issue', desc: 'Other problem not listed above', icon: '❓' },
+type ProblemType = { value: string; labelKey: MessageKey; descKey: MessageKey; icon: string };
+
+const BUYER_PROBLEM_TYPES: ProblemType[] = [
+  { value: 'CALIDAD', labelKey: 'dispute.problemBuyer.calidad.label', descKey: 'dispute.problemBuyer.calidad.desc', icon: '🔍' },
+  { value: 'CANTIDAD', labelKey: 'dispute.problemBuyer.cantidad.label', descKey: 'dispute.problemBuyer.cantidad.desc', icon: '⚖️' },
+  { value: 'EMPAQUETADO', labelKey: 'dispute.problemBuyer.empaquetado.label', descKey: 'dispute.problemBuyer.empaquetado.desc', icon: '📦' },
+  { value: 'CALIBRES', labelKey: 'dispute.problemBuyer.calibres.label', descKey: 'dispute.problemBuyer.calibres.desc', icon: '📏' },
+  { value: 'PRODUCTO_DIFERENTE', labelKey: 'dispute.problemBuyer.productoDif.label', descKey: 'dispute.problemBuyer.productoDif.desc', icon: '🔄' },
+  { value: 'RETRASO_ENTREGA', labelKey: 'dispute.problemBuyer.retraso.label', descKey: 'dispute.problemBuyer.retraso.desc', icon: '🕐' },
+  { value: 'OTRO', labelKey: 'dispute.problemBuyer.otro.label', descKey: 'dispute.problemBuyer.otro.desc', icon: '❓' },
 ];
 
-const SELLER_PROBLEM_TYPES = [
-  { value: 'PAGO_NO_RECIBIDO', label: 'Payment not received', desc: 'Payment has not been released after confirmed delivery', icon: '💳' },
-  { value: 'COMPRADOR_NO_RESPONDE', label: 'Buyer not responding', desc: 'The buyer is not responding to messages or delivery confirmation', icon: '📵' },
-  { value: 'RECHAZO_INJUSTIFICADO', label: 'Unjustified rejection', desc: 'The buyer rejected the delivery without valid reason', icon: '🚫' },
-  { value: 'LOGISTICA', label: 'Logistics / access issue', desc: 'Unable to complete delivery due to logistics or access problems', icon: '🚚' },
-  { value: 'DATOS_INCORRECTOS', label: 'Incorrect delivery data', desc: 'The delivery address or contact information provided is wrong', icon: '📍' },
-  { value: 'CANCELACION_COMPRADOR', label: 'Buyer cancelled unfairly', desc: 'The buyer cancelled after the lot was already prepared and dispatched', icon: '❌' },
-  { value: 'OTRO', label: 'Other issue', desc: 'Other problem not listed above', icon: '❓' },
+const SELLER_PROBLEM_TYPES: ProblemType[] = [
+  { value: 'PAGO_NO_RECIBIDO', labelKey: 'dispute.problemSeller.pago.label', descKey: 'dispute.problemSeller.pago.desc', icon: '💳' },
+  { value: 'COMPRADOR_NO_RESPONDE', labelKey: 'dispute.problemSeller.noResponde.label', descKey: 'dispute.problemSeller.noResponde.desc', icon: '📵' },
+  { value: 'RECHAZO_INJUSTIFICADO', labelKey: 'dispute.problemSeller.rechazo.label', descKey: 'dispute.problemSeller.rechazo.desc', icon: '🚫' },
+  { value: 'LOGISTICA', labelKey: 'dispute.problemSeller.logistica.label', descKey: 'dispute.problemSeller.logistica.desc', icon: '🚚' },
+  { value: 'DATOS_INCORRECTOS', labelKey: 'dispute.problemSeller.datos.label', descKey: 'dispute.problemSeller.datos.desc', icon: '📍' },
+  { value: 'CANCELACION_COMPRADOR', labelKey: 'dispute.problemSeller.cancelacion.label', descKey: 'dispute.problemSeller.cancelacion.desc', icon: '❌' },
+  { value: 'OTRO', labelKey: 'dispute.problemSeller.otro.label', descKey: 'dispute.problemSeller.otro.desc', icon: '❓' },
 ];
 
 /* ─── Types ──────────────────────────────────────────────────────── */
@@ -55,6 +59,8 @@ export function DisputeModal({
   onSuccess,
   role = 'buyer',
 }: DisputeModalProps) {
+  const t = useT();
+  const { locale } = useLocale();
   const [step, setStep] = useState<Step>('select');
   const [selectedType, setSelectedType] = useState<string>('');
   const [description, setDescription] = useState('');
@@ -67,7 +73,7 @@ export function DisputeModal({
   if (!isOpen) return null;
 
   const problemTypes = role === 'seller' ? SELLER_PROBLEM_TYPES : BUYER_PROBLEM_TYPES;
-  const counterpartLabel = role === 'seller' ? 'Buyer' : 'Seller';
+  const counterpartLabel = role === 'seller' ? t('dispute.buyerCounterpart') : t('dispute.sellerCounterpart');
 
   const handleClose = () => {
     setStep('select');
@@ -91,7 +97,7 @@ export function DisputeModal({
       });
       setEvidenceUrls((prev) => [...prev, res.data.data.url]);
     } catch {
-      setError('Failed to upload file.');
+      setError(t('dispute.uploadFail'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -118,7 +124,7 @@ export function DisputeModal({
       }, 6000);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-        ?? 'Failed to open claim. Please try again.';
+        ?? t('dispute.submitFail');
       setError(msg);
     } finally {
       setLoading(false);
@@ -137,9 +143,9 @@ export function DisputeModal({
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-red-500" />
             <div>
-              <h2 className="font-semibold text-foreground text-base">Open a Claim</h2>
+              <h2 className="font-semibold text-foreground text-base">{t('dispute.title')}</h2>
               <p className="text-[11px] text-muted-foreground">
-                {role === 'seller' ? 'Filing as seller' : 'Filing as buyer'}
+                {role === 'seller' ? t('dispute.filingAsSeller') : t('dispute.filingAsBuyer')}
               </p>
             </div>
           </div>
@@ -152,8 +158,8 @@ export function DisputeModal({
         {orderInfo && (
           <div className="px-5 py-3 bg-muted/50 border-b border-gray-100">
             <p className="text-xs text-muted-foreground">
-              Product: <span className="font-medium text-gray-800">{orderInfo.product}</span>
-              {' · '}{orderInfo.kg.toLocaleString('es-ES')} kg
+              {t('dispute.product')}: <span className="font-medium text-gray-800">{orderInfo.product}</span>
+              {' · '}{orderInfo.kg.toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES')} kg
               {' · '}{counterpartLabel}: <span className="font-medium text-gray-800">{orderInfo.seller}</span>
             </p>
           </div>
@@ -164,9 +170,7 @@ export function DisputeModal({
           {step === 'select' && (
             <div className="p-5 space-y-2">
               <p className="text-sm text-muted-foreground mb-4">
-                {role === 'seller'
-                  ? 'What issue are you experiencing with this transaction?'
-                  : 'What is the issue with this order?'}
+                {role === 'seller' ? t('dispute.selectPromptSeller') : t('dispute.selectPromptBuyer')}
               </p>
               {problemTypes.map((type) => (
                 <button
@@ -182,8 +186,8 @@ export function DisputeModal({
                 >
                   <span className="text-xl mt-0.5 flex-shrink-0">{type.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{type.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{type.desc}</p>
+                    <p className="text-sm font-semibold text-foreground">{t(type.labelKey)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t(type.descKey)}</p>
                   </div>
                   {selectedType === type.value && (
                     <CheckCircle2 className="w-5 h-5 text-red-500 ml-auto flex-shrink-0 mt-0.5" />
@@ -199,25 +203,21 @@ export function DisputeModal({
               <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl">
                 <span className="text-xl">{selectedInfo?.icon}</span>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{selectedInfo?.label}</p>
-                  <p className="text-xs text-muted-foreground">{selectedInfo?.desc}</p>
+                  <p className="text-sm font-semibold text-foreground">{selectedInfo ? t(selectedInfo.labelKey) : ''}</p>
+                  <p className="text-xs text-muted-foreground">{selectedInfo ? t(selectedInfo.descKey) : ''}</p>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Describe the issue <span className="text-muted-foreground">(min. 20 characters)</span>
+                  {t('dispute.describeLabel')} <span className="text-muted-foreground">{t('dispute.describeMin')}</span>
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
                   maxLength={2000}
-                  placeholder={
-                    role === 'seller'
-                      ? 'Explain the situation in detail. Include dates, communication attempts, and any relevant context...'
-                      : 'Explain what happened in detail. Include quantities, dates, and any other relevant information...'
-                  }
+                  placeholder={role === 'seller' ? t('dispute.describePhSeller') : t('dispute.describePhBuyer')}
                   className="w-full px-3 py-2.5 border border-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 transition-colors"
                 />
                 <p className="text-xs text-muted-foreground text-right mt-1">{description.length}/2000</p>
@@ -226,13 +226,12 @@ export function DisputeModal({
               <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl">
                 <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-700">
-                  Our team will review your claim within <strong>48 hours</strong>. Both parties will be notified and can provide evidence.
-                  {role === 'buyer' ? ' Funds remain in escrow during the process.' : ' You will be notified of any resolution.'}
+                  {t('dispute.reviewNote')} {role === 'buyer' ? t('dispute.reviewNoteBuyer') : t('dispute.reviewNoteSeller')}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Evidence (up to 6 files)</p>
+                <p className="text-xs font-medium text-muted-foreground">{t('dispute.evidenceLabel')}</p>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -266,7 +265,7 @@ export function DisputeModal({
                   >
                     <Upload className="w-4 h-4 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
-                      {uploading ? 'Uploading…' : `Add photo or PDF (${evidenceUrls.length}/6)`}
+                      {uploading ? t('dispute.uploading') : `${t('dispute.addEvidence')} (${evidenceUrls.length}/6)`}
                     </span>
                   </button>
                 )}
@@ -284,9 +283,9 @@ export function DisputeModal({
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-2">
                 <CheckCircle2 className="w-8 h-8 text-green-500" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">Claim submitted</h3>
+              <h3 className="text-lg font-semibold text-foreground">{t('dispute.successTitle')}</h3>
               <p className="text-sm text-muted-foreground max-w-xs">
-                Our team will review your claim within 48 hours. You&apos;ll be notified of any updates.
+                {t('dispute.successDesc')}
               </p>
             </div>
           )}
@@ -298,7 +297,7 @@ export function DisputeModal({
             {step === 'describe' ? (
               <>
                 <button type="button" onClick={() => setStep('select')} className="text-sm text-muted-foreground hover:text-foreground font-medium">
-                  ← Back
+                  {t('dispute.back')}
                 </button>
                 <Button
                   variant="primary"
@@ -308,13 +307,13 @@ export function DisputeModal({
                   onClick={handleSubmit}
                   className="bg-red-500 hover:bg-red-600 border-red-500"
                 >
-                  Submit Claim
+                  {t('dispute.submit')}
                 </Button>
               </>
             ) : (
               <>
                 <button type="button" onClick={handleClose} className="text-sm text-muted-foreground hover:text-foreground font-medium">
-                  Cancel
+                  {t('dispute.cancel')}
                 </button>
                 <Button
                   variant="primary"
@@ -323,7 +322,7 @@ export function DisputeModal({
                   onClick={() => setStep('describe')}
                   className="bg-red-500 hover:bg-red-600 border-red-500"
                 >
-                  Continue →
+                  {t('dispute.continue')}
                 </Button>
               </>
             )}

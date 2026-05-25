@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Star, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 type TipoValoracion = 'VENDEDOR_A_COMPRADOR' | 'COMPRADOR_A_VENDEDOR';
 
@@ -17,21 +19,21 @@ interface RatingModalProps {
 
 interface EjeRating {
   key: string;
-  label: string;
+  labelKey: MessageKey;
 }
 
 const EJES_VENDEDOR: EjeRating[] = [
-  { key: 'calidad', label: 'Calidad del producto' },
-  { key: 'puntualidad', label: 'Puntualidad en la entrega' },
-  { key: 'empaquetado', label: 'Empaquetado' },
-  { key: 'comunicacion', label: 'Comunicación' },
-  { key: 'profesionalidad', label: 'Profesionalidad' },
+  { key: 'calidad', labelKey: 'rating.eje.calidad' },
+  { key: 'puntualidad', labelKey: 'rating.eje.puntualidadDelivery' },
+  { key: 'empaquetado', labelKey: 'rating.eje.empaquetado' },
+  { key: 'comunicacion', labelKey: 'rating.eje.comunicacion' },
+  { key: 'profesionalidad', labelKey: 'rating.eje.profesionalidad' },
 ];
 
 const EJES_COMPRADOR: EjeRating[] = [
-  { key: 'comunicacion', label: 'Comunicación' },
-  { key: 'profesionalidad', label: 'Profesionalidad' },
-  { key: 'puntualidad', label: 'Puntualidad en el pago' },
+  { key: 'comunicacion', labelKey: 'rating.eje.comunicacion' },
+  { key: 'profesionalidad', labelKey: 'rating.eje.profesionalidad' },
+  { key: 'puntualidad', labelKey: 'rating.eje.puntualidadPago' },
 ];
 
 function StarPicker({
@@ -43,6 +45,7 @@ function StarPicker({
   onChange: (v: number) => void;
   label: string;
 }) {
+  const t = useT();
   const [hovered, setHovered] = useState(0);
 
   return (
@@ -58,7 +61,7 @@ function StarPicker({
               type="button"
               role="radio"
               aria-checked={value === starVal}
-              aria-label={`${starVal} estrella${starVal > 1 ? 's' : ''}`}
+              aria-label={t('rating.starsAria').replace('{n}', String(starVal))}
               onMouseEnter={() => setHovered(starVal)}
               onMouseLeave={() => setHovered(0)}
               onClick={() => onChange(starVal)}
@@ -81,6 +84,7 @@ function StarPicker({
 type RatingValues = Record<string, number>;
 
 export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSuccess }: RatingModalProps) {
+  const t = useT();
   const ejes: EjeRating[] =
     tipo === 'COMPRADOR_A_VENDEDOR' ? EJES_VENDEDOR : EJES_COMPRADOR;
 
@@ -102,7 +106,7 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!allFilled) {
-      setError('Por favor, valora todos los criterios.');
+      setError(t('rating.allRequired'));
       return;
     }
     setError(null);
@@ -125,7 +129,7 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
       } else {
         const msg =
           (err as { response?: { data?: { error?: string } } })?.response?.data?.error ??
-          'No se pudo enviar la valoración. Inténtalo de nuevo.';
+          t('rating.submitFail');
         setError(msg);
       }
     } finally {
@@ -152,13 +156,13 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h2 id="rating-modal-title" className="font-semibold text-foreground text-base">
-            Valorar transacción
+            {t('rating.title')}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-muted-foreground"
-            aria-label="Cerrar"
+            aria-label={t('rating.close')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -167,14 +171,14 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
         {/* Body */}
         {alreadyRated ? (
           <div className="px-5 py-8 text-center">
-            <p className="text-sm text-muted-foreground font-medium">Ya has valorado esta transacción.</p>
+            <p className="text-sm text-muted-foreground font-medium">{t('rating.alreadyRated')}</p>
             <Button variant="outline" size="sm" onClick={onClose} className="mt-4">
-              Cerrar
+              {t('rating.close')}
             </Button>
           </div>
         ) : success ? (
           <div className="px-5 py-8 text-center">
-            <p className="text-sm text-green-600 font-medium">Valoracion enviada. Gracias.</p>
+            <p className="text-sm text-green-600 font-medium">{t('rating.successMsg')}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col">
@@ -182,7 +186,7 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
               {ejes.map((eje) => (
                 <StarPicker
                   key={eje.key}
-                  label={eje.label}
+                  label={t(eje.labelKey)}
                   value={ratings[eje.key] ?? 0}
                   onChange={(v) => setRating(eje.key, v)}
                 />
@@ -190,7 +194,7 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
 
               <div className="pt-2">
                 <label className="block text-sm text-foreground mb-1" htmlFor="rating-comentario">
-                  Comentario (opcional)
+                  {t('rating.commentLabel')}
                 </label>
                 <textarea
                   id="rating-comentario"
@@ -198,7 +202,7 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
                   onChange={(e) => setComentario(e.target.value)}
                   maxLength={500}
                   rows={3}
-                  placeholder="Comparte tu experiencia..."
+                  placeholder={t('rating.commentPh')}
                   className="w-full border border-border rounded-lg px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                 />
                 <p className="text-[11px] text-muted-foreground text-right mt-0.5">
@@ -216,7 +220,7 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
               {!error && <span className="flex-1" />}
               <div className="flex gap-2 flex-shrink-0">
                 <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={loading}>
-                  Cancelar
+                  {t('rating.cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -225,7 +229,7 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
                   loading={loading}
                   disabled={!allFilled}
                 >
-                  Enviar valoracion
+                  {t('rating.submit')}
                 </Button>
               </div>
             </div>
