@@ -141,6 +141,75 @@ export type MessageKey =
   | 'dashboard.createOne'
   | 'dashboard.seasonalCalendar'
   | 'dashboard.seasonalCalendarSub'
+  | 'dashboard.action.signContract.one'
+  | 'dashboard.action.signContract.many'
+  | 'dashboard.action.signContract.desc'
+  | 'dashboard.action.authorizePayment.one'
+  | 'dashboard.action.authorizePayment.many'
+  | 'dashboard.action.authorizePayment.desc'
+  | 'dashboard.action.confirmDelivery.one'
+  | 'dashboard.action.confirmDelivery.many'
+  | 'dashboard.action.confirmDelivery.desc'
+  | 'dashboard.action.rateSeller.one'
+  | 'dashboard.action.rateSeller.many'
+  | 'dashboard.action.rateSeller.desc'
+  | 'dashboard.action.rateBuyer.one'
+  | 'dashboard.action.rateBuyer.many'
+  | 'dashboard.action.rateBuyer.desc'
+  | 'dashboard.action.expiredOrders.one'
+  | 'dashboard.action.expiredOrders.many'
+  | 'dashboard.action.expiredOrders.desc'
+  | 'dashboard.action.expiredLots.one'
+  | 'dashboard.action.expiredLots.many'
+  | 'dashboard.action.expiredLots.desc'
+  | 'dashboard.action.unreadMessages.one'
+  | 'dashboard.action.unreadMessages.many'
+  | 'dashboard.action.unreadMessages.desc'
+  | 'dashboard.action.reviewMatches.one'
+  | 'dashboard.action.reviewMatches.many'
+  | 'dashboard.action.reviewMatches.desc'
+  | 'dashboard.action.markShipped.one'
+  | 'dashboard.action.markShipped.many'
+  | 'dashboard.action.markShipped.desc'
+  | 'dashboard.action.sellerSignContract.one'
+  | 'dashboard.action.sellerSignContract.many'
+  | 'dashboard.action.sellerSignContract.desc'
+  // ─── lots/orders list ────────────────────────────────────────────────────
+  | 'lots.title'
+  | 'lots.newLot'
+  | 'lots.empty'
+  | 'lots.search'
+  | 'lots.tab.all'
+  | 'lots.tab.open'
+  | 'lots.tab.inProgress'
+  | 'lots.tab.full'
+  | 'lots.tab.cancelled'
+  | 'lots.col.id'
+  | 'lots.col.product'
+  | 'lots.col.totalKg'
+  | 'lots.col.coverage'
+  | 'lots.col.status'
+  | 'lots.col.availableDate'
+  | 'lots.pendingRating'
+  | 'lots.rateNow'
+  | 'orders.title'
+  | 'orders.newOrder'
+  | 'orders.empty'
+  | 'orders.search'
+  | 'orders.tab.all'
+  | 'orders.tab.open'
+  | 'orders.tab.inProgress'
+  | 'orders.tab.covered'
+  | 'orders.tab.closed'
+  | 'orders.tab.cancelled'
+  | 'orders.col.id'
+  | 'orders.col.product'
+  | 'orders.col.totalKg'
+  | 'orders.col.coverage'
+  | 'orders.col.status'
+  | 'orders.col.deliveryDate'
+  | 'orders.pendingRating'
+  | 'orders.rateNow'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -285,6 +354,75 @@ export const messages: Record<Locale, Messages> = {
     'dashboard.createOne': 'Crea uno',
     'dashboard.seasonalCalendar': 'Calendario estacional — España',
     'dashboard.seasonalCalendarSub': 'Temporadas de producción y comercialización por categoría de producto',
+    // Action items con interpolación {n}. Plural en español: "1 contrato" vs "N contratos".
+    'dashboard.action.signContract.one': 'Firmar y pagar 1 contrato',
+    'dashboard.action.signContract.many': 'Firmar y pagar {n} contratos',
+    'dashboard.action.signContract.desc': 'El vendedor ha firmado. Tienes 48 horas hábiles para pagar la comisión y firmar.',
+    'dashboard.action.authorizePayment.one': 'Autorizar pago de 1 oferta',
+    'dashboard.action.authorizePayment.many': 'Autorizar pago de {n} ofertas',
+    'dashboard.action.authorizePayment.desc': 'Pre-autoriza el pago para confirmar el acuerdo en escrow.',
+    'dashboard.action.confirmDelivery.one': 'Confirmar recepción de 1 envío',
+    'dashboard.action.confirmDelivery.many': 'Confirmar recepción de {n} envíos',
+    'dashboard.action.confirmDelivery.desc': 'El vendedor ha marcado el envío. Confirma que has recibido la mercancía.',
+    'dashboard.action.rateSeller.one': 'Valorar al vendedor en 1 operación',
+    'dashboard.action.rateSeller.many': 'Valorar al vendedor en {n} operaciones',
+    'dashboard.action.rateSeller.desc': 'La mercancía ya fue recibida. Valora al vendedor para cerrar la operación.',
+    'dashboard.action.rateBuyer.one': 'Valorar al comprador en 1 operación',
+    'dashboard.action.rateBuyer.many': 'Valorar al comprador en {n} operaciones',
+    'dashboard.action.rateBuyer.desc': 'La mercancía ya fue recibida. Valora al comprador para cerrar la operación.',
+    'dashboard.action.expiredOrders.one': '1 pedido fuera de fecha de entrega',
+    'dashboard.action.expiredOrders.many': '{n} pedidos fuera de fecha de entrega',
+    'dashboard.action.expiredOrders.desc': 'Amplía el plazo o cierra el pedido con la cobertura actual.',
+    'dashboard.action.expiredLots.one': '1 lote fuera de fecha de disponibilidad',
+    'dashboard.action.expiredLots.many': '{n} lotes fuera de fecha de disponibilidad',
+    'dashboard.action.expiredLots.desc': 'Amplía la fecha o cierra el lote con la cobertura actual.',
+    'dashboard.action.unreadMessages.one': '1 mensaje sin leer',
+    'dashboard.action.unreadMessages.many': '{n} mensajes sin leer',
+    'dashboard.action.unreadMessages.desc': 'Tienes mensajes pendientes de la otra parte.',
+    'dashboard.action.reviewMatches.one': 'Revisar 1 match nuevo',
+    'dashboard.action.reviewMatches.many': 'Revisar {n} matches nuevos',
+    'dashboard.action.reviewMatches.desc': 'Compradores interesados en tus lotes. Acepta o rechaza desde la pestaña Matches.',
+    'dashboard.action.markShipped.one': 'Marcar como enviado 1 envío',
+    'dashboard.action.markShipped.many': 'Marcar como enviados {n} envíos',
+    'dashboard.action.markShipped.desc': 'El contrato está firmado y la comisión pagada. Marca el envío para que el comprador confirme.',
+    'dashboard.action.sellerSignContract.one': 'Firmar 1 contrato',
+    'dashboard.action.sellerSignContract.many': 'Firmar {n} contratos',
+    'dashboard.action.sellerSignContract.desc': 'Tienes contratos pendientes de firmar como vendedor. El comprador podrá pagar y firmar después.',
+    'lots.title': 'Mis lotes',
+    'lots.newLot': 'Nuevo lote',
+    'lots.empty': 'Sin lotes. Publica tu primer lote para empezar a vender.',
+    'lots.search': 'Buscar por ID de lote o producto…',
+    'lots.tab.all': 'Todos',
+    'lots.tab.open': 'Abiertos',
+    'lots.tab.inProgress': 'En curso',
+    'lots.tab.full': 'Completos',
+    'lots.tab.cancelled': 'Cancelados',
+    'lots.col.id': 'ID Lote',
+    'lots.col.product': 'Producto',
+    'lots.col.totalKg': 'Cantidad total',
+    'lots.col.coverage': '% Cobertura',
+    'lots.col.status': 'Estado',
+    'lots.col.availableDate': 'Fecha recogida',
+    'lots.pendingRating': 'Tienes una transacción pendiente de valorar.',
+    'lots.rateNow': 'Valorar ahora',
+    'orders.title': 'Mis pedidos',
+    'orders.newOrder': 'Nuevo pedido',
+    'orders.empty': 'Sin pedidos. Crea tu primer pedido para empezar a comprar.',
+    'orders.search': 'Buscar por ID de pedido o producto…',
+    'orders.tab.all': 'Todos',
+    'orders.tab.open': 'Abiertos',
+    'orders.tab.inProgress': 'En curso',
+    'orders.tab.covered': 'Cubiertos',
+    'orders.tab.closed': 'Cerrados',
+    'orders.tab.cancelled': 'Cancelados',
+    'orders.col.id': 'ID Pedido',
+    'orders.col.product': 'Producto',
+    'orders.col.totalKg': 'Cantidad total',
+    'orders.col.coverage': '% Cobertura',
+    'orders.col.status': 'Estado',
+    'orders.col.deliveryDate': 'Fecha entrega',
+    'orders.pendingRating': 'Tienes una transacción pendiente de valorar.',
+    'orders.rateNow': 'Valorar ahora',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -424,6 +562,74 @@ export const messages: Record<Locale, Messages> = {
     'dashboard.createOne': 'Create one',
     'dashboard.seasonalCalendar': 'Seasonal calendar — Spain',
     'dashboard.seasonalCalendarSub': 'Production and trade seasons by product category',
+    'dashboard.action.signContract.one': 'Sign and pay 1 contract',
+    'dashboard.action.signContract.many': 'Sign and pay {n} contracts',
+    'dashboard.action.signContract.desc': "The seller has signed. You have 48 business hours to pay the commission and sign.",
+    'dashboard.action.authorizePayment.one': 'Authorize payment for 1 offer',
+    'dashboard.action.authorizePayment.many': 'Authorize payment for {n} offers',
+    'dashboard.action.authorizePayment.desc': 'Pre-authorize payment to confirm the deal in escrow.',
+    'dashboard.action.confirmDelivery.one': 'Confirm delivery of 1 shipment',
+    'dashboard.action.confirmDelivery.many': 'Confirm delivery of {n} shipments',
+    'dashboard.action.confirmDelivery.desc': "The seller has marked it as shipped. Confirm you have received the goods.",
+    'dashboard.action.rateSeller.one': 'Rate the seller on 1 operation',
+    'dashboard.action.rateSeller.many': 'Rate the seller on {n} operations',
+    'dashboard.action.rateSeller.desc': 'Goods received. Rate the seller to close the operation.',
+    'dashboard.action.rateBuyer.one': 'Rate the buyer on 1 operation',
+    'dashboard.action.rateBuyer.many': 'Rate the buyer on {n} operations',
+    'dashboard.action.rateBuyer.desc': 'Goods received. Rate the buyer to close the operation.',
+    'dashboard.action.expiredOrders.one': '1 order past delivery date',
+    'dashboard.action.expiredOrders.many': '{n} orders past delivery date',
+    'dashboard.action.expiredOrders.desc': 'Extend the deadline or close the order with the current coverage.',
+    'dashboard.action.expiredLots.one': '1 lot past availability date',
+    'dashboard.action.expiredLots.many': '{n} lots past availability date',
+    'dashboard.action.expiredLots.desc': 'Extend the date or close the lot with the current coverage.',
+    'dashboard.action.unreadMessages.one': '1 unread message',
+    'dashboard.action.unreadMessages.many': '{n} unread messages',
+    'dashboard.action.unreadMessages.desc': 'You have pending messages from the other party.',
+    'dashboard.action.reviewMatches.one': 'Review 1 new match',
+    'dashboard.action.reviewMatches.many': 'Review {n} new matches',
+    'dashboard.action.reviewMatches.desc': 'Buyers interested in your lots. Accept or decline from the Matches tab.',
+    'dashboard.action.markShipped.one': 'Mark 1 shipment as sent',
+    'dashboard.action.markShipped.many': 'Mark {n} shipments as sent',
+    'dashboard.action.markShipped.desc': "Contract is signed and commission paid. Mark the shipment so the buyer can confirm.",
+    'dashboard.action.sellerSignContract.one': 'Sign 1 contract',
+    'dashboard.action.sellerSignContract.many': 'Sign {n} contracts',
+    'dashboard.action.sellerSignContract.desc': 'You have contracts pending to sign as seller. The buyer can pay and sign after.',
+    'lots.title': 'My lots',
+    'lots.newLot': 'New lot',
+    'lots.empty': 'No lots yet. Publish your first lot to start selling.',
+    'lots.search': 'Search by lot ID or product…',
+    'lots.tab.all': 'All',
+    'lots.tab.open': 'Open',
+    'lots.tab.inProgress': 'In progress',
+    'lots.tab.full': 'Completed',
+    'lots.tab.cancelled': 'Cancelled',
+    'lots.col.id': 'Lot ID',
+    'lots.col.product': 'Product',
+    'lots.col.totalKg': 'Total qty',
+    'lots.col.coverage': 'Coverage %',
+    'lots.col.status': 'Status',
+    'lots.col.availableDate': 'Pickup date',
+    'lots.pendingRating': 'You have a transaction pending rating.',
+    'lots.rateNow': 'Rate now',
+    'orders.title': 'My orders',
+    'orders.newOrder': 'New order',
+    'orders.empty': 'No orders yet. Create your first order to start buying.',
+    'orders.search': 'Search by order ID or product…',
+    'orders.tab.all': 'All',
+    'orders.tab.open': 'Open',
+    'orders.tab.inProgress': 'In progress',
+    'orders.tab.covered': 'Covered',
+    'orders.tab.closed': 'Closed',
+    'orders.tab.cancelled': 'Cancelled',
+    'orders.col.id': 'Order ID',
+    'orders.col.product': 'Product',
+    'orders.col.totalKg': 'Total qty',
+    'orders.col.coverage': 'Coverage %',
+    'orders.col.status': 'Status',
+    'orders.col.deliveryDate': 'Delivery date',
+    'orders.pendingRating': 'You have a transaction pending rating.',
+    'orders.rateNow': 'Rate now',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",

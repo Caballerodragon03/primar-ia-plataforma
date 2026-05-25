@@ -94,11 +94,16 @@ export default function BuyerDashboard() {
     .slice(0, 3);
 
   const n = notifs;
+  // Phase 14M v3.40 — helper plural: elige la clave .one o .many según
+  // count y substituye {n}. Mantiene la lógica de pluralización en
+  // las claves del diccionario, no en el componente.
+  const pl = (count: number, oneKey: Parameters<typeof t>[0], manyKey: Parameters<typeof t>[0]) =>
+    (count === 1 ? t(oneKey) : t(manyKey).replace('{n}', String(count)));
   const actionItems = [
     n && n.pendingContracts > 0 && {
       icon: <PenLine className="w-5 h-5" />,
-      label: `Firmar y pagar ${n.pendingContracts} contrato${n.pendingContracts > 1 ? 's' : ''}`,
-      desc: 'El vendedor ha firmado. Tienes 48 horas hábiles para pagar la comisión y firmar.',
+      label: pl(n.pendingContracts, 'dashboard.action.signContract.one', 'dashboard.action.signContract.many'),
+      desc: t('dashboard.action.signContract.desc'),
       href: n.pendingContracts === 1 && n.firstPendingContractMatchId
         ? `/buyer/contracts/${n.firstPendingContractMatchId}`
         : '/buyer/orders/tasks/contracts',
@@ -106,8 +111,8 @@ export default function BuyerDashboard() {
     },
     n && n.pendingOffers > 0 && {
       icon: <CreditCard className="w-5 h-5" />,
-      label: `Autorizar pago de ${n.pendingOffers} oferta${n.pendingOffers > 1 ? 's' : ''}`,
-      desc: 'Pre-authorize payment to confirm the deal in escrow.',
+      label: pl(n.pendingOffers, 'dashboard.action.authorizePayment.one', 'dashboard.action.authorizePayment.many'),
+      desc: t('dashboard.action.authorizePayment.desc'),
       href: n.pendingOffers === 1 && n.firstPendingOfferOrderId
         ? `/buyer/orders/${n.firstPendingOfferOrderId}`
         : '/buyer/orders/tasks/offers',
@@ -115,12 +120,8 @@ export default function BuyerDashboard() {
     },
     n && n.pendingDeliveries > 0 && {
       icon: <PackageCheck className="w-5 h-5" />,
-      label: `Confirmar recepción de ${n.pendingDeliveries} envío${n.pendingDeliveries > 1 ? 's' : ''}`,
-      // Phase 14M v3.20 — texto v2 ("confirmar recepción", no "entrega
-      // con QR") y enlace al contrato donde vive el botón "Confirmar
-      // recepción". Antes apuntaba a /buyer/orders/.../delivery/...
-      // (legacy v1) que no existe en v2.
-      desc: 'El vendedor ha marcado el envío. Confirma que has recibido la mercancía.',
+      label: pl(n.pendingDeliveries, 'dashboard.action.confirmDelivery.one', 'dashboard.action.confirmDelivery.many'),
+      desc: t('dashboard.action.confirmDelivery.desc'),
       href: n.pendingDeliveries === 1 && n.firstPendingDeliveryMatchId
         ? `/buyer/contracts/${n.firstPendingDeliveryMatchId}`
         : '/buyer/orders/tasks/deliveries',
@@ -128,8 +129,8 @@ export default function BuyerDashboard() {
     },
     n && (n.pendingRatings ?? 0) > 0 && {
       icon: <Star className="w-5 h-5" />,
-      label: `Valorar al vendedor en ${n.pendingRatings} operación${(n.pendingRatings ?? 0) > 1 ? 'es' : ''}`,
-      desc: 'La mercancía ya fue recibida. Valora al vendedor para cerrar la operación.',
+      label: pl(n.pendingRatings ?? 0, 'dashboard.action.rateSeller.one', 'dashboard.action.rateSeller.many'),
+      desc: t('dashboard.action.rateSeller.desc'),
       href: n.firstPendingRatingMatchId
         ? `/buyer/contracts/${n.firstPendingRatingMatchId}`
         : '/buyer/orders/tasks/deliveries',
@@ -137,15 +138,15 @@ export default function BuyerDashboard() {
     },
     n && n.expiredOrders > 0 && {
       icon: <AlarmClock className="w-5 h-5" />,
-      label: `${n.expiredOrders} order${n.expiredOrders > 1 ? 's' : ''} past delivery date`,
-      desc: 'Extend the deadline or close the order with the current coverage.',
+      label: pl(n.expiredOrders, 'dashboard.action.expiredOrders.one', 'dashboard.action.expiredOrders.many'),
+      desc: t('dashboard.action.expiredOrders.desc'),
       href: '/buyer/orders/tasks/expiry',
       color: 'red',
     },
     n && n.unreadMessages > 0 && {
       icon: <MessageCircle className="w-5 h-5" />,
-      label: `${n.unreadMessages} unread message${n.unreadMessages > 1 ? 's' : ''}`,
-      desc: 'You have unread messages from sellers.',
+      label: pl(n.unreadMessages, 'dashboard.action.unreadMessages.one', 'dashboard.action.unreadMessages.many'),
+      desc: t('dashboard.action.unreadMessages.desc'),
       href: '/buyer/messages',
       color: 'purple',
     },

@@ -99,11 +99,14 @@ export default function SellerDashboard() {
   const recentMatches = matches.slice(0, 3);
 
   const n = notifs;
+  // Phase 14M v3.40 — helper plural i18n (mismo que en buyer dashboard).
+  const pl = (count: number, oneKey: Parameters<typeof t>[0], manyKey: Parameters<typeof t>[0]) =>
+    (count === 1 ? t(oneKey) : t(manyKey).replace('{n}', String(count)));
   const actionItems = [
     n && n.pendingContracts > 0 && {
       icon: <PenLine className="w-5 h-5" />,
-      label: `Firmar ${n.pendingContracts} contrato${n.pendingContracts > 1 ? 's' : ''}`,
-      desc: 'Tienes contratos pendientes de firmar como vendedor. El comprador podrá pagar y firmar después.',
+      label: pl(n.pendingContracts, 'dashboard.action.sellerSignContract.one', 'dashboard.action.sellerSignContract.many'),
+      desc: t('dashboard.action.sellerSignContract.desc'),
       href: n.pendingContracts === 1 && n.firstPendingContractMatchId
         ? `/seller/contracts/${n.firstPendingContractMatchId}`
         : '/seller/lots/tasks/contracts',
@@ -111,10 +114,8 @@ export default function SellerDashboard() {
     },
     n && n.pendingPhotos > 0 && {
       icon: <Camera className="w-5 h-5" />,
-      // Phase 14M v3.19 — antes decía "Subir fotos" (legacy v1). En v2
-      // la tarea es marcar como enviado en la pantalla del contrato.
-      label: `Marcar como enviado ${n.pendingPhotos} envío${n.pendingPhotos > 1 ? 's' : ''}`,
-      desc: 'El contrato ya está firmado y pagado. Marca la mercancía como enviada para que el comprador pueda confirmar la recepción.',
+      label: pl(n.pendingPhotos, 'dashboard.action.markShipped.one', 'dashboard.action.markShipped.many'),
+      desc: t('dashboard.action.markShipped.desc'),
       href: n.pendingPhotos === 1 && n.firstPendingPhotosMatchId
         ? `/seller/contracts/${n.firstPendingPhotosMatchId}`
         : '/seller/lots/tasks/photos',
@@ -122,15 +123,15 @@ export default function SellerDashboard() {
     },
     n && n.pendingMatches > 0 && {
       icon: <Zap className="w-5 h-5" />,
-      label: `${n.pendingMatches} new match${n.pendingMatches > 1 ? 'es' : ''} to review`,
-      desc: 'New buyers matched to your lots. Review and accept.',
+      label: pl(n.pendingMatches, 'dashboard.action.reviewMatches.one', 'dashboard.action.reviewMatches.many'),
+      desc: t('dashboard.action.reviewMatches.desc'),
       href: n.pendingMatches === 1 ? '/seller/matches' : '/seller/lots/tasks/matches',
       color: 'green',
     },
     n && (n.pendingRatings ?? 0) > 0 && {
       icon: <Star className="w-5 h-5" />,
-      label: `Valorar al comprador en ${n.pendingRatings} operación${(n.pendingRatings ?? 0) > 1 ? 'es' : ''}`,
-      desc: 'La mercancía ya fue recibida. Valora al comprador para cerrar la operación.',
+      label: pl(n.pendingRatings ?? 0, 'dashboard.action.rateBuyer.one', 'dashboard.action.rateBuyer.many'),
+      desc: t('dashboard.action.rateBuyer.desc'),
       href: n.firstPendingRatingMatchId
         ? `/seller/contracts/${n.firstPendingRatingMatchId}`
         : '/seller/lots/tasks/photos',
@@ -138,15 +139,15 @@ export default function SellerDashboard() {
     },
     n && n.expiredLots > 0 && {
       icon: <AlarmClock className="w-5 h-5" />,
-      label: `${n.expiredLots} lot${n.expiredLots > 1 ? 's' : ''} past availability date`,
-      desc: 'Extend the period or close the lot with the current sales.',
+      label: pl(n.expiredLots, 'dashboard.action.expiredLots.one', 'dashboard.action.expiredLots.many'),
+      desc: t('dashboard.action.expiredLots.desc'),
       href: '/seller/lots/tasks/expiry',
       color: 'red',
     },
     n && n.unreadMessages > 0 && {
       icon: <MessageCircle className="w-5 h-5" />,
-      label: `${n.unreadMessages} unread message${n.unreadMessages > 1 ? 's' : ''}`,
-      desc: 'You have unread messages from buyers.',
+      label: pl(n.unreadMessages, 'dashboard.action.unreadMessages.one', 'dashboard.action.unreadMessages.many'),
+      desc: t('dashboard.action.unreadMessages.desc'),
       href: '/seller/messages',
       color: 'purple',
     },
