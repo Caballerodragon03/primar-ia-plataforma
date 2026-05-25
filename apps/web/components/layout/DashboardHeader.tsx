@@ -6,6 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 import { Avatar, AvatarFallback } from '@/components/shadcn/avatar';
 import { Badge } from '@/components/shadcn/badge';
 import {
@@ -17,36 +19,38 @@ import {
   DropdownMenuTrigger,
 } from '@/components/shadcn/dropdown-menu';
 
-function generateBreadcrumbs(pathname: string, role?: string) {
+// Phase 14M v3.38 — slug → MessageKey para los breadcrumbs traducibles.
+// Si un slug no está en este mapa, se renderiza tal cual (capitalizado).
+const BREADCRUMB_KEYS: Record<string, MessageKey> = {
+  buyer: 'header.breadcrumbBuyer',
+  seller: 'header.breadcrumbSeller',
+  orders: 'header.breadcrumbOrders',
+  lots: 'header.breadcrumbLots',
+  messages: 'header.breadcrumbMessages',
+  analytics: 'header.breadcrumbAnalytics',
+  disputes: 'header.breadcrumbDisputes',
+  matches: 'header.breadcrumbMatches',
+  profile: 'header.breadcrumbProfile',
+  mercado: 'header.breadcrumbMercado',
+  subscription: 'header.breadcrumbSubscription',
+  new: 'header.breadcrumbNew',
+  'harvest-estimation': 'header.breadcrumbHarvest',
+  dashboard: 'header.breadcrumbDashboard',
+  users: 'header.breadcrumbUsers',
+  certificates: 'header.breadcrumbCertificates',
+  incidents: 'header.breadcrumbIncidents',
+};
+
+function generateBreadcrumbs(pathname: string, t: (k: MessageKey) => string) {
   const segments = pathname.split('/').filter(Boolean);
   const crumbs: { label: string; href: string }[] = [];
-
-  const labelMap: Record<string, string> = {
-    buyer: 'Comprador',
-    seller: 'Vendedor',
-    admin: 'Admin',
-    orders: 'Pedidos',
-    lots: 'Lotes',
-    messages: 'Mensajes',
-    analytics: 'Analíticas',
-    disputes: 'Incidencias',
-    matches: 'Matches',
-    profile: 'Perfil',
-    mercado: 'Mercado',
-    subscription: 'Suscripción',
-    new: 'Nuevo',
-    'harvest-estimation': 'Cosecha',
-    dashboard: 'Dashboard',
-    users: 'Usuarios',
-    certificates: 'Certificados',
-    incidents: 'Incidentes',
-  };
 
   let href = '';
   for (const seg of segments) {
     href += `/${seg}`;
     if (seg.match(/^[a-f0-9-]{20,}$/i)) continue;
-    const label = labelMap[seg] || seg.charAt(0).toUpperCase() + seg.slice(1);
+    const key = BREADCRUMB_KEYS[seg];
+    const label = key ? t(key) : seg.charAt(0).toUpperCase() + seg.slice(1);
     crumbs.push({ label, href });
   }
 
@@ -58,6 +62,7 @@ export function DashboardHeader() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const pathname = usePathname();
   const router = useRouter();
+  const t = useT();
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchUnread = useCallback(async () => {
@@ -90,7 +95,7 @@ export function DashboardHeader() {
     router.push('/login');
   };
 
-  const breadcrumbs = generateBreadcrumbs(pathname, user?.role);
+  const breadcrumbs = generateBreadcrumbs(pathname, t);
   const userInitials = user
     ? `${user.nombre?.[0] ?? ''}${user.apellidos?.[0] ?? ''}`.toUpperCase()
     : '?';
@@ -124,7 +129,7 @@ export function DashboardHeader() {
         <Link
           href={messagesHref}
           className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-accent transition-colors duration-150 cursor-pointer"
-          aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+          aria-label={`${t('header.notifications')}${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
         >
           <Bell className="w-[18px] h-[18px] text-muted-foreground" />
           {unreadCount > 0 && (
@@ -164,13 +169,13 @@ export function DashboardHeader() {
             <DropdownMenuItem asChild>
               <Link href={profileHref} className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
-                Mi perfil
+                {t('header.myProfile')}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href={profileHref} className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
-                Configuración
+                {t('header.settings')}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -179,7 +184,7 @@ export function DashboardHeader() {
               className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Cerrar sesión
+              {t('nav.logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

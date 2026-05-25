@@ -28,8 +28,32 @@ export type MessageKey =
   | 'nav.profile'
   | 'nav.subscription'
   | 'nav.logout'
+  | 'nav.harvest'
+  | 'role.seller'
+  | 'role.buyer'
+  | 'sidebar.expand'
+  | 'sidebar.collapse'
   | 'header.notifications'
   | 'header.greeting'
+  | 'header.myProfile'
+  | 'header.settings'
+  | 'header.breadcrumbBuyer'
+  | 'header.breadcrumbSeller'
+  | 'header.breadcrumbOrders'
+  | 'header.breadcrumbLots'
+  | 'header.breadcrumbMessages'
+  | 'header.breadcrumbAnalytics'
+  | 'header.breadcrumbDisputes'
+  | 'header.breadcrumbMatches'
+  | 'header.breadcrumbProfile'
+  | 'header.breadcrumbMercado'
+  | 'header.breadcrumbSubscription'
+  | 'header.breadcrumbNew'
+  | 'header.breadcrumbHarvest'
+  | 'header.breadcrumbDashboard'
+  | 'header.breadcrumbUsers'
+  | 'header.breadcrumbCertificates'
+  | 'header.breadcrumbIncidents'
   // ─── auth ────────────────────────────────────────────────────────────────
   | 'auth.login.title'
   | 'auth.login.subtitle'
@@ -42,6 +66,22 @@ export type MessageKey =
   | 'auth.login.register'
   | 'auth.login.invalidCreds'
   | 'auth.login.locked'
+  | 'auth.login.serverErrorFallback'
+  | 'auth.login.tagline'
+  | 'auth.login.heroTitle'
+  | 'auth.login.heroDesc'
+  | 'auth.login.statPreregistros'
+  | 'auth.login.statMarketplace'
+  | 'auth.login.statSellerFee'
+  | 'auth.login.welcome'
+  | 'auth.login.subtitleCard'
+  | 'auth.login.emailPlaceholder'
+  | 'auth.login.passwordInvalid'
+  | 'auth.login.emailInvalid'
+  | 'auth.login.passwordRequired'
+  | 'auth.login.or'
+  | 'auth.login.registerNow'
+  | 'auth.login.endorsedBy'
   | 'auth.register.title'
   | 'auth.register.haveAccount'
   | 'auth.register.signIn'
@@ -91,8 +131,32 @@ export const messages: Record<Locale, Messages> = {
     'nav.profile': 'Perfil',
     'nav.subscription': 'Suscripción',
     'nav.logout': 'Cerrar sesión',
+    'nav.harvest': 'Cosecha',
+    'role.seller': 'Vendedor',
+    'role.buyer': 'Comprador',
+    'sidebar.expand': 'Expandir menú',
+    'sidebar.collapse': 'Colapsar menú',
     'header.notifications': 'Notificaciones',
     'header.greeting': 'Hola',
+    'header.myProfile': 'Mi perfil',
+    'header.settings': 'Configuración',
+    'header.breadcrumbBuyer': 'Comprador',
+    'header.breadcrumbSeller': 'Vendedor',
+    'header.breadcrumbOrders': 'Pedidos',
+    'header.breadcrumbLots': 'Lotes',
+    'header.breadcrumbMessages': 'Mensajes',
+    'header.breadcrumbAnalytics': 'Analíticas',
+    'header.breadcrumbDisputes': 'Incidencias',
+    'header.breadcrumbMatches': 'Matches',
+    'header.breadcrumbProfile': 'Perfil',
+    'header.breadcrumbMercado': 'Mercado',
+    'header.breadcrumbSubscription': 'Suscripción',
+    'header.breadcrumbNew': 'Nuevo',
+    'header.breadcrumbHarvest': 'Cosecha',
+    'header.breadcrumbDashboard': 'Dashboard',
+    'header.breadcrumbUsers': 'Usuarios',
+    'header.breadcrumbCertificates': 'Certificados',
+    'header.breadcrumbIncidents': 'Incidentes',
     'auth.login.title': 'Iniciar sesión',
     'auth.login.subtitle': 'Bienvenido de vuelta a Primar-IA',
     'auth.login.email': 'Correo electrónico',
@@ -104,6 +168,22 @@ export const messages: Record<Locale, Messages> = {
     'auth.login.register': 'Regístrate',
     'auth.login.invalidCreds': 'Credenciales inválidas',
     'auth.login.locked': 'Cuenta bloqueada temporalmente. Intenta más tarde.',
+    'auth.login.serverErrorFallback': 'Error al iniciar sesión. Inténtalo de nuevo.',
+    'auth.login.tagline': 'La lonja digital del sector primario',
+    'auth.login.heroTitle': 'La revolución del campo\nempieza contigo.',
+    'auth.login.heroDesc': 'Conecta directamente con productores y compradores del sector primario en España. Sin intermediarios.',
+    'auth.login.statPreregistros': 'Pre-registros',
+    'auth.login.statMarketplace': 'Marketplace',
+    'auth.login.statSellerFee': 'Comisión vendedor',
+    'auth.login.welcome': 'Bienvenido de vuelta',
+    'auth.login.subtitleCard': 'Inicia sesión en tu cuenta',
+    'auth.login.emailPlaceholder': 'tu@empresa.com',
+    'auth.login.emailInvalid': 'Email no válido',
+    'auth.login.passwordRequired': 'La contraseña es obligatoria',
+    'auth.login.passwordInvalid': 'Contraseña no válida',
+    'auth.login.or': 'o',
+    'auth.login.registerNow': 'Regístrate ahora',
+    'auth.login.endorsedBy': 'Respaldado por Santander X Explorer y ESIC Emprendedores',
     'auth.register.title': 'Crear cuenta',
     'auth.register.haveAccount': '¿Ya tienes cuenta?',
     'auth.register.signIn': 'Iniciar sesión',
@@ -146,8 +226,32 @@ export const messages: Record<Locale, Messages> = {
     'nav.profile': 'Profile',
     'nav.subscription': 'Subscription',
     'nav.logout': 'Log out',
+    'nav.harvest': 'Harvest',
+    'role.seller': 'Seller',
+    'role.buyer': 'Buyer',
+    'sidebar.expand': 'Expand menu',
+    'sidebar.collapse': 'Collapse menu',
     'header.notifications': 'Notifications',
     'header.greeting': 'Hi',
+    'header.myProfile': 'My profile',
+    'header.settings': 'Settings',
+    'header.breadcrumbBuyer': 'Buyer',
+    'header.breadcrumbSeller': 'Seller',
+    'header.breadcrumbOrders': 'Orders',
+    'header.breadcrumbLots': 'Lots',
+    'header.breadcrumbMessages': 'Messages',
+    'header.breadcrumbAnalytics': 'Analytics',
+    'header.breadcrumbDisputes': 'Disputes',
+    'header.breadcrumbMatches': 'Matches',
+    'header.breadcrumbProfile': 'Profile',
+    'header.breadcrumbMercado': 'Market',
+    'header.breadcrumbSubscription': 'Subscription',
+    'header.breadcrumbNew': 'New',
+    'header.breadcrumbHarvest': 'Harvest',
+    'header.breadcrumbDashboard': 'Dashboard',
+    'header.breadcrumbUsers': 'Users',
+    'header.breadcrumbCertificates': 'Certificates',
+    'header.breadcrumbIncidents': 'Incidents',
     'auth.login.title': 'Sign in',
     'auth.login.subtitle': 'Welcome back to Primar-IA',
     'auth.login.email': 'Email',
@@ -159,6 +263,22 @@ export const messages: Record<Locale, Messages> = {
     'auth.login.register': 'Register',
     'auth.login.invalidCreds': 'Invalid credentials',
     'auth.login.locked': 'Account temporarily locked. Try again later.',
+    'auth.login.serverErrorFallback': 'Could not sign in. Please try again.',
+    'auth.login.tagline': 'The digital marketplace for primary sector',
+    'auth.login.heroTitle': "The countryside revolution\nstarts with you.",
+    'auth.login.heroDesc': 'Connect directly with producers and buyers in the Spanish primary sector. No middlemen.',
+    'auth.login.statPreregistros': 'Pre-registrations',
+    'auth.login.statMarketplace': 'Marketplace',
+    'auth.login.statSellerFee': 'Seller commission',
+    'auth.login.welcome': 'Welcome back',
+    'auth.login.subtitleCard': 'Sign in to your account',
+    'auth.login.emailPlaceholder': 'you@company.com',
+    'auth.login.emailInvalid': 'Invalid email',
+    'auth.login.passwordRequired': 'Password is required',
+    'auth.login.passwordInvalid': 'Invalid password',
+    'auth.login.or': 'or',
+    'auth.login.registerNow': 'Register now',
+    'auth.login.endorsedBy': 'Backed by Santander X Explorer and ESIC Emprendedores',
     'auth.register.title': 'Create account',
     'auth.register.haveAccount': 'Already have an account?',
     'auth.register.signIn': 'Sign in',

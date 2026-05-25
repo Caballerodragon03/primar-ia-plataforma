@@ -21,6 +21,8 @@ import {
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 import { Logo } from '@/components/brand/Logo';
 import { Avatar, AvatarFallback } from '@/components/shadcn/avatar';
 import { Badge } from '@/components/shadcn/badge';
@@ -42,59 +44,62 @@ interface NotificationSummary {
 }
 
 interface NavItem {
-  label: string;
+  // Phase 14M v3.38 — labelKey en lugar de label hardcoded. Se resuelve
+  // dentro del componente con useT() para que el cambio de idioma del
+  // toggle re-renderice los items al instante.
+  labelKey: MessageKey;
   href: string;
   icon: React.ElementType;
   badgeKeys?: Array<keyof NotificationSummary>;
 }
 
 const BUYER_NAV: NavItem[] = [
-  { label: 'Dashboard', href: '/buyer', icon: LayoutDashboard },
+  { labelKey: 'nav.dashboard', href: '/buyer', icon: LayoutDashboard },
   {
-    label: 'My Orders',
+    labelKey: 'nav.orders',
     href: '/buyer/orders',
     icon: ShoppingCart,
     badgeKeys: ['pendingOffers', 'pendingContracts', 'pendingDeliveries'],
   },
   {
-    label: 'Messages',
+    labelKey: 'nav.messages',
     href: '/buyer/messages',
     icon: MessageSquare,
     badgeKeys: ['unreadMessages'],
   },
-  { label: 'Disputes', href: '/buyer/disputes', icon: AlertTriangle },
-  { label: 'Analytics', href: '/buyer/analytics', icon: BarChart3 },
-  { label: 'Mercado', href: '/buyer/mercado', icon: LineChart },
-  { label: 'Suscripción', href: '/buyer/subscription', icon: CreditCard },
-  { label: 'Profile', href: '/buyer/profile', icon: UserCircle },
+  { labelKey: 'nav.disputes', href: '/buyer/disputes', icon: AlertTriangle },
+  { labelKey: 'nav.analytics', href: '/buyer/analytics', icon: BarChart3 },
+  { labelKey: 'nav.mercado', href: '/buyer/mercado', icon: LineChart },
+  { labelKey: 'nav.subscription', href: '/buyer/subscription', icon: CreditCard },
+  { labelKey: 'nav.profile', href: '/buyer/profile', icon: UserCircle },
 ];
 
 const SELLER_NAV: NavItem[] = [
-  { label: 'Dashboard', href: '/seller', icon: LayoutDashboard },
+  { labelKey: 'nav.dashboard', href: '/seller', icon: LayoutDashboard },
   {
-    label: 'My Lots',
+    labelKey: 'nav.lots',
     href: '/seller/lots',
     icon: Package,
     badgeKeys: ['pendingPhotos'],
   },
   {
-    label: 'Matches',
+    labelKey: 'nav.matches',
     href: '/seller/matches',
     icon: Zap,
     badgeKeys: ['pendingMatches', 'pendingContracts'],
   },
   {
-    label: 'Messages',
+    labelKey: 'nav.messages',
     href: '/seller/messages',
     icon: MessageSquare,
     badgeKeys: ['unreadMessages'],
   },
-  { label: 'Disputes', href: '/seller/disputes', icon: AlertTriangle },
-  { label: 'Analytics', href: '/seller/analytics', icon: BarChart3 },
-  { label: 'Mercado', href: '/seller/mercado', icon: LineChart },
-  { label: 'Cosecha', href: '/seller/harvest-estimation', icon: Sprout },
-  { label: 'Suscripción', href: '/seller/subscription', icon: CreditCard },
-  { label: 'Profile', href: '/seller/profile', icon: UserCircle },
+  { labelKey: 'nav.disputes', href: '/seller/disputes', icon: AlertTriangle },
+  { labelKey: 'nav.analytics', href: '/seller/analytics', icon: BarChart3 },
+  { labelKey: 'nav.mercado', href: '/seller/mercado', icon: LineChart },
+  { labelKey: 'nav.harvest', href: '/seller/harvest-estimation', icon: Sprout },
+  { labelKey: 'nav.subscription', href: '/seller/subscription', icon: CreditCard },
+  { labelKey: 'nav.profile', href: '/seller/profile', icon: UserCircle },
 ];
 
 const POLL_INTERVAL_MS = 30_000;
@@ -112,6 +117,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
+  const t = useT();
 
   const [notifications, setNotifications] =
     useState<NotificationSummary>(EMPTY_NOTIFICATIONS);
@@ -183,7 +189,7 @@ export function Sidebar() {
     ? `${user.nombre?.[0] ?? ''}${user.apellidos?.[0] ?? ''}`.toUpperCase()
     : '?';
 
-  const roleLabel = user?.role === 'COMPRADOR' ? 'Comprador' : 'Vendedor';
+  const roleLabel = user?.role === 'COMPRADOR' ? t('role.buyer') : t('role.seller');
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -197,7 +203,7 @@ export function Sidebar() {
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute -right-3 top-20 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card shadow-soft-sm hover:shadow-soft transition-all duration-200 cursor-pointer"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
         >
           {collapsed ? (
             <ChevronRight className="h-3 w-3 text-muted-foreground" />
@@ -261,7 +267,8 @@ export function Sidebar() {
 
         {/* Nav */}
         <nav className={cn('flex-1 p-2 flex flex-col gap-0.5 overflow-y-auto scrollbar-thin', collapsed && 'px-1.5')} aria-label="Main navigation">
-          {navItems.map(({ label, href, icon: Icon, badgeKeys }) => {
+          {navItems.map(({ labelKey, href, icon: Icon, badgeKeys }) => {
+            const label = t(labelKey);
             const isActive = pathname === href || pathname.startsWith(`${href}/`);
             const badgeCount = getBadgeCount(badgeKeys);
 
@@ -342,14 +349,14 @@ export function Sidebar() {
                   'w-full flex items-center gap-3 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 cursor-pointer',
                   collapsed ? 'justify-center p-2.5' : 'px-3 py-2.5'
                 )}
-                aria-label="Logout"
+                aria-label={t('nav.logout')}
               >
                 <LogOut className={cn(collapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]')} />
-                {!collapsed && <span className="text-[13px]">Cerrar sesión</span>}
+                {!collapsed && <span className="text-[13px]">{t('nav.logout')}</span>}
               </button>
             </TooltipTrigger>
             {collapsed && (
-              <TooltipContent side="right">Cerrar sesión</TooltipContent>
+              <TooltipContent side="right">{t('nav.logout')}</TooltipContent>
             )}
           </Tooltip>
         </div>
