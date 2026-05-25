@@ -8,6 +8,8 @@ import { MatchCard, type Match } from '@/components/ui/MatchCard';
 import { ContributeModal } from '@/components/ui/ContributeModal';
 import { AutoDistributeModal } from '@/components/ui/AutoDistributeModal';
 import { SimilarOffersSection } from '@/components/ui/SimilarOffersSection';
+import { useT } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 type Tab = 'best' | 'price' | 'distance' | 'newest';
 
@@ -28,11 +30,13 @@ function loadIncotermPrefs(): IncotermPrefs | null {
   }
 }
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'best', label: 'Mejor match' },
-  { key: 'price', label: 'Mejor precio' },
-  { key: 'distance', label: 'Más cercano' },
-  { key: 'newest', label: 'Más reciente' },
+// Phase 14M v3.41 — TABS ahora mapea key → MessageKey; el label se resuelve
+// con useT() dentro del componente para que cambie con el toggle de idioma.
+const TABS: { key: Tab; labelKey: MessageKey }[] = [
+  { key: 'best', labelKey: 'matches.tab.best' },
+  { key: 'price', labelKey: 'matches.tab.price' },
+  { key: 'distance', labelKey: 'matches.tab.distance' },
+  { key: 'newest', labelKey: 'matches.tab.newest' },
 ];
 
 interface ApiMatchItem {
@@ -123,6 +127,10 @@ function groupMatches(matches: Match[]): GroupedMatches {
 }
 
 function MatchesList({ matches, onContribute }: { matches: Match[]; onContribute: (m: Match) => void }) {
+  const t = useT();
+  const pl = (count: number) => count === 1
+    ? t('matches.group.matches.one')
+    : t('matches.group.matches.many').replace('{n}', String(count));
   // < threshold → render plano para no fragmentar visualmente listas cortas.
   if (matches.length < GROUP_THRESHOLD) {
     return (
@@ -141,7 +149,7 @@ function MatchesList({ matches, onContribute }: { matches: Match[]; onContribute
           <div className="flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur-sm py-1.5 z-10 border-b border-border">
             <h2 className="text-base font-bold text-foreground">{producto}</h2>
             <span className="text-xs text-text-secondary">
-              · {variedades.reduce((s, v) => s + v.items.length, 0)} match{variedades.reduce((s, v) => s + v.items.length, 0) === 1 ? '' : 'es'}
+              · {pl(variedades.reduce((s, v) => s + v.items.length, 0))}
             </span>
           </div>
           {variedades.map(({ variedad, items }) => (
@@ -161,6 +169,7 @@ function MatchesList({ matches, onContribute }: { matches: Match[]; onContribute
 }
 
 export default function SellerMatchesPage() {
+  const t = useT();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -324,9 +333,9 @@ export default function SellerMatchesPage() {
     <div className="space-y-6">
       {/* Page title */}
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">Tus pedidos compatibles</h1>
+        <h1 className="text-2xl font-bold text-text-primary">{t('matches.title')}</h1>
         <p className="text-sm text-text-secondary mt-1">
-          Pedidos que mejor encajan con tus lotes publicados.
+          {t('matches.subtitle')}
         </p>
       </div>
 
@@ -337,22 +346,22 @@ export default function SellerMatchesPage() {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium text-text-primary">
-                Filtro de incoterm
+                {t('matches.incotermFilter')}
                 {incotermPrefs.recommended && (
                   <span className="ml-2 text-xs text-text-secondary">
-                    (Recomendado: <span className="font-semibold text-primary">{incotermPrefs.recommended}</span>)
+                    ({t('matches.incotermFilterRecommended')}: <span className="font-semibold text-primary">{incotermPrefs.recommended}</span>)
                   </span>
                 )}
               </span>
               <span className="text-xs text-text-secondary">
-                {incotermFilter.size} de {incotermPrefs.selected.length} seleccionados
+                {t('matches.incotermFilterCount').replace('{n}', String(incotermFilter.size)).replace('{total}', String(incotermPrefs.selected.length))}
               </span>
             </div>
             <button
               onClick={() => setShowIncotermFilter((v) => !v)}
               className="text-xs text-primary-dark hover:underline"
             >
-              {showIncotermFilter ? 'Ocultar' : 'Editar'}
+              {showIncotermFilter ? t('matches.hide') : t('matches.edit')}
             </button>
           </div>
 
@@ -386,7 +395,7 @@ export default function SellerMatchesPage() {
                 onClick={() => setIncotermFilter(new Set(incotermPrefs.selected))}
                 className="text-xs text-text-secondary hover:text-text-primary underline ml-1"
               >
-                Restablecer
+                {t('matches.reset')}
               </button>
             </div>
           )}
@@ -401,14 +410,14 @@ export default function SellerMatchesPage() {
             <Star className="w-5 h-5 text-primary flex-shrink-0 fill-primary" />
             <div>
               <p className="font-semibold text-text-primary text-sm">
-                Mejor match automático
+                {t('matches.bestMatchTitle')}
               </p>
               <p className="text-xs text-text-secondary">
-                Ingresos potenciales estimados:{' '}
+                {t('matches.bestMatchSub')}{' '}
                 <span className="font-bold text-text-primary">
                   €{totalProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
-                <span className="ml-1 text-text-secondary font-normal">(sumando todos los matches pendientes)</span>
+                <span className="ml-1 text-text-secondary font-normal">{t('matches.bestMatchPotential')}</span>
               </p>
             </div>
           </div>
@@ -417,7 +426,7 @@ export default function SellerMatchesPage() {
             size="sm"
             onClick={() => setAutoDistOpen(true)}
           >
-            Revisar y aceptar
+            {t('matches.reviewAccept')}
           </Button>
         </div>
       )}
@@ -435,7 +444,7 @@ export default function SellerMatchesPage() {
                 : 'text-text-secondary hover:text-text-primary',
             ].join(' ')}
           >
-            {tab.label}
+            {t(tab.labelKey)}
           </button>
         ))}
       </div>
@@ -456,7 +465,7 @@ export default function SellerMatchesPage() {
             onClick={fetchMatches}
             className="ml-3 underline font-medium hover:no-underline"
           >
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -471,23 +480,25 @@ export default function SellerMatchesPage() {
             {hiddenByFilter ? (
               <>
                 <p className="font-semibold text-text-primary mb-1">
-                  Tienes {matches.length} match{matches.length === 1 ? '' : 'es'} pero el filtro de incoterm los oculta.
+                  {matches.length === 1
+                    ? t('matches.empty.filterHides.one')
+                    : t('matches.empty.filterHides.many').replace('{n}', String(matches.length))}
                 </p>
                 <p className="text-sm text-text-secondary max-w-sm">
-                  Amplía los incoterms del filtro o pulsa <strong>Restablecer</strong> para verlos todos.
+                  {t('matches.empty.filterHidesDesc')}
                 </p>
                 <button
                   onClick={() => incotermPrefs && setIncotermFilter(new Set(incotermPrefs.selected))}
                   className="mt-4 text-xs text-primary-dark underline hover:no-underline"
                 >
-                  Restablecer filtro
+                  {t('matches.reset')}
                 </button>
               </>
             ) : (
               <>
-                <p className="font-semibold text-text-primary mb-1">Todavía no hay pedidos que encajen.</p>
+                <p className="font-semibold text-text-primary mb-1">{t('matches.empty.noMatches')}</p>
                 <p className="text-sm text-text-secondary max-w-sm">
-                  Ningún comprador encaja con los calibres de tus lotes actuales. Mira lo que están pidiendo abajo.
+                  {t('matches.empty.noMatchesDesc')}
                 </p>
               </>
             )}
@@ -497,8 +508,8 @@ export default function SellerMatchesPage() {
             <div className="bg-card border border-border rounded-card p-5 space-y-4">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-primary" />
-                <h3 className="font-semibold text-text-primary text-sm">Lo que están pidiendo los compradores</h3>
-                <span className="text-xs text-text-secondary">— actualiza los calibres de tus lotes para encajar</span>
+                <h3 className="font-semibold text-text-primary text-sm">{t('matches.marketDemandTitle')}</h3>
+                <span className="text-xs text-text-secondary">{t('matches.marketDemandSub')}</span>
               </div>
               <div className="divide-y divide-border">
                 {marketDemand.map((d) => (
@@ -506,14 +517,18 @@ export default function SellerMatchesPage() {
                     <div>
                       <span className="text-sm font-medium text-text-primary">{d.productoNombre}</span>
                       <span className="ml-2 text-xs bg-muted text-text-secondary px-2 py-0.5 rounded-badge">
-                        Calibre {d.calibre}
+                        {t('matches.marketDemandCalibre').replace('{c}', d.calibre)}
                       </span>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-text-primary">
                         {d.totalKg.toLocaleString('es-ES')} kg
                       </p>
-                      <p className="text-xs text-text-secondary">{d.orderCount} pedido{d.orderCount !== 1 ? 's' : ''}</p>
+                      <p className="text-xs text-text-secondary">
+                        {d.orderCount === 1
+                          ? t('matches.marketDemandOrders.one')
+                          : t('matches.marketDemandOrders.many').replace('{n}', String(d.orderCount))}
+                      </p>
                     </div>
                   </div>
                 ))}

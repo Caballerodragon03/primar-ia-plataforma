@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils';
 import { CoverageBar } from './CoverageBar';
 import { Button } from './Button';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 export interface CalibresSolicitados {
   calibre: string;
@@ -60,6 +61,7 @@ function getProfitabilityBg(score: number): string {
 }
 
 export function MatchCard({ match, onContribute }: MatchCardProps) {
+  const t = useT();
   const scoreRaw = match.scoreMatching ?? 0;
   const score = Math.round(scoreRaw * 100);
   const precioKg = parseFloat(match.precioKg);
@@ -79,8 +81,8 @@ export function MatchCard({ match, onContribute }: MatchCardProps) {
         'flex flex-col items-center justify-center min-w-[80px] rounded-lg px-3 py-2',
         getProfitabilityBg(score)
       )}>
-        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider text-center leading-tight mb-1">
-          Índice de<br />rentabilidad
+        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider text-center leading-tight mb-1 whitespace-pre-line">
+          {t('matchCard.profitability')}
         </span>
         <span className={cn('text-3xl font-bold tabular-nums', getProfitabilityColor(score))}>
           {score}
@@ -102,38 +104,38 @@ export function MatchCard({ match, onContribute }: MatchCardProps) {
               distintos del mismo vendedor (caso real cuando publicas 2
               lotes del mismo producto separados para no liarte). */}
           <p className="text-[11px] text-text-muted mt-1">
-            Tu lote: <span className="font-mono">#{match.loteId.slice(-6).toUpperCase()}</span>
+            {t('matchCard.yourLot')}: <span className="font-mono">#{match.loteId.slice(-6).toUpperCase()}</span>
           </p>
         </div>
 
         <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
           <span className="text-muted-foreground">
-            Precio:{' '}
+            {t('matchCard.price')}:{' '}
             <span className="font-medium text-foreground">
               €{precioKg.toFixed(2)}/kg
             </span>
           </span>
           <span className="text-muted-foreground">
-            Destino:{' '}
+            {t('matchCard.destination')}:{' '}
             <span className="font-medium text-foreground">
-              {match.pedido.destinoFinal ?? 'N/A'}
+              {match.pedido.destinoFinal ?? t('matchCard.notAvailable')}
             </span>
           </span>
           <span className="text-muted-foreground">
-            Distancia:{' '}
+            {t('matchCard.distance')}:{' '}
             <span className="font-medium text-foreground">
-              {match.distanceKm != null ? `${match.distanceKm} km` : 'N/A'}
+              {match.distanceKm != null ? `${match.distanceKm} km` : t('matchCard.notAvailable')}
             </span>
           </span>
         </div>
 
         <div>
           <p className="text-xs text-muted-foreground mb-1.5">
-            Cantidad restante:{' '}
+            {t('matchCard.remainingQty')}:{' '}
             <span className="font-medium text-foreground">
               {totalKgNeeded > 0
                 ? `${Math.round((remainingPct / 100) * totalKgNeeded).toLocaleString()} kg`
-                : 'N/A'}
+                : t('matchCard.notAvailable')}
             </span>
           </p>
           <CoverageBar percentage={remainingPct} />
@@ -149,7 +151,7 @@ export function MatchCard({ match, onContribute }: MatchCardProps) {
           className="group-hover:shadow-soft"
           data-tutorial="btn-contribuir"
         >
-          Contribuir
+          {t('matchCard.contribute')}
         </Button>
       </div>
     </div>

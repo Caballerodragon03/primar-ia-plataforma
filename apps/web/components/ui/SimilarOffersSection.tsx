@@ -14,6 +14,8 @@ import { useEffect, useState } from 'react';
 import { Sparkles, MapPin, Loader2, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 interface DiffChange {
   field: 'calibre' | 'incoterm' | 'logistica' | 'precio' | 'terminoPago';
@@ -36,44 +38,32 @@ interface SimilarOffer {
   };
 }
 
-const SEVERITY_STYLES: Record<SimilarOffer['diff']['severity'], { dot: string; border: string; bg: string; label: string }> = {
-  minor: {
-    dot: 'bg-green-500',
-    border: 'border-green-200',
-    bg: 'bg-green-50/40',
-    label: 'Cambio menor',
-  },
-  moderate: {
-    dot: 'bg-amber-500',
-    border: 'border-amber-200',
-    bg: 'bg-amber-50/40',
-    label: 'Requiere ajustes',
-  },
-  major: {
-    dot: 'bg-red-500',
-    border: 'border-red-200',
-    bg: 'bg-red-50/40',
-    label: 'Diferencias grandes',
-  },
+// Phase 14M v3.41 — labels traducidos via useT, los estilos se quedan.
+const SEVERITY_STYLES: Record<SimilarOffer['diff']['severity'], { dot: string; border: string; bg: string; labelKey: MessageKey }> = {
+  minor: { dot: 'bg-green-500', border: 'border-green-200', bg: 'bg-green-50/40', labelKey: 'similar.severity.minor' },
+  moderate: { dot: 'bg-amber-500', border: 'border-amber-200', bg: 'bg-amber-50/40', labelKey: 'similar.severity.moderate' },
+  major: { dot: 'bg-red-500', border: 'border-red-200', bg: 'bg-red-50/40', labelKey: 'similar.severity.major' },
 };
 
-const FIELD_LABELS: Record<DiffChange['field'], string> = {
-  calibre: 'Calibre',
-  incoterm: 'Incoterm',
-  logistica: 'Logística',
-  precio: 'Precio',
-  terminoPago: 'Pago',
+const FIELD_KEYS: Record<DiffChange['field'], MessageKey> = {
+  calibre: 'similar.field.calibre',
+  incoterm: 'similar.field.incoterm',
+  logistica: 'similar.field.logistica',
+  precio: 'similar.field.precio',
+  terminoPago: 'similar.field.terminoPago',
 };
 
-function fmtDate(iso: string): string {
+function fmtDate(iso: string, locale: 'es' | 'en'): string {
   try {
-    return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    return new Date(iso).toLocaleDateString(locale === 'en' ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'short' });
   } catch {
     return '';
   }
 }
 
 export function SimilarOffersSection() {
+  const t = useT();
+  const { locale } = useLocale();
   const [offers, setOffers] = useState<SimilarOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,8 +71,9 @@ export function SimilarOffersSection() {
   useEffect(() => {
     api.get<{ success: boolean; data: SimilarOffer[] }>('/matching/seller/similar-offers')
       .then(({ data }) => setOffers(data.data ?? []))
-      .catch(() => setError('No se pudieron cargar las ofertas similares.'))
+      .catch(() => setError(t('similar.errorLoading')))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
@@ -109,10 +100,10 @@ export function SimilarOffersSection() {
       <div className="bg-card border border-border rounded-card p-5 space-y-2">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
-          <h3 className="font-semibold text-text-primary text-sm">Ofertas similares</h3>
+          <h3 className="font-semibold text-text-primary text-sm">{t('similar.title')}</h3>
         </div>
         <p className="text-xs text-text-secondary">
-          No hay pedidos cercanos a tus lotes ahora mismo. Te avisaremos cuando aparezca alguno.
+          {t('similar.empty')}
         </p>
       </div>
     );
@@ -124,9 +115,11 @@ export function SimilarOffersSection() {
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
           <div>
-            <h3 className="font-semibold text-text-primary text-sm">Ofertas similares</h3>
+            <h3 className="font-semibold text-text-primary text-sm">{t('similar.title')}</h3>
             <p className="text-[11px] text-text-secondary">
-              {offers.length} pedido{offers.length !== 1 ? 's' : ''} cercano{offers.length !== 1 ? 's' : ''} a tus lotes — ajusta condiciones para encajar
+              {offers.length === 1
+                ? t('similar.headerSub.one')
+                : t('similar.headerSub.many').replace('{n}', String(offers.length))}
             </p>
           </div>
         </div>
@@ -145,7 +138,7 @@ export function SimilarOffersSection() {
                     </p>
                     <span className="flex items-center gap-1 text-[10px] font-medium text-text-secondary">
                       <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-                      {style.label}
+                      {t(style.labelKey)}
                     </span>
                   </div>
                   <p className="text-xs text-text-secondary mt-0.5">
@@ -157,34 +150,34 @@ export function SimilarOffersSection() {
                       </>
                     )}
                     <span className="mx-1.5">·</span>
-                    Entrega: {fmtDate(o.fechaEntregaDeseada)}
+                    {t('similar.delivery')}: {fmtDate(o.fechaEntregaDeseada, locale)}
                   </p>
                 </div>
               </div>
 
-              {/* Phase 14M v3.34 — diff chips cada uno con su botón "Ajustar"
-                  específico. Antes había un solo link "Ajustar mi lote" que
-                  llevaba al edit genérico y el vendedor tenía que adivinar
-                  qué tocar. Ahora cada chip explica el diff Y lleva
-                  directamente al edit enfocado en ese campo concreto. */}
+              {/* Phase 14M v3.34/v3.41 — diff chips, cada uno con su botón
+                  "Ajustar {campo}" que lleva al edit enfocado. Ahora i18n. */}
               <div className={`mt-3 space-y-1.5 pl-3 border-l-2 ${style.border}`}>
-                {o.diff.changes.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between gap-3 flex-wrap">
-                    <div className="flex items-baseline gap-1.5 flex-wrap text-[12px]">
-                      <span className="font-semibold text-text-primary">{FIELD_LABELS[c.field]}:</span>
-                      <span className="text-text-secondary" title={c.hint}>
-                        {c.label.replace(`${FIELD_LABELS[c.field]}: `, '')}
-                      </span>
+                {o.diff.changes.map((c, i) => {
+                  const fieldLabel = t(FIELD_KEYS[c.field]);
+                  return (
+                    <div key={i} className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-baseline gap-1.5 flex-wrap text-[12px]">
+                        <span className="font-semibold text-text-primary">{fieldLabel}:</span>
+                        <span className="text-text-secondary" title={c.hint}>
+                          {c.label.replace(`${fieldLabel}: `, '')}
+                        </span>
+                      </div>
+                      <Link
+                        href={`/seller/lots/${o.loteId}/edit?focus=${c.field}&pedidoId=${o.pedidoId}`}
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-primary-dark hover:bg-primary/10 px-2 py-1 rounded-badge transition-colors"
+                      >
+                        {t('similar.adjust')} {fieldLabel.toLowerCase()}
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
-                    <Link
-                      href={`/seller/lots/${o.loteId}/edit?focus=${c.field}&pedidoId=${o.pedidoId}`}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary-dark hover:bg-primary/10 px-2 py-1 rounded-badge transition-colors"
-                    >
-                      Ajustar {FIELD_LABELS[c.field].toLowerCase()}
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           );

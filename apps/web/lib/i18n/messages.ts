@@ -210,6 +210,62 @@ export type MessageKey =
   | 'orders.col.deliveryDate'
   | 'orders.pendingRating'
   | 'orders.rateNow'
+  // ─── matches page (seller) ──────────────────────────────────────────────
+  | 'matches.title'
+  | 'matches.subtitle'
+  | 'matches.incotermFilter'
+  | 'matches.incotermFilterRecommended'
+  | 'matches.incotermFilterCount'
+  | 'matches.show'
+  | 'matches.hide'
+  | 'matches.edit'
+  | 'matches.reset'
+  | 'matches.bestMatchTitle'
+  | 'matches.bestMatchSub'
+  | 'matches.bestMatchPotential'
+  | 'matches.reviewAccept'
+  | 'matches.tab.best'
+  | 'matches.tab.price'
+  | 'matches.tab.distance'
+  | 'matches.tab.newest'
+  | 'matches.empty.filterHides.one'
+  | 'matches.empty.filterHides.many'
+  | 'matches.empty.filterHidesDesc'
+  | 'matches.empty.noMatches'
+  | 'matches.empty.noMatchesDesc'
+  | 'matches.marketDemandTitle'
+  | 'matches.marketDemandSub'
+  | 'matches.marketDemandCalibre'
+  | 'matches.marketDemandOrders.one'
+  | 'matches.marketDemandOrders.many'
+  | 'matches.group.matches.one'
+  | 'matches.group.matches.many'
+  // ─── match card ─────────────────────────────────────────────────────────
+  | 'matchCard.profitability'
+  | 'matchCard.yourLot'
+  | 'matchCard.price'
+  | 'matchCard.destination'
+  | 'matchCard.distance'
+  | 'matchCard.remainingQty'
+  | 'matchCard.notAvailable'
+  | 'matchCard.contribute'
+  // ─── similar offers ─────────────────────────────────────────────────────
+  | 'similar.title'
+  | 'similar.subtitle'
+  | 'similar.severity.minor'
+  | 'similar.severity.moderate'
+  | 'similar.severity.major'
+  | 'similar.field.calibre'
+  | 'similar.field.incoterm'
+  | 'similar.field.logistica'
+  | 'similar.field.precio'
+  | 'similar.field.terminoPago'
+  | 'similar.adjust'
+  | 'similar.delivery'
+  | 'similar.empty'
+  | 'similar.errorLoading'
+  | 'similar.headerSub.one'
+  | 'similar.headerSub.many'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -423,6 +479,59 @@ export const messages: Record<Locale, Messages> = {
     'orders.col.deliveryDate': 'Fecha entrega',
     'orders.pendingRating': 'Tienes una transacción pendiente de valorar.',
     'orders.rateNow': 'Valorar ahora',
+    'matches.title': 'Tus pedidos compatibles',
+    'matches.subtitle': 'Pedidos que mejor encajan con tus lotes publicados.',
+    'matches.incotermFilter': 'Filtro de incoterm',
+    'matches.incotermFilterRecommended': 'Recomendado',
+    'matches.incotermFilterCount': '{n} de {total} seleccionados',
+    'matches.show': 'Mostrar',
+    'matches.hide': 'Ocultar',
+    'matches.edit': 'Editar',
+    'matches.reset': 'Restablecer',
+    'matches.bestMatchTitle': 'Mejor match automático',
+    'matches.bestMatchSub': 'Ingresos potenciales estimados:',
+    'matches.bestMatchPotential': '(sumando todos los matches pendientes)',
+    'matches.reviewAccept': 'Revisar y aceptar',
+    'matches.tab.best': 'Mejor match',
+    'matches.tab.price': 'Mejor precio',
+    'matches.tab.distance': 'Más cercano',
+    'matches.tab.newest': 'Más reciente',
+    'matches.empty.filterHides.one': 'Tienes 1 match pero el filtro de incoterm lo oculta.',
+    'matches.empty.filterHides.many': 'Tienes {n} matches pero el filtro de incoterm los oculta.',
+    'matches.empty.filterHidesDesc': 'Amplía los incoterms del filtro o pulsa "Restablecer" para verlos todos.',
+    'matches.empty.noMatches': 'Todavía no hay pedidos que encajen.',
+    'matches.empty.noMatchesDesc': 'Ningún comprador encaja con los calibres de tus lotes actuales. Mira lo que están pidiendo abajo.',
+    'matches.marketDemandTitle': 'Lo que están pidiendo los compradores',
+    'matches.marketDemandSub': '— actualiza los calibres de tus lotes para encajar',
+    'matches.marketDemandCalibre': 'Calibre {c}',
+    'matches.marketDemandOrders.one': '1 pedido',
+    'matches.marketDemandOrders.many': '{n} pedidos',
+    'matches.group.matches.one': '1 match',
+    'matches.group.matches.many': '{n} matches',
+    'matchCard.profitability': 'Índice de\nrentabilidad',
+    'matchCard.yourLot': 'Tu lote',
+    'matchCard.price': 'Precio',
+    'matchCard.destination': 'Destino',
+    'matchCard.distance': 'Distancia',
+    'matchCard.remainingQty': 'Cantidad restante',
+    'matchCard.notAvailable': 'N/D',
+    'matchCard.contribute': 'Contribuir',
+    'similar.title': 'Ofertas similares',
+    'similar.subtitle': 'Pedidos parecidos a los tuyos con pequeñas diferencias que podrías ajustar para encajar.',
+    'similar.severity.minor': 'Cambio menor',
+    'similar.severity.moderate': 'Requiere ajustes',
+    'similar.severity.major': 'Diferencias grandes',
+    'similar.field.calibre': 'Calibre',
+    'similar.field.incoterm': 'Incoterm',
+    'similar.field.logistica': 'Logística',
+    'similar.field.precio': 'Precio',
+    'similar.field.terminoPago': 'Términos de pago',
+    'similar.adjust': 'Ajustar',
+    'similar.delivery': 'Entrega',
+    'similar.empty': 'No hay pedidos cercanos a tus lotes ahora mismo. Te avisaremos cuando aparezca alguno.',
+    'similar.errorLoading': 'No se pudieron cargar las ofertas similares.',
+    'similar.headerSub.one': '1 pedido cercano a tus lotes — ajusta condiciones para encajar',
+    'similar.headerSub.many': '{n} pedidos cercanos a tus lotes — ajusta condiciones para encajar',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -630,6 +739,59 @@ export const messages: Record<Locale, Messages> = {
     'orders.col.deliveryDate': 'Delivery date',
     'orders.pendingRating': 'You have a transaction pending rating.',
     'orders.rateNow': 'Rate now',
+    'matches.title': 'Compatible orders',
+    'matches.subtitle': 'Orders that best match your published lots.',
+    'matches.incotermFilter': 'Incoterm filter',
+    'matches.incotermFilterRecommended': 'Recommended',
+    'matches.incotermFilterCount': '{n} of {total} selected',
+    'matches.show': 'Show',
+    'matches.hide': 'Hide',
+    'matches.edit': 'Edit',
+    'matches.reset': 'Reset',
+    'matches.bestMatchTitle': 'Best automatic match',
+    'matches.bestMatchSub': 'Estimated potential revenue:',
+    'matches.bestMatchPotential': '(summing all pending matches)',
+    'matches.reviewAccept': 'Review and accept',
+    'matches.tab.best': 'Best match',
+    'matches.tab.price': 'Best price',
+    'matches.tab.distance': 'Closest',
+    'matches.tab.newest': 'Newest',
+    'matches.empty.filterHides.one': 'You have 1 match but the incoterm filter hides it.',
+    'matches.empty.filterHides.many': 'You have {n} matches but the incoterm filter hides them.',
+    'matches.empty.filterHidesDesc': 'Broaden the incoterms in the filter or press "Reset" to see them all.',
+    'matches.empty.noMatches': 'No compatible orders yet.',
+    'matches.empty.noMatchesDesc': "No buyer matches the calibres of your current lots. See what they're asking for below.",
+    'matches.marketDemandTitle': "What buyers are asking for",
+    'matches.marketDemandSub': "— update your lot calibres to match",
+    'matches.marketDemandCalibre': 'Calibre {c}',
+    'matches.marketDemandOrders.one': '1 order',
+    'matches.marketDemandOrders.many': '{n} orders',
+    'matches.group.matches.one': '1 match',
+    'matches.group.matches.many': '{n} matches',
+    'matchCard.profitability': 'Profitability\nindex',
+    'matchCard.yourLot': 'Your lot',
+    'matchCard.price': 'Price',
+    'matchCard.destination': 'Destination',
+    'matchCard.distance': 'Distance',
+    'matchCard.remainingQty': 'Remaining quantity',
+    'matchCard.notAvailable': 'N/A',
+    'matchCard.contribute': 'Contribute',
+    'similar.title': 'Similar offers',
+    'similar.subtitle': 'Orders close to yours with small differences you could tweak to match.',
+    'similar.severity.minor': 'Minor change',
+    'similar.severity.moderate': 'Needs adjustments',
+    'similar.severity.major': 'Big differences',
+    'similar.field.calibre': 'Calibre',
+    'similar.field.incoterm': 'Incoterm',
+    'similar.field.logistica': 'Logistics',
+    'similar.field.precio': 'Price',
+    'similar.field.terminoPago': 'Payment terms',
+    'similar.adjust': 'Adjust',
+    'similar.delivery': 'Delivery',
+    'similar.empty': "No orders close to your lots right now. We'll notify you when there are.",
+    'similar.errorLoading': 'Could not load similar offers.',
+    'similar.headerSub.one': '1 order close to your lots — tweak conditions to match',
+    'similar.headerSub.many': '{n} orders close to your lots — tweak conditions to match',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",
