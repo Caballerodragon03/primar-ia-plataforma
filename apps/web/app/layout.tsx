@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Poppins } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { LocaleProvider } from '@/lib/i18n/LocaleProvider';
 import './globals.css';
 
 const poppins = Poppins({
@@ -69,7 +70,7 @@ export default function RootLayout({
         >
           Saltar al contenido
         </a>
-        {children}
+        <LocaleProvider>{children}</LocaleProvider>
         <Toaster
           position="bottom-right"
           toastOptions={{

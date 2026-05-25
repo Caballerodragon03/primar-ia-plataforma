@@ -8,6 +8,7 @@ import { Select } from '@/components/ui/Select';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { TutorialsSection } from '@/components/tutorials/TutorialsSection';
+import { LanguageToggle } from '@/components/profile/LanguageToggle';
 
 type Tab = 'account' | 'company' | 'tutoriales';
 
@@ -25,10 +26,9 @@ interface CompanyData {
   iban: string | null;
 }
 
-const LANGUAGE_OPTIONS = [
-  { value: 'ES', label: 'Español (ES)' },
-  { value: 'EN', label: 'Inglés (EN)' },
-];
+// Phase 14M v3.37 — LANGUAGE_OPTIONS retirado: el viejo Select se sustituye
+// por <LanguageToggle> arriba en la tab (cambio instantáneo de UI vía
+// LocaleProvider + persistencia en backend idiomaPreferido).
 
 function BuyerProfileContent() {
   const { user } = useAuthStore();
@@ -38,7 +38,7 @@ function BuyerProfileContent() {
 
   // Account settings state
   const [phone, setPhone] = useState('');
-  const [language, setLanguage] = useState('ES');
+  // Phase 14M v3.37 — `language` retirado, ahora vive en LocaleProvider.
   const [savingAccount, setSavingAccount] = useState(false);
   const [accountSuccess, setAccountSuccess] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
@@ -82,7 +82,8 @@ function BuyerProfileContent() {
     setAccountError(null);
     setAccountSuccess(false);
     try {
-      await api.patch('/auth/profile', { telefono: phone, idiomaPreferido: language });
+      // idiomaPreferido se persiste de forma independiente vía LanguageToggle.
+      await api.patch('/auth/profile', { telefono: phone });
       setAccountSuccess(true);
       setTimeout(() => setAccountSuccess(false), 3000);
     } catch (err: unknown) {
@@ -162,6 +163,8 @@ function BuyerProfileContent() {
       {/* Account Settings */}
       {activeTab === 'account' && (
         <div className="space-y-6 animate-stagger">
+          {/* Phase 14M v3.37 — toggle de idioma UI (localStorage). */}
+          <LanguageToggle />
           {/* Contact info */}
           <div className="bg-card rounded-card border border-border p-6 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Persona de contacto</h2>
@@ -189,12 +192,8 @@ function BuyerProfileContent() {
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+34 600 000 000"
             />
-            <Select
-              label="Idioma preferido"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              options={LANGUAGE_OPTIONS}
-            />
+            {/* Phase 14M v3.37 — Select de idioma retirado; ahora vive
+                en <LanguageToggle> al inicio de esta tab. */}
             {accountError && (
               <p role="alert" className="text-xs text-red-500">⚠ {accountError}</p>
             )}

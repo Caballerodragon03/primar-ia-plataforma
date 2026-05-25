@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Lock, Building2, User, FileCheck2, Upload, FileText, GraduationCap } from 'lucide-react';
 import { TutorialsSection } from '@/components/tutorials/TutorialsSection';
+import { LanguageToggle } from '@/components/profile/LanguageToggle';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -33,10 +34,8 @@ interface Certificate {
   fechaExpiracion: string | null;
 }
 
-const LANGUAGE_OPTIONS = [
-  { value: 'ES', label: 'Español (ES)' },
-  { value: 'EN', label: 'Inglés (EN)' },
-];
+// Phase 14M v3.37 — LANGUAGE_OPTIONS retirado: el viejo Select se sustituye
+// por <LanguageToggle> arriba en la tab.
 
 const DOC_TYPE_OPTIONS = [
   { value: 'GLOBAL_GAP', label: 'GlobalG.A.P.' },
@@ -64,7 +63,7 @@ function SellerProfileContent() {
 
   // Account settings state
   const [phone, setPhone] = useState('');
-  const [language, setLanguage] = useState('ES');
+  // Phase 14M v3.37 — `language` retirado, ahora vive en LocaleProvider.
   const [savingAccount, setSavingAccount] = useState(false);
   const [accountSuccess, setAccountSuccess] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
@@ -201,7 +200,8 @@ function SellerProfileContent() {
     setAccountError(null);
     setAccountSuccess(false);
     try {
-      await api.patch('/auth/profile', { telefono: phone, idiomaPreferido: language });
+      // idiomaPreferido se persiste de forma independiente vía LanguageToggle.
+      await api.patch('/auth/profile', { telefono: phone });
       setAccountSuccess(true);
       setTimeout(() => setAccountSuccess(false), 3000);
     } catch (err: unknown) {
@@ -348,6 +348,8 @@ function SellerProfileContent() {
       {/* Account Settings */}
       {activeTab === 'account' && (
         <div className="space-y-6">
+          {/* Phase 14M v3.37 — toggle de idioma UI (localStorage + persiste idiomaPreferido). */}
+          <LanguageToggle />
           {/* Contact info */}
           <div className="bg-card rounded-card border border-border p-6 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Persona de contacto</h2>
@@ -375,12 +377,8 @@ function SellerProfileContent() {
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+34 600 000 000"
             />
-            <Select
-              label="Preferred Language"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              options={LANGUAGE_OPTIONS}
-            />
+            {/* Phase 14M v3.37 — Select de idioma retirado; ahora vive
+                en <LanguageToggle> al inicio de esta tab. */}
             {accountError && (
               <p role="alert" className="text-xs text-red-500">⚠ {accountError}</p>
             )}
