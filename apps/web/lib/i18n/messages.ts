@@ -463,6 +463,28 @@ export type MessageKey =
   | 'contract.payment.cancelled.title'
   | 'contract.payment.cancelled.desc'
   | 'contract.downloadFail'
+  // ─── chat ────────────────────────────────────────────────────────────────
+  | 'chat.title'
+  | 'chat.empty'
+  | 'chat.selectConv'
+  | 'chat.orderHash'
+  | 'chat.noMessages'
+  | 'chat.bypassDetected'
+  | 'chat.close'
+  | 'chat.privacy'
+  | 'chat.estado.completed'
+  | 'chat.estado.cancelled'
+  | 'chat.estado.refunded'
+  | 'chat.banner.completed'
+  | 'chat.banner.cancelled'
+  | 'chat.banner.refunded'
+  | 'chat.actions.propose'
+  | 'chat.actions.proposeTitle'
+  | 'chat.actions.attach'
+  | 'chat.actions.attachTitle'
+  | 'chat.placeholder'
+  | 'chat.send'
+  | 'chat.sendFail'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -920,6 +942,27 @@ export const messages: Record<Locale, Messages> = {
     'contract.payment.cancelled.title': 'Pago cancelado',
     'contract.payment.cancelled.desc': 'Cancelaste el pago en Stripe. Puedes reintentar cuando quieras, siempre que el vendedor no haya caducado su firma.',
     'contract.downloadFail': 'No se pudo descargar el contrato.',
+    'chat.title': 'Mensajes',
+    'chat.empty': 'Aún no tienes conversaciones',
+    'chat.selectConv': 'Selecciona una conversación',
+    'chat.orderHash': 'Pedido #',
+    'chat.noMessages': 'Aún no hay mensajes. ¡Saluda!',
+    'chat.bypassDetected': 'BYPASS DETECTADO — mensaje saneado',
+    'chat.close': 'Cerrar',
+    'chat.privacy': 'Por tu seguridad: no compartas teléfono, email ni cierres la operación fuera de Primar-IA hasta firmar el contrato. Los mensajes son revisados por IA.',
+    'chat.estado.completed': 'Completado',
+    'chat.estado.cancelled': 'Cancelado',
+    'chat.estado.refunded': 'Reembolsado',
+    'chat.banner.completed': 'Esta transacción está completada — la conversación es solo lectura.',
+    'chat.banner.cancelled': 'Esta transacción fue cancelada — la conversación es solo lectura.',
+    'chat.banner.refunded': 'Esta transacción fue reembolsada — la conversación es solo lectura.',
+    'chat.actions.propose': 'Proponer cambio de precio o incoterm',
+    'chat.actions.proposeTitle': 'Proponer cambio',
+    'chat.actions.attach': 'Adjuntar archivo (próximamente)',
+    'chat.actions.attachTitle': 'Adjuntar archivos próximamente',
+    'chat.placeholder': 'Escribe un mensaje… (Enter para enviar, Shift+Enter para nueva línea)',
+    'chat.send': 'Enviar mensaje',
+    'chat.sendFail': 'No se pudo enviar el mensaje',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -1371,6 +1414,27 @@ export const messages: Record<Locale, Messages> = {
     'contract.payment.cancelled.title': 'Payment cancelled',
     'contract.payment.cancelled.desc': "You cancelled the payment on Stripe. You can retry whenever you want, as long as the seller's signature hasn't expired.",
     'contract.downloadFail': 'Could not download the contract.',
+    'chat.title': 'Messages',
+    'chat.empty': "You don't have any conversations yet",
+    'chat.selectConv': 'Select a conversation',
+    'chat.orderHash': 'Order #',
+    'chat.noMessages': 'No messages yet. Say hello!',
+    'chat.bypassDetected': 'BYPASS DETECTED — message sanitized',
+    'chat.close': 'Close',
+    'chat.privacy': "For your safety: don't share phone, email or close the deal outside Primar-IA until the contract is signed. Messages are reviewed by AI.",
+    'chat.estado.completed': 'Completed',
+    'chat.estado.cancelled': 'Cancelled',
+    'chat.estado.refunded': 'Refunded',
+    'chat.banner.completed': 'This transaction is completed — the conversation is read-only.',
+    'chat.banner.cancelled': 'This transaction was cancelled — the conversation is read-only.',
+    'chat.banner.refunded': 'This transaction was refunded — the conversation is read-only.',
+    'chat.actions.propose': 'Propose price or incoterm change',
+    'chat.actions.proposeTitle': 'Propose change',
+    'chat.actions.attach': 'Attach file (coming soon)',
+    'chat.actions.attachTitle': 'Attachments coming soon',
+    'chat.placeholder': 'Type a message… (Enter to send, Shift+Enter for new line)',
+    'chat.send': 'Send message',
+    'chat.sendFail': 'Could not send the message',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",

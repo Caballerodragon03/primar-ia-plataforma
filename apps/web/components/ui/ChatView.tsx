@@ -5,6 +5,8 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { NegotiationCard, type NegotiacionData } from './NegotiationCard';
 import { NegotiationOfferModal } from './NegotiationOfferModal';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 type TxEstado =
   | 'PENDIENTE_PAGO'
@@ -22,35 +24,35 @@ function isClosed(estado: TxEstado | undefined): boolean {
   return !!estado && CLOSED_ESTADOS.includes(estado);
 }
 
-function estadoLabel(estado: TxEstado): { label: string; icon: typeof CheckCircle2; classes: string; banner: string } {
+function estadoMeta(estado: TxEstado): { labelKey: MessageKey; icon: typeof CheckCircle2; classes: string; bannerKey: MessageKey | null } {
   switch (estado) {
     case 'COMPLETADO':
       return {
-        label: 'Completado',
+        labelKey: 'chat.estado.completed',
         icon: CheckCircle2,
         classes: 'bg-green-100 text-green-800 border-green-200',
-        banner: 'Esta transacción está completada — la conversación es solo lectura.',
+        bannerKey: 'chat.banner.completed',
       };
     case 'CANCELADO':
       return {
-        label: 'Cancelado',
+        labelKey: 'chat.estado.cancelled',
         icon: XCircle,
         classes: 'bg-red-100 text-red-800 border-red-200',
-        banner: 'Esta transacción fue cancelada — la conversación es solo lectura.',
+        bannerKey: 'chat.banner.cancelled',
       };
     case 'REEMBOLSADO':
       return {
-        label: 'Reembolsado',
+        labelKey: 'chat.estado.refunded',
         icon: RotateCcw,
         classes: 'bg-muted text-foreground border-border',
-        banner: 'Esta transacción fue reembolsada — la conversación es solo lectura.',
+        bannerKey: 'chat.banner.refunded',
       };
     default:
       return {
-        label: estado,
+        labelKey: 'chat.estado.completed',
         icon: CheckCircle2,
         classes: 'bg-muted text-foreground border-border',
-        banner: '',
+        bannerKey: null,
       };
   }
 }
@@ -97,28 +99,31 @@ function getInitials(name: string): string {
     .join('');
 }
 
-function formatTime(iso: string): string {
+function formatTime(iso: string, locale: 'es' | 'en'): string {
   try {
-    return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return new Date(iso).toLocaleTimeString(locale === 'en' ? 'en-GB' : 'es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
   } catch {
     return '';
   }
 }
 
-function formatConvTime(iso: string): string {
+function formatConvTime(iso: string, locale: 'es' | 'en'): string {
   try {
     const d = new Date(iso);
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffHrs = diffMs / (1000 * 60 * 60);
-    if (diffHrs < 24) return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const loc = locale === 'en' ? 'en-GB' : 'es-ES';
+    if (diffHrs < 24) return d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', hour12: false });
+    return d.toLocaleDateString(loc, { month: 'short', day: 'numeric' });
   } catch {
     return '';
   }
 }
 
 export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: ChatViewProps) {
+  const t = useT();
+  const { locale } = useLocale();
   const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialTransaccionId ?? null);
@@ -256,7 +261,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
       const apiMsg =
         (err as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.error ??
         (err as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.message;
-      const msg = apiMsg ?? (status ? `Error ${status}` : 'No se pudo enviar el mensaje');
+      const msg = apiMsg ?? (status ? `Error ${status}` : t('chat.sendFail'));
       console.error('[chat] sendMessage failed:', err);
       setSendError(msg);
     } finally {
@@ -288,7 +293,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
       {/* Left panel — conversation list */}
       <div className="w-[240px] flex-shrink-0 border-r border-border flex flex-col">
         <div className="p-4 border-b border-border">
-          <h2 className="text-sm font-semibold text-foreground">Mensajes</h2>
+          <h2 className="text-sm font-semibold text-foreground">{t('chat.title')}</h2>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -302,12 +307,12 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
               ))}
             </div>
           ) : conversations.length === 0 ? (
-            <div className="p-4 text-center text-xs text-muted-foreground">Aún no tienes conversaciones</div>
+            <div className="p-4 text-center text-xs text-muted-foreground">{t('chat.empty')}</div>
           ) : (
             conversations.map((conv) => {
               const isSelected = conv.transaccionId === selectedId;
               const closed = isClosed(conv.estado);
-              const meta = closed ? estadoLabel(conv.estado) : null;
+              const meta = closed ? estadoMeta(conv.estado) : null;
               return (
                 <button
                   key={conv.transaccionId}
@@ -339,7 +344,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                               {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
                             </span>
                           )}
-                          <span className="text-[9px] text-muted-foreground">{formatConvTime(conv.lastMessageAt)}</span>
+                          <span className="text-[9px] text-muted-foreground">{formatConvTime(conv.lastMessageAt, locale)}</span>
                         </div>
                       </div>
                       <p className={[
@@ -349,7 +354,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {meta && (
                           <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${meta.classes}`}>
-                            {meta.label}
+                            {t(meta.labelKey)}
                           </span>
                         )}
                         <p className={[
@@ -371,7 +376,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
         {!selectedId ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground gap-3">
             <MessageSquare className="w-10 h-10 text-gray-200" />
-            <p className="text-sm">Select a conversation</p>
+            <p className="text-sm">{t('chat.selectConv')}</p>
           </div>
         ) : (
           <>
@@ -379,7 +384,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
             <div className="px-4 py-3 border-b border-border flex items-center gap-3">
               {selectedConv && (() => {
                 const closed = isClosed(selectedConv.estado);
-                const meta = closed ? estadoLabel(selectedConv.estado) : null;
+                const meta = closed ? estadoMeta(selectedConv.estado) : null;
                 const Icon = meta?.icon;
                 return (
                   <>
@@ -400,11 +405,11 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                         {meta && Icon && (
                           <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-full border ${meta.classes}`}>
                             <Icon className="w-3 h-3" />
-                            {meta.label}
+                            {t(meta.labelKey)}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-muted-foreground">Order #{selectedConv.orderId} · {selectedConv.product}</p>
+                      <p className="text-[11px] text-muted-foreground">{t('chat.orderHash')}{selectedConv.orderId} · {selectedConv.product}</p>
                     </div>
                   </>
                 );
@@ -418,7 +423,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
               className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
             >
               {messages.length === 0 ? (
-                <p className="text-center text-xs text-muted-foreground mt-8">No messages yet. Say hello!</p>
+                <p className="text-center text-xs text-muted-foreground mt-8">{t('chat.noMessages')}</p>
               ) : (
                 messages.map((msg) => {
                   const isOwn = msg.senderId === user?.id;
@@ -438,7 +443,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                             fetchConversations();
                           }}
                         />
-                        <span className="text-[11px] text-muted-foreground">{formatTime(msg.sentAt)}</span>
+                        <span className="text-[11px] text-muted-foreground">{formatTime(msg.sentAt, locale)}</span>
                       </div>
                     );
                   }
@@ -459,11 +464,11 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                         <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                         {msg.intentoBypass && (
                           <p className="text-[11px] text-red-500 mt-1 font-medium">
-                            BYPASS DETECTED — Message sanitized
+                            {t('chat.bypassDetected')}
                           </p>
                         )}
                       </div>
-                      <span className="text-[11px] text-muted-foreground">{formatTime(msg.sentAt)}</span>
+                      <span className="text-[11px] text-muted-foreground">{formatTime(msg.sentAt, locale)}</span>
                     </div>
                   );
                 })
@@ -478,7 +483,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                 <button
                   onClick={() => setSendError(null)}
                   className="text-red-500 hover:text-red-700 font-medium ml-2"
-                  aria-label="Cerrar"
+                  aria-label={t('chat.close')}
                 >
                   ×
                 </button>
@@ -488,12 +493,12 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
             {/* Input bar OR closed-state banner */}
             {selectedConv && isClosed(selectedConv.estado) ? (
               (() => {
-                const meta = estadoLabel(selectedConv.estado);
+                const meta = estadoMeta(selectedConv.estado);
                 const Icon = meta.icon;
                 return (
                   <div className="px-4 py-4 border-t border-border bg-muted/50 flex items-center gap-2 text-xs text-muted-foreground justify-center">
                     <Icon className="w-4 h-4" />
-                    <span>{meta.banner}</span>
+                    <span>{meta.bannerKey ? t(meta.bannerKey) : ''}</span>
                   </div>
                 );
               })()
@@ -510,9 +515,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                 {selectedConv?.contratoEstado !== 'FIRMADO' && (
                   <div className="px-4 py-2 border-t border-border bg-blue-50/60 text-[11px] text-blue-900 flex items-start gap-1.5">
                     <span aria-hidden>🔒</span>
-                    <span>
-                      Por tu seguridad: no compartas teléfono, email ni cierres la operación fuera de Primar-IA hasta firmar el contrato. Los mensajes son revisados por IA.
-                    </span>
+                    <span>{t('chat.privacy')}</span>
                   </div>
                 )}
                 <div className="px-4 py-3 border-t border-border flex items-end gap-2">
@@ -521,8 +524,8 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                   type="button"
                   onClick={() => setShowOfferModal(true)}
                   className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-button transition-colors flex-shrink-0"
-                  aria-label="Proponer cambio de precio o incoterm"
-                  title="Proponer cambio"
+                  aria-label={t('chat.actions.propose')}
+                  title={t('chat.actions.proposeTitle')}
                 >
                   <TrendingUp className="w-5 h-5" />
                 </button>
@@ -531,8 +534,8 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                   type="button"
                   disabled
                   className="p-2 text-muted-foreground/50 cursor-not-allowed flex-shrink-0"
-                  aria-label="Adjuntar archivo (próximamente)"
-                  title="Adjuntar archivos próximamente"
+                  aria-label={t('chat.actions.attach')}
+                  title={t('chat.actions.attachTitle')}
                 >
                   <Paperclip className="w-5 h-5" />
                 </button>
@@ -542,7 +545,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Escribe un mensaje… (Enter para enviar, Shift+Enter para nueva línea)"
+                  placeholder={t('chat.placeholder')}
                   rows={1}
                   className="flex-1 resize-none px-3 py-2.5 rounded-input border border-border text-sm text-foreground placeholder-gray-400 bg-card focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors min-h-[44px] max-h-[120px] overflow-y-auto"
                   style={{ height: 'auto' }}
@@ -562,7 +565,7 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
                       ? 'bg-primary text-foreground hover:opacity-90 cursor-pointer'
                       : 'bg-muted text-muted-foreground/50 cursor-not-allowed',
                   ].join(' ')}
-                  aria-label="Enviar mensaje"
+                  aria-label={t('chat.send')}
                 >
                   <Send className="w-5 h-5" />
                 </button>
