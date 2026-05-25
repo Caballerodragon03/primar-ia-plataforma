@@ -266,6 +266,50 @@ export type MessageKey =
   | 'similar.errorLoading'
   | 'similar.headerSub.one'
   | 'similar.headerSub.many'
+  // ─── order create form ──────────────────────────────────────────────────
+  | 'orderForm.title'
+  | 'orderForm.commercialDetails'
+  | 'orderForm.product'
+  | 'orderForm.product.placeholder'
+  | 'orderForm.variety'
+  | 'orderForm.variety.placeholder'
+  | 'orderForm.variety.other'
+  | 'orderForm.variety.customPlaceholder'
+  | 'orderForm.frequency'
+  | 'orderForm.frequency.placeholder'
+  | 'orderForm.frequency.weekly'
+  | 'orderForm.frequency.biweekly'
+  | 'orderForm.frequency.monthly'
+  | 'orderForm.frequency.onetime'
+  | 'orderForm.destination'
+  | 'orderForm.destination.placeholder'
+  | 'orderForm.deliveryDate'
+  | 'orderForm.noCalibreCheckbox'
+  | 'orderForm.quantityKg'
+  | 'orderForm.maxPriceKg'
+  | 'orderForm.caliber'
+  | 'orderForm.caliber.placeholder'
+  | 'orderForm.qtyKg'
+  | 'orderForm.sellingPriceKg'
+  | 'orderForm.addCaliber'
+  | 'orderForm.comments'
+  | 'orderForm.comments.placeholder'
+  | 'orderForm.logisticsTitle'
+  | 'orderForm.whoShips'
+  | 'orderForm.principalIncoterm'
+  | 'orderForm.otherIncoterms'
+  | 'orderForm.otherIncotermsHint'
+  | 'orderForm.incotermFilteredNote'
+  | 'orderForm.paymentTermsTitle'
+  | 'orderForm.paymentTermsHelp'
+  | 'orderForm.futureLogisticsTitle'
+  | 'orderForm.futureLogisticsBadge'
+  | 'orderForm.futureLogisticsDesc'
+  | 'orderForm.futureLogisticsBtn'
+  | 'orderForm.futureLogisticsBtnTitle'
+  | 'orderForm.cancel'
+  | 'orderForm.publish'
+  | 'orderForm.publishing'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -532,6 +576,49 @@ export const messages: Record<Locale, Messages> = {
     'similar.errorLoading': 'No se pudieron cargar las ofertas similares.',
     'similar.headerSub.one': '1 pedido cercano a tus lotes — ajusta condiciones para encajar',
     'similar.headerSub.many': '{n} pedidos cercanos a tus lotes — ajusta condiciones para encajar',
+    'orderForm.title': 'Crear pedido',
+    'orderForm.commercialDetails': 'Detalles comerciales',
+    'orderForm.product': 'Producto',
+    'orderForm.product.placeholder': 'Selecciona producto…',
+    'orderForm.variety': 'Variedad',
+    'orderForm.variety.placeholder': 'Selecciona variedad…',
+    'orderForm.variety.other': 'Otra (especificar)…',
+    'orderForm.variety.customPlaceholder': 'Escribe el nombre de la variedad…',
+    'orderForm.frequency': 'Frecuencia',
+    'orderForm.frequency.placeholder': 'Selecciona…',
+    'orderForm.frequency.weekly': 'Semanal',
+    'orderForm.frequency.biweekly': 'Quincenal',
+    'orderForm.frequency.monthly': 'Mensual',
+    'orderForm.frequency.onetime': 'Puntual',
+    'orderForm.destination': 'Destino final',
+    'orderForm.destination.placeholder': 'p. ej. Puerto de Rotterdam',
+    'orderForm.deliveryDate': 'Fecha de entrega deseada',
+    'orderForm.noCalibreCheckbox': 'Sin calibrar (acepto cualquier calibre)',
+    'orderForm.quantityKg': 'Cantidad (kg)',
+    'orderForm.maxPriceKg': 'Precio máximo (€/kg)',
+    'orderForm.caliber': 'Calibre',
+    'orderForm.caliber.placeholder': 'Selecciona calibre…',
+    'orderForm.qtyKg': 'Cant. (kg)',
+    'orderForm.sellingPriceKg': 'Precio compra (€/kg)',
+    'orderForm.addCaliber': 'Añadir otro calibre',
+    'orderForm.comments': 'Comentarios',
+    'orderForm.comments.placeholder': 'Notas adicionales para los vendedores…',
+    'orderForm.logisticsTitle': 'Logística y condiciones',
+    'orderForm.whoShips': '¿Quién hace el envío?',
+    'orderForm.principalIncoterm': 'Incoterm principal',
+    'orderForm.otherIncoterms': 'Otros incoterms aceptados',
+    'orderForm.otherIncotermsHint': '(opcional, más matches)',
+    'orderForm.incotermFilteredNote': 'Los incoterms se filtran según quién envía. Cambia la opción de logística para verlos todos.',
+    'orderForm.paymentTermsTitle': 'Términos de pago aceptados',
+    'orderForm.paymentTermsHelp': 'Selecciona uno o varios. Los matches incluirán vendedores que acepten cualquiera de estos.',
+    'orderForm.futureLogisticsTitle': 'Presupuestar logística con Primar-IA',
+    'orderForm.futureLogisticsBadge': 'Próximamente',
+    'orderForm.futureLogisticsDesc': 'Pronto podrás pedir presupuesto de transporte directamente desde Primar-IA con transportistas integrados, sin salir de la plataforma.',
+    'orderForm.futureLogisticsBtn': 'Pedir presupuesto',
+    'orderForm.futureLogisticsBtnTitle': 'Esta funcionalidad estará disponible próximamente',
+    'orderForm.cancel': 'Cancelar',
+    'orderForm.publish': 'Publicar pedido',
+    'orderForm.publishing': 'Publicando…',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -792,6 +879,49 @@ export const messages: Record<Locale, Messages> = {
     'similar.errorLoading': 'Could not load similar offers.',
     'similar.headerSub.one': '1 order close to your lots — tweak conditions to match',
     'similar.headerSub.many': '{n} orders close to your lots — tweak conditions to match',
+    'orderForm.title': 'Create order',
+    'orderForm.commercialDetails': 'Commercial details',
+    'orderForm.product': 'Product',
+    'orderForm.product.placeholder': 'Select product…',
+    'orderForm.variety': 'Variety',
+    'orderForm.variety.placeholder': 'Select variety…',
+    'orderForm.variety.other': 'Other (specify)…',
+    'orderForm.variety.customPlaceholder': 'Type variety name…',
+    'orderForm.frequency': 'Frequency',
+    'orderForm.frequency.placeholder': 'Select…',
+    'orderForm.frequency.weekly': 'Weekly',
+    'orderForm.frequency.biweekly': 'Bi-weekly',
+    'orderForm.frequency.monthly': 'Monthly',
+    'orderForm.frequency.onetime': 'One-time',
+    'orderForm.destination': 'Final destination',
+    'orderForm.destination.placeholder': 'e.g. Port of Rotterdam',
+    'orderForm.deliveryDate': 'Desired delivery date',
+    'orderForm.noCalibreCheckbox': 'No calibre (any calibre accepted)',
+    'orderForm.quantityKg': 'Quantity (kg)',
+    'orderForm.maxPriceKg': 'Max price (€/kg)',
+    'orderForm.caliber': 'Calibre',
+    'orderForm.caliber.placeholder': 'Select calibre…',
+    'orderForm.qtyKg': 'Qty (kg)',
+    'orderForm.sellingPriceKg': 'Buying price (€/kg)',
+    'orderForm.addCaliber': 'Add another calibre',
+    'orderForm.comments': 'Comments',
+    'orderForm.comments.placeholder': 'Additional notes for sellers…',
+    'orderForm.logisticsTitle': 'Logistics and terms',
+    'orderForm.whoShips': 'Who handles shipping?',
+    'orderForm.principalIncoterm': 'Principal incoterm',
+    'orderForm.otherIncoterms': 'Other accepted incoterms',
+    'orderForm.otherIncotermsHint': '(optional, more matches)',
+    'orderForm.incotermFilteredNote': "Incoterms are filtered by who ships. Change the logistics option to see them all.",
+    'orderForm.paymentTermsTitle': 'Accepted payment terms',
+    'orderForm.paymentTermsHelp': "Select one or more. Matches will include sellers accepting any of these.",
+    'orderForm.futureLogisticsTitle': 'Get a logistics quote with Primar-IA',
+    'orderForm.futureLogisticsBadge': 'Coming soon',
+    'orderForm.futureLogisticsDesc': "Soon you'll be able to request transport quotes directly from Primar-IA with integrated carriers, without leaving the platform.",
+    'orderForm.futureLogisticsBtn': 'Request quote',
+    'orderForm.futureLogisticsBtnTitle': 'This feature will be available soon',
+    'orderForm.cancel': 'Cancel',
+    'orderForm.publish': 'Publish order',
+    'orderForm.publishing': 'Publishing…',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",

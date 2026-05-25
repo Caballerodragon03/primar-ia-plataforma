@@ -10,6 +10,7 @@ import { api } from '@/lib/api';
 import { Button, Input, Select } from '@/components/ui';
 import { ExistingEntityBanner } from '@/components/ui/ExistingEntityBanner';
 import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
+import { useT } from '@/lib/i18n/LocaleProvider';
 import {
   ALL_INCOTERMS,
   ALL_TERMINOS_PAGO,
@@ -39,7 +40,16 @@ const calibreSchema = z.object({
 });
 
 // Reuse shared incoterm list — single source of truth in @primaria/shared.
-const FREQUENCIES = ['Weekly', 'Bi-weekly', 'Monthly', 'One-time'];
+// Phase 14M v3.42 — FREQUENCIES ahora son keys i18n; el componente las
+// resuelve con t() al render. El valor persistido sigue siendo la
+// constante en inglés ('Weekly' / 'Bi-weekly' / 'Monthly' / 'One-time')
+// para mantener compat con pedidos antiguos.
+const FREQUENCIES: { value: string; labelKey: 'orderForm.frequency.weekly' | 'orderForm.frequency.biweekly' | 'orderForm.frequency.monthly' | 'orderForm.frequency.onetime' }[] = [
+  { value: 'Weekly', labelKey: 'orderForm.frequency.weekly' },
+  { value: 'Bi-weekly', labelKey: 'orderForm.frequency.biweekly' },
+  { value: 'Monthly', labelKey: 'orderForm.frequency.monthly' },
+  { value: 'One-time', labelKey: 'orderForm.frequency.onetime' },
+];
 
 const schema = z.object({
   productoId: z.string().min(1, 'Selecciona un producto'),
@@ -83,6 +93,7 @@ type Product = { id: string; nombre: string; variedades: { id: string; nombre: s
 
 export default function CreateOrderPage() {
   const router = useRouter();
+  const t = useT();
   const [products, setProducts] = useState<Product[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -292,7 +303,7 @@ export default function CreateOrderPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-text-primary"> Crear Pedido</h1>
+      <h1 className="text-2xl font-bold text-text-primary">{t('orderForm.title')}</h1>
 
       <FreeTierMatchingNotice itemKind="pedido" subscriptionHref="/buyer/subscription" />
 
@@ -308,31 +319,31 @@ export default function CreateOrderPage() {
         {/* Left: Commercial Details */}
         <section className="space-y-5">
           <div data-tutorial="form-producto" className="bg-card rounded-card border border-border p-5 space-y-4">
-            <h2 className="font-semibold text-text-primary">Detalles comerciales</h2>
+            <h2 className="font-semibold text-text-primary">{t('orderForm.commercialDetails')}</h2>
 
             <div className="grid grid-cols-2 gap-4">
               <Select
-                label="Product"
+                label={t('orderForm.product')}
                 required
                 {...register('productoId')}
                 error={errors.productoId?.message}
               >
-                <option value="">Select product...</option>
+                <option value="">{t('orderForm.product.placeholder')}</option>
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>{p.nombre}</option>
                 ))}
               </Select>
               <div className="flex flex-col gap-1">
-                <Select label="Variety" {...register('variedadId')}>
-                  <option value="">Select variety...</option>
+                <Select label={t('orderForm.variety')} {...register('variedadId')}>
+                  <option value="">{t('orderForm.variety.placeholder')}</option>
                   {varieties.map((v) => (
                     <option key={v.id} value={v.id}>{v.nombre}</option>
                   ))}
-                  <option value={OTHER_VALUE}>Other (specify)...</option>
+                  <option value={OTHER_VALUE}>{t('orderForm.variety.other')}</option>
                 </Select>
                 {selectedVariedadId === OTHER_VALUE && (
                   <Input
-                    placeholder="Type variety name..."
+                    placeholder={t('orderForm.variety.customPlaceholder')}
                     value={customVariety}
                     onChange={(e) => setCustomVariety(e.target.value)}
                   />
@@ -341,13 +352,13 @@ export default function CreateOrderPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Select label="Frequency" {...register('frecuencia')}>
-                <option value="">Select...</option>
-                {FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}
+              <Select label={t('orderForm.frequency')} {...register('frecuencia')}>
+                <option value="">{t('orderForm.frequency.placeholder')}</option>
+                {FREQUENCIES.map((f) => <option key={f.value} value={f.value}>{t(f.labelKey)}</option>)}
               </Select>
               <Input
-                label="Final Destination"
-                placeholder="e.g. Port of Rotterdam"
+                label={t('orderForm.destination')}
+                placeholder={t('orderForm.destination.placeholder')}
                 {...register('destinoFinal')}
                 error={errors.destinoFinal?.message}
               />
@@ -355,7 +366,7 @@ export default function CreateOrderPage() {
 
             <Input
               type="date"
-              label="Desired Delivery Date"
+              label={t('orderForm.deliveryDate')}
               required
               {...register('fechaEntregaDeseada')}
               error={errors.fechaEntregaDeseada?.message}
@@ -370,12 +381,12 @@ export default function CreateOrderPage() {
             <div data-tutorial="form-calibres" className="space-y-2">
               <label className="flex items-center gap-2 text-sm text-text-secondary">
                 <input type="checkbox" {...register('noCalibre')} className="rounded" />
-                Sin calibrar (acepto cualquier calibre)
+                {t('orderForm.noCalibreCheckbox')}
               </label>
               {noCalibre ? (
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   <div className="space-y-1">
-                    <p className="text-xs font-medium text-text-secondary px-1">Quantity (kg)</p>
+                    <p className="text-xs font-medium text-text-secondary px-1">{t('orderForm.quantityKg')}</p>
                     <Input
                       type="number"
                       step="0.01"
@@ -385,7 +396,7 @@ export default function CreateOrderPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-medium text-text-secondary px-1">Max Price (€/kg)</p>
+                    <p className="text-xs font-medium text-text-secondary px-1">{t('orderForm.maxPriceKg')}</p>
                     <Input
                       type="number"
                       step="0.001"
@@ -398,9 +409,9 @@ export default function CreateOrderPage() {
               ) : (
                 <>
                   <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-xs font-medium text-text-secondary px-1">
-                    <span>Caliber</span>
-                    <span>Qty (kg)</span>
-                    <span>Selling Price (€/kg)</span>
+                    <span>{t('orderForm.caliber')}</span>
+                    <span>{t('orderForm.qtyKg')}</span>
+                    <span>{t('orderForm.sellingPriceKg')}</span>
                     <span />
                   </div>
                   {fields.map((field, idx) => (
@@ -411,14 +422,14 @@ export default function CreateOrderPage() {
                           {...register(`calibresSolicitados.${idx}.calibre`)}
                           error={errors.calibresSolicitados?.[idx]?.calibre?.message}
                         >
-                          <option value="">Select caliber...</option>
+                          <option value="">{t('orderForm.caliber.placeholder')}</option>
                           {calibreOptions.map((c) => (
                             <option key={c} value={c}>{c}</option>
                           ))}
                         </Select>
                       ) : (
                         <Input
-                          placeholder="Caliber"
+                          placeholder={t('orderForm.caliber')}
                           {...register(`calibresSolicitados.${idx}.calibre`)}
                           error={errors.calibresSolicitados?.[idx]?.calibre?.message}
                         />
@@ -452,7 +463,7 @@ export default function CreateOrderPage() {
                     onClick={() => append({ calibre: '', cantidad_kg: 0, precio_max_kg: 0 })}
                     className="text-sm text-primary-dark font-medium hover:underline flex items-center gap-1"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add another caliber
+                    <Plus className="w-3.5 h-3.5" /> {t('orderForm.addCaliber')}
                   </button>
                 </>
               )}
@@ -460,13 +471,13 @@ export default function CreateOrderPage() {
 
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">
-                Comments
+                {t('orderForm.comments')}
               </label>
               <textarea
                 {...register('notasAdicionales')}
                 rows={3}
                 className="w-full border border-border rounded-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-                placeholder="Additional notes for sellers..."
+                placeholder={t('orderForm.comments.placeholder')}
               />
             </div>
           </div>
@@ -475,15 +486,15 @@ export default function CreateOrderPage() {
         {/* Right: Logistics & Terms */}
         <section className="space-y-5">
           <div data-tutorial="form-logistica" className="bg-card rounded-card border border-border p-5 space-y-4">
-            <h2 className="font-semibold text-text-primary">Logística y condiciones</h2>
+            <h2 className="font-semibold text-text-primary">{t('orderForm.logisticsTitle')}</h2>
 
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Truck className="w-4 h-4 text-text-secondary" />
-                <h3 className="text-sm font-semibold text-text-primary">¿Quién hace el envío?</h3>
+                <h3 className="text-sm font-semibold text-text-primary">{t('orderForm.whoShips')}</h3>
               </div>
               <Select label="" {...register('logistica')}>
-                <option value="INDIFERENTE">{LOGISTICA_LABELS.INDIFERENTE} (más matches)</option>
+                <option value="INDIFERENTE">{LOGISTICA_LABELS.INDIFERENTE}</option>
                 <option value="YO_ENVIO">{LOGISTICA_LABELS.YO_ENVIO}</option>
                 <option value="OTRO_RECOGE">{LOGISTICA_LABELS.OTRO_RECOGE}</option>
               </Select>
@@ -491,7 +502,7 @@ export default function CreateOrderPage() {
 
             <div>
               <Select
-                label="Incoterm principal"
+                label={t('orderForm.principalIncoterm')}
                 required
                 {...register('incoterm')}
                 error={errors.incoterm?.message}
@@ -507,7 +518,7 @@ export default function CreateOrderPage() {
 
             <div>
               <p className="text-xs font-medium text-text-secondary mb-2">
-                Otros incoterms aceptados <span className="text-text-muted">(opcional, más matches)</span>
+                {t('orderForm.otherIncoterms')} <span className="text-text-muted">{t('orderForm.otherIncotermsHint')}</span>
               </p>
               <div className="flex flex-wrap gap-2">
                 {availableIncoterms.map((it) => {
@@ -559,7 +570,7 @@ export default function CreateOrderPage() {
               <p className="text-[11px] text-text-muted mt-2 flex items-start gap-1.5">
                 <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
                 <span>
-                  Los incoterms se filtran según quién envía. Cambia la opción de logística para verlos todos.
+                  {t('orderForm.incotermFilteredNote')}
                 </span>
               </p>
             </div>
@@ -567,10 +578,10 @@ export default function CreateOrderPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-text-secondary" />
-                <h3 className="text-sm font-semibold text-text-primary">Términos de pago aceptados</h3>
+                <h3 className="text-sm font-semibold text-text-primary">{t('orderForm.paymentTermsTitle')}</h3>
               </div>
               <p className="text-xs text-text-muted">
-                Selecciona uno o varios. Los matches incluirán vendedores que acepten cualquiera de estos.
+                {t('orderForm.paymentTermsHelp')}
               </p>
               <div className="flex flex-wrap gap-2">
                 {ALL_TERMINOS_PAGO.map((tp) => {
@@ -615,22 +626,22 @@ export default function CreateOrderPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-semibold text-foreground">Presupuestar logística con Primar-IA</p>
+                  <p className="text-sm font-semibold text-foreground">{t('orderForm.futureLogisticsTitle')}</p>
                   <span className="text-[10px] font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-badge">
-                    Próximamente
+                    {t('orderForm.futureLogisticsBadge')}
                   </span>
                 </div>
                 <p className="text-xs text-text-secondary mt-1">
-                  Pronto podrás pedir presupuesto de transporte directamente desde Primar-IA con transportistas integrados, sin salir de la plataforma.
+                  {t('orderForm.futureLogisticsDesc')}
                 </p>
               </div>
               <button
                 type="button"
                 disabled
                 className="text-xs px-3 py-1.5 rounded-button bg-muted text-muted-foreground cursor-not-allowed whitespace-nowrap"
-                title="Esta funcionalidad estará disponible próximamente"
+                title={t('orderForm.futureLogisticsBtnTitle')}
               >
-                Pedir presupuesto
+                {t('orderForm.futureLogisticsBtn')}
               </button>
             </div>
           </div>
@@ -650,7 +661,7 @@ export default function CreateOrderPage() {
               disabled={isSubmitting}
               onClick={() => router.back()}
             >
-              Cancel
+              {t('orderForm.cancel')}
             </Button>
             <Button
               type="button"
@@ -659,7 +670,7 @@ export default function CreateOrderPage() {
               onClick={handleSubmit((v) => onSubmit(v, true))}
               data-tutorial="btn-publicar-pedido"
             >
-              {isSubmitting ? 'Publicando...' : 'Publish Order'}
+              {isSubmitting ? t('orderForm.publishing') : t('orderForm.publish')}
             </Button>
           </div>
         </div>
