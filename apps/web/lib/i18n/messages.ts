@@ -550,6 +550,23 @@ export type MessageKey =
   | 'register.step4.privacy'
   | 'register.step4.back'
   | 'register.step4.submit'
+  // ─── subscription pages ──────────────────────────────────────────────────
+  | 'subscription.title'
+  | 'subscription.subtitleSeller'
+  | 'subscription.subtitleBuyer'
+  | 'subscription.success'
+  | 'subscription.cancelled'
+  | 'subscription.errorCheckout'
+  | 'subscription.currentPlan'
+  | 'subscription.manage'
+  | 'subscription.activeLots'
+  | 'subscription.activeOrders'
+  | 'subscription.breakdown.searching'
+  | 'subscription.breakdown.dealing'
+  | 'subscription.breakdown.reserved'
+  | 'subscription.itemLot'
+  | 'subscription.itemOrder'
+  | 'subscription.redirecting'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -1092,6 +1109,22 @@ export const messages: Record<Locale, Messages> = {
     'register.step4.privacy': 'Política de Privacidad',
     'register.step4.back': 'Atrás',
     'register.step4.submit': 'Enviar solicitud de registro',
+    'subscription.title': 'Tu Suscripción',
+    'subscription.subtitleSeller': 'Elige el plan que mejor se adapte a tu producción',
+    'subscription.subtitleBuyer': 'Elige el plan que mejor se adapte a tu negocio',
+    'subscription.success': '¡Tu suscripción se ha activado correctamente! Ya puedes disfrutar de los beneficios de tu nuevo plan.',
+    'subscription.cancelled': 'El proceso de pago fue cancelado. Puedes intentarlo de nuevo cuando quieras.',
+    'subscription.errorCheckout': 'Error al iniciar el pago',
+    'subscription.currentPlan': 'Plan actual:',
+    'subscription.manage': 'Gestionar suscripción',
+    'subscription.activeLots': 'Lotes activos',
+    'subscription.activeOrders': 'Pedidos activos',
+    'subscription.breakdown.searching': 'buscando',
+    'subscription.breakdown.dealing': 'en trato',
+    'subscription.breakdown.reserved': 'reservados (pdte. comisión)',
+    'subscription.itemLot': 'lote',
+    'subscription.itemOrder': 'pedido',
+    'subscription.redirecting': 'Redirigiendo a Stripe...',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -1628,6 +1661,22 @@ export const messages: Record<Locale, Messages> = {
     'register.step4.privacy': 'Privacy Policy',
     'register.step4.back': 'Back',
     'register.step4.submit': 'Submit registration request',
+    'subscription.title': 'Your Subscription',
+    'subscription.subtitleSeller': 'Choose the plan that best fits your production',
+    'subscription.subtitleBuyer': 'Choose the plan that best fits your business',
+    'subscription.success': 'Your subscription has been activated successfully! You can now enjoy the benefits of your new plan.',
+    'subscription.cancelled': 'The payment process was cancelled. You can try again whenever you want.',
+    'subscription.errorCheckout': 'Failed to start payment',
+    'subscription.currentPlan': 'Current plan:',
+    'subscription.manage': 'Manage subscription',
+    'subscription.activeLots': 'Active lots',
+    'subscription.activeOrders': 'Active orders',
+    'subscription.breakdown.searching': 'searching',
+    'subscription.breakdown.dealing': 'in deal',
+    'subscription.breakdown.reserved': 'reserved (pending commission)',
+    'subscription.itemLot': 'lot',
+    'subscription.itemOrder': 'order',
+    'subscription.redirecting': 'Redirecting to Stripe...',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",

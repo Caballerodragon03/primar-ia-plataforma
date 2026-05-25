@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { PlanComparison } from '@/components/subscriptions/PlanComparison';
 import { UsageMeter } from '@/components/subscriptions/UsageMeter';
 import { CreationCreditsCard } from '@/components/subscriptions/CreationCreditsCard';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 interface Credits {
   available: number;
@@ -30,6 +31,7 @@ interface SubscriptionData {
 }
 
 export default function BuyerSubscriptionPage() {
+  const t = useT();
   const searchParams = useSearchParams();
   const [data, setData] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,7 +93,7 @@ export default function BuyerSubscriptionPage() {
         window.location.href = res.data.data.url;
       }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Error al iniciar el pago';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('subscription.errorCheckout');
       setError(msg);
     } finally {
       setCheckoutLoading(false);
@@ -127,20 +129,20 @@ export default function BuyerSubscriptionPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-text-primary mb-1">Tu Suscripción</h1>
+      <h1 className="text-2xl font-bold text-text-primary mb-1">{t('subscription.title')}</h1>
       <p className="text-sm text-text-secondary mb-6">
-        Elige el plan que mejor se adapte a tu negocio
+        {t('subscription.subtitleBuyer')}
       </p>
 
       {success === 'true' && (
         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-[8px] text-sm text-green-800">
-          ¡Tu suscripción se ha activado correctamente! Ya puedes disfrutar de los beneficios de tu nuevo plan.
+          {t('subscription.success')}
         </div>
       )}
 
       {cancelled === 'true' && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-[8px] text-sm text-yellow-800">
-          El proceso de pago fue cancelado. Puedes intentarlo de nuevo cuando quieras.
+          {t('subscription.cancelled')}
         </div>
       )}
 
@@ -155,7 +157,7 @@ export default function BuyerSubscriptionPage() {
           <div className="bg-card border border-border rounded-[12px] p-4 mb-8">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <span className="text-sm text-text-secondary">Plan actual:</span>
+                <span className="text-sm text-text-secondary">{t('subscription.currentPlan')}</span>
                 <span className="ml-2 font-semibold text-text-primary">{data.plan}</span>
                 {data.badge && (
                   <span className="ml-2 text-xs bg-primary/10 text-secondary px-2 py-0.5 rounded-full">
@@ -168,25 +170,25 @@ export default function BuyerSubscriptionPage() {
                   onClick={handleManage}
                   className="text-sm text-secondary hover:text-text-primary underline cursor-pointer"
                 >
-                  Gestionar suscripción
+                  {t('subscription.manage')}
                 </button>
               )}
             </div>
             <UsageMeter
               current={data.pedidosActivos}
               max={data.maxPedidos}
-              label="Pedidos activos"
+              label={t('subscription.activeOrders')}
               breakdown={
                 data.breakdownComprador
                   ? [
-                      { label: 'buscando', value: data.breakdownComprador.buscando },
-                      { label: 'en trato', value: data.breakdownComprador.enTrato },
-                      { label: 'reservados (pdte. comisión)', value: data.breakdownComprador.reservadoPendienteComision },
+                      { label: t('subscription.breakdown.searching'), value: data.breakdownComprador.buscando },
+                      { label: t('subscription.breakdown.dealing'), value: data.breakdownComprador.enTrato },
+                      { label: t('subscription.breakdown.reserved'), value: data.breakdownComprador.reservadoPendienteComision },
                     ]
                   : undefined
               }
             />
-            <CreationCreditsCard credits={data.credits} itemLabel="pedido" />
+            <CreationCreditsCard credits={data.credits} itemLabel={t('subscription.itemOrder')} />
           </div>
 
           <PlanComparison
@@ -199,7 +201,7 @@ export default function BuyerSubscriptionPage() {
             <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
               <div className="bg-card p-6 rounded-[12px] shadow-lg text-center">
                 <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-3" />
-                <p className="text-sm text-text-secondary">Redirigiendo a Stripe...</p>
+                <p className="text-sm text-text-secondary">{t('subscription.redirecting')}</p>
               </div>
             </div>
           )}
