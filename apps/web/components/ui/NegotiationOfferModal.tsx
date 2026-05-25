@@ -29,6 +29,7 @@ import {
   type LogisticaPreferencia,
   type TerminoPago as TerminoPagoType,
 } from '@primaria/shared';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 
 interface CalibreItem {
   calibre: string;
@@ -73,6 +74,9 @@ export function NegotiationOfferModal({
   onClose,
   onSuccess,
 }: NegotiationOfferModalProps) {
+  const t = useT();
+  const { locale } = useLocale();
+  const numLoc = locale === 'en' ? 'en-GB' : 'es-ES';
   // Local form state. Empty string means "no change to this field" except for
   // calibres which uses a separate edit-mode flag.
   // Phase 14H — el precio se gestiona POR CALIBRE en la sección de calibres
@@ -185,11 +189,11 @@ export function NegotiationOfferModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!hasChange) {
-      setError('Debes cambiar al menos un término respecto al actual.');
+      setError(t('negModal.errNoChange'));
       return;
     }
     if (calibresOverMax) {
-      setError('Hay calibres con kg por encima del máximo permitido por el match.');
+      setError(t('negModal.errOverMax'));
       return;
     }
     setError(null);
@@ -213,7 +217,7 @@ export function NegotiationOfferModal({
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ??
-        'No se pudo enviar la propuesta.';
+        t('negModal.submitFail');
       setError(msg);
     } finally {
       setLoading(false);
@@ -234,7 +238,7 @@ export function NegotiationOfferModal({
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-yellow-600" />
             <h2 className="font-semibold text-foreground text-sm">
-              {parentId ? 'Realizar contraoferta' : 'Proponer cambio'}
+              {parentId ? t('negModal.titleCounter') : t('negModal.titlePropose')}
             </h2>
           </div>
           <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground">
@@ -245,7 +249,7 @@ export function NegotiationOfferModal({
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-5">
           {/* Logística */}
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Logística</label>
+            <label className="block text-xs font-medium text-foreground mb-1">{t('negModal.logistics')}</label>
             <div className="flex items-center gap-2">
               {currentLogistica && (
                 <span className="text-xs text-muted-foreground line-through whitespace-nowrap">
@@ -257,7 +261,7 @@ export function NegotiationOfferModal({
                 onChange={(e) => { setLogistica(e.target.value); setLogisticaUserChanged(true); }}
                 className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none bg-card"
               >
-                <option value="">Sin cambio</option>
+                <option value="">{t('negModal.noChange')}</option>
                 <option value="INDIFERENTE">{LOGISTICA_LABELS.INDIFERENTE}</option>
                 <option value="YO_ENVIO">{LOGISTICA_LABELS.YO_ENVIO}</option>
                 <option value="OTRO_RECOGE">{LOGISTICA_LABELS.OTRO_RECOGE}</option>
@@ -268,9 +272,9 @@ export function NegotiationOfferModal({
           {/* Incoterm */}
           <div>
             <label className="block text-xs font-medium text-foreground mb-1">
-              Incoterm
+              {t('negModal.incoterm')}
               {logistica && logistica !== 'INDIFERENTE' && (
-                <span className="ml-1 text-[10px] text-muted-foreground">(filtrado por logística)</span>
+                <span className="ml-1 text-[10px] text-muted-foreground">{t('negModal.filteredByLog')}</span>
               )}
             </label>
             <div className="flex items-center gap-2">
@@ -284,9 +288,9 @@ export function NegotiationOfferModal({
                 onChange={(e) => setIncoterm(e.target.value)}
                 className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none bg-card"
               >
-                <option value="">Sin cambio</option>
-                {availableIncoterms.map((t) => (
-                  <option key={t} value={t} title={incotermTooltip(t)}>{t}</option>
+                <option value="">{t('negModal.noChange')}</option>
+                {availableIncoterms.map((ic) => (
+                  <option key={ic} value={ic} title={incotermTooltip(ic)}>{ic}</option>
                 ))}
               </select>
             </div>
@@ -299,7 +303,7 @@ export function NegotiationOfferModal({
 
           {/* Término de pago */}
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">Término de pago</label>
+            <label className="block text-xs font-medium text-foreground mb-1">{t('negModal.paymentTerm')}</label>
             <div className="flex items-center gap-2">
               {currentTerminoPago && (
                 <span className="text-xs text-muted-foreground line-through whitespace-nowrap">
@@ -311,9 +315,9 @@ export function NegotiationOfferModal({
                 onChange={(e) => setTerminoPago(e.target.value)}
                 className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none bg-card"
               >
-                <option value="">Sin cambio</option>
-                {ALL_TERMINOS_PAGO.map((t) => (
-                  <option key={t} value={t}>{TERMINO_PAGO_LABELS[t]}</option>
+                <option value="">{t('negModal.noChange')}</option>
+                {ALL_TERMINOS_PAGO.map((tp) => (
+                  <option key={tp} value={tp}>{TERMINO_PAGO_LABELS[tp]}</option>
                 ))}
               </select>
             </div>
@@ -322,14 +326,14 @@ export function NegotiationOfferModal({
           {/* Calibres */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-foreground">Calibres y cantidades</label>
+              <label className="block text-xs font-medium text-foreground">{t('negModal.calibresHeader')}</label>
               {!editCalibres ? (
                 <button
                   type="button"
                   onClick={() => setEditCalibres(true)}
                   className="text-[11px] text-primary-dark hover:underline"
                 >
-                  Editar calibres
+                  {t('negModal.editCalibres')}
                 </button>
               ) : (
                 <button
@@ -342,18 +346,18 @@ export function NegotiationOfferModal({
                   }}
                   className="text-[11px] text-muted-foreground hover:underline"
                 >
-                  Cancelar cambios
+                  {t('negModal.cancelEdit')}
                 </button>
               )}
             </div>
             {!editCalibres ? (
               <div className="flex flex-wrap gap-1.5">
                 {(currentCalibres ?? []).length === 0 && (
-                  <span className="text-[11px] text-muted-foreground">Sin calibres definidos</span>
+                  <span className="text-[11px] text-muted-foreground">{t('negModal.noCalibres')}</span>
                 )}
                 {(currentCalibres ?? []).map((c) => (
                   <span key={c.calibre} className="text-[11px] bg-muted text-text-secondary px-2 py-0.5 rounded-badge">
-                    {c.calibre}: {c.cantidad_kg.toLocaleString('es-ES')} kg
+                    {c.calibre}: {c.cantidad_kg.toLocaleString(numLoc)} kg
                     {c.precio_kg != null && c.precio_kg > 0 && (
                       <> · €{c.precio_kg.toFixed(3)}/kg</>
                     )}
@@ -364,9 +368,9 @@ export function NegotiationOfferModal({
               <div className="space-y-2">
                 {/* Phase 14G — header row para columnas. */}
                 <div className="grid grid-cols-[5rem_1fr_5.5rem_1.5rem] gap-2 px-1 text-[10px] uppercase tracking-wide text-text-muted">
-                  <span>Calibre</span>
-                  <span>Cantidad (kg)</span>
-                  <span>Precio €/kg</span>
+                  <span>{t('negModal.col.caliber')}</span>
+                  <span>{t('negModal.col.qty')}</span>
+                  <span>{t('negModal.col.price')}</span>
                   <span />
                 </div>
                 {calibres.map((c, i) => {
@@ -399,7 +403,7 @@ export function NegotiationOfferModal({
                           step="1"
                           min="1"
                           max={ctx?.maxKg ?? undefined}
-                          placeholder="kg"
+                          placeholder={t('negModal.col.qty')}
                           value={c.cantidad_kg || ''}
                           onChange={(e) => updateCalibre(i, { cantidad_kg: Number(e.target.value) })}
                           className={`border rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-yellow-400/40 focus:border-yellow-400 outline-none ${overMax ? 'border-red-400 bg-red-50' : 'border-border'}`}
@@ -408,7 +412,7 @@ export function NegotiationOfferModal({
                           type="number"
                           step="0.0001"
                           min="0.0001"
-                          placeholder={currentPrecioKg?.toFixed(3) ?? '€/kg'}
+                          placeholder={currentPrecioKg?.toFixed(3) ?? t('negModal.pricePh')}
                           value={c.precio_kg ?? ''}
                           onChange={(e) =>
                             updateCalibre(i, {
@@ -429,8 +433,8 @@ export function NegotiationOfferModal({
                       </div>
                       {ctx && (
                         <p className={`text-[10px] px-1 ${overMax ? 'text-red-500' : 'text-muted-foreground'}`}>
-                          Máx {ctx.maxKg.toLocaleString('es-ES')} kg
-                          {' '}(vendedor {ctx.maxKgVendedor.toLocaleString('es-ES')} / comprador {ctx.maxKgComprador.toLocaleString('es-ES')})
+                          {t('negModal.maxKg').replace('{n}', ctx.maxKg.toLocaleString(numLoc))}
+                          {' '}{t('negModal.maxKgSplit').replace('{v}', ctx.maxKgVendedor.toLocaleString(numLoc)).replace('{c}', ctx.maxKgComprador.toLocaleString(numLoc))}
                         </p>
                       )}
                     </div>
@@ -442,11 +446,11 @@ export function NegotiationOfferModal({
                   disabled={calibres.length >= calibreOptions.length}
                   className="flex items-center gap-1 text-[11px] text-primary-dark hover:underline disabled:opacity-40 disabled:no-underline"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Añadir calibre
+                  <Plus className="w-3.5 h-3.5" /> {t('negModal.addCalibre')}
                 </button>
                 {contextLoaded && calibreOptions.length === 0 && (
                   <p className="text-[10px] text-amber-600">
-                    No hay calibres negociables en este match.
+                    {t('negModal.noContextCalibres')}
                   </p>
                 )}
               </div>
@@ -457,7 +461,7 @@ export function NegotiationOfferModal({
 
           <div className="flex gap-2 pt-1">
             <Button type="button" variant="outline" size="sm" onClick={onClose} className="flex-1" disabled={loading}>
-              Cancelar
+              {t('negModal.cancel')}
             </Button>
             <Button
               type="submit"
@@ -467,7 +471,7 @@ export function NegotiationOfferModal({
               loading={loading}
               disabled={!hasChange}
             >
-              {parentId ? 'Contraoferta' : 'Enviar propuesta'}
+              {parentId ? t('negModal.submitCounter') : t('negModal.submit')}
             </Button>
           </div>
         </form>

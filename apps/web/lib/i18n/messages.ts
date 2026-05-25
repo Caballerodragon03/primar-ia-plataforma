@@ -861,6 +861,53 @@ export type MessageKey =
   | 'dispute.problemSeller.cancelacion.desc'
   | 'dispute.problemSeller.otro.label'
   | 'dispute.problemSeller.otro.desc'
+  // ─── negotiation card ────────────────────────────────────────────────────
+  | 'negCard.ownProposal'
+  | 'negCard.receivedProposal'
+  | 'negCard.estado.pending'
+  | 'negCard.estado.accepted'
+  | 'negCard.estado.rejected'
+  | 'negCard.estado.superseded'
+  | 'negCard.currentSuffix'
+  | 'negCard.proposed'
+  | 'negCard.field.price'
+  | 'negCard.field.incoterm'
+  | 'negCard.field.logistics'
+  | 'negCard.field.payment'
+  | 'negCard.field.calibres'
+  | 'negCard.calibresShort'
+  | 'negCard.reject'
+  | 'negCard.counter'
+  | 'negCard.accept'
+  | 'negCard.acceptFail'
+  | 'negCard.rejectFail'
+  | 'negCard.waitingResponse'
+  // ─── negotiation offer modal ─────────────────────────────────────────────
+  | 'negModal.titlePropose'
+  | 'negModal.titleCounter'
+  | 'negModal.logistics'
+  | 'negModal.noChange'
+  | 'negModal.incoterm'
+  | 'negModal.filteredByLog'
+  | 'negModal.paymentTerm'
+  | 'negModal.calibresHeader'
+  | 'negModal.editCalibres'
+  | 'negModal.cancelEdit'
+  | 'negModal.noCalibres'
+  | 'negModal.col.caliber'
+  | 'negModal.col.qty'
+  | 'negModal.col.price'
+  | 'negModal.addCalibre'
+  | 'negModal.noContextCalibres'
+  | 'negModal.maxKg'
+  | 'negModal.maxKgSplit'
+  | 'negModal.errNoChange'
+  | 'negModal.errOverMax'
+  | 'negModal.submitFail'
+  | 'negModal.cancel'
+  | 'negModal.submit'
+  | 'negModal.submitCounter'
+  | 'negModal.pricePh'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -1705,6 +1752,51 @@ export const messages: Record<Locale, Messages> = {
     'dispute.problemSeller.cancelacion.desc': 'El comprador canceló tras tener el lote ya preparado y enviado',
     'dispute.problemSeller.otro.label': 'Otra incidencia',
     'dispute.problemSeller.otro.desc': 'Otro problema no listado arriba',
+    'negCard.ownProposal': 'Tu propuesta',
+    'negCard.receivedProposal': 'Propuesta recibida',
+    'negCard.estado.pending': 'Pendiente',
+    'negCard.estado.accepted': 'Aceptada',
+    'negCard.estado.rejected': 'Rechazada',
+    'negCard.estado.superseded': 'Superada',
+    'negCard.currentSuffix': 'actual',
+    'negCard.proposed': 'Propuesto',
+    'negCard.field.price': 'Precio',
+    'negCard.field.incoterm': 'Incoterm',
+    'negCard.field.logistics': 'Logística',
+    'negCard.field.payment': 'Pago',
+    'negCard.field.calibres': 'Calibres',
+    'negCard.calibresShort': '{n} cal. · {kg} kg',
+    'negCard.reject': 'Rechazar',
+    'negCard.counter': 'Contraoferta',
+    'negCard.accept': 'Aceptar',
+    'negCard.acceptFail': 'Error al aceptar',
+    'negCard.rejectFail': 'Error al rechazar',
+    'negCard.waitingResponse': 'Esperando respuesta de la otra parte…',
+    'negModal.titlePropose': 'Proponer cambio',
+    'negModal.titleCounter': 'Realizar contraoferta',
+    'negModal.logistics': 'Logística',
+    'negModal.noChange': 'Sin cambio',
+    'negModal.incoterm': 'Incoterm',
+    'negModal.filteredByLog': '(filtrado por logística)',
+    'negModal.paymentTerm': 'Término de pago',
+    'negModal.calibresHeader': 'Calibres y cantidades',
+    'negModal.editCalibres': 'Editar calibres',
+    'negModal.cancelEdit': 'Cancelar cambios',
+    'negModal.noCalibres': 'Sin calibres definidos',
+    'negModal.col.caliber': 'Calibre',
+    'negModal.col.qty': 'Cantidad (kg)',
+    'negModal.col.price': 'Precio €/kg',
+    'negModal.addCalibre': 'Añadir calibre',
+    'negModal.noContextCalibres': 'No hay calibres negociables en este match.',
+    'negModal.maxKg': 'Máx {n} kg',
+    'negModal.maxKgSplit': '(vendedor {v} / comprador {c})',
+    'negModal.errNoChange': 'Debes cambiar al menos un término respecto al actual.',
+    'negModal.errOverMax': 'Hay calibres con kg por encima del máximo permitido por el match.',
+    'negModal.submitFail': 'No se pudo enviar la propuesta.',
+    'negModal.cancel': 'Cancelar',
+    'negModal.submit': 'Enviar propuesta',
+    'negModal.submitCounter': 'Contraoferta',
+    'negModal.pricePh': '€/kg',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -2543,6 +2635,51 @@ export const messages: Record<Locale, Messages> = {
     'dispute.problemSeller.cancelacion.desc': 'The buyer cancelled after the lot was already prepared and dispatched',
     'dispute.problemSeller.otro.label': 'Other issue',
     'dispute.problemSeller.otro.desc': 'Other problem not listed above',
+    'negCard.ownProposal': 'Your proposal',
+    'negCard.receivedProposal': 'Proposal received',
+    'negCard.estado.pending': 'Pending',
+    'negCard.estado.accepted': 'Accepted',
+    'negCard.estado.rejected': 'Rejected',
+    'negCard.estado.superseded': 'Superseded',
+    'negCard.currentSuffix': 'current',
+    'negCard.proposed': 'Proposed',
+    'negCard.field.price': 'Price',
+    'negCard.field.incoterm': 'Incoterm',
+    'negCard.field.logistics': 'Logistics',
+    'negCard.field.payment': 'Payment',
+    'negCard.field.calibres': 'Calibres',
+    'negCard.calibresShort': '{n} cal. · {kg} kg',
+    'negCard.reject': 'Reject',
+    'negCard.counter': 'Counter-offer',
+    'negCard.accept': 'Accept',
+    'negCard.acceptFail': 'Failed to accept',
+    'negCard.rejectFail': 'Failed to reject',
+    'negCard.waitingResponse': "Waiting for the other party's response…",
+    'negModal.titlePropose': 'Propose change',
+    'negModal.titleCounter': 'Make counter-offer',
+    'negModal.logistics': 'Logistics',
+    'negModal.noChange': 'No change',
+    'negModal.incoterm': 'Incoterm',
+    'negModal.filteredByLog': '(filtered by logistics)',
+    'negModal.paymentTerm': 'Payment term',
+    'negModal.calibresHeader': 'Calibres and quantities',
+    'negModal.editCalibres': 'Edit calibres',
+    'negModal.cancelEdit': 'Cancel changes',
+    'negModal.noCalibres': 'No calibres defined',
+    'negModal.col.caliber': 'Caliber',
+    'negModal.col.qty': 'Quantity (kg)',
+    'negModal.col.price': 'Price €/kg',
+    'negModal.addCalibre': 'Add caliber',
+    'negModal.noContextCalibres': 'No negotiable calibres in this match.',
+    'negModal.maxKg': 'Max {n} kg',
+    'negModal.maxKgSplit': '(seller {v} / buyer {c})',
+    'negModal.errNoChange': 'You must change at least one term from the current one.',
+    'negModal.errOverMax': 'Some calibres have kg above the maximum allowed by the match.',
+    'negModal.submitFail': 'Could not send the proposal.',
+    'negModal.cancel': 'Cancel',
+    'negModal.submit': 'Send proposal',
+    'negModal.submitCounter': 'Counter-offer',
+    'negModal.pricePh': '€/kg',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",

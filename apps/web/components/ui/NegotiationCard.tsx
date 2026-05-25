@@ -10,6 +10,8 @@ import {
   type LogisticaPreferencia,
   type TerminoPago as TerminoPagoType,
 } from '@primaria/shared';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 interface CalibreItem { calibre: string; cantidad_kg: number }
 
@@ -44,25 +46,28 @@ interface NegotiationCardProps {
 function DiffRow({ label, current, proposed, pending }: {
   label: string; current: string; proposed: string; pending: boolean;
 }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-2 text-xs">
       <div className="flex-1">
-        <p className="text-muted-foreground text-[11px] uppercase tracking-wide">{label} actual</p>
+        <p className="text-muted-foreground text-[11px] uppercase tracking-wide">{label} {t('negCard.currentSuffix')}</p>
         <p className="font-medium text-muted-foreground">{current}</p>
       </div>
       <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
       <div className="flex-1 text-right">
-        <p className="text-muted-foreground text-[11px] uppercase tracking-wide">Propuesto</p>
+        <p className="text-muted-foreground text-[11px] uppercase tracking-wide">{t('negCard.proposed')}</p>
         <p className={`font-bold ${pending ? 'text-yellow-700' : 'text-foreground'}`}>{proposed}</p>
       </div>
     </div>
   );
 }
 
-function fmtCalibres(cs: CalibreItem[] | null | undefined): string {
+function fmtCalibres(cs: CalibreItem[] | null | undefined, t: (k: MessageKey) => string, locale: 'es' | 'en'): string {
   if (!cs || cs.length === 0) return '—';
   const totalKg = cs.reduce((s, c) => s + Number(c.cantidad_kg), 0);
-  return `${cs.length} cal. · ${totalKg.toLocaleString('es-ES')} kg`;
+  return t('negCard.calibresShort')
+    .replace('{n}', String(cs.length))
+    .replace('{kg}', totalKg.toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES'));
 }
 
 function calibresEqual(a: CalibreItem[] | null | undefined, b: CalibreItem[] | null | undefined): boolean {
@@ -83,6 +88,8 @@ export function NegotiationCard({
   currentUserId,
   onActionDone,
 }: NegotiationCardProps) {
+  const t = useT();
+  const { locale } = useLocale();
   const [loading, setLoading] = useState<'accept' | 'reject' | null>(null);
   const [showCounter, setShowCounter] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +106,7 @@ export function NegotiationCard({
       onActionDone();
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg ?? 'Error al aceptar');
+      setError(msg ?? t('negCard.acceptFail'));
     } finally {
       setLoading(null);
     }
@@ -113,20 +120,22 @@ export function NegotiationCard({
       onActionDone();
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg ?? 'Error al rechazar');
+      setError(msg ?? t('negCard.rejectFail'));
     } finally {
       setLoading(null);
     }
   }
 
-  const statusConfig = {
-    PENDIENTE: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-    ACEPTADA:  { label: 'Aceptada',  color: 'bg-green-100 text-green-800 border-green-200' },
-    RECHAZADA: { label: 'Rechazada', color: 'bg-red-100 text-red-800 border-red-200' },
-    SUPERADA:  { label: 'Superada',  color: 'bg-muted text-muted-foreground border-border' },
+  const statusConfig: Record<NegotiacionData['estado'], { labelKey: MessageKey; color: string }> = {
+    PENDIENTE: { labelKey: 'negCard.estado.pending', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    ACEPTADA:  { labelKey: 'negCard.estado.accepted', color: 'bg-green-100 text-green-800 border-green-200' },
+    RECHAZADA: { labelKey: 'negCard.estado.rejected', color: 'bg-red-100 text-red-800 border-red-200' },
+    SUPERADA:  { labelKey: 'negCard.estado.superseded', color: 'bg-muted text-muted-foreground border-border' },
   };
 
-  const { label, color } = statusConfig[negociacion.estado as keyof typeof statusConfig];
+  const cfg = statusConfig[negociacion.estado];
+  const label = t(cfg.labelKey);
+  const color = cfg.color;
 
   return (
     <>
@@ -138,7 +147,7 @@ export function NegotiationCard({
         {/* Header */}
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-semibold text-foreground">
-            {isOwn ? 'Tu propuesta' : 'Propuesta recibida'}
+            {isOwn ? t('negCard.ownProposal') : t('negCard.receivedProposal')}
           </p>
           <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${color}`}>
             {label}
@@ -149,7 +158,7 @@ export function NegotiationCard({
         <div className="space-y-2">
           {negociacion.precioKg !== null && (
             <DiffRow
-              label="Precio"
+              label={t('negCard.field.price')}
               current={negociacion.currentPrecioKg != null ? `€${negociacion.currentPrecioKg.toFixed(4)}/kg` : '—'}
               proposed={`€${negociacion.precioKg.toFixed(4)}/kg`}
               pending={isPending}
@@ -157,7 +166,7 @@ export function NegotiationCard({
           )}
           {negociacion.incoterm !== null && (
             <DiffRow
-              label="Incoterm"
+              label={t('negCard.field.incoterm')}
               current={negociacion.currentIncoterm ?? '—'}
               proposed={negociacion.incoterm}
               pending={isPending}
@@ -165,7 +174,7 @@ export function NegotiationCard({
           )}
           {negociacion.logistica && (
             <DiffRow
-              label="Logística"
+              label={t('negCard.field.logistics')}
               current={negociacion.currentLogistica
                 ? (LOGISTICA_LABELS[negociacion.currentLogistica as LogisticaPreferencia] ?? negociacion.currentLogistica)
                 : '—'}
@@ -175,7 +184,7 @@ export function NegotiationCard({
           )}
           {negociacion.terminoPago && (
             <DiffRow
-              label="Pago"
+              label={t('negCard.field.payment')}
               current={negociacion.currentTerminoPago
                 ? (TERMINO_PAGO_LABELS[negociacion.currentTerminoPago as TerminoPagoType] ?? negociacion.currentTerminoPago)
                 : '—'}
@@ -185,9 +194,9 @@ export function NegotiationCard({
           )}
           {negociacion.calibres && !calibresEqual(negociacion.calibres, negociacion.currentCalibres) && (
             <DiffRow
-              label="Calibres"
-              current={fmtCalibres(negociacion.currentCalibres)}
-              proposed={fmtCalibres(negociacion.calibres)}
+              label={t('negCard.field.calibres')}
+              current={fmtCalibres(negociacion.currentCalibres, t, locale)}
+              proposed={fmtCalibres(negociacion.calibres, t, locale)}
               pending={isPending}
             />
           )}
@@ -205,7 +214,7 @@ export function NegotiationCard({
               disabled={loading !== null}
             >
               <XCircle className="w-3.5 h-3.5" />
-              Rechazar
+              {t('negCard.reject')}
             </Button>
             <Button
               size="sm"
@@ -215,7 +224,7 @@ export function NegotiationCard({
               disabled={loading !== null}
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              Contraoferta
+              {t('negCard.counter')}
             </Button>
             <Button
               size="sm"
@@ -226,13 +235,13 @@ export function NegotiationCard({
               disabled={loading !== null}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Aceptar
+              {t('negCard.accept')}
             </Button>
           </div>
         )}
 
         {isOwn && isPending && (
-          <p className="text-[11px] text-muted-foreground text-center">Esperando respuesta de la otra parte…</p>
+          <p className="text-[11px] text-muted-foreground text-center">{t('negCard.waitingResponse')}</p>
         )}
 
         {error && <p className="text-[11px] text-red-500">{error}</p>}
