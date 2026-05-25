@@ -567,6 +567,38 @@ export type MessageKey =
   | 'subscription.itemLot'
   | 'subscription.itemOrder'
   | 'subscription.redirecting'
+  // ─── disputes ────────────────────────────────────────────────────────────
+  | 'disputes.title'
+  | 'disputes.none'
+  | 'disputes.role.buyer'
+  | 'disputes.role.seller'
+  | 'disputes.role.admin'
+  | 'disputes.estado.open'
+  | 'disputes.estado.sellerResponded'
+  | 'disputes.estado.inReview'
+  | 'disputes.estado.resolved'
+  | 'disputes.back'
+  | 'disputes.opened'
+  | 'disputes.notFound'
+  | 'disputes.yourDescription'
+  | 'disputes.buyerClaim'
+  | 'disputes.evidence'
+  | 'disputes.sellerResponseTitle'
+  | 'disputes.sellerEvidence'
+  | 'disputes.yourResponse'
+  | 'disputes.yourEvidence'
+  | 'disputes.respondPromptDesc'
+  | 'disputes.respondPromptBtn'
+  | 'disputes.respondFormTitle'
+  | 'disputes.respondFormPh'
+  | 'disputes.uploading'
+  | 'disputes.addEvidence'
+  | 'disputes.respondFail'
+  | 'disputes.cancel'
+  | 'disputes.submitResponse'
+  | 'disputes.chatTitle'
+  | 'disputes.chatEmpty'
+  | 'disputes.chatPlaceholder'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -1125,6 +1157,37 @@ export const messages: Record<Locale, Messages> = {
     'subscription.itemLot': 'lote',
     'subscription.itemOrder': 'pedido',
     'subscription.redirecting': 'Redirigiendo a Stripe...',
+    'disputes.title': 'Mis reclamaciones',
+    'disputes.none': 'Sin reclamaciones.',
+    'disputes.role.buyer': 'Comprador',
+    'disputes.role.seller': 'Vendedor',
+    'disputes.role.admin': 'Admin',
+    'disputes.estado.open': 'Abierta',
+    'disputes.estado.sellerResponded': 'Respuesta del vendedor',
+    'disputes.estado.inReview': 'En revisión',
+    'disputes.estado.resolved': 'Resuelta',
+    'disputes.back': 'Volver a reclamaciones',
+    'disputes.opened': 'Abierta el',
+    'disputes.notFound': 'Reclamación no encontrada.',
+    'disputes.yourDescription': 'Tu descripción',
+    'disputes.buyerClaim': 'Reclamación del comprador',
+    'disputes.evidence': 'Evidencias',
+    'disputes.sellerResponseTitle': 'Respuesta del vendedor',
+    'disputes.sellerEvidence': 'Evidencias del vendedor',
+    'disputes.yourResponse': 'Tu respuesta',
+    'disputes.yourEvidence': 'Tus evidencias',
+    'disputes.respondPromptDesc': 'Un comprador ha abierto una reclamación contra esta transacción. Puedes enviar tu respuesta.',
+    'disputes.respondPromptBtn': 'Responder',
+    'disputes.respondFormTitle': 'Envía tu respuesta',
+    'disputes.respondFormPh': 'Explica tu versión. Incluye contexto relevante, fechas y detalles…',
+    'disputes.uploading': 'Subiendo…',
+    'disputes.addEvidence': 'Añadir foto o PDF',
+    'disputes.respondFail': 'No se pudo enviar la respuesta.',
+    'disputes.cancel': 'Cancelar',
+    'disputes.submitResponse': 'Enviar respuesta',
+    'disputes.chatTitle': 'Mensajes',
+    'disputes.chatEmpty': 'Aún no hay mensajes.',
+    'disputes.chatPlaceholder': 'Escribe un mensaje…',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -1677,6 +1740,37 @@ export const messages: Record<Locale, Messages> = {
     'subscription.itemLot': 'lot',
     'subscription.itemOrder': 'order',
     'subscription.redirecting': 'Redirecting to Stripe...',
+    'disputes.title': 'My disputes',
+    'disputes.none': 'No disputes.',
+    'disputes.role.buyer': 'Buyer',
+    'disputes.role.seller': 'Seller',
+    'disputes.role.admin': 'Admin',
+    'disputes.estado.open': 'Open',
+    'disputes.estado.sellerResponded': 'Seller responded',
+    'disputes.estado.inReview': 'In review',
+    'disputes.estado.resolved': 'Resolved',
+    'disputes.back': 'Back to disputes',
+    'disputes.opened': 'Opened',
+    'disputes.notFound': 'Dispute not found.',
+    'disputes.yourDescription': 'Your description',
+    'disputes.buyerClaim': "Buyer's claim",
+    'disputes.evidence': 'Evidence',
+    'disputes.sellerResponseTitle': "Seller's response",
+    'disputes.sellerEvidence': 'Seller evidence',
+    'disputes.yourResponse': 'Your response',
+    'disputes.yourEvidence': 'Your evidence',
+    'disputes.respondPromptDesc': 'A buyer has filed a claim against this transaction. You can submit your response.',
+    'disputes.respondPromptBtn': 'Respond',
+    'disputes.respondFormTitle': 'Submit your response',
+    'disputes.respondFormPh': 'Explain your side. Include any relevant context, dates, and details…',
+    'disputes.uploading': 'Uploading…',
+    'disputes.addEvidence': 'Add photo or PDF',
+    'disputes.respondFail': 'Failed to submit response.',
+    'disputes.cancel': 'Cancel',
+    'disputes.submitResponse': 'Submit response',
+    'disputes.chatTitle': 'Messages',
+    'disputes.chatEmpty': 'No messages yet.',
+    'disputes.chatPlaceholder': 'Write a message…',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",

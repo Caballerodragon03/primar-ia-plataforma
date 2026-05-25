@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { ArrowLeft, Send, X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 interface Dispute {
   id: string;
@@ -40,14 +42,16 @@ const ESTADO_COLORS: Record<string, string> = {
   RESUELTA: 'bg-green-100 text-green-700',
 };
 
-const ESTADO_LABELS: Record<string, string> = {
-  ABIERTA: 'Abierta',
-  RESPUESTA_VENDEDOR: 'Respuesta del vendedor',
-  EN_REVISION: 'En revisión',
-  RESUELTA: 'Resuelta',
+const ESTADO_LABEL_KEYS: Record<string, MessageKey> = {
+  ABIERTA: 'disputes.estado.open',
+  RESPUESTA_VENDEDOR: 'disputes.estado.sellerResponded',
+  EN_REVISION: 'disputes.estado.inReview',
+  RESUELTA: 'disputes.estado.resolved',
 };
 
 export default function SellerDisputeDetailPage() {
+  const t = useT();
+  const { locale } = useLocale();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const disputeId = params.id;
@@ -123,7 +127,7 @@ export default function SellerDisputeDetailPage() {
       setShowRespondForm(false);
       await loadData();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to submit response.';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('disputes.respondFail');
       setRespondError(msg);
     }
     setResponding(false);
@@ -140,7 +144,7 @@ export default function SellerDisputeDetailPage() {
   if (!dispute) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted-foreground">Dispute not found.</p>
+        <p className="text-muted-foreground">{t('disputes.notFound')}</p>
       </div>
     );
   }
@@ -148,13 +152,15 @@ export default function SellerDisputeDetailPage() {
   const comprador = dispute.transaccion?.comprador;
   const producto = dispute.transaccion?.match?.pedido?.producto?.nombre;
   const badgeClass = ESTADO_COLORS[dispute.estado] ?? 'bg-muted text-muted-foreground';
-  const badgeLabel = ESTADO_LABELS[dispute.estado] ?? dispute.estado;
+  const labelKey = ESTADO_LABEL_KEYS[dispute.estado];
+  const badgeLabel = labelKey ? t(labelKey) : dispute.estado;
   const canRespond = dispute.estado === 'ABIERTA' && !dispute.respuestaVendedor;
+  const dateLoc = locale === 'en' ? 'en-GB' : 'es-ES';
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       <button onClick={() => router.push('/seller/disputes')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-        <ArrowLeft className="w-4 h-4" /> Back to disputes
+        <ArrowLeft className="w-4 h-4" /> {t('disputes.back')}
       </button>
 
       {/* Header */}
@@ -163,9 +169,9 @@ export default function SellerDisputeDetailPage() {
           <div className="space-y-1">
             <h1 className="text-lg font-bold text-foreground">{dispute.tipoProblema.replace(/_/g, ' ')}</h1>
             <p className="text-xs text-muted-foreground">
-              Opened {new Date(dispute.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {t('disputes.opened')} {new Date(dispute.createdAt).toLocaleDateString(dateLoc, { day: 'numeric', month: 'long', year: 'numeric' })}
               {producto && ` · ${producto}`}
-              {comprador && ` · Buyer: ${comprador.nombre} ${comprador.apellidos}`}
+              {comprador && ` · ${t('disputes.role.buyer')}: ${comprador.nombre} ${comprador.apellidos}`}
             </p>
           </div>
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${badgeClass}`}>
@@ -176,11 +182,11 @@ export default function SellerDisputeDetailPage() {
 
       {/* Buyer's claim */}
       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Buyer&apos;s claim</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t('disputes.buyerClaim')}</h3>
         <p className="text-sm text-foreground leading-relaxed">{dispute.descripcion}</p>
         {dispute.evidenciasUrls.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Evidence</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{t('disputes.evidence')}</p>
             <div className="grid grid-cols-3 gap-2">
               {dispute.evidenciasUrls.map((url, i) => (
                 <button key={i} onClick={() => setLightbox(url)} className="aspect-square rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity cursor-pointer">
@@ -196,11 +202,11 @@ export default function SellerDisputeDetailPage() {
       {/* Seller response (already submitted) */}
       {dispute.respuestaVendedor && (
         <div className="bg-card rounded-xl border border-border p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-foreground">Your response</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t('disputes.yourResponse')}</h3>
           <p className="text-sm text-foreground leading-relaxed">{dispute.respuestaVendedor}</p>
           {dispute.evidenciasVendedorUrls && dispute.evidenciasVendedorUrls.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Your evidence</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{t('disputes.yourEvidence')}</p>
               <div className="grid grid-cols-3 gap-2">
                 {dispute.evidenciasVendedorUrls.map((url, i) => (
                   <button key={i} onClick={() => setLightbox(url)} className="aspect-square rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity cursor-pointer">
@@ -217,22 +223,22 @@ export default function SellerDisputeDetailPage() {
       {/* Respond form */}
       {canRespond && !showRespondForm && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-center justify-between">
-          <p className="text-sm text-amber-800">A buyer has filed a claim against this transaction. You can submit your response.</p>
+          <p className="text-sm text-amber-800">{t('disputes.respondPromptDesc')}</p>
           <Button variant="primary" size="sm" onClick={() => setShowRespondForm(true)} className="bg-amber-500 hover:bg-amber-600 border-amber-500">
-            Respond
+            {t('disputes.respondPromptBtn')}
           </Button>
         </div>
       )}
 
       {canRespond && showRespondForm && (
         <div className="bg-card rounded-xl border border-border p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-foreground">Submit your response</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t('disputes.respondFormTitle')}</h3>
           <textarea
             value={respuesta}
             onChange={(e) => setRespuesta(e.target.value)}
             rows={5}
             maxLength={2000}
-            placeholder="Explain your side. Include any relevant context, dates, and details..."
+            placeholder={t('disputes.respondFormPh')}
             className="w-full px-3 py-2.5 border border-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
           />
           <p className="text-xs text-muted-foreground text-right">{respuesta.length}/2000</p>
@@ -263,14 +269,14 @@ export default function SellerDisputeDetailPage() {
               className="flex items-center gap-2 w-full p-3 bg-muted/50 rounded-xl border border-dashed border-border hover:border-gray-400 transition-colors text-left cursor-pointer"
             >
               <Upload className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{uploading ? 'Uploading...' : `Add photo or PDF (${evidenceUrls.length}/6)`}</span>
+              <span className="text-xs text-muted-foreground">{uploading ? t('disputes.uploading') : `${t('disputes.addEvidence')} (${evidenceUrls.length}/6)`}</span>
             </button>
           )}
 
           {respondError && <p className="text-sm text-red-500">{respondError}</p>}
 
           <div className="flex justify-end gap-3">
-            <button onClick={() => setShowRespondForm(false)} className="text-sm text-muted-foreground hover:text-foreground font-medium cursor-pointer">Cancelar</button>
+            <button onClick={() => setShowRespondForm(false)} className="text-sm text-muted-foreground hover:text-foreground font-medium cursor-pointer">{t('disputes.cancel')}</button>
             <Button
               variant="primary"
               size="sm"
@@ -279,7 +285,7 @@ export default function SellerDisputeDetailPage() {
               onClick={handleRespond}
               className="bg-[#E1C44D] hover:bg-[#c9ad40] border-[#E1C44D]"
             >
-              Submit Response
+              {t('disputes.submitResponse')}
             </Button>
           </div>
         </div>
@@ -288,17 +294,17 @@ export default function SellerDisputeDetailPage() {
       {/* Chat */}
       <div className="bg-card rounded-xl border border-border flex flex-col" style={{ minHeight: '300px' }}>
         <div className="px-5 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold text-foreground">Mensajes</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t('disputes.chatTitle')}</h3>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3" style={{ maxHeight: '360px' }}>
-          {messages.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">No messages yet.</p>}
+          {messages.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">{t('disputes.chatEmpty')}</p>}
           {messages.map((msg) => (
             <div key={msg.id} className="space-y-0.5">
               <div className="flex items-baseline gap-2">
                 <span className="text-xs font-semibold text-foreground">{msg.autor.nombre} {msg.autor.apellidos}</span>
-                <span className="text-xs text-muted-foreground">{msg.autor.role === 'ADMIN' ? 'Admin' : msg.autor.role === 'COMPRADOR' ? 'Buyer' : 'Seller'}</span>
+                <span className="text-xs text-muted-foreground">{msg.autor.role === 'ADMIN' ? t('disputes.role.admin') : msg.autor.role === 'COMPRADOR' ? t('disputes.role.buyer') : t('disputes.role.seller')}</span>
                 <span className="text-xs text-muted-foreground/50 ml-auto">
-                  {new Date(msg.createdAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  {new Date(msg.createdAt).toLocaleString(dateLoc, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
               <p className="text-sm text-gray-800 bg-muted/50 rounded-lg px-3 py-2">{msg.contenido}</p>
@@ -312,7 +318,7 @@ export default function SellerDisputeDetailPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder="Write a message..."
+            placeholder={t('disputes.chatPlaceholder')}
             className="flex-1 px-3 py-2 text-sm border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400"
           />
           <button onClick={handleSend} disabled={sending || !text.trim()} className="p-2.5 bg-[#E1C44D] text-foreground rounded-lg hover:bg-[#c9ad40] transition-colors disabled:opacity-50 cursor-pointer">

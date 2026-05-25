@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { AlertTriangle } from 'lucide-react';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 interface Dispute {
   id: string;
@@ -23,14 +25,16 @@ const ESTADO_COLORS: Record<string, string> = {
   RESUELTA: 'bg-green-100 text-green-700',
 };
 
-const ESTADO_LABELS: Record<string, string> = {
-  ABIERTA: 'Abierta',
-  RESPUESTA_VENDEDOR: 'Respuesta del vendedor',
-  EN_REVISION: 'En revisión',
-  RESUELTA: 'Resuelta',
+const ESTADO_LABEL_KEYS: Record<string, MessageKey> = {
+  ABIERTA: 'disputes.estado.open',
+  RESPUESTA_VENDEDOR: 'disputes.estado.sellerResponded',
+  EN_REVISION: 'disputes.estado.inReview',
+  RESUELTA: 'disputes.estado.resolved',
 };
 
 export default function BuyerDisputesPage() {
+  const t = useT();
+  const { locale } = useLocale();
   const router = useRouter();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +50,7 @@ export default function BuyerDisputesPage() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-2">
         <AlertTriangle className="w-5 h-5 text-red-500" />
-        <h1 className="text-xl font-bold text-foreground">Mis Reclamaciones</h1>
+        <h1 className="text-xl font-bold text-foreground">{t('disputes.title')}</h1>
       </div>
 
       {loading ? (
@@ -57,7 +61,7 @@ export default function BuyerDisputesPage() {
         </div>
       ) : disputes.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-muted-foreground">Sin reclamaciones.</p>
+          <p className="text-muted-foreground">{t('disputes.none')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -65,7 +69,8 @@ export default function BuyerDisputesPage() {
             const vendedor = d.transaccion?.vendedor;
             const producto = d.transaccion?.match?.pedido?.producto?.nombre;
             const badgeClass = ESTADO_COLORS[d.estado] ?? 'bg-muted text-muted-foreground';
-            const badgeLabel = ESTADO_LABELS[d.estado] ?? d.estado;
+            const labelKey = ESTADO_LABEL_KEYS[d.estado];
+            const badgeLabel = labelKey ? t(labelKey) : d.estado;
 
             return (
               <button
@@ -78,8 +83,8 @@ export default function BuyerDisputesPage() {
                     <p className="text-sm font-semibold text-foreground">{d.tipoProblema.replace(/_/g, ' ')}</p>
                     <p className="text-xs text-muted-foreground">
                       {producto && <span>{producto} · </span>}
-                      {vendedor && <span>Seller: {vendedor.nombre} {vendedor.apellidos} · </span>}
-                      {new Date(d.createdAt).toLocaleDateString('es-ES')}
+                      {vendedor && <span>{t('disputes.role.seller')}: {vendedor.nombre} {vendedor.apellidos} · </span>}
+                      {new Date(d.createdAt).toLocaleDateString(locale === 'en' ? 'en-GB' : 'es-ES')}
                     </p>
                   </div>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${badgeClass}`}>
