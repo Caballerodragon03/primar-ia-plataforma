@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/lib/i18n/LocaleProvider';
 import type { RegisterFormData } from '../types';
 
 interface Step4Props {
@@ -10,15 +11,14 @@ interface Step4Props {
 }
 
 export function Step4({ onBack, isSubmitting }: Step4Props) {
+  const t = useT();
   const { register, formState: { errors } } = useFormContext<RegisterFormData>();
 
   return (
     <div className="flex flex-col gap-5">
       <div className="p-4 rounded-input bg-gray-50 border border-border">
         <p className="text-sm text-gray-600 leading-relaxed">
-          Tu solicitud será enviada para revisión manual tras el envío.
-          Recibirás notificación del resultado por correo electrónico en un plazo de 1–2 días laborables.
-          Mientras tanto, tu acceso a la plataforma será limitado.
+          {t('register.step4.review')}
         </p>
       </div>
 
@@ -30,9 +30,9 @@ export function Step4({ onBack, isSubmitting }: Step4Props) {
             {...register('acceptedTerms')}
           />
           <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
-            He leído y acepto los{' '}
+            {t('register.step4.termsAccept')}{' '}
             <Link href="/terms" target="_blank" className="font-semibold text-gray-900 underline">
-              Términos y Condiciones
+              {t('register.step4.terms')}
             </Link>
           </span>
         </label>
@@ -47,9 +47,9 @@ export function Step4({ onBack, isSubmitting }: Step4Props) {
             {...register('acceptedPrivacy')}
           />
           <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
-            He leído y acepto la{' '}
+            {t('register.step4.privacyAccept')}{' '}
             <Link href="/privacy" target="_blank" className="font-semibold text-gray-900 underline">
-              Política de Privacidad
+              {t('register.step4.privacy')}
             </Link>
           </span>
         </label>
@@ -60,10 +60,10 @@ export function Step4({ onBack, isSubmitting }: Step4Props) {
 
       <div className="flex gap-3 mt-2">
         <Button type="button" variant="outline" size="lg" className="flex-1" onClick={onBack} disabled={isSubmitting}>
-          Atrás
+          {t('register.step4.back')}
         </Button>
         <Button type="submit" variant="primary" size="lg" className="flex-1" loading={isSubmitting}>
-          Enviar solicitud de registro
+          {t('register.step4.submit')}
         </Button>
       </div>
     </div>

@@ -3,25 +3,27 @@ import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/lib/i18n/LocaleProvider';
 import type { RegisterFormData } from '../types';
-
-const LANGUAGE_OPTIONS = [
-  { value: 'ES', label: 'Español' },
-  { value: 'EN', label: 'English' },
-];
 
 interface Step1Props {
   onNext: () => void;
 }
 
 export function Step1({ onNext }: Step1Props) {
+  const t = useT();
   const { register, formState: { errors }, watch, setValue } = useFormContext<RegisterFormData>();
   const selectedRole = watch('role');
+
+  const LANGUAGE_OPTIONS = [
+    { value: 'ES', label: 'Español' },
+    { value: 'EN', label: 'English' },
+  ];
 
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <p className="text-sm font-medium text-gray-700 mb-2">Account Type <span className="text-red-500">*</span></p>
+        <p className="text-sm font-medium text-gray-700 mb-2">{t('register.step1.accountType')} <span className="text-red-500">*</span></p>
         <div className="flex rounded-input border border-border overflow-hidden">
           {(['VENDEDOR', 'COMPRADOR'] as const).map((role) => (
             <button
@@ -35,16 +37,16 @@ export function Step1({ onNext }: Step1Props) {
                   : 'bg-white text-secondary hover:bg-gray-50',
               ].join(' ')}
             >
-              {role === 'VENDEDOR' ? 'SELLER' : 'BUYER'}
+              {role === 'VENDEDOR' ? t('register.step1.seller') : t('register.step1.buyer')}
             </button>
           ))}
         </div>
       </div>
 
       <Input
-        label="Corporate Email"
+        label={t('register.step1.email')}
         type="email"
-        placeholder="you@company.com"
+        placeholder={t('register.step1.emailPh')}
         autoComplete="email"
         required
         error={errors.email?.message}
@@ -52,17 +54,17 @@ export function Step1({ onNext }: Step1Props) {
       />
 
       <Input
-        label="Create Password"
+        label={t('register.step1.password')}
         showPasswordToggle
         autoComplete="new-password"
         required
-        hint="Minimum 12 characters"
+        hint={t('register.step1.passwordHint')}
         error={errors.password?.message}
         {...register('password')}
       />
 
       <Input
-        label="Contact Phone Number"
+        label={t('register.step1.phone')}
         type="tel"
         placeholder="+34 600 000 000"
         autoComplete="tel"
@@ -71,13 +73,13 @@ export function Step1({ onNext }: Step1Props) {
       />
 
       <Select
-        label="Preferred Language"
+        label={t('register.step1.language')}
         options={LANGUAGE_OPTIONS}
         {...register('idioma')}
       />
 
       <Button type="button" variant="primary" size="lg" className="w-full mt-2" onClick={onNext}>
-        Continue to Business Details
+        {t('register.step1.continue')}
       </Button>
     </div>
   );

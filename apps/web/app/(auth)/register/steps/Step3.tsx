@@ -2,6 +2,7 @@
 import { useFormContext } from 'react-hook-form';
 import { FileDropzone } from '@/components/ui/FileDropzone';
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/lib/i18n/LocaleProvider';
 import type { RegisterFormData } from '../types';
 
 interface Step3Props {
@@ -10,6 +11,7 @@ interface Step3Props {
 }
 
 export function Step3({ onNext, onBack }: Step3Props) {
+  const t = useT();
   const { watch } = useFormContext<RegisterFormData>();
   const role = watch('role');
 
@@ -17,44 +19,44 @@ export function Step3({ onNext, onBack }: Step3Props) {
     <div className="flex flex-col gap-5">
       <div className="p-3 rounded-input bg-yellow-50 border border-yellow-200">
         <p className="text-sm text-yellow-800 font-medium">
-          Documents are NOT mandatory but will position you better in the marketplace.
+          {t('register.step3.optionalDocs')}
         </p>
       </div>
 
       {role === 'VENDEDOR' ? (
         <>
           <FileDropzone
-            label="Proof of Land Ownership or Lease"
-            hint="Official document proving access to agricultural land"
+            label={t('register.step3.seller.land')}
+            hint={t('register.step3.seller.landHint')}
           />
           <FileDropzone
-            label="GlobalG.A.P. or Food Safety Certificate"
-            hint="Certification from an accredited body"
+            label={t('register.step3.seller.gap')}
+            hint={t('register.step3.seller.gapHint')}
           />
           <FileDropzone
-            label="Organic Certification (if applicable)"
-            hint="e.g. CAAE, CCPAE or EU Organic logo"
+            label={t('register.step3.seller.organic')}
+            hint={t('register.step3.seller.organicHint')}
           />
         </>
       ) : (
         <>
           <FileDropzone
-            label="Company Registration Document"
-            hint="Official registration from Registro Mercantil or equivalent"
+            label={t('register.step3.buyer.registration')}
+            hint={t('register.step3.buyer.registrationHint')}
           />
           <FileDropzone
-            label="Import / Export License (if applicable)"
-            hint="Required for international trade operations"
+            label={t('register.step3.buyer.license')}
+            hint={t('register.step3.buyer.licenseHint')}
           />
         </>
       )}
 
       <div className="flex gap-3 mt-2">
         <Button type="button" variant="outline" size="lg" className="flex-1" onClick={onBack}>
-          Back
+          {t('register.step3.back')}
         </Button>
         <Button type="button" variant="primary" size="lg" className="flex-1" onClick={onNext}>
-          Continue
+          {t('register.step3.continue')}
         </Button>
       </div>
     </div>

@@ -485,6 +485,71 @@ export type MessageKey =
   | 'chat.placeholder'
   | 'chat.send'
   | 'chat.sendFail'
+  // ─── register steps ──────────────────────────────────────────────────────
+  | 'register.step1.accountType'
+  | 'register.step1.seller'
+  | 'register.step1.buyer'
+  | 'register.step1.email'
+  | 'register.step1.emailPh'
+  | 'register.step1.password'
+  | 'register.step1.passwordHint'
+  | 'register.step1.phone'
+  | 'register.step1.language'
+  | 'register.step1.continue'
+  | 'register.step2.companyHeader'
+  | 'register.step2.razonSocial'
+  | 'register.step2.razonSocialPh'
+  | 'register.step2.legalForm'
+  | 'register.step2.legalFormPh'
+  | 'register.step2.cifNif'
+  | 'register.step2.cifNifHint'
+  | 'register.step2.addressHeader'
+  | 'register.step2.street'
+  | 'register.step2.streetPh'
+  | 'register.step2.city'
+  | 'register.step2.zip'
+  | 'register.step2.country'
+  | 'register.step2.legalContactHeader'
+  | 'register.step2.name'
+  | 'register.step2.lastName'
+  | 'register.step2.position'
+  | 'register.step2.positionPh'
+  | 'register.step2.sellerBankHeader'
+  | 'register.step2.sellerBankDesc'
+  | 'register.step2.iban'
+  | 'register.step2.ibanHint'
+  | 'register.step2.swift'
+  | 'register.step2.swiftPh'
+  | 'register.step2.regimenFiscal'
+  | 'register.step2.regimenFiscalPh'
+  | 'register.step2.regimenGeneral'
+  | 'register.step2.regimenAgrario'
+  | 'register.step2.regimenRecargo'
+  | 'register.step2.regimenExento'
+  | 'register.step2.ibanInvalid'
+  | 'register.step2.regimenMissing'
+  | 'register.step2.back'
+  | 'register.step2.continue'
+  | 'register.step3.optionalDocs'
+  | 'register.step3.seller.land'
+  | 'register.step3.seller.landHint'
+  | 'register.step3.seller.gap'
+  | 'register.step3.seller.gapHint'
+  | 'register.step3.seller.organic'
+  | 'register.step3.seller.organicHint'
+  | 'register.step3.buyer.registration'
+  | 'register.step3.buyer.registrationHint'
+  | 'register.step3.buyer.license'
+  | 'register.step3.buyer.licenseHint'
+  | 'register.step3.back'
+  | 'register.step3.continue'
+  | 'register.step4.review'
+  | 'register.step4.termsAccept'
+  | 'register.step4.terms'
+  | 'register.step4.privacyAccept'
+  | 'register.step4.privacy'
+  | 'register.step4.back'
+  | 'register.step4.submit'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -963,6 +1028,70 @@ export const messages: Record<Locale, Messages> = {
     'chat.placeholder': 'Escribe un mensaje… (Enter para enviar, Shift+Enter para nueva línea)',
     'chat.send': 'Enviar mensaje',
     'chat.sendFail': 'No se pudo enviar el mensaje',
+    'register.step1.accountType': 'Tipo de cuenta',
+    'register.step1.seller': 'VENDEDOR',
+    'register.step1.buyer': 'COMPRADOR',
+    'register.step1.email': 'Email corporativo',
+    'register.step1.emailPh': 'tu@empresa.com',
+    'register.step1.password': 'Crear contraseña',
+    'register.step1.passwordHint': 'Mínimo 12 caracteres',
+    'register.step1.phone': 'Teléfono de contacto',
+    'register.step1.language': 'Idioma preferido',
+    'register.step1.continue': 'Continuar a datos fiscales',
+    'register.step2.companyHeader': 'Datos de la empresa',
+    'register.step2.razonSocial': 'Razón social',
+    'register.step2.razonSocialPh': 'Frutas García S.L.',
+    'register.step2.legalForm': 'Forma jurídica',
+    'register.step2.legalFormPh': 'Selecciona forma jurídica…',
+    'register.step2.cifNif': 'CIF / NIF',
+    'register.step2.cifNifHint': '9 caracteres — letra + 8 dígitos (ej.: B12345678)',
+    'register.step2.addressHeader': 'Dirección fiscal',
+    'register.step2.street': 'Calle y número',
+    'register.step2.streetPh': 'Calle Mayor 1',
+    'register.step2.city': 'Ciudad',
+    'register.step2.zip': 'Código postal',
+    'register.step2.country': 'País',
+    'register.step2.legalContactHeader': 'Persona de contacto legal',
+    'register.step2.name': 'Nombre',
+    'register.step2.lastName': 'Apellidos',
+    'register.step2.position': 'Cargo',
+    'register.step2.positionPh': 'Administrador único',
+    'register.step2.sellerBankHeader': 'Datos bancarios y fiscales (sólo vendedores)',
+    'register.step2.sellerBankDesc': 'Necesarios para emitir facturas con la fiscalidad correcta y para que el comprador pueda transferirte. Sólo se introducen una vez aquí — para modificarlos posteriormente deberás contactar con Primar-IA.',
+    'register.step2.iban': 'IBAN',
+    'register.step2.ibanHint': 'IBAN europeo — 24 caracteres (España). Se normaliza automáticamente.',
+    'register.step2.swift': 'SWIFT / BIC',
+    'register.step2.swiftPh': 'BSCHESMM (opcional, sólo cuentas no-IBAN)',
+    'register.step2.regimenFiscal': 'Régimen fiscal',
+    'register.step2.regimenFiscalPh': 'Selecciona régimen fiscal…',
+    'register.step2.regimenGeneral': 'General (IVA 21%, sin retención)',
+    'register.step2.regimenAgrario': 'Régimen especial agrario (IVA 4/10%, IRPF 2%)',
+    'register.step2.regimenRecargo': 'Recargo de equivalencia (minorista)',
+    'register.step2.regimenExento': 'Exento (intracomunitario, exportación…)',
+    'register.step2.ibanInvalid': 'IBAN inválido — obligatorio para vendedores',
+    'register.step2.regimenMissing': 'Selecciona el régimen fiscal',
+    'register.step2.back': 'Volver',
+    'register.step2.continue': 'Continuar',
+    'register.step3.optionalDocs': 'Los documentos NO son obligatorios pero te posicionarán mejor en el marketplace.',
+    'register.step3.seller.land': 'Acreditación de tierras o arrendamiento',
+    'register.step3.seller.landHint': 'Documento oficial que acredite acceso a tierras agrícolas',
+    'register.step3.seller.gap': 'Certificado GlobalG.A.P. o seguridad alimentaria',
+    'register.step3.seller.gapHint': 'Certificación de un organismo acreditado',
+    'register.step3.seller.organic': 'Certificación ecológica (si aplica)',
+    'register.step3.seller.organicHint': 'ej.: CAAE, CCPAE o logo EU Organic',
+    'register.step3.buyer.registration': 'Documento de constitución de la empresa',
+    'register.step3.buyer.registrationHint': 'Inscripción oficial en Registro Mercantil o equivalente',
+    'register.step3.buyer.license': 'Licencia de importación / exportación (si aplica)',
+    'register.step3.buyer.licenseHint': 'Necesaria para operaciones de comercio internacional',
+    'register.step3.back': 'Volver',
+    'register.step3.continue': 'Continuar',
+    'register.step4.review': 'Tu solicitud será enviada para revisión manual tras el envío. Recibirás notificación del resultado por correo electrónico en un plazo de 1–2 días laborables. Mientras tanto, tu acceso a la plataforma será limitado.',
+    'register.step4.termsAccept': 'He leído y acepto los',
+    'register.step4.terms': 'Términos y Condiciones',
+    'register.step4.privacyAccept': 'He leído y acepto la',
+    'register.step4.privacy': 'Política de Privacidad',
+    'register.step4.back': 'Atrás',
+    'register.step4.submit': 'Enviar solicitud de registro',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -1435,6 +1564,70 @@ export const messages: Record<Locale, Messages> = {
     'chat.placeholder': 'Type a message… (Enter to send, Shift+Enter for new line)',
     'chat.send': 'Send message',
     'chat.sendFail': 'Could not send the message',
+    'register.step1.accountType': 'Account type',
+    'register.step1.seller': 'SELLER',
+    'register.step1.buyer': 'BUYER',
+    'register.step1.email': 'Corporate email',
+    'register.step1.emailPh': 'you@company.com',
+    'register.step1.password': 'Create password',
+    'register.step1.passwordHint': 'Minimum 12 characters',
+    'register.step1.phone': 'Contact phone number',
+    'register.step1.language': 'Preferred language',
+    'register.step1.continue': 'Continue to business details',
+    'register.step2.companyHeader': 'Company details',
+    'register.step2.razonSocial': 'Legal name',
+    'register.step2.razonSocialPh': 'Frutas García S.L.',
+    'register.step2.legalForm': 'Legal form',
+    'register.step2.legalFormPh': 'Select legal form…',
+    'register.step2.cifNif': 'CIF / NIF (tax ID)',
+    'register.step2.cifNifHint': '9 characters — letter + 8 digits (e.g. B12345678)',
+    'register.step2.addressHeader': 'Tax address',
+    'register.step2.street': 'Street and number',
+    'register.step2.streetPh': 'Calle Mayor 1',
+    'register.step2.city': 'City',
+    'register.step2.zip': 'Postal code',
+    'register.step2.country': 'Country',
+    'register.step2.legalContactHeader': 'Legal contact person',
+    'register.step2.name': 'First name',
+    'register.step2.lastName': 'Last name',
+    'register.step2.position': 'Position',
+    'register.step2.positionPh': 'Sole Administrator',
+    'register.step2.sellerBankHeader': 'Bank and tax details (sellers only)',
+    'register.step2.sellerBankDesc': "Needed to issue invoices with the correct tax setup and so the buyer can transfer funds to you. They are entered only once here — to modify them later you'll need to contact Primar-IA.",
+    'register.step2.iban': 'IBAN',
+    'register.step2.ibanHint': 'European IBAN — 24 characters (Spain). Auto-normalised.',
+    'register.step2.swift': 'SWIFT / BIC',
+    'register.step2.swiftPh': 'BSCHESMM (optional, only non-IBAN accounts)',
+    'register.step2.regimenFiscal': 'Tax regime',
+    'register.step2.regimenFiscalPh': 'Select tax regime…',
+    'register.step2.regimenGeneral': 'General (VAT 21%, no withholding)',
+    'register.step2.regimenAgrario': 'Special agricultural regime (VAT 4/10%, IRPF 2%)',
+    'register.step2.regimenRecargo': 'Equivalence surcharge (retailer)',
+    'register.step2.regimenExento': 'Exempt (intra-community, export…)',
+    'register.step2.ibanInvalid': 'Invalid IBAN — required for sellers',
+    'register.step2.regimenMissing': 'Select the tax regime',
+    'register.step2.back': 'Back',
+    'register.step2.continue': 'Continue',
+    'register.step3.optionalDocs': 'Documents are NOT mandatory but will position you better in the marketplace.',
+    'register.step3.seller.land': 'Proof of land ownership or lease',
+    'register.step3.seller.landHint': 'Official document proving access to agricultural land',
+    'register.step3.seller.gap': 'GlobalG.A.P. or food safety certificate',
+    'register.step3.seller.gapHint': 'Certification from an accredited body',
+    'register.step3.seller.organic': 'Organic certification (if applicable)',
+    'register.step3.seller.organicHint': 'e.g. CAAE, CCPAE or EU Organic logo',
+    'register.step3.buyer.registration': 'Company registration document',
+    'register.step3.buyer.registrationHint': 'Official registration from Registro Mercantil or equivalent',
+    'register.step3.buyer.license': 'Import / export licence (if applicable)',
+    'register.step3.buyer.licenseHint': 'Required for international trade operations',
+    'register.step3.back': 'Back',
+    'register.step3.continue': 'Continue',
+    'register.step4.review': "Your application will be sent for manual review after submission. You'll be notified of the outcome by email within 1–2 business days. In the meantime, your access to the platform will be limited.",
+    'register.step4.termsAccept': 'I have read and accept the',
+    'register.step4.terms': 'Terms and Conditions',
+    'register.step4.privacyAccept': 'I have read and accept the',
+    'register.step4.privacy': 'Privacy Policy',
+    'register.step4.back': 'Back',
+    'register.step4.submit': 'Submit registration request',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",
