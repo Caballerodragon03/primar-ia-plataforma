@@ -24,6 +24,7 @@ import { api } from '@/lib/api';
 import { Button, StatusBadge, CoverageBar } from '@/components/ui';
 import { DisputeModal } from '@/components/ui/DisputeModal';
 import { ScoreBadge } from '@/components/ui/ScoreBadge';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 
 type CalibreItem = { calibre: string; cantidad_kg: number; precio_min_kg: number };
 
@@ -84,6 +85,8 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export default function LotDetailPage() {
+  const t = useT();
+  const { locale } = useLocale();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [lot, setLot] = useState<Lot | null>(null);
@@ -99,7 +102,7 @@ export default function LotDetailPage() {
     api
       .get(`/lots/${id}`)
       .then(({ data }) => setLot(data.data))
-      .catch(() => setError('No se pudo cargar los detalles del lote.'))
+      .catch(() => setError(t('lotDetail.loadFail')))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -110,7 +113,7 @@ export default function LotDetailPage() {
       await api.put(`/lots/${id}`, { publicar: true });
       setLot((prev) => prev ? { ...prev, estado: 'ACTIVO' } : prev);
     } catch {
-      setError('Failed to publish lot.');
+      setError(t('lotDetail.publishFail'));
     } finally {
       setPublishing(false);
     }
@@ -119,8 +122,8 @@ export default function LotDetailPage() {
   const handleCancel = async () => {
     const hasMatches = lot && lot.matches.length > 0;
     const msg = hasMatches
-      ? 'This lot has active contributions. Only the uncommitted part will be cancelled. The committed quantities will be kept and the lot will be marked as completed. Continue?'
-      : 'Are you sure you want to cancel this lot? This cannot be undone.';
+      ? t('lotDetail.cancelConfirmWithMatches')
+      : t('lotDetail.cancelConfirm');
     if (!confirm(msg)) return;
     setCancelling(true);
     try {
@@ -133,7 +136,7 @@ export default function LotDetailPage() {
         router.push('/seller/lots');
       }
     } catch (err: unknown) {
-      const msg2 = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to cancel lot.';
+      const msg2 = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('lotDetail.cancelFail');
       setError(msg2);
       setCancelling(false);
     }
@@ -165,9 +168,9 @@ export default function LotDetailPage() {
       <div className="p-6 max-w-4xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-card p-6 text-center">
           <XCircle className="w-10 h-10 text-red-400 mx-auto mb-2" />
-          <p className="text-sm text-red-700">{error || 'Lote no encontrado.'}</p>
+          <p className="text-sm text-red-700">{error || t('lotDetail.notFound')}</p>
           <Link href="/seller/lots" className="text-sm text-primary-dark mt-3 inline-block hover:underline">
-            ← Volver a mis lotes
+            ← {t('lotDetail.backToLots')}
           </Link>
         </div>
       </div>
@@ -196,7 +199,7 @@ export default function LotDetailPage() {
             )}
           </h1>
           <p className="text-xs text-text-secondary mt-0.5">
-            Lot #{lot.id.slice(-8).toUpperCase()} · Created {new Date(lot.createdAt).toLocaleDateString('es-ES')}
+            {t('lotDetail.lotHash')}{lot.id.slice(-8).toUpperCase()} · {t('lotDetail.created')} {new Date(lot.createdAt).toLocaleDateString(locale === 'en' ? 'en-GB' : 'es-ES')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -221,10 +224,12 @@ export default function LotDetailPage() {
             <Zap className="w-5 h-5 text-yellow-600 shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-yellow-900">
-                Tienes {lot.hiddenMatchesCount} match{(lot.hiddenMatchesCount ?? 0) > 1 ? 'es' : ''} pendiente{(lot.hiddenMatchesCount ?? 0) > 1 ? 's' : ''} de mostrar
+                {((lot.hiddenMatchesCount ?? 0) === 1
+                  ? t('lotDetail.hiddenMatches.one')
+                  : t('lotDetail.hiddenMatches.many')).replace('{n}', String(lot.hiddenMatchesCount))}
               </p>
               <p className="text-xs text-yellow-700 mt-0.5">
-                Tu plan actual aplica 24 h de retraso a los nuevos matches. Suscríbete para verlos al instante →
+                {t('lotDetail.hiddenMatchesDesc')}
               </p>
             </div>
           </div>
@@ -237,7 +242,7 @@ export default function LotDetailPage() {
           {/* Coverage */}
           <div className="bg-card rounded-card border border-border p-5">
             <h2 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-              <Package className="w-4 h-4" /> Cobertura
+              <Package className="w-4 h-4" /> {t('lotDetail.coverage')}
             </h2>
             <div className="flex items-center gap-4 mb-2">
               <CoverageBar percentage={displayCoverage} className="flex-1" />
@@ -246,20 +251,20 @@ export default function LotDetailPage() {
               </span>
             </div>
             <p className="text-xs text-text-secondary">
-              {lot.totalKg.toLocaleString('es-ES')} kg totales ·{' '}
-              {Math.round((displayCoverage / 100) * lot.totalKg).toLocaleString('es-ES')} kg comprometidos
+              {lot.totalKg.toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES')} {t('lotDetail.totalKg')} ·{' '}
+              {Math.round((displayCoverage / 100) * lot.totalKg).toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES')} {t('lotDetail.committedKg')}
             </p>
           </div>
 
           {/* Calibres */}
           <div className="bg-card rounded-card border border-border overflow-x-auto">
             <div className="px-4 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-text-primary">Calibres</h2>
+              <h2 className="text-sm font-semibold text-text-primary">{t('lotDetail.calibres')}</h2>
             </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted/50">
-                  {['CALIBRE', 'CANTIDAD (kg)', '% DEL LOTE'].map((h) => (
+                  {[t('lotDetail.col.calibre'), t('lotDetail.col.quantity'), t('lotDetail.col.percent')].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
                       {h}
                     </th>
@@ -270,14 +275,14 @@ export default function LotDetailPage() {
                 {calibres.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="px-4 py-6 text-center text-xs text-text-muted">
-                      Sin calibres definidos
+                      {t('lotDetail.noCalibres')}
                     </td>
                   </tr>
                 ) : (
                   calibres.map((c, i) => (
                     <tr key={i} className="hover:bg-accent/50 transition-colors">
                       <td className="px-4 py-2.5 font-medium text-text-primary">{c.calibre || '—'}</td>
-                      <td className="px-4 py-2.5">{Number(c.cantidad_kg).toLocaleString('es-ES')}</td>
+                      <td className="px-4 py-2.5">{Number(c.cantidad_kg).toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES')}</td>
                       <td className="px-4 py-2.5 text-text-secondary">
                         {totalKg > 0 ? `${Math.round((c.cantidad_kg / totalKg) * 100)}%` : '—'}
                       </td>
@@ -298,13 +303,13 @@ export default function LotDetailPage() {
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-text-primary">
-                Matches activos ({lot.matches.length})
+                {t('lotDetail.activeMatches')} ({lot.matches.length})
               </h2>
             </div>
             {lot.matches.length === 0 ? (
               <div className="p-6 text-center">
-                <p className="text-xs text-text-muted">Sin matches activos aún.</p>
-                <p className="text-xs text-text-muted mt-1">La plataforma te notificará cuando se encuentre un match.</p>
+                <p className="text-xs text-text-muted">{t('lotDetail.noMatches')}</p>
+                <p className="text-xs text-text-muted mt-1">{t('lotDetail.noMatchesHint')}</p>
               </div>
             ) : (
               <div className="divide-y divide-border">
@@ -326,7 +331,7 @@ export default function LotDetailPage() {
                           )}
                         </div>
                         <p className="text-xs text-text-secondary mt-0.5">
-                          {Number(m.cantidadKg).toLocaleString('es-ES')} kg · €{Number(m.precioKg).toFixed(3)}/kg
+                          {Number(m.cantidadKg).toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES')} kg · €{Number(m.precioKg).toFixed(3)}/kg
                         </p>
                       </div>
                       <StatusBadge status={m.estado} />
@@ -335,15 +340,15 @@ export default function LotDetailPage() {
                     {/* Fila inferior: acciones icon-only con tooltip */}
                     <div className="flex items-center gap-1 mt-2 flex-wrap">
                       {m.transaccion?.id && (
-                        <Link href={`/seller/messages?tx=${m.transaccion.id}`} title="Abrir chat">
-                          <Button variant="ghost" size="sm" className="!p-2" aria-label="Chat">
+                        <Link href={`/seller/messages?tx=${m.transaccion.id}`} title={t('lotDetail.action.openChat')}>
+                          <Button variant="ghost" size="sm" className="!p-2" aria-label={t('lotDetail.action.openChat')}>
                             <MessageSquare className="w-4 h-4" />
                           </Button>
                         </Link>
                       )}
                       {['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
-                        <Link href={`/seller/contracts/${m.id}`} title="Ver contrato">
-                          <Button variant="ghost" size="sm" className="!p-2" aria-label="Contrato">
+                        <Link href={`/seller/contracts/${m.id}`} title={t('lotDetail.action.viewContract')}>
+                          <Button variant="ghost" size="sm" className="!p-2" aria-label={t('lotDetail.action.viewContract')}>
                             <FileText className="w-4 h-4" />
                           </Button>
                         </Link>
@@ -356,8 +361,8 @@ export default function LotDetailPage() {
                       {m.transaccion?.id && m.estado === 'CONFIRMADO' && (
                         <button
                           onClick={async () => { try { const r = await api.get(`/invoices/seller/${m.transaccion!.id}/html`, { responseType: 'text' }); window.open(URL.createObjectURL(new Blob([r.data], { type: 'text/html' })), '_blank'); } catch { /* ignore */ } }}
-                          title="Descargar factura"
-                          aria-label="Descargar factura"
+                          title={t('lotDetail.action.downloadInvoice')}
+                          aria-label={t('lotDetail.action.downloadInvoice')}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-button transition-colors"
                         >
                           <Download className="w-4 h-4" />
@@ -368,8 +373,8 @@ export default function LotDetailPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => openDisputeModal(m)}
-                          title="Abrir incidencia"
-                          aria-label="Incidencia"
+                          title={t('lotDetail.action.openDispute')}
+                          aria-label={t('lotDetail.action.openDispute')}
                           className="!p-2 text-red-500 hover:text-red-700 hover:!bg-red-50 ml-auto"
                         >
                           <AlertTriangle className="w-4 h-4" />
@@ -387,22 +392,22 @@ export default function LotDetailPage() {
         <div className="space-y-5">
           {/* Details */}
           <div className="bg-card rounded-card border border-border p-4">
-            <h2 className="text-sm font-semibold text-text-primary mb-3">Detalles</h2>
-            <InfoRow label="Producto" value={lot.producto.nombre} />
-            <InfoRow label="Categoría" value={lot.producto.categoria} />
-            {lot.variedad && <InfoRow label="Variedad" value={lot.variedad.nombre} />}
-            <InfoRow label="Tipo" value={lot.tipo === 'VENTA_DIRECTA' ? 'Venta directa' : 'Subasta'} />
+            <h2 className="text-sm font-semibold text-text-primary mb-3">{t('lotDetail.details')}</h2>
+            <InfoRow label={t('lotDetail.product')} value={lot.producto.nombre} />
+            <InfoRow label={t('lotDetail.category')} value={lot.producto.categoria} />
+            {lot.variedad && <InfoRow label={t('lotDetail.variety')} value={lot.variedad.nombre} />}
+            <InfoRow label={t('lotDetail.type')} value={lot.tipo === 'VENTA_DIRECTA' ? t('lotDetail.typeDirect') : t('lotDetail.typeAuction')} />
             <InfoRow
-              label="Disponibilidad"
+              label={t('lotDetail.availability')}
               value={
                 <span className="flex items-center gap-1 justify-end">
                   <Calendar className="w-3.5 h-3.5 text-text-muted" />
-                  {new Date(lot.fechaDisponibilidad).toLocaleDateString('es-ES')}
+                  {new Date(lot.fechaDisponibilidad).toLocaleDateString(locale === 'en' ? 'en-GB' : 'es-ES')}
                 </span>
               }
             />
             <InfoRow
-              label="Ubicación"
+              label={t('lotDetail.location')}
               value={
                 <span className="flex items-center gap-1 justify-end text-right">
                   <MapPin className="w-3.5 h-3.5 text-text-muted shrink-0" />
@@ -415,7 +420,7 @@ export default function LotDetailPage() {
           {/* Certifications */}
           {lot.certificaciones && lot.certificaciones.length > 0 && (
             <div className="bg-card rounded-card border border-border p-4">
-              <h2 className="text-sm font-semibold text-text-primary mb-3">Certificaciones</h2>
+              <h2 className="text-sm font-semibold text-text-primary mb-3">{t('lotDetail.certifications')}</h2>
               <div className="flex flex-wrap gap-1.5">
                 {(lot.certificaciones as string[]).map((cert) => (
                   <span
@@ -432,14 +437,14 @@ export default function LotDetailPage() {
           {/* Comments */}
           {lot.comentariosAdicionales && (
             <div className="bg-card rounded-card border border-border p-4">
-              <h2 className="text-sm font-semibold text-text-primary mb-2">Comentarios</h2>
+              <h2 className="text-sm font-semibold text-text-primary mb-2">{t('lotDetail.comments')}</h2>
               <p className="text-xs text-text-secondary leading-relaxed">{lot.comentariosAdicionales}</p>
             </div>
           )}
 
           {/* Actions */}
           <div className="bg-card rounded-card border border-border p-4 space-y-2">
-            <h2 className="text-sm font-semibold text-text-primary mb-3">Acciones</h2>
+            <h2 className="text-sm font-semibold text-text-primary mb-3">{t('lotDetail.actions')}</h2>
 
             {canPublish && (
               <Button
@@ -449,14 +454,14 @@ export default function LotDetailPage() {
                 loading={publishing}
                 onClick={handlePublish}
               >
-                Publicar lote
+                {t('lotDetail.publish')}
               </Button>
             )}
 
             {canEdit && (
               <Link href={`/seller/lots/${id}/edit`}>
                 <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-2">
-                  <Pencil className="w-3.5 h-3.5" /> Editar lote
+                  <Pencil className="w-3.5 h-3.5" /> {t('lotDetail.edit')}
                 </Button>
               </Link>
             )}
@@ -469,7 +474,7 @@ export default function LotDetailPage() {
                 loading={cancelling}
                 onClick={handleCancel}
               >
-                <Trash2 className="w-3.5 h-3.5" /> Cancelar lote
+                <Trash2 className="w-3.5 h-3.5" /> {t('lotDetail.cancel')}
               </Button>
             )}
           </div>

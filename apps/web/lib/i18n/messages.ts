@@ -599,6 +599,49 @@ export type MessageKey =
   | 'disputes.chatTitle'
   | 'disputes.chatEmpty'
   | 'disputes.chatPlaceholder'
+  // ─── lot detail ──────────────────────────────────────────────────────────
+  | 'lotDetail.loadFail'
+  | 'lotDetail.notFound'
+  | 'lotDetail.backToLots'
+  | 'lotDetail.lotHash'
+  | 'lotDetail.created'
+  | 'lotDetail.publishFail'
+  | 'lotDetail.cancelConfirmWithMatches'
+  | 'lotDetail.cancelConfirm'
+  | 'lotDetail.cancelFail'
+  | 'lotDetail.hiddenMatches.one'
+  | 'lotDetail.hiddenMatches.many'
+  | 'lotDetail.hiddenMatchesDesc'
+  | 'lotDetail.coverage'
+  | 'lotDetail.totalKg'
+  | 'lotDetail.committedKg'
+  | 'lotDetail.calibres'
+  | 'lotDetail.col.calibre'
+  | 'lotDetail.col.quantity'
+  | 'lotDetail.col.percent'
+  | 'lotDetail.noCalibres'
+  | 'lotDetail.activeMatches'
+  | 'lotDetail.noMatches'
+  | 'lotDetail.noMatchesHint'
+  | 'lotDetail.action.openChat'
+  | 'lotDetail.action.viewContract'
+  | 'lotDetail.action.downloadInvoice'
+  | 'lotDetail.action.openDispute'
+  | 'lotDetail.details'
+  | 'lotDetail.product'
+  | 'lotDetail.category'
+  | 'lotDetail.variety'
+  | 'lotDetail.type'
+  | 'lotDetail.typeDirect'
+  | 'lotDetail.typeAuction'
+  | 'lotDetail.availability'
+  | 'lotDetail.location'
+  | 'lotDetail.certifications'
+  | 'lotDetail.comments'
+  | 'lotDetail.actions'
+  | 'lotDetail.publish'
+  | 'lotDetail.edit'
+  | 'lotDetail.cancel'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -1188,6 +1231,48 @@ export const messages: Record<Locale, Messages> = {
     'disputes.chatTitle': 'Mensajes',
     'disputes.chatEmpty': 'Aún no hay mensajes.',
     'disputes.chatPlaceholder': 'Escribe un mensaje…',
+    'lotDetail.loadFail': 'No se pudo cargar los detalles del lote.',
+    'lotDetail.notFound': 'Lote no encontrado.',
+    'lotDetail.backToLots': 'Volver a mis lotes',
+    'lotDetail.lotHash': 'Lote #',
+    'lotDetail.created': 'Creado el',
+    'lotDetail.publishFail': 'No se pudo publicar el lote.',
+    'lotDetail.cancelConfirmWithMatches': 'Este lote tiene aportaciones activas. Sólo se cancelará la parte no comprometida. Las cantidades comprometidas se mantendrán y el lote pasará a completado. ¿Continuar?',
+    'lotDetail.cancelConfirm': '¿Seguro que quieres cancelar este lote? Esta acción no se puede deshacer.',
+    'lotDetail.cancelFail': 'No se pudo cancelar el lote.',
+    'lotDetail.hiddenMatches.one': 'Tienes {n} match pendiente de mostrar',
+    'lotDetail.hiddenMatches.many': 'Tienes {n} matches pendientes de mostrar',
+    'lotDetail.hiddenMatchesDesc': 'Tu plan actual aplica 24 h de retraso a los nuevos matches. Suscríbete para verlos al instante →',
+    'lotDetail.coverage': 'Cobertura',
+    'lotDetail.totalKg': 'kg totales',
+    'lotDetail.committedKg': 'kg comprometidos',
+    'lotDetail.calibres': 'Calibres',
+    'lotDetail.col.calibre': 'CALIBRE',
+    'lotDetail.col.quantity': 'CANTIDAD (kg)',
+    'lotDetail.col.percent': '% DEL LOTE',
+    'lotDetail.noCalibres': 'Sin calibres definidos',
+    'lotDetail.activeMatches': 'Matches activos',
+    'lotDetail.noMatches': 'Sin matches activos aún.',
+    'lotDetail.noMatchesHint': 'La plataforma te notificará cuando se encuentre un match.',
+    'lotDetail.action.openChat': 'Abrir chat',
+    'lotDetail.action.viewContract': 'Ver contrato',
+    'lotDetail.action.downloadInvoice': 'Descargar factura',
+    'lotDetail.action.openDispute': 'Abrir incidencia',
+    'lotDetail.details': 'Detalles',
+    'lotDetail.product': 'Producto',
+    'lotDetail.category': 'Categoría',
+    'lotDetail.variety': 'Variedad',
+    'lotDetail.type': 'Tipo',
+    'lotDetail.typeDirect': 'Venta directa',
+    'lotDetail.typeAuction': 'Subasta',
+    'lotDetail.availability': 'Disponibilidad',
+    'lotDetail.location': 'Ubicación',
+    'lotDetail.certifications': 'Certificaciones',
+    'lotDetail.comments': 'Comentarios',
+    'lotDetail.actions': 'Acciones',
+    'lotDetail.publish': 'Publicar lote',
+    'lotDetail.edit': 'Editar lote',
+    'lotDetail.cancel': 'Cancelar lote',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -1771,6 +1856,48 @@ export const messages: Record<Locale, Messages> = {
     'disputes.chatTitle': 'Messages',
     'disputes.chatEmpty': 'No messages yet.',
     'disputes.chatPlaceholder': 'Write a message…',
+    'lotDetail.loadFail': 'Could not load lot details.',
+    'lotDetail.notFound': 'Lot not found.',
+    'lotDetail.backToLots': 'Back to my lots',
+    'lotDetail.lotHash': 'Lot #',
+    'lotDetail.created': 'Created',
+    'lotDetail.publishFail': 'Failed to publish lot.',
+    'lotDetail.cancelConfirmWithMatches': 'This lot has active contributions. Only the uncommitted part will be cancelled. The committed quantities will be kept and the lot will be marked as completed. Continue?',
+    'lotDetail.cancelConfirm': 'Are you sure you want to cancel this lot? This cannot be undone.',
+    'lotDetail.cancelFail': 'Failed to cancel lot.',
+    'lotDetail.hiddenMatches.one': 'You have {n} match pending to display',
+    'lotDetail.hiddenMatches.many': 'You have {n} matches pending to display',
+    'lotDetail.hiddenMatchesDesc': 'Your current plan delays new matches by 24 h. Subscribe to see them instantly →',
+    'lotDetail.coverage': 'Coverage',
+    'lotDetail.totalKg': 'total kg',
+    'lotDetail.committedKg': 'committed kg',
+    'lotDetail.calibres': 'Calibres',
+    'lotDetail.col.calibre': 'CALIBRE',
+    'lotDetail.col.quantity': 'QUANTITY (kg)',
+    'lotDetail.col.percent': '% OF LOT',
+    'lotDetail.noCalibres': 'No calibres defined',
+    'lotDetail.activeMatches': 'Active matches',
+    'lotDetail.noMatches': 'No active matches yet.',
+    'lotDetail.noMatchesHint': "The platform will notify you when a match is found.",
+    'lotDetail.action.openChat': 'Open chat',
+    'lotDetail.action.viewContract': 'View contract',
+    'lotDetail.action.downloadInvoice': 'Download invoice',
+    'lotDetail.action.openDispute': 'Open dispute',
+    'lotDetail.details': 'Details',
+    'lotDetail.product': 'Product',
+    'lotDetail.category': 'Category',
+    'lotDetail.variety': 'Variety',
+    'lotDetail.type': 'Type',
+    'lotDetail.typeDirect': 'Direct sale',
+    'lotDetail.typeAuction': 'Auction',
+    'lotDetail.availability': 'Availability',
+    'lotDetail.location': 'Location',
+    'lotDetail.certifications': 'Certifications',
+    'lotDetail.comments': 'Comments',
+    'lotDetail.actions': 'Actions',
+    'lotDetail.publish': 'Publish lot',
+    'lotDetail.edit': 'Edit lot',
+    'lotDetail.cancel': 'Cancel lot',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",
