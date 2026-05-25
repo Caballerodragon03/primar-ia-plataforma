@@ -310,6 +310,48 @@ export type MessageKey =
   | 'orderForm.cancel'
   | 'orderForm.publish'
   | 'orderForm.publishing'
+  // ─── lot create form ────────────────────────────────────────────────────
+  | 'lotForm.title'
+  | 'lotForm.productDetails'
+  | 'lotForm.product'
+  | 'lotForm.product.placeholder'
+  | 'lotForm.variety'
+  | 'lotForm.variety.placeholder'
+  | 'lotForm.variety.other'
+  | 'lotForm.variety.customPlaceholder'
+  | 'lotForm.noCalibreCheckbox'
+  | 'lotForm.estimatedQty'
+  | 'lotForm.estimatedQty.placeholder'
+  | 'lotForm.caliber'
+  | 'lotForm.caliber.placeholder'
+  | 'lotForm.caliber.customPlaceholder'
+  | 'lotForm.qtyKg'
+  | 'lotForm.qtyKg.placeholder'
+  | 'lotForm.addCaliber'
+  | 'lotForm.logisticsTitle'
+  | 'lotForm.location.placeholder'
+  | 'lotForm.availableFrom'
+  | 'lotForm.availableUntil'
+  | 'lotForm.whoShips'
+  | 'lotForm.acceptedIncoterms'
+  | 'lotForm.acceptedIncotermsHint'
+  | 'lotForm.recommendedByProfile'
+  | 'lotForm.dontShow'
+  | 'lotForm.dontShowTitle'
+  | 'lotForm.incotermFilteredNote'
+  | 'lotForm.paymentTermsTitle'
+  | 'lotForm.paymentTermsHelp'
+  | 'lotForm.extraInfoTitle'
+  | 'lotForm.certificates'
+  | 'lotForm.certificates.empty'
+  | 'lotForm.photos'
+  | 'lotForm.photos.upload'
+  | 'lotForm.photos.error'
+  | 'lotForm.extraComments'
+  | 'lotForm.extraComments.placeholder'
+  | 'lotForm.saveDraft'
+  | 'lotForm.publish'
+  | 'lotForm.publishing'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -619,6 +661,47 @@ export const messages: Record<Locale, Messages> = {
     'orderForm.cancel': 'Cancelar',
     'orderForm.publish': 'Publicar pedido',
     'orderForm.publishing': 'Publicando…',
+    'lotForm.title': 'Publicar nuevo lote',
+    'lotForm.productDetails': 'Detalles del producto',
+    'lotForm.product': 'Producto',
+    'lotForm.product.placeholder': 'Selecciona producto…',
+    'lotForm.variety': 'Variedad',
+    'lotForm.variety.placeholder': 'Selecciona variedad…',
+    'lotForm.variety.other': 'Otra (especificar)…',
+    'lotForm.variety.customPlaceholder': 'Escribe el nombre de la variedad…',
+    'lotForm.noCalibreCheckbox': 'Lote sin calibrar / sin pesar',
+    'lotForm.estimatedQty': 'Cantidad estimada (kg)',
+    'lotForm.estimatedQty.placeholder': 'Total kg disponibles',
+    'lotForm.caliber': 'Calibre',
+    'lotForm.caliber.placeholder': 'Selecciona calibre…',
+    'lotForm.caliber.customPlaceholder': 'p. ej. 70/80 mm',
+    'lotForm.qtyKg': 'Cantidad (kg)',
+    'lotForm.qtyKg.placeholder': '1000',
+    'lotForm.addCaliber': 'Añadir otro calibre',
+    'lotForm.logisticsTitle': 'Logística y disponibilidad',
+    'lotForm.location.placeholder': 'Ubicación del lote',
+    'lotForm.availableFrom': 'Disponible desde',
+    'lotForm.availableUntil': 'Disponible hasta',
+    'lotForm.whoShips': '¿Quién se encarga del envío?',
+    'lotForm.acceptedIncoterms': 'Incoterms aceptados',
+    'lotForm.acceptedIncotermsHint': '(elige uno o varios)',
+    'lotForm.recommendedByProfile': 'Recomendado por tu perfil:',
+    'lotForm.dontShow': 'No mostrar',
+    'lotForm.dontShowTitle': 'Ocultar la recomendación y aceptar todos los incoterms por defecto',
+    'lotForm.incotermFilteredNote': 'Los incoterms se filtran según quién envía. Para ampliarlos, cambia la opción de logística.',
+    'lotForm.paymentTermsTitle': 'Términos de pago aceptados',
+    'lotForm.paymentTermsHelp': 'Elige uno o varios. El comprador podrá pagar bajo cualquiera de los términos que aceptes.',
+    'lotForm.extraInfoTitle': 'Información adicional',
+    'lotForm.certificates': 'Certificados asociados',
+    'lotForm.certificates.empty': 'No tienes certificados aprobados. Sube tus certificados en tu perfil y espera la verificación del administrador.',
+    'lotForm.photos': 'Fotos del lote',
+    'lotForm.photos.upload': 'Subir foto del lote',
+    'lotForm.photos.error': 'No se pudo subir la foto. Inténtalo de nuevo.',
+    'lotForm.extraComments': 'Comentarios adicionales',
+    'lotForm.extraComments.placeholder': 'Cualquier información extra sobre este lote…',
+    'lotForm.saveDraft': 'Guardar como borrador',
+    'lotForm.publish': 'Publicar lote',
+    'lotForm.publishing': 'Publicando…',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -922,6 +1005,47 @@ export const messages: Record<Locale, Messages> = {
     'orderForm.cancel': 'Cancel',
     'orderForm.publish': 'Publish order',
     'orderForm.publishing': 'Publishing…',
+    'lotForm.title': 'Publish new lot',
+    'lotForm.productDetails': 'Product details',
+    'lotForm.product': 'Product',
+    'lotForm.product.placeholder': 'Select product…',
+    'lotForm.variety': 'Variety',
+    'lotForm.variety.placeholder': 'Select variety…',
+    'lotForm.variety.other': 'Other (specify)…',
+    'lotForm.variety.customPlaceholder': 'Type variety name…',
+    'lotForm.noCalibreCheckbox': 'Non calibrated / non graded lot',
+    'lotForm.estimatedQty': 'Estimated quantity (kg)',
+    'lotForm.estimatedQty.placeholder': 'Total kg available',
+    'lotForm.caliber': 'Calibre',
+    'lotForm.caliber.placeholder': 'Select calibre…',
+    'lotForm.caliber.customPlaceholder': 'e.g. 70/80 mm',
+    'lotForm.qtyKg': 'Quantity (kg)',
+    'lotForm.qtyKg.placeholder': '1000',
+    'lotForm.addCaliber': 'Add another calibre',
+    'lotForm.logisticsTitle': 'Logistics and availability',
+    'lotForm.location.placeholder': 'Lot location',
+    'lotForm.availableFrom': 'Available from',
+    'lotForm.availableUntil': 'Available until',
+    'lotForm.whoShips': 'Who handles shipping?',
+    'lotForm.acceptedIncoterms': 'Accepted incoterms',
+    'lotForm.acceptedIncotermsHint': '(pick one or more)',
+    'lotForm.recommendedByProfile': 'Recommended for your profile:',
+    'lotForm.dontShow': "Don't show",
+    'lotForm.dontShowTitle': 'Hide the recommendation and accept all incoterms by default',
+    'lotForm.incotermFilteredNote': 'Incoterms are filtered by who ships. To see more, change the logistics option.',
+    'lotForm.paymentTermsTitle': 'Accepted payment terms',
+    'lotForm.paymentTermsHelp': 'Pick one or more. The buyer will be able to pay under any of the terms you accept.',
+    'lotForm.extraInfoTitle': 'Extra info',
+    'lotForm.certificates': 'Associated certificates',
+    'lotForm.certificates.empty': 'You have no approved certificates yet. Upload them in your profile and wait for the admin to verify.',
+    'lotForm.photos': 'Lot photos',
+    'lotForm.photos.upload': 'Upload lot photo',
+    'lotForm.photos.error': "Couldn't upload the photo. Try again.",
+    'lotForm.extraComments': 'Additional comments',
+    'lotForm.extraComments.placeholder': 'Any extra information about this lot…',
+    'lotForm.saveDraft': 'Save as draft',
+    'lotForm.publish': 'Publish lot',
+    'lotForm.publishing': 'Publishing…',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",

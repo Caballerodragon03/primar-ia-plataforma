@@ -10,6 +10,7 @@ import { api } from '@/lib/api';
 import { Button, Input, Select, FileDropzone, IncotermWizard } from '@/components/ui';
 import { ExistingEntityBanner } from '@/components/ui/ExistingEntityBanner';
 import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
+import { useT } from '@/lib/i18n/LocaleProvider';
 import {
   ALL_INCOTERMS,
   ALL_TERMINOS_PAGO,
@@ -75,6 +76,7 @@ type Certificate = { id: string; tipo: string; estado: string; fechaExpiracion: 
 
 export default function PublishLotPage() {
   const router = useRouter();
+  const t = useT();
   const [products, setProducts] = useState<Product[]>([]);
   const [approvedCerts, setApprovedCerts] = useState<Certificate[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -413,7 +415,7 @@ export default function PublishLotPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-text-primary">Publicar nuevo lote</h1>
+      <h1 className="text-2xl font-bold text-text-primary">{t('lotForm.title')}</h1>
 
       <FreeTierMatchingNotice itemKind="lote" subscriptionHref="/seller/subscription" />
 
@@ -429,30 +431,30 @@ export default function PublishLotPage() {
       <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
         {/* Product Details */}
         <section data-tutorial="form-producto" className="bg-card rounded-card border border-border p-5 space-y-4">
-          <h2 className="font-semibold text-text-primary">Detalles del producto</h2>
+          <h2 className="font-semibold text-text-primary">{t('lotForm.productDetails')}</h2>
           <div className="grid grid-cols-2 gap-4">
             <Select
-              label="Product"
+              label={t('lotForm.product')}
               required
               {...register('productoId')}
               error={errors.productoId?.message}
             >
-              <option value="">Select product...</option>
+              <option value="">{t('lotForm.product.placeholder')}</option>
               {products.map((p) => (
                 <option key={p.id} value={p.id}>{p.nombre}</option>
               ))}
             </Select>
             <div className="flex flex-col gap-1">
-              <Select label="Variety" {...register('variedadId')}>
-                <option value="">Select variety...</option>
+              <Select label={t('lotForm.variety')} {...register('variedadId')}>
+                <option value="">{t('lotForm.variety.placeholder')}</option>
                 {varieties.map((v) => (
                   <option key={v.id} value={v.id}>{v.nombre}</option>
                 ))}
-                <option value={OTHER_VALUE}>Other (specify)...</option>
+                <option value={OTHER_VALUE}>{t('lotForm.variety.other')}</option>
               </Select>
               {selectedVariedadId === OTHER_VALUE && (
                 <Input
-                  placeholder="Type variety name..."
+                  placeholder={t('lotForm.variety.customPlaceholder')}
                   value={customVariety}
                   onChange={(e) => setCustomVariety(e.target.value)}
                 />
@@ -464,15 +466,15 @@ export default function PublishLotPage() {
           <div data-tutorial="form-calibres" className="space-y-2">
             <label className="flex items-center gap-2 text-sm text-text-secondary">
               <input type="checkbox" {...register('noCalibre')} className="rounded" />
-              Non calibrated/weighted Lot
+              {t('lotForm.noCalibreCheckbox')}
             </label>
             {noCalibre ? (
               <div className="space-y-1">
-                <p className="text-xs font-medium text-text-secondary px-1">Estimated Quantity (kg)</p>
+                <p className="text-xs font-medium text-text-secondary px-1">{t('lotForm.estimatedQty')}</p>
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="Total kg available"
+                  placeholder={t('lotForm.estimatedQty.placeholder')}
                   {...register('calibres.0.cantidad_kg')}
                   error={errors.calibres?.[0]?.cantidad_kg?.message}
                 />
@@ -480,8 +482,8 @@ export default function PublishLotPage() {
             ) : (
               <>
                 <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-text-secondary px-1">
-                  <span>Caliber</span>
-                  <span>Quantity (kg)</span>
+                  <span>{t('lotForm.caliber')}</span>
+                  <span>{t('lotForm.qtyKg')}</span>
                   <span />
                 </div>
                 {fields.map((field, idx) => (
@@ -492,14 +494,14 @@ export default function PublishLotPage() {
                         {...register(`calibres.${idx}.calibre`)}
                         error={errors.calibres?.[idx]?.calibre?.message}
                       >
-                        <option value="">Select caliber...</option>
+                        <option value="">{t('lotForm.caliber.placeholder')}</option>
                         {calibreOptions.map((c) => (
                           <option key={c} value={c}>{c}</option>
                         ))}
                       </Select>
                     ) : (
                       <Input
-                        placeholder="e.g. 70/80 mm"
+                        placeholder={t('lotForm.caliber.customPlaceholder')}
                         {...register(`calibres.${idx}.calibre`)}
                         error={errors.calibres?.[idx]?.calibre?.message}
                       />
@@ -507,7 +509,7 @@ export default function PublishLotPage() {
                     <Input
                       type="number"
                       step="0.01"
-                      placeholder="1000"
+                      placeholder={t('lotForm.qtyKg.placeholder')}
                       {...register(`calibres.${idx}.cantidad_kg`)}
                       error={errors.calibres?.[idx]?.cantidad_kg?.message}
                     />
@@ -526,7 +528,7 @@ export default function PublishLotPage() {
                   onClick={() => append({ calibre: '', cantidad_kg: 0 })}
                   className="text-sm text-primary-dark font-medium hover:underline flex items-center gap-1"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add another caliber
+                  <Plus className="w-3.5 h-3.5" /> {t('lotForm.addCaliber')}
                 </button>
               </>
             )}
@@ -535,12 +537,12 @@ export default function PublishLotPage() {
 
         {/* Logistics */}
         <section data-tutorial="form-logistica" className="bg-card rounded-card border border-border p-5 space-y-4">
-          <h2 className="font-semibold text-text-primary">Logística y disponibilidad</h2>
+          <h2 className="font-semibold text-text-primary">{t('lotForm.logisticsTitle')}</h2>
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <input
               type="text"
-              placeholder="Lot Location"
+              placeholder={t('lotForm.location.placeholder')}
               {...register('direccionRecogida')}
               className="w-full pl-9 pr-4 py-2.5 border border-border rounded-input text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -551,14 +553,14 @@ export default function PublishLotPage() {
           <div className="grid grid-cols-2 gap-4">
             <Input
               type="date"
-              label="Available From"
+              label={t('lotForm.availableFrom')}
               required
               {...register('fechaDisponibilidad')}
               error={errors.fechaDisponibilidad?.message}
             />
             <Input
               type="date"
-              label="Available Until"
+              label={t('lotForm.availableUntil')}
               required
               {...register('fechaFinDisponibilidad')}
               error={errors.fechaFinDisponibilidad?.message}
@@ -569,32 +571,32 @@ export default function PublishLotPage() {
           <div className="pt-4 border-t border-border space-y-3">
             <div className="flex items-center gap-2">
               <Truck className="w-4 h-4 text-text-secondary" />
-              <h3 className="text-sm font-semibold text-text-primary">¿Quién se encarga del envío?</h3>
+              <h3 className="text-sm font-semibold text-text-primary">{t('lotForm.whoShips')}</h3>
             </div>
             <Select
               label=""
               {...register('logistica')}
             >
-              <option value="INDIFERENTE">{LOGISTICA_LABELS.INDIFERENTE} (más matches)</option>
+              <option value="INDIFERENTE">{LOGISTICA_LABELS.INDIFERENTE}</option>
               <option value="YO_ENVIO">{LOGISTICA_LABELS.YO_ENVIO}</option>
               <option value="OTRO_RECOGE">{LOGISTICA_LABELS.OTRO_RECOGE}</option>
             </Select>
 
             <div>
               <p className="text-xs font-medium text-text-secondary mb-2">
-                Incoterms aceptados <span className="text-text-muted">(elige uno o varios)</span>
+                {t('lotForm.acceptedIncoterms')} <span className="text-text-muted">{t('lotForm.acceptedIncotermsHint')}</span>
                 {recommendedIncoterm && (
                   <>
                     <span className="ml-2 text-[11px] text-primary-dark">
-                      Recomendado por tu perfil: <strong>{recommendedIncoterm}</strong>
+                      {t('lotForm.recommendedByProfile')} <strong>{recommendedIncoterm}</strong>
                     </span>
                     <button
                       type="button"
                       onClick={dismissRecommendation}
                       className="ml-2 text-[11px] text-text-muted hover:text-text-secondary underline"
-                      title="Ocultar la recomendación y aceptar todos los incoterms por defecto"
+                      title={t('lotForm.dontShowTitle')}
                     >
-                      No mostrar
+                      {t('lotForm.dontShow')}
                     </button>
                   </>
                 )}
@@ -653,7 +655,7 @@ export default function PublishLotPage() {
               <p className="text-[11px] text-text-muted mt-2 flex items-start gap-1.5">
                 <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
                 <span>
-                  Los incoterms se filtran según quién envía. Para ampliarlos, cambia la opción de logística.
+                  {t('lotForm.incotermFilteredNote')}
                 </span>
               </p>
             </div>
@@ -663,10 +665,10 @@ export default function PublishLotPage() {
           <div className="pt-4 border-t border-border space-y-3">
             <div className="flex items-center gap-2">
               <Wallet className="w-4 h-4 text-text-secondary" />
-              <h3 className="text-sm font-semibold text-text-primary">Términos de pago aceptados</h3>
+              <h3 className="text-sm font-semibold text-text-primary">{t('lotForm.paymentTermsTitle')}</h3>
             </div>
             <p className="text-xs text-text-muted">
-              Elige uno o varios. El comprador podrá pagar bajo cualquiera de los términos que aceptes.
+              {t('lotForm.paymentTermsHelp')}
             </p>
             <div className="flex flex-wrap gap-2">
               {ALL_TERMINOS_PAGO.map((tp) => {
@@ -698,13 +700,13 @@ export default function PublishLotPage() {
 
         {/* Supporting Info */}
         <section className="bg-card rounded-card border border-border p-5 space-y-4">
-          <h2 className="font-semibold text-text-primary">Información adicional</h2>
+          <h2 className="font-semibold text-text-primary">{t('lotForm.extraInfoTitle')}</h2>
 
           <div>
-            <p className="text-sm font-medium text-text-secondary mb-2">Associated Certificates</p>
+            <p className="text-sm font-medium text-text-secondary mb-2">{t('lotForm.certificates')}</p>
             {approvedCerts.length === 0 ? (
               <p className="text-xs text-text-muted italic">
-                No tienes certificados aprobados. Sube tus certificados en tu perfil y espera la verificación del administrador.
+                {t('lotForm.certificates.empty')}
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -733,11 +735,11 @@ export default function PublishLotPage() {
           {/* Phase 14B — file upload real con POST /upload. Antes el handler
               solo hacía console.log → fotosUrls quedaba siempre []. */}
           <div>
-            <p className="text-sm font-medium text-text-secondary mb-2">Fotos del lote</p>
+            <p className="text-sm font-medium text-text-secondary mb-2">{t('lotForm.photos')}</p>
             <FileDropzone
               accept=".png,.jpg,.jpeg,.gif"
               maxSizeMB={10}
-              label="Subir foto del lote"
+              label={t('lotForm.photos.upload')}
               onFileSelect={async (file) => {
                 if (!file) return;
                 try {
@@ -753,7 +755,7 @@ export default function PublishLotPage() {
                   }
                 } catch (err) {
                   console.error('[upload] foto del lote failed:', err);
-                  alert('No se pudo subir la foto. Inténtalo de nuevo.');
+                  alert(t('lotForm.photos.error'));
                 }
               }}
             />
@@ -780,13 +782,13 @@ export default function PublishLotPage() {
 
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
-              Additional Comments
+              {t('lotForm.extraComments')}
             </label>
             <textarea
               {...register('comentariosAdicionales')}
               rows={3}
               className="w-full border border-border rounded-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-              placeholder="Any additional information about this lot..."
+              placeholder={t('lotForm.extraComments.placeholder')}
             />
           </div>
         </section>
@@ -804,7 +806,7 @@ export default function PublishLotPage() {
             disabled={isSubmitting}
             onClick={handleSubmit((v) => onSubmit(v, false))}
           >
-            Save as Draft
+            {t('lotForm.saveDraft')}
           </Button>
           <Button
             type="button"
@@ -813,7 +815,7 @@ export default function PublishLotPage() {
             onClick={handleSubmit((v) => onSubmit(v, true))}
             data-tutorial="btn-publicar-lote"
           >
-            {isSubmitting ? 'Publicando...' : 'Publish Lot'}
+            {isSubmitting ? t('lotForm.publishing') : t('lotForm.publish')}
           </Button>
         </div>
       </form>
