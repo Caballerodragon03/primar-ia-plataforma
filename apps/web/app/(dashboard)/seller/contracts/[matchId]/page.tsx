@@ -23,6 +23,7 @@ import {
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { CancelContractModal } from '@/components/ui/CancelContractModal';
+import { useT } from '@/lib/i18n/LocaleProvider';
 import { ShippingEventsSection } from '@/components/ui/ShippingEventsSection';
 
 interface CalibreItem { calibre: string; cantidad_kg: number; precio_min_kg?: number }
@@ -110,6 +111,7 @@ function estadoBadge(estado: MatchContractInfo['contratoEstado']) {
 }
 
 export default function SellerMatchContractPage() {
+  const t = useT();
   const { matchId } = useParams<{ matchId: string }>();
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -234,9 +236,9 @@ export default function SellerMatchContractPage() {
   if (error || !info) {
     return (
       <div className="p-6 text-center space-y-4">
-        <p className="text-red-600">{error || 'Contrato no encontrado.'}</p>
+        <p className="text-red-600">{error || t('contract.notFound')}</p>
         <Button variant="outline" onClick={() => router.push('/seller/matches')}>
-          Volver a matches
+          {t('contract.backToMatches')}
         </Button>
       </div>
     );
@@ -256,54 +258,54 @@ export default function SellerMatchContractPage() {
         href="/seller/matches"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="w-4 h-4" /> Volver a matches
+        <ArrowLeft className="w-4 h-4" /> {t('contract.backToMatches')}
       </Link>
 
       <div className="flex items-center gap-3 flex-wrap">
         <FileText className="w-6 h-6 text-primary" />
-        <h1 className="text-xl font-bold text-foreground">Contrato — Firma como vendedor</h1>
+        <h1 className="text-xl font-bold text-foreground">{t('contract.sellerTitle')}</h1>
         {estadoBadge(info.contratoEstado)}
       </div>
 
       {/* Operation summary — what's being signed */}
       <div className="bg-card border border-border rounded-card divide-y divide-border shadow-soft">
         <div data-tutorial="contract-resumen" className="p-5">
-          <h2 className="text-sm font-semibold text-foreground mb-3">Resumen de la operación</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3">{t('contract.summary')}</h2>
           <dl className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
             {info.producto && (
               <>
-                <dt className="text-text-secondary">Producto</dt>
+                <dt className="text-text-secondary">{t('contract.summary.product')}</dt>
                 <dd className="font-medium text-right">{info.producto}{info.variedad ? ` — ${info.variedad}` : ''}</dd>
               </>
             )}
-            <dt className="text-text-secondary">Cantidad</dt>
+            <dt className="text-text-secondary">{t('contract.summary.quantity')}</dt>
             <dd className="font-medium text-right">{info.cantidadKg.toLocaleString('es-ES')} kg</dd>
-            <dt className="text-text-secondary">Precio/kg acordado</dt>
+            <dt className="text-text-secondary">{t('contract.summary.pricePerKg')}</dt>
             <dd className="font-medium text-right">{formatEur(info.precioKg)}</dd>
-            <dt className="text-text-secondary">Importe total mercancía</dt>
+            <dt className="text-text-secondary">{t('contract.summary.totalGoods')}</dt>
             <dd className="font-semibold text-right text-green-700">{formatEur(info.precioTotalMercancia)}</dd>
             {info.incoterm && (
               <>
-                <dt className="text-text-secondary">Incoterm</dt>
+                <dt className="text-text-secondary">{t('contract.summary.incoterm')}</dt>
                 <dd className="font-medium text-right">{info.incoterm}</dd>
               </>
             )}
             {info.terminoPago && (
               <>
-                <dt className="text-text-secondary">Condiciones de pago</dt>
+                <dt className="text-text-secondary">{t('contract.summary.paymentTerms')}</dt>
                 <dd className="font-medium text-right">{formatTerminoPago(info.terminoPago)}</dd>
               </>
             )}
             {info.destinoFinal && (
               <>
-                <dt className="text-text-secondary">Destino</dt>
+                <dt className="text-text-secondary">{t('contract.summary.destination')}</dt>
                 <dd className="font-medium text-right">{info.destinoFinal}</dd>
               </>
             )}
           </dl>
           {info.calibres && info.calibres.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border">
-              <p className="text-xs text-text-secondary mb-2">Calibres</p>
+              <p className="text-xs text-text-secondary mb-2">{t('contract.summary.calibres')}</p>
               <div className="flex flex-wrap gap-1.5">
                 {info.calibres.map((c) => (
                   <span key={c.calibre} className="text-xs bg-muted text-text-secondary px-2 py-0.5 rounded-badge">
@@ -314,27 +316,27 @@ export default function SellerMatchContractPage() {
             </div>
           )}
           <p className="text-xs text-text-secondary mt-3">
-            Recibirás el importe total directamente del comprador por transferencia según las condiciones de pago acordadas.
+            {t('contract.summary.transferHint')}
           </p>
         </div>
 
         <div data-tutorial="contract-comision" className="p-5">
-          <h2 className="text-sm font-semibold text-foreground mb-3">Comisión Primar-IA</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3">{t('contract.commission.title')}</h2>
           <div className="grid grid-cols-2 gap-y-2 text-sm">
-            <span className="text-text-secondary">Importe estimado</span>
+            <span className="text-text-secondary">{t('contract.commission.amount')}</span>
             <span className="font-medium text-right">{formatEur(info.comisionEstimada)}</span>
-            <span className="text-text-secondary">Porcentaje aplicado</span>
+            <span className="text-text-secondary">{t('contract.commission.percent')}</span>
             <span className="font-medium text-right">
               {info.comisionPorcentaje !== null ? `${(info.comisionPorcentaje * 100).toFixed(2)}%` : '—'}
             </span>
           </div>
           <p className="text-xs text-text-secondary mt-3">
-            La comisión la paga el comprador directamente a Primar-IA. Tú recibes el 100% del importe acordado del comprador por transferencia según las condiciones del contrato.
+            {t('contract.commission.helpSeller')}
           </p>
         </div>
 
         <div className="p-5">
-          <h2 className="text-sm font-semibold text-foreground mb-3">Documento</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3">{t('contract.document')}</h2>
           <Button
             variant="outline"
             size="sm"
@@ -343,18 +345,18 @@ export default function SellerMatchContractPage() {
             className="flex items-center gap-2"
           >
             {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Descargar contrato (PDF)
+            {t('contract.document.download')}
           </Button>
           {info.contratoEstado !== 'FIRMADO' && (
             <p className="text-xs text-amber-700 mt-2">
-              El PDF lleva una marca de agua «No válido hasta firmar y pagar» hasta que ambas partes lo firmen y el comprador pague la comisión.
+              {t('contract.document.watermark')}
             </p>
           )}
         </div>
 
         {/* Signatures status */}
         <div data-tutorial="contract-firmas" className="p-5">
-          <h2 className="text-sm font-semibold text-foreground mb-3">Estado de firmas</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-3">{t('contract.signatures')}</h2>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div
@@ -369,9 +371,9 @@ export default function SellerMatchContractPage() {
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium">Vendedor (tú)</p>
+                <p className="text-sm font-medium">{t('contract.signatures.sellerYou')}</p>
                 <p className="text-xs text-text-secondary">
-                  {info.firmaVendedor ? `Firmado el ${formatDateTime(info.firmaVendedorFecha)}` : 'Pendiente de tu firma'}
+                  {info.firmaVendedor ? `${t('contract.signatures.signedOn')} ${formatDateTime(info.firmaVendedorFecha)}` : t('contract.signatures.pendingYours')}
                 </p>
               </div>
             </div>
@@ -388,11 +390,11 @@ export default function SellerMatchContractPage() {
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium">Comprador</p>
+                <p className="text-sm font-medium">{t('contract.signatures.buyer')}</p>
                 <p className="text-xs text-text-secondary">
                   {info.firmaComprador
-                    ? `Firmado el ${formatDateTime(info.firmaCompradorFecha)}`
-                    : 'Firmará después de pagar la comisión'}
+                    ? `${t('contract.signatures.signedOn')} ${formatDateTime(info.firmaCompradorFecha)}`
+                    : t('contract.signatures.buyerWillSignLater')}
                 </p>
               </div>
             </div>
@@ -404,10 +406,10 @@ export default function SellerMatchContractPage() {
       {canSign && (
         <div className="bg-amber-50 border border-amber-200 rounded-card p-5 space-y-4">
           <div>
-            <p className="text-sm font-semibold text-amber-900">Tu firma es necesaria</p>
+            <p className="text-sm font-semibold text-amber-900">{t('contract.sign.needTitle')}</p>
             <p className="text-xs text-amber-700 mt-1">
-              Revisa el PDF antes de firmar. Una vez firmes, el comprador tendrá <strong>48 horas hábiles</strong>{' '}
-              para pagar la comisión y firmar también. Si no lo hace, el contrato caducará y podrás iniciar de nuevo.
+              {t('contract.sign.needDesc')} <strong>{t('contract.sign.deadlineWord')}</strong>{' '}
+              {t('contract.sign.deadlineTail')}
             </p>
           </div>
           {!showSignPad ? (
@@ -418,25 +420,25 @@ export default function SellerMatchContractPage() {
                 className="flex items-center gap-2"
                 data-tutorial="btn-firmar-vendedor"
               >
-                <PenTool className="w-4 h-4" /> Firmar contrato
+                <PenTool className="w-4 h-4" /> {t('contract.sign.btn')}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => router.push(info.transaccionId ? `/seller/messages?tx=${info.transaccionId}&propose=1` : '/seller/messages')}
               >
-                Modificar condiciones (chat)
+                {t('contract.sign.modify')}
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => setShowCancelModal(true)}
                 className="text-red-600 hover:!bg-red-50"
               >
-                Cancelar contrato
+                {t('contract.sign.cancel')}
               </Button>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-xs font-medium text-foreground">Dibuja tu firma:</p>
+              <p className="text-xs font-medium text-foreground">{t('contract.sign.drawHere')}</p>
               <canvas
                 ref={canvasRef}
                 width={400}
@@ -448,7 +450,7 @@ export default function SellerMatchContractPage() {
                 onMouseLeave={stopDraw}
               />
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" onClick={clearSig}>Limpiar</Button>
+                <Button variant="outline" size="sm" onClick={clearSig}>{t('contract.sign.clear')}</Button>
                 <Button
                   variant="primary"
                   size="sm"
@@ -457,9 +459,9 @@ export default function SellerMatchContractPage() {
                   className="flex items-center gap-2"
                 >
                   {signing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  Confirmar firma
+                  {t('contract.sign.confirm')}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowSignPad(false)}>Cancelar</Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowSignPad(false)}>{t('contract.sign.cancelDraw')}</Button>
               </div>
             </div>
           )}
@@ -470,11 +472,11 @@ export default function SellerMatchContractPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-card p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-blue-700" />
-            <p className="text-sm font-semibold text-blue-900">Esperando al comprador</p>
+            <p className="text-sm font-semibold text-blue-900">{t('contract.waitingBuyer.title')}</p>
           </div>
           <p className="text-xs text-blue-800">
-            Ya has firmado. El comprador debe pagar la comisión y firmar antes de:{' '}
-            <strong>{formatDateTime(info.firmaVendedorDeadline)}</strong>. Si no, el contrato caducará y tu firma se anulará automáticamente.
+            {t('contract.waitingBuyer.desc.before')}{' '}
+            <strong>{formatDateTime(info.firmaVendedorDeadline)}</strong>. {t('contract.waitingBuyer.desc.after')}
           </p>
           {/* During the 48h waiting window the seller may still want to
               renegotiate (e.g. drop the price) to give the buyer another
@@ -485,7 +487,7 @@ export default function SellerMatchContractPage() {
               size="sm"
               onClick={() => router.push(info.transaccionId ? `/seller/messages?tx=${info.transaccionId}` : '/seller/messages')}
             >
-              Abrir chat con el comprador
+              {t('contract.waitingBuyer.openChat')}
             </Button>
             <Button
               variant="ghost"
@@ -493,7 +495,7 @@ export default function SellerMatchContractPage() {
               onClick={() => setShowCancelModal(true)}
               className="text-red-600 hover:!bg-red-50"
             >
-              Cancelar contrato
+              {t('contract.waitingBuyer.cancel')}
             </Button>
           </div>
         </div>
@@ -503,10 +505,10 @@ export default function SellerMatchContractPage() {
         <div className="bg-red-50 border border-red-200 rounded-card p-5">
           <div className="flex items-center gap-2 mb-1">
             <AlertTriangle className="w-4 h-4 text-red-700" />
-            <p className="text-sm font-semibold text-red-900">Contrato caducado</p>
+            <p className="text-sm font-semibold text-red-900">{t('contract.expired.title')}</p>
           </div>
           <p className="text-xs text-red-800">
-            El comprador no firmó dentro del plazo. Puedes regenerar el contrato e iniciar la firma de nuevo desde la pantalla del match.
+            {t('contract.expired.desc')}
           </p>
         </div>
       )}
@@ -517,16 +519,16 @@ export default function SellerMatchContractPage() {
         <div className="bg-red-50 border border-red-200 rounded-card p-5 space-y-2">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-red-700" />
-            <p className="text-sm font-semibold text-red-900">Contrato cancelado</p>
+            <p className="text-sm font-semibold text-red-900">{t('contract.cancelled.title')}</p>
           </div>
           <p className="text-xs text-red-800">
             {info.canceladoPorMi
-              ? `Cancelaste este contrato el ${formatDateTime(info.canceladoEn)}.`
-              : `El comprador canceló este contrato el ${formatDateTime(info.canceladoEn)}.`}
+              ? `${t('contract.cancelled.byYou')} ${formatDateTime(info.canceladoEn)}.`
+              : `${t('contract.cancelled.byBuyer')} ${formatDateTime(info.canceladoEn)}.`}
           </p>
           {info.motivoCancelacion && (
             <p className="text-xs text-red-800 italic">
-              <strong>Motivo:</strong> {info.motivoCancelacion}
+              <strong>{t('contract.cancelled.reason')}</strong> {info.motivoCancelacion}
             </p>
           )}
           <div className="pt-2">
@@ -535,7 +537,7 @@ export default function SellerMatchContractPage() {
               size="sm"
               onClick={() => router.push('/seller/matches')}
             >
-              Volver a mis matches
+              {t('contract.cancelled.back')}
             </Button>
           </div>
         </div>
@@ -544,9 +546,9 @@ export default function SellerMatchContractPage() {
       {info.contratoEstado === 'FIRMADO' && (
         <>
           <div className="bg-green-50 border border-green-200 rounded-card p-5">
-            <p className="text-sm font-semibold text-green-900">Contrato firmado por ambas partes</p>
+            <p className="text-sm font-semibold text-green-900">{t('contract.signed.title')}</p>
             <p className="text-xs text-green-800 mt-1">
-              El comprador pagó la comisión el {formatDateTime(info.comisionPagadaEn)}. Procede con la entrega y la cobranza según las condiciones acordadas.
+              {t('contract.signed.desc').replace('{date}', formatDateTime(info.comisionPagadaEn) ?? '')}
             </p>
           </div>
 
@@ -568,9 +570,9 @@ export default function SellerMatchContractPage() {
               reference). The resguardo de pago is buyer-only. */}
           {(info.facturaPlataformaUrl || info.facturaVendedorUrl) && (
             <div className="bg-card border border-border rounded-card p-5 space-y-3">
-              <h2 className="text-sm font-semibold text-foreground">Documentos generados</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t('contract.docs.title')}</h2>
               <p className="text-xs text-text-secondary">
-                Tras la firma del contrato hemos generado automáticamente la factura de tu venta y la de la comisión de Primar-IA.
+                {t('contract.docs.intro')}
               </p>
               <div className="space-y-2">
                 {info.facturaVendedorUrl && (
@@ -582,7 +584,7 @@ export default function SellerMatchContractPage() {
                   >
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium text-foreground">Tu factura (venta al comprador)</span>
+                      <span className="text-sm font-medium text-foreground">{t('contract.docs.sellerInvoice')}</span>
                     </div>
                     <Download className="w-4 h-4 text-text-secondary" />
                   </a>
@@ -596,7 +598,7 @@ export default function SellerMatchContractPage() {
                   >
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium text-foreground">Factura comisión Primar-IA (referencia)</span>
+                      <span className="text-sm font-medium text-foreground">{t('contract.docs.platformInvoice')}</span>
                     </div>
                     <Download className="w-4 h-4 text-text-secondary" />
                   </a>

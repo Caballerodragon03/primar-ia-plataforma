@@ -352,6 +352,62 @@ export type MessageKey =
   | 'lotForm.saveDraft'
   | 'lotForm.publish'
   | 'lotForm.publishing'
+  // ─── seller contract page ───────────────────────────────────────────────
+  | 'contract.notFound'
+  | 'contract.backToMatches'
+  | 'contract.sellerTitle'
+  | 'contract.summary'
+  | 'contract.summary.product'
+  | 'contract.summary.quantity'
+  | 'contract.summary.pricePerKg'
+  | 'contract.summary.totalGoods'
+  | 'contract.summary.incoterm'
+  | 'contract.summary.paymentTerms'
+  | 'contract.summary.destination'
+  | 'contract.summary.calibres'
+  | 'contract.summary.transferHint'
+  | 'contract.commission.title'
+  | 'contract.commission.amount'
+  | 'contract.commission.percent'
+  | 'contract.commission.helpSeller'
+  | 'contract.document'
+  | 'contract.document.download'
+  | 'contract.document.watermark'
+  | 'contract.signatures'
+  | 'contract.signatures.sellerYou'
+  | 'contract.signatures.buyer'
+  | 'contract.signatures.signedOn'
+  | 'contract.signatures.pendingYours'
+  | 'contract.signatures.buyerWillSignLater'
+  | 'contract.sign.needTitle'
+  | 'contract.sign.needDesc'
+  | 'contract.sign.deadlineWord'
+  | 'contract.sign.deadlineTail'
+  | 'contract.sign.btn'
+  | 'contract.sign.modify'
+  | 'contract.sign.cancel'
+  | 'contract.sign.drawHere'
+  | 'contract.sign.clear'
+  | 'contract.sign.confirm'
+  | 'contract.sign.cancelDraw'
+  | 'contract.waitingBuyer.title'
+  | 'contract.waitingBuyer.desc.before'
+  | 'contract.waitingBuyer.desc.after'
+  | 'contract.waitingBuyer.openChat'
+  | 'contract.waitingBuyer.cancel'
+  | 'contract.expired.title'
+  | 'contract.expired.desc'
+  | 'contract.cancelled.title'
+  | 'contract.cancelled.byYou'
+  | 'contract.cancelled.byBuyer'
+  | 'contract.cancelled.reason'
+  | 'contract.cancelled.back'
+  | 'contract.signed.title'
+  | 'contract.signed.desc'
+  | 'contract.docs.title'
+  | 'contract.docs.intro'
+  | 'contract.docs.sellerInvoice'
+  | 'contract.docs.platformInvoice'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -702,6 +758,61 @@ export const messages: Record<Locale, Messages> = {
     'lotForm.saveDraft': 'Guardar como borrador',
     'lotForm.publish': 'Publicar lote',
     'lotForm.publishing': 'Publicando…',
+    'contract.notFound': 'Contrato no encontrado.',
+    'contract.backToMatches': 'Volver a matches',
+    'contract.sellerTitle': 'Contrato — Firma como vendedor',
+    'contract.summary': 'Resumen de la operación',
+    'contract.summary.product': 'Producto',
+    'contract.summary.quantity': 'Cantidad',
+    'contract.summary.pricePerKg': 'Precio/kg acordado',
+    'contract.summary.totalGoods': 'Importe total mercancía',
+    'contract.summary.incoterm': 'Incoterm',
+    'contract.summary.paymentTerms': 'Condiciones de pago',
+    'contract.summary.destination': 'Destino',
+    'contract.summary.calibres': 'Calibres',
+    'contract.summary.transferHint': 'Recibirás el importe total directamente del comprador por transferencia según las condiciones de pago acordadas.',
+    'contract.commission.title': 'Comisión Primar-IA',
+    'contract.commission.amount': 'Importe estimado',
+    'contract.commission.percent': 'Porcentaje aplicado',
+    'contract.commission.helpSeller': 'La comisión la paga el comprador directamente a Primar-IA. Tú recibes el 100 % del importe acordado por transferencia según las condiciones del contrato.',
+    'contract.document': 'Documento',
+    'contract.document.download': 'Descargar contrato (PDF)',
+    'contract.document.watermark': 'El PDF lleva una marca de agua «No válido hasta firmar y pagar» hasta que ambas partes lo firmen y el comprador pague la comisión.',
+    'contract.signatures': 'Estado de firmas',
+    'contract.signatures.sellerYou': 'Vendedor (tú)',
+    'contract.signatures.buyer': 'Comprador',
+    'contract.signatures.signedOn': 'Firmado el',
+    'contract.signatures.pendingYours': 'Pendiente de tu firma',
+    'contract.signatures.buyerWillSignLater': 'Firmará después de pagar la comisión',
+    'contract.sign.needTitle': 'Tu firma es necesaria',
+    'contract.sign.needDesc': 'Revisa el PDF antes de firmar. Una vez firmes, el comprador tendrá',
+    'contract.sign.deadlineWord': '48 horas hábiles',
+    'contract.sign.deadlineTail': 'para pagar la comisión y firmar también. Si no lo hace, el contrato caducará y podrás iniciar de nuevo.',
+    'contract.sign.btn': 'Firmar contrato',
+    'contract.sign.modify': 'Modificar condiciones (chat)',
+    'contract.sign.cancel': 'Cancelar contrato',
+    'contract.sign.drawHere': 'Dibuja tu firma:',
+    'contract.sign.clear': 'Limpiar',
+    'contract.sign.confirm': 'Confirmar firma',
+    'contract.sign.cancelDraw': 'Cancelar',
+    'contract.waitingBuyer.title': 'Esperando al comprador',
+    'contract.waitingBuyer.desc.before': 'Ya has firmado. El comprador debe pagar la comisión y firmar antes de:',
+    'contract.waitingBuyer.desc.after': 'Si no, el contrato caducará y tu firma se anulará automáticamente.',
+    'contract.waitingBuyer.openChat': 'Abrir chat con el comprador',
+    'contract.waitingBuyer.cancel': 'Cancelar contrato',
+    'contract.expired.title': 'Contrato caducado',
+    'contract.expired.desc': 'El comprador no firmó dentro del plazo. Puedes regenerar el contrato e iniciar la firma de nuevo desde la pantalla del match.',
+    'contract.cancelled.title': 'Contrato cancelado',
+    'contract.cancelled.byYou': 'Cancelaste este contrato el',
+    'contract.cancelled.byBuyer': 'El comprador canceló este contrato el',
+    'contract.cancelled.reason': 'Motivo:',
+    'contract.cancelled.back': 'Volver a mis matches',
+    'contract.signed.title': 'Contrato firmado por ambas partes',
+    'contract.signed.desc': 'El comprador pagó la comisión el {date}. Procede con la entrega y la cobranza según las condiciones acordadas.',
+    'contract.docs.title': 'Documentos generados',
+    'contract.docs.intro': 'Tras la firma del contrato hemos generado automáticamente la factura de tu venta y la de la comisión de Primar-IA.',
+    'contract.docs.sellerInvoice': 'Tu factura (venta al comprador)',
+    'contract.docs.platformInvoice': 'Factura comisión Primar-IA (referencia)',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -1046,6 +1157,61 @@ export const messages: Record<Locale, Messages> = {
     'lotForm.saveDraft': 'Save as draft',
     'lotForm.publish': 'Publish lot',
     'lotForm.publishing': 'Publishing…',
+    'contract.notFound': 'Contract not found.',
+    'contract.backToMatches': 'Back to matches',
+    'contract.sellerTitle': 'Contract — Sign as seller',
+    'contract.summary': 'Operation summary',
+    'contract.summary.product': 'Product',
+    'contract.summary.quantity': 'Quantity',
+    'contract.summary.pricePerKg': 'Agreed price/kg',
+    'contract.summary.totalGoods': 'Total goods amount',
+    'contract.summary.incoterm': 'Incoterm',
+    'contract.summary.paymentTerms': 'Payment terms',
+    'contract.summary.destination': 'Destination',
+    'contract.summary.calibres': 'Calibres',
+    'contract.summary.transferHint': "You'll receive the full amount directly from the buyer by bank transfer per the agreed payment terms.",
+    'contract.commission.title': 'Primar-IA commission',
+    'contract.commission.amount': 'Estimated amount',
+    'contract.commission.percent': 'Applied percentage',
+    'contract.commission.helpSeller': 'The commission is paid by the buyer directly to Primar-IA. You receive 100% of the agreed amount by transfer per the contract terms.',
+    'contract.document': 'Document',
+    'contract.document.download': 'Download contract (PDF)',
+    'contract.document.watermark': 'The PDF carries a "Not valid until signed and paid" watermark until both parties sign and the buyer pays the commission.',
+    'contract.signatures': 'Signatures status',
+    'contract.signatures.sellerYou': 'Seller (you)',
+    'contract.signatures.buyer': 'Buyer',
+    'contract.signatures.signedOn': 'Signed on',
+    'contract.signatures.pendingYours': 'Pending your signature',
+    'contract.signatures.buyerWillSignLater': 'Will sign after paying the commission',
+    'contract.sign.needTitle': 'Your signature is needed',
+    'contract.sign.needDesc': 'Review the PDF before signing. Once you sign, the buyer has',
+    'contract.sign.deadlineWord': '48 business hours',
+    'contract.sign.deadlineTail': "to pay the commission and sign as well. Otherwise the contract will expire and you can restart.",
+    'contract.sign.btn': 'Sign contract',
+    'contract.sign.modify': 'Modify terms (chat)',
+    'contract.sign.cancel': 'Cancel contract',
+    'contract.sign.drawHere': 'Draw your signature:',
+    'contract.sign.clear': 'Clear',
+    'contract.sign.confirm': 'Confirm signature',
+    'contract.sign.cancelDraw': 'Cancel',
+    'contract.waitingBuyer.title': 'Waiting for the buyer',
+    'contract.waitingBuyer.desc.before': 'You already signed. The buyer must pay the commission and sign before:',
+    'contract.waitingBuyer.desc.after': 'Otherwise the contract expires and your signature will be voided automatically.',
+    'contract.waitingBuyer.openChat': 'Open chat with the buyer',
+    'contract.waitingBuyer.cancel': 'Cancel contract',
+    'contract.expired.title': 'Contract expired',
+    'contract.expired.desc': "The buyer didn't sign within the deadline. You can regenerate the contract and restart signing from the match screen.",
+    'contract.cancelled.title': 'Contract cancelled',
+    'contract.cancelled.byYou': 'You cancelled this contract on',
+    'contract.cancelled.byBuyer': 'The buyer cancelled this contract on',
+    'contract.cancelled.reason': 'Reason:',
+    'contract.cancelled.back': 'Back to my matches',
+    'contract.signed.title': 'Contract signed by both parties',
+    'contract.signed.desc': 'The buyer paid the commission on {date}. Proceed with delivery and collection per the agreed terms.',
+    'contract.docs.title': 'Generated documents',
+    'contract.docs.intro': "After signing we've auto-generated your sale invoice and Primar-IA's commission invoice.",
+    'contract.docs.sellerInvoice': 'Your invoice (sale to buyer)',
+    'contract.docs.platformInvoice': 'Primar-IA commission invoice (reference)',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",
