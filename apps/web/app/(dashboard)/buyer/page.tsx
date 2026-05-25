@@ -8,6 +8,7 @@ import { SkeletonRow, SkeletonBlock } from '@/components/ui/SkeletonRow';
 import { SeasonalCalendar } from '@/components/ui/SeasonalCalendar';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { api } from '@/lib/api';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 interface OrderMatch {
   estado: string;
@@ -46,6 +47,7 @@ const IN_PROGRESS_STATES = ['ACTIVO', 'PARCIALMENTE_CUBIERTO', 'TOTALMENTE_CUBIE
 const PAID_STATES = ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'];
 
 export default function BuyerDashboard() {
+  const t = useT();
   const [orders, setOrders] = useState<Order[]>([]);
   const [notifs, setNotifs] = useState<NotifSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -154,13 +156,13 @@ export default function BuyerDashboard() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">¡Bienvenido de nuevo!</h1>
-          <p className="text-secondary text-sm mt-1">Aquí tienes un resumen de tus pedidos.</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('dashboard.buyerWelcome')}</h1>
+          <p className="text-secondary text-sm mt-1">{t('dashboard.buyerSubtitle')}</p>
         </div>
         <Link href="/buyer/orders/new">
           <Button variant="primary" size="md" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
-            Crear pedido nuevo
+            {t('dashboard.buyerNewOrder')}
           </Button>
         </Link>
       </div>
@@ -168,21 +170,21 @@ export default function BuyerDashboard() {
       {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-stagger">
         <KPICard
-          label="Orders in Progress"
+          label={t('dashboard.kpi.ordersInProgress')}
           value={loading ? '—' : String(ordersInProgress)}
-          sub={loading ? 'Loading...' : 'Pedidos activos'}
+          sub={loading ? t('dashboard.kpi.loading') : t('dashboard.kpi.activeOrders')}
           icon={<Clock className="w-4 h-4" />}
         />
         <KPICard
-          label="Valor total"
+          label={t('dashboard.kpi.totalValue')}
           value={loading ? '—' : `€${totalValue.toLocaleString('es-ES', { maximumFractionDigits: 0 })}`}
-          sub={loading ? 'Loading...' : 'Valor comprometido'}
+          sub={loading ? t('dashboard.kpi.loading') : t('dashboard.kpi.committedValue')}
           icon={<DollarSign className="w-4 h-4" />}
         />
         <KPICard
-          label="Pending Deliveries"
+          label={t('dashboard.kpi.pendingDeliveries')}
           value={loading ? '—' : String(pendingDeliveries)}
-          sub={loading ? 'Loading...' : 'Listo para pagar'}
+          sub={loading ? t('dashboard.kpi.loading') : t('dashboard.kpi.readyToPay')}
           icon={<TrendingUp className="w-4 h-4" />}
         />
       </div>
@@ -195,7 +197,7 @@ export default function BuyerDashboard() {
             className="flex items-center gap-1.5 text-sm text-red-700 font-medium hover:underline"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -204,7 +206,7 @@ export default function BuyerDashboard() {
         <section className="mb-6">
           <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            Acciones requeridas
+            {t('dashboard.actions')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-stagger">
             {actionItems.map((item) => (
@@ -245,7 +247,7 @@ export default function BuyerDashboard() {
         {/* Active Orders Table */}
         <div className="lg:col-span-2 bg-card rounded-card border border-border overflow-hidden hover-lift">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Resumen de pedidos activos</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t('dashboard.activeOrdersSummary')}</h2>
             <Link href="/buyer/orders" className="text-xs text-secondary hover:underline font-medium">
               View All Orders
             </Link>
@@ -327,7 +329,7 @@ export default function BuyerDashboard() {
         {/* Recent Activity */}
         <div className="bg-card rounded-card border border-border overflow-hidden hover-lift">
           <div className="px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Actividad reciente</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t('dashboard.recentActivity')}</h2>
           </div>
           <div className="p-4 flex flex-col gap-3">
             {loading ? (
@@ -337,7 +339,7 @@ export default function BuyerDashboard() {
                 <SkeletonBlock className="h-12 w-full" />
               </>
             ) : recentOrders.length === 0 ? (
-              <p className="text-xs text-secondary text-center mt-2">Sin pedidos aún</p>
+              <p className="text-xs text-secondary text-center mt-2">{t('dashboard.noOrdersYet')}</p>
             ) : (
               recentOrders.map((order) => {
                 const hasOffer = order.matches.some((m) => m.estado === 'ACEPTADO_VENDEDOR');
@@ -369,8 +371,8 @@ export default function BuyerDashboard() {
       {/* Seasonal Calendar */}
       <div className="bg-card rounded-card border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border">
-          <h2 className="text-sm font-semibold text-foreground">Calendario estacional — España</h2>
-          <p className="text-xs text-secondary mt-0.5">Temporadas de producción y comercialización por categoría de producto</p>
+          <h2 className="text-sm font-semibold text-foreground">{t('dashboard.seasonalCalendar')}</h2>
+          <p className="text-xs text-secondary mt-0.5">{t('dashboard.seasonalCalendarSub')}</p>
         </div>
         <div className="p-4">
           <SeasonalCalendar />

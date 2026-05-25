@@ -15,9 +15,8 @@ import { api } from '@/lib/api';
 import { Logo } from '@/components/brand/Logo';
 import { LogoIcon } from '@/components/brand/LogoIcon';
 import { Progress } from '@/components/shadcn/progress';
+import { useT } from '@/lib/i18n/LocaleProvider';
 import type { RegisterFormData } from './types';
-
-const STEP_LABELS = ['Cuenta', 'Empresa', 'Documentos', 'Legal'];
 
 const step1Schema = z.object({
   role: z.enum(['VENDEDOR', 'COMPRADOR']),
@@ -68,6 +67,14 @@ interface SuccessState {
 }
 
 export default function RegisterPage() {
+  const t = useT();
+  // Phase 14M v3.39 — STEP_LABELS construido a partir del locale activo.
+  const STEP_LABELS = [
+    t('auth.register.stepAccount'),
+    t('auth.register.stepCompany'),
+    t('auth.register.stepDocs'),
+    t('auth.register.stepLegal'),
+  ];
   const [currentStep, setCurrentStep] = useState(1);
   const [success, setSuccess] = useState<SuccessState | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -127,8 +134,8 @@ export default function RegisterPage() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string }; status?: number }; message?: string; code?: string };
       const message = axiosErr?.response?.data?.error
-        ?? (axiosErr?.code === 'ECONNABORTED' ? 'Tiempo de conexión agotado. Inténtalo de nuevo.' : null)
-        ?? (axiosErr?.message ? `Error: ${axiosErr.message}` : 'Error en el registro. Inténtalo de nuevo.');
+        ?? (axiosErr?.code === 'ECONNABORTED' ? t('auth.register.timeout') : null)
+        ?? (axiosErr?.message ? `Error: ${axiosErr.message}` : t('auth.register.serverErrorFallback'));
       setServerError(message);
     }
   };
@@ -141,22 +148,22 @@ export default function RegisterPage() {
             <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="w-8 h-8 text-emerald-500" />
             </div>
-            <h2 className="text-xl font-bold text-foreground mb-2">¡Registro recibido!</h2>
+            <h2 className="text-xl font-bold text-foreground mb-2">{t('auth.register.successTitle')}</h2>
             <p className="text-muted-foreground text-sm mb-6">
-              Verificaremos tu información y recibirás confirmación sobre el estado de tu solicitud en breve.
+              {t('auth.register.successDesc')}
             </p>
             <div className="bg-muted/50 rounded-lg p-4 mb-6 text-left space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">E-mail</span>
+                <span className="text-muted-foreground">{t('auth.register.labelEmail')}</span>
                 <span className="font-medium text-foreground">{success.email}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Contraseña</span>
+                <span className="text-muted-foreground">{t('auth.register.labelPassword')}</span>
                 <span className="font-medium text-foreground">••••••••••</span>
               </div>
             </div>
             <Link href="/login">
-              <Button variant="outline" size="lg" className="w-full">Volver al inicio de sesión</Button>
+              <Button variant="outline" size="lg" className="w-full">{t('auth.register.backToLogin')}</Button>
             </Link>
           </div>
         </div>
@@ -178,10 +185,10 @@ export default function RegisterPage() {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-foreground leading-tight">
-              Únete al marketplace agrícola B2B más innovador
+              {t('auth.register.heroTitle')}
             </h2>
             <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-              Más de 100 empresas ya confían en Primar-IA para conectar con el sector primario español.
+              {t('auth.register.heroDesc')}
             </p>
           </div>
         </div>
@@ -194,13 +201,15 @@ export default function RegisterPage() {
             <div className="flex justify-center mb-3">
               <Logo variant="small" width={140} />
             </div>
-            <p className="text-muted-foreground text-sm">Crea tu cuenta</p>
+            <p className="text-muted-foreground text-sm">{t('auth.register.tagline')}</p>
           </div>
 
           {/* Progress bar */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">Paso {currentStep} de 4</span>
+              <span className="text-xs text-muted-foreground">
+                {t('auth.register.stepOf').replace('{n}', String(currentStep))}
+              </span>
               <span className="text-xs font-medium text-foreground">{STEP_LABELS[currentStep - 1]}</span>
             </div>
             <Progress value={(currentStep / 4) * 100} className="h-1.5" />
@@ -226,8 +235,8 @@ export default function RegisterPage() {
             </FormProvider>
 
             <p className="text-center text-sm text-muted-foreground mt-6">
-              ¿Ya tienes cuenta?{' '}
-              <Link href="/login" className="font-semibold text-foreground hover:text-primary transition-colors">Iniciar sesión</Link>
+              {t('auth.register.haveAccount')}{' '}
+              <Link href="/login" className="font-semibold text-foreground hover:text-primary transition-colors">{t('auth.register.signIn')}</Link>
             </p>
           </div>
         </div>

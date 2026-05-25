@@ -85,6 +85,21 @@ export type MessageKey =
   | 'auth.register.title'
   | 'auth.register.haveAccount'
   | 'auth.register.signIn'
+  | 'auth.register.tagline'
+  | 'auth.register.heroTitle'
+  | 'auth.register.heroDesc'
+  | 'auth.register.stepOf'
+  | 'auth.register.stepAccount'
+  | 'auth.register.stepCompany'
+  | 'auth.register.stepDocs'
+  | 'auth.register.stepLegal'
+  | 'auth.register.successTitle'
+  | 'auth.register.successDesc'
+  | 'auth.register.labelEmail'
+  | 'auth.register.labelPassword'
+  | 'auth.register.backToLogin'
+  | 'auth.register.timeout'
+  | 'auth.register.serverErrorFallback'
   | 'auth.logout.confirm'
   // ─── profile ─────────────────────────────────────────────────────────────
   | 'profile.title'
@@ -98,6 +113,35 @@ export type MessageKey =
   | 'dashboard.welcome'
   | 'dashboard.actions'
   | 'dashboard.noTasks'
+  | 'dashboard.buyerWelcome'
+  | 'dashboard.buyerSubtitle'
+  | 'dashboard.buyerNewOrder'
+  | 'dashboard.sellerWelcome'
+  | 'dashboard.sellerSubtitle'
+  | 'dashboard.sellerNewLot'
+  | 'dashboard.kpi.ordersInProgress'
+  | 'dashboard.kpi.activeOrders'
+  | 'dashboard.kpi.totalValue'
+  | 'dashboard.kpi.committedValue'
+  | 'dashboard.kpi.pendingDeliveries'
+  | 'dashboard.kpi.readyToPay'
+  | 'dashboard.kpi.activeLots'
+  | 'dashboard.kpi.activeLotsSub'
+  | 'dashboard.kpi.pendingMatches'
+  | 'dashboard.kpi.pendingMatchesSub'
+  | 'dashboard.kpi.lotsClosed'
+  | 'dashboard.kpi.lotsClosedSub'
+  | 'dashboard.kpi.matches'
+  | 'dashboard.kpi.loading'
+  | 'dashboard.activeOrdersSummary'
+  | 'dashboard.activeLotsSummary'
+  | 'dashboard.recentActivity'
+  | 'dashboard.noOrdersYet'
+  | 'dashboard.noLotsYet'
+  | 'dashboard.createOne'
+  | 'dashboard.seasonalCalendar'
+  | 'dashboard.seasonalCalendarSub'
+  | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
   | 'pendingBanner.bodySeller'
@@ -187,6 +231,21 @@ export const messages: Record<Locale, Messages> = {
     'auth.register.title': 'Crear cuenta',
     'auth.register.haveAccount': '¿Ya tienes cuenta?',
     'auth.register.signIn': 'Iniciar sesión',
+    'auth.register.tagline': 'Crea tu cuenta',
+    'auth.register.heroTitle': 'Únete al marketplace agrícola B2B más innovador',
+    'auth.register.heroDesc': 'Más de 100 empresas ya confían en Primar-IA para conectar con el sector primario español.',
+    'auth.register.stepOf': 'Paso {n} de 4',
+    'auth.register.stepAccount': 'Cuenta',
+    'auth.register.stepCompany': 'Empresa',
+    'auth.register.stepDocs': 'Documentos',
+    'auth.register.stepLegal': 'Legal',
+    'auth.register.successTitle': '¡Registro recibido!',
+    'auth.register.successDesc': 'Verificaremos tu información y recibirás confirmación sobre el estado de tu solicitud en breve.',
+    'auth.register.labelEmail': 'E-mail',
+    'auth.register.labelPassword': 'Contraseña',
+    'auth.register.backToLogin': 'Volver al inicio de sesión',
+    'auth.register.timeout': 'Tiempo de conexión agotado. Inténtalo de nuevo.',
+    'auth.register.serverErrorFallback': 'Error en el registro. Inténtalo de nuevo.',
     'auth.logout.confirm': '¿Cerrar sesión?',
     'profile.title': 'Mi perfil',
     'profile.language': 'Idioma de la plataforma',
@@ -198,6 +257,35 @@ export const messages: Record<Locale, Messages> = {
     'dashboard.welcome': 'Bienvenido',
     'dashboard.actions': 'Acciones requeridas',
     'dashboard.noTasks': 'No tienes tareas pendientes',
+    'dashboard.buyerWelcome': '¡Bienvenido de nuevo!',
+    'dashboard.buyerSubtitle': 'Aquí tienes un resumen de tus pedidos.',
+    'dashboard.buyerNewOrder': 'Crear pedido nuevo',
+    'dashboard.sellerWelcome': '¡Bienvenido de nuevo!',
+    'dashboard.sellerSubtitle': 'Aquí tienes un resumen de tus lotes.',
+    'dashboard.sellerNewLot': 'Crear lote nuevo',
+    'dashboard.kpi.ordersInProgress': 'Pedidos en curso',
+    'dashboard.kpi.activeOrders': 'Pedidos activos',
+    'dashboard.kpi.totalValue': 'Valor total',
+    'dashboard.kpi.committedValue': 'Valor comprometido',
+    'dashboard.kpi.pendingDeliveries': 'Entregas pendientes',
+    'dashboard.kpi.readyToPay': 'Listo para pagar',
+    'dashboard.kpi.activeLots': 'Lotes activos',
+    'dashboard.kpi.activeLotsSub': 'Lotes activos o en curso',
+    'dashboard.kpi.pendingMatches': 'Matches pendientes',
+    'dashboard.kpi.pendingMatchesSub': 'Esperando tu revisión',
+    'dashboard.kpi.lotsClosed': 'Lotes cerrados',
+    'dashboard.kpi.lotsClosedSub': 'Vendidos o cancelados',
+    'dashboard.kpi.matches': 'Matches',
+    'dashboard.kpi.loading': 'Cargando…',
+    'dashboard.activeOrdersSummary': 'Resumen de pedidos activos',
+    'dashboard.activeLotsSummary': 'Resumen de lotes activos',
+    'dashboard.recentActivity': 'Actividad reciente',
+    'dashboard.noOrdersYet': 'Sin pedidos aún',
+    'dashboard.noLotsYet': 'Sin lotes aún',
+    'dashboard.createOne': 'Crea uno',
+    'dashboard.seasonalCalendar': 'Calendario estacional — España',
+    'dashboard.seasonalCalendarSub': 'Temporadas de producción y comercialización por categoría de producto',
+    'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
     'pendingBanner.bodyBuyer': 'Estamos revisando tu solicitud como comprador.',
@@ -282,6 +370,21 @@ export const messages: Record<Locale, Messages> = {
     'auth.register.title': 'Create account',
     'auth.register.haveAccount': 'Already have an account?',
     'auth.register.signIn': 'Sign in',
+    'auth.register.tagline': 'Create your account',
+    'auth.register.heroTitle': 'Join the most innovative B2B agri marketplace',
+    'auth.register.heroDesc': 'Over 100 companies already trust Primar-IA to connect with the Spanish primary sector.',
+    'auth.register.stepOf': 'Step {n} of 4',
+    'auth.register.stepAccount': 'Account',
+    'auth.register.stepCompany': 'Company',
+    'auth.register.stepDocs': 'Documents',
+    'auth.register.stepLegal': 'Legal',
+    'auth.register.successTitle': 'Registration received!',
+    'auth.register.successDesc': "We'll review your information and send you confirmation about the status of your application shortly.",
+    'auth.register.labelEmail': 'E-mail',
+    'auth.register.labelPassword': 'Password',
+    'auth.register.backToLogin': 'Back to sign in',
+    'auth.register.timeout': 'Connection timed out. Please try again.',
+    'auth.register.serverErrorFallback': 'Registration error. Please try again.',
     'auth.logout.confirm': 'Log out?',
     'profile.title': 'My profile',
     'profile.language': 'Platform language',
@@ -293,6 +396,35 @@ export const messages: Record<Locale, Messages> = {
     'dashboard.welcome': 'Welcome',
     'dashboard.actions': 'Actions required',
     'dashboard.noTasks': 'No pending tasks',
+    'dashboard.buyerWelcome': 'Welcome back!',
+    'dashboard.buyerSubtitle': "Here's an overview of your orders.",
+    'dashboard.buyerNewOrder': 'Create new order',
+    'dashboard.sellerWelcome': 'Welcome back!',
+    'dashboard.sellerSubtitle': "Here's an overview of your lots.",
+    'dashboard.sellerNewLot': 'Create new lot',
+    'dashboard.kpi.ordersInProgress': 'Orders in progress',
+    'dashboard.kpi.activeOrders': 'Active orders',
+    'dashboard.kpi.totalValue': 'Total value',
+    'dashboard.kpi.committedValue': 'Committed value',
+    'dashboard.kpi.pendingDeliveries': 'Pending deliveries',
+    'dashboard.kpi.readyToPay': 'Ready to pay',
+    'dashboard.kpi.activeLots': 'Active lots',
+    'dashboard.kpi.activeLotsSub': 'Lots active or in progress',
+    'dashboard.kpi.pendingMatches': 'Pending matches',
+    'dashboard.kpi.pendingMatchesSub': 'Awaiting your review',
+    'dashboard.kpi.lotsClosed': 'Lots closed',
+    'dashboard.kpi.lotsClosedSub': 'Sold or cancelled',
+    'dashboard.kpi.matches': 'Matches',
+    'dashboard.kpi.loading': 'Loading…',
+    'dashboard.activeOrdersSummary': 'Active orders summary',
+    'dashboard.activeLotsSummary': 'Active lots summary',
+    'dashboard.recentActivity': 'Recent activity',
+    'dashboard.noOrdersYet': 'No orders yet',
+    'dashboard.noLotsYet': 'No lots yet',
+    'dashboard.createOne': 'Create one',
+    'dashboard.seasonalCalendar': 'Seasonal calendar — Spain',
+    'dashboard.seasonalCalendarSub': 'Production and trade seasons by product category',
+    'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",
     'pendingBanner.bodyBuyer': "We're reviewing your buyer application.",

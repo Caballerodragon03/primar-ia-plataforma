@@ -8,6 +8,7 @@ import { SkeletonRow, SkeletonBlock } from '@/components/ui/SkeletonRow';
 import { SeasonalCalendar } from '@/components/ui/SeasonalCalendar';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { api } from '@/lib/api';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 interface LoteCalibre {
   calibre: string;
@@ -60,6 +61,7 @@ interface SellerNotifSummary {
 }
 
 export default function SellerDashboard() {
+  const t = useT();
   const [lots, setLots] = useState<Lote[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [notifs, setNotifs] = useState<SellerNotifSummary | null>(null);
@@ -155,13 +157,13 @@ export default function SellerDashboard() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">¡Bienvenido de nuevo!</h1>
-          <p className="text-secondary text-sm mt-1">Gestiona tus lotes y revisa tus matches.</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('dashboard.sellerWelcome')}</h1>
+          <p className="text-secondary text-sm mt-1">{t('dashboard.sellerSubtitle')}</p>
         </div>
         <Link href="/seller/lots/new">
           <Button variant="primary" size="md" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
-            Publicar lote nuevo
+            {t('dashboard.sellerNewLot')}
           </Button>
         </Link>
       </div>
@@ -169,21 +171,21 @@ export default function SellerDashboard() {
       {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-stagger">
         <KPICard
-          label="Active Lots"
+          label={t('dashboard.kpi.activeLots')}
           value={loading ? '—' : String(activeLots)}
-          sub={loading ? 'Loading...' : `${activeLots} lot${activeLots !== 1 ? 's' : ''} active or in progress`}
+          sub={loading ? t('dashboard.kpi.loading') : t('dashboard.kpi.activeLotsSub')}
           icon={<Package className="w-4 h-4" />}
         />
         <KPICard
-          label="Pending Matches"
+          label={t('dashboard.kpi.pendingMatches')}
           value={loading ? '—' : String(pendingMatches)}
-          sub={loading ? 'Loading...' : 'Esperando tu revisión'}
+          sub={loading ? t('dashboard.kpi.loading') : t('dashboard.kpi.pendingMatchesSub')}
           icon={<GitMerge className="w-4 h-4" />}
         />
         <KPICard
-          label="Lots Closed"
+          label={t('dashboard.kpi.lotsClosed')}
           value={loading ? '—' : String(completedSales)}
-          sub={loading ? 'Loading...' : 'Vendidos o cancelados'}
+          sub={loading ? t('dashboard.kpi.loading') : t('dashboard.kpi.lotsClosedSub')}
           icon={<CheckCircle2 className="w-4 h-4" />}
         />
       </div>
@@ -196,7 +198,7 @@ export default function SellerDashboard() {
             className="flex items-center gap-1.5 text-sm text-red-700 font-medium hover:underline"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -205,7 +207,7 @@ export default function SellerDashboard() {
         <section className="mb-6">
           <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            Acciones requeridas
+            {t('dashboard.actions')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-stagger">
             {actionItems.map((item) => (
@@ -246,7 +248,7 @@ export default function SellerDashboard() {
         {/* Active Lots Table */}
         <div className="lg:col-span-2 bg-card rounded-card border border-border overflow-hidden hover-lift">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Lotes activos y en curso</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t('dashboard.activeLotsSummary')}</h2>
             <Link href="/seller/lots" className="text-xs text-secondary hover:underline font-medium">
               View All Lots
             </Link>
@@ -316,7 +318,7 @@ export default function SellerDashboard() {
         {/* Recent Activity */}
         <div className="bg-card rounded-card border border-border overflow-hidden hover-lift">
           <div className="px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Actividad reciente</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t('dashboard.recentActivity')}</h2>
           </div>
           <div className="p-4 flex flex-col gap-3">
             {loading ? (
@@ -326,7 +328,7 @@ export default function SellerDashboard() {
                 <SkeletonBlock className="h-12 w-full" />
               </>
             ) : recentMatches.length === 0 ? (
-              <p className="text-xs text-secondary text-center mt-2">Sin matches recientes</p>
+              <p className="text-xs text-secondary text-center mt-2">{t('dashboard.noLotsYet')}</p>
             ) : (
               recentMatches.map((match) => {
                 const qty = Number(match.cantidadKg);
@@ -360,8 +362,8 @@ export default function SellerDashboard() {
       {/* Seasonal Calendar */}
       <div className="bg-card rounded-card border border-border overflow-hidden">
         <div className="px-4 py-3 border-b border-border">
-          <h2 className="text-sm font-semibold text-foreground">Calendario estacional — España</h2>
-          <p className="text-xs text-secondary mt-0.5">Temporadas de producción y comercialización por categoría de producto</p>
+          <h2 className="text-sm font-semibold text-foreground">{t('dashboard.seasonalCalendar')}</h2>
+          <p className="text-xs text-secondary mt-0.5">{t('dashboard.seasonalCalendarSub')}</p>
         </div>
         <div className="p-4">
           <SeasonalCalendar />
