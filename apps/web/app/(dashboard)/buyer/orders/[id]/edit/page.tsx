@@ -9,6 +9,7 @@ import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Button, Input, Select } from '@/components/ui';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 
 const INCOTERMS = ['EXW','FCA','FOB','CIF','DAP','DDP','FAS','CFR','CPT','CIP','DAT','DPU'];
 
@@ -46,6 +47,8 @@ type OrderDetail = {
 type Product = { id: string; nombre: string; calibresDisponibles: string[] };
 
 export default function EditOrderPage() {
+  const t = useT();
+  const { locale } = useLocale();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [committedKg, setCommittedKg] = useState(0);
@@ -94,7 +97,7 @@ export default function EditOrderPage() {
           notasAdicionales: order.notasAdicionales ?? '',
         });
       })
-      .catch(() => setError('No se pudo cargar el pedido.'))
+      .catch(() => setError(t('editOrder.loadFail')))
       .finally(() => setLoading(false));
   }, [id, reset]);
 
@@ -109,7 +112,7 @@ export default function EditOrderPage() {
       router.push(`/buyer/orders/${id}`);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-        ?? 'Error al guardar el pedido';
+        ?? t('editOrder.saveFail');
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -130,13 +133,12 @@ export default function EditOrderPage() {
         <Link href={`/buyer/orders/${id}`} className="text-text-secondary hover:text-text-primary">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-xl font-bold text-text-primary">Edit Order</h1>
+        <h1 className="text-xl font-bold text-text-primary">{t('editOrder.title')}</h1>
       </div>
 
       {committedKg > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-card p-4 text-sm text-amber-800">
-          <strong>{committedKg.toLocaleString('es-ES')} kg</strong> already reserved by sellers.
-          You cannot reduce total kg below this amount. Prices on confirmed matches are locked.
+          <strong>{committedKg.toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES')} kg</strong> {t('editOrder.committedBanner')}
         </div>
       )}
 
@@ -147,30 +149,30 @@ export default function EditOrderPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Calibres */}
         <div className="bg-card rounded-card border border-border p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-text-primary">Calibres solicitados</h2>
+          <h2 className="text-sm font-semibold text-text-primary">{t('orderDetail.requestedCalibres')}</h2>
           <div className="space-y-3">
             {fields.map((field, i) => (
               <div key={field.id} className="grid grid-cols-3 gap-3 items-end">
                 {calibreOptions.length > 1 ? (
                   <Select
-                    label="Caliber"
+                    label={t('editOrder.caliber')}
                     {...register(`calibresSolicitados.${i}.calibre`)}
                     error={errors.calibresSolicitados?.[i]?.calibre?.message}
                   >
-                    <option value="">Select caliber...</option>
+                    <option value="">{t('editOrder.selectCaliber')}</option>
                     {calibreOptions.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </Select>
                 ) : (
                   <Input
-                    label="Caliber"
+                    label={t('editOrder.caliber')}
                     {...register(`calibresSolicitados.${i}.calibre`)}
                     error={errors.calibresSolicitados?.[i]?.calibre?.message}
                   />
                 )}
                 <Input
-                  label="Qty (kg)"
+                  label={t('editOrder.qtyKg')}
                   type="number"
                   step="0.01"
                   {...register(`calibresSolicitados.${i}.cantidad_kg`)}
@@ -179,7 +181,7 @@ export default function EditOrderPage() {
                 <div className="flex gap-2 items-end">
                   <div className="flex-1">
                     <Input
-                      label="Max Price (€/kg)"
+                      label={t('editOrder.maxPrice')}
                       type="number"
                       step="0.001"
                       {...register(`calibresSolicitados.${i}.precio_max_kg`)}
@@ -204,54 +206,54 @@ export default function EditOrderPage() {
             onClick={() => append({ calibre: '', cantidad_kg: 0, precio_max_kg: 0 })}
             className="text-sm text-primary-dark hover:underline flex items-center gap-1 font-medium"
           >
-            <Plus className="w-3.5 h-3.5" /> Add caliber
+            <Plus className="w-3.5 h-3.5" /> {t('editOrder.addCaliber')}
           </button>
         </div>
 
         {/* Order details */}
         <div className="bg-card rounded-card border border-border p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-text-primary">Detalles del pedido</h2>
+          <h2 className="text-sm font-semibold text-text-primary">{t('editOrder.detailsHeader')}</h2>
           <Select
             label="Incoterm"
             {...register('incoterm')}
             error={errors.incoterm?.message}
           >
-            <option value="">Select incoterm…</option>
-            {INCOTERMS.map((t) => <option key={t} value={t}>{t}</option>)}
+            <option value="">{t('editOrder.selectIncoterm')}</option>
+            {INCOTERMS.map((ic) => <option key={ic} value={ic}>{ic}</option>)}
           </Select>
           <Input
-            label="Final Destination"
+            label={t('editOrder.finalDest')}
             {...register('destinoFinal')}
-            placeholder="e.g. Port of Rotterdam, Netherlands"
+            placeholder={t('editOrder.finalDestPh')}
           />
           <Input
-            label="Frequency"
+            label={t('editOrder.frequency')}
             {...register('frecuencia')}
-            placeholder="e.g. Weekly, Monthly"
+            placeholder={t('editOrder.frequencyPh')}
           />
           <Input
-            label="Desired Delivery Date"
+            label={t('editOrder.deliveryDate')}
             type="date"
             {...register('fechaEntregaDeseada')}
             error={errors.fechaEntregaDeseada?.message}
           />
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">Additional Notes</label>
+            <label className="block text-sm font-medium text-text-primary mb-1">{t('editOrder.notes')}</label>
             <textarea
               {...register('notasAdicionales')}
               rows={3}
               className="w-full px-3 py-2.5 rounded-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors resize-none"
-              placeholder="Optional notes..."
+              placeholder={t('editOrder.notesPh')}
             />
           </div>
         </div>
 
         <div className="flex gap-3 justify-end">
           <Link href={`/buyer/orders/${id}`}>
-            <Button variant="outline" type="button">Cancelar</Button>
+            <Button variant="outline" type="button">{t('editOrder.cancel')}</Button>
           </Link>
           <Button variant="primary" type="submit" loading={isSubmitting}>
-            Save Changes
+            {t('editOrder.save')}
           </Button>
         </div>
       </form>

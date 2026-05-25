@@ -716,6 +716,50 @@ export type MessageKey =
   | 'orderDetail.matchEstado.PENDIENTE_PAGO'
   | 'orderDetail.matchEstado.CONFIRMADO'
   | 'orderDetail.matchEstado.CANCELADO'
+  // ─── edit forms ──────────────────────────────────────────────────────────
+  | 'editOrder.title'
+  | 'editOrder.loadFail'
+  | 'editOrder.saveFail'
+  | 'editOrder.committedBanner'
+  | 'editOrder.detailsHeader'
+  | 'editOrder.caliber'
+  | 'editOrder.selectCaliber'
+  | 'editOrder.qtyKg'
+  | 'editOrder.maxPrice'
+  | 'editOrder.addCaliber'
+  | 'editOrder.selectIncoterm'
+  | 'editOrder.finalDest'
+  | 'editOrder.finalDestPh'
+  | 'editOrder.frequency'
+  | 'editOrder.frequencyPh'
+  | 'editOrder.deliveryDate'
+  | 'editOrder.notes'
+  | 'editOrder.notesPh'
+  | 'editOrder.cancel'
+  | 'editOrder.save'
+  | 'editLot.title'
+  | 'editLot.loadFail'
+  | 'editLot.saveFail'
+  | 'editLot.committedBanner'
+  | 'editLot.focusHint'
+  | 'editLot.focus.calibre'
+  | 'editLot.focus.precio'
+  | 'editLot.focus.incoterm'
+  | 'editLot.focus.logistica'
+  | 'editLot.focus.terminoPago'
+  | 'editLot.calibresHeader'
+  | 'editLot.priceNoteCommitted'
+  | 'editLot.minPrice'
+  | 'editLot.commercialHeader'
+  | 'editLot.whoShips'
+  | 'editLot.logIndiff'
+  | 'editLot.incotermsAccepted'
+  | 'editLot.paymentTermsAccepted'
+  | 'editLot.locationHeader'
+  | 'editLot.pickup'
+  | 'editLot.availableFrom'
+  | 'editLot.comments'
+  | 'editLot.commentsPh'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -1420,6 +1464,49 @@ export const messages: Record<Locale, Messages> = {
     'orderDetail.matchEstado.PENDIENTE_PAGO': 'Pendiente de pago',
     'orderDetail.matchEstado.CONFIRMADO': 'Confirmado',
     'orderDetail.matchEstado.CANCELADO': 'Cancelado',
+    'editOrder.title': 'Editar pedido',
+    'editOrder.loadFail': 'No se pudo cargar el pedido.',
+    'editOrder.saveFail': 'Error al guardar el pedido',
+    'editOrder.committedBanner': 'kg ya reservados por vendedores. No puedes reducir el total por debajo de esa cantidad. Los precios de matches confirmados quedan bloqueados.',
+    'editOrder.detailsHeader': 'Detalles del pedido',
+    'editOrder.caliber': 'Calibre',
+    'editOrder.selectCaliber': 'Selecciona calibre…',
+    'editOrder.qtyKg': 'Cantidad (kg)',
+    'editOrder.maxPrice': 'Precio máx (€/kg)',
+    'editOrder.addCaliber': 'Añadir calibre',
+    'editOrder.selectIncoterm': 'Selecciona incoterm…',
+    'editOrder.finalDest': 'Destino final',
+    'editOrder.finalDestPh': 'p.ej. Puerto de Rotterdam, Países Bajos',
+    'editOrder.frequency': 'Frecuencia',
+    'editOrder.frequencyPh': 'p.ej. Semanal, Mensual',
+    'editOrder.deliveryDate': 'Fecha de entrega deseada',
+    'editOrder.notes': 'Notas adicionales',
+    'editOrder.notesPh': 'Notas opcionales…',
+    'editOrder.cancel': 'Cancelar',
+    'editOrder.save': 'Guardar cambios',
+    'editLot.title': 'Editar lote',
+    'editLot.loadFail': 'No se pudo cargar el lote.',
+    'editLot.saveFail': 'Error al guardar el lote',
+    'editLot.committedBanner': 'kg ya comprometidos por compradores. No puedes reducir el total por debajo de esa cantidad.',
+    'editLot.focusHint': 'Estás ajustando {field} para encajar con la oferta de un comprador. Cambia solo ese campo y guarda — el resto puedes dejarlo igual.',
+    'editLot.focus.calibre': 'los calibres',
+    'editLot.focus.precio': 'el precio mínimo por calibre',
+    'editLot.focus.incoterm': 'los incoterms aceptados',
+    'editLot.focus.logistica': 'la logística',
+    'editLot.focus.terminoPago': 'los términos de pago',
+    'editLot.calibresHeader': 'Calibres y precios',
+    'editLot.priceNoteCommitted': 'Nota: los precios se pueden actualizar, pero el total kg debe permanecer ≥ {n} kg comprometidos.',
+    'editLot.minPrice': 'Precio mín (€/kg)',
+    'editLot.commercialHeader': 'Condiciones comerciales',
+    'editLot.whoShips': '¿Quién envía?',
+    'editLot.logIndiff': 'más matches',
+    'editLot.incotermsAccepted': 'Incoterms aceptados',
+    'editLot.paymentTermsAccepted': 'Términos de pago aceptados',
+    'editLot.locationHeader': 'Ubicación y notas',
+    'editLot.pickup': 'Dirección de recogida',
+    'editLot.availableFrom': 'Disponible desde',
+    'editLot.comments': 'Comentarios adicionales',
+    'editLot.commentsPh': 'Notas opcionales…',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -2118,6 +2205,49 @@ export const messages: Record<Locale, Messages> = {
     'orderDetail.matchEstado.PENDIENTE_PAGO': 'Pending payment',
     'orderDetail.matchEstado.CONFIRMADO': 'Confirmed',
     'orderDetail.matchEstado.CANCELADO': 'Cancelled',
+    'editOrder.title': 'Edit order',
+    'editOrder.loadFail': 'Could not load the order.',
+    'editOrder.saveFail': 'Failed to save the order',
+    'editOrder.committedBanner': 'kg already reserved by sellers. You cannot reduce the total below this amount. Prices on confirmed matches are locked.',
+    'editOrder.detailsHeader': 'Order details',
+    'editOrder.caliber': 'Caliber',
+    'editOrder.selectCaliber': 'Select caliber…',
+    'editOrder.qtyKg': 'Qty (kg)',
+    'editOrder.maxPrice': 'Max price (€/kg)',
+    'editOrder.addCaliber': 'Add caliber',
+    'editOrder.selectIncoterm': 'Select incoterm…',
+    'editOrder.finalDest': 'Final destination',
+    'editOrder.finalDestPh': 'e.g. Port of Rotterdam, Netherlands',
+    'editOrder.frequency': 'Frequency',
+    'editOrder.frequencyPh': 'e.g. Weekly, Monthly',
+    'editOrder.deliveryDate': 'Desired delivery date',
+    'editOrder.notes': 'Additional notes',
+    'editOrder.notesPh': 'Optional notes…',
+    'editOrder.cancel': 'Cancel',
+    'editOrder.save': 'Save changes',
+    'editLot.title': 'Edit lot',
+    'editLot.loadFail': 'Could not load the lot.',
+    'editLot.saveFail': 'Failed to save the lot',
+    'editLot.committedBanner': 'kg already committed by buyers. You cannot reduce the total below this amount.',
+    'editLot.focusHint': "You're adjusting {field} to match a buyer's offer. Change just that field and save — the rest can stay the same.",
+    'editLot.focus.calibre': 'the calibres',
+    'editLot.focus.precio': 'the minimum price per caliber',
+    'editLot.focus.incoterm': 'the accepted incoterms',
+    'editLot.focus.logistica': 'logistics',
+    'editLot.focus.terminoPago': 'payment terms',
+    'editLot.calibresHeader': 'Calibres & prices',
+    'editLot.priceNoteCommitted': 'Note: prices can be updated, but total kg must stay ≥ {n} kg committed.',
+    'editLot.minPrice': 'Min price (€/kg)',
+    'editLot.commercialHeader': 'Commercial terms',
+    'editLot.whoShips': 'Who ships?',
+    'editLot.logIndiff': 'more matches',
+    'editLot.incotermsAccepted': 'Accepted incoterms',
+    'editLot.paymentTermsAccepted': 'Accepted payment terms',
+    'editLot.locationHeader': 'Location & notes',
+    'editLot.pickup': 'Pickup location',
+    'editLot.availableFrom': 'Available from',
+    'editLot.comments': 'Additional comments',
+    'editLot.commentsPh': 'Optional notes…',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",

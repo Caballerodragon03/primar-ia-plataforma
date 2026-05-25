@@ -17,6 +17,8 @@ import {
   incotermsForLogistica,
   type LogisticaPreferencia,
 } from '@primaria/shared';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 const calibreSchema = z.object({
   calibre: z.string().min(1, 'Requerido'),
@@ -67,12 +69,12 @@ const FOCUS_SECTION_ID: Record<FocusField, string> = {
   logistica: 'section-comerciales',
   terminoPago: 'section-comerciales',
 };
-const FOCUS_LABEL: Record<FocusField, string> = {
-  calibre: 'los calibres',
-  precio: 'el precio mínimo por calibre',
-  incoterm: 'los incoterms aceptados',
-  logistica: 'la logística',
-  terminoPago: 'los términos de pago',
+const FOCUS_LABEL_KEYS: Record<FocusField, MessageKey> = {
+  calibre: 'editLot.focus.calibre',
+  precio: 'editLot.focus.precio',
+  incoterm: 'editLot.focus.incoterm',
+  logistica: 'editLot.focus.logistica',
+  terminoPago: 'editLot.focus.terminoPago',
 };
 
 export default function EditLotPage() {
@@ -84,6 +86,8 @@ export default function EditLotPage() {
 }
 
 function EditLotContent() {
+  const t = useT();
+  const { locale } = useLocale();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -147,7 +151,7 @@ function EditLotContent() {
           terminosPagoAceptados: ((lot.terminosPagoAceptados ?? ['INMEDIATO']) as FormValues['terminosPagoAceptados']),
         });
       })
-      .catch(() => setError('No se pudo cargar el lote.'))
+      .catch(() => setError(t('editLot.loadFail')))
       .finally(() => setLoading(false));
   }, [id, reset]);
 
@@ -191,7 +195,7 @@ function EditLotContent() {
       router.push(`/seller/lots/${id}`);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-        ?? 'Error al guardar el lote';
+        ?? t('editLot.saveFail');
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -223,23 +227,19 @@ function EditLotContent() {
         <Link href={`/seller/lots/${id}`} className="text-text-secondary hover:text-text-primary">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-xl font-bold text-text-primary">Editar lote</h1>
+        <h1 className="text-xl font-bold text-text-primary">{t('editLot.title')}</h1>
       </div>
 
       {focus && (
         <div className="bg-primary/10 border border-primary/40 rounded-card p-3 flex items-start gap-2 text-sm">
           <Target className="w-4 h-4 text-primary-dark shrink-0 mt-0.5" />
-          <p className="text-foreground">
-            Estás ajustando <strong>{FOCUS_LABEL[focus]}</strong> para encajar con la oferta de un comprador.
-            Cambia solo ese campo y guarda — el resto puedes dejarlo igual.
-          </p>
+          <p className="text-foreground" dangerouslySetInnerHTML={{ __html: t('editLot.focusHint').replace('{field}', `<strong>${t(FOCUS_LABEL_KEYS[focus])}</strong>`) }} />
         </div>
       )}
 
       {committedKg > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-card p-4 text-sm text-amber-800">
-          <strong>{committedKg.toLocaleString('es-ES')} kg</strong> already committed by buyers.
-          You cannot reduce total kg below this amount.
+          <strong>{committedKg.toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES')} kg</strong> {t('editLot.committedBanner')}
         </div>
       )}
 
@@ -250,17 +250,17 @@ function EditLotContent() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Calibres + precio */}
         <div id="section-calibres" className={sectionClass('section-calibres')}>
-          <h2 className="text-sm font-semibold text-text-primary">Calibres y precios</h2>
+          <h2 className="text-sm font-semibold text-text-primary">{t('editLot.calibresHeader')}</h2>
           {committedKg > 0 && (
             <p className="text-xs text-text-secondary">
-              Note: prices can be updated, but total kg must stay ≥ {committedKg.toLocaleString('es-ES')} kg committed.
+              {t('editLot.priceNoteCommitted').replace('{n}', committedKg.toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES'))}
             </p>
           )}
           <div className="space-y-3">
             <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 text-xs font-medium text-text-secondary px-1">
-              <span>Caliber</span>
-              <span>Qty (kg)</span>
-              <span>Precio mín (€/kg)</span>
+              <span>{t('editOrder.caliber')}</span>
+              <span>{t('editOrder.qtyKg')}</span>
+              <span>{t('editLot.minPrice')}</span>
               <span />
             </div>
             {fields.map((field, i) => (
@@ -280,25 +280,25 @@ function EditLotContent() {
             onClick={() => append({ calibre: '', cantidad_kg: 0, precio_min_kg: 0 })}
             className="text-sm text-primary-dark hover:underline flex items-center gap-1 font-medium"
           >
-            <Plus className="w-3.5 h-3.5" /> Add caliber
+            <Plus className="w-3.5 h-3.5" /> {t('editOrder.addCaliber')}
           </button>
         </div>
 
         {/* Logistics + Incoterms + Términos de pago */}
         <div id="section-comerciales" className={sectionClass('section-comerciales')}>
-          <h2 className="text-sm font-semibold text-text-primary">Condiciones comerciales</h2>
+          <h2 className="text-sm font-semibold text-text-primary">{t('editLot.commercialHeader')}</h2>
 
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">¿Quién envía?</label>
+            <label className="block text-sm font-medium text-text-primary mb-1">{t('editLot.whoShips')}</label>
             <Select label="" {...register('logistica')}>
-              <option value="INDIFERENTE">{LOGISTICA_LABELS.INDIFERENTE} (más matches)</option>
+              <option value="INDIFERENTE">{LOGISTICA_LABELS.INDIFERENTE} ({t('editLot.logIndiff')})</option>
               <option value="YO_ENVIO">{LOGISTICA_LABELS.YO_ENVIO}</option>
               <option value="OTRO_RECOGE">{LOGISTICA_LABELS.OTRO_RECOGE}</option>
             </Select>
           </div>
 
           <div>
-            <p className="text-xs font-medium text-text-secondary mb-2">Incoterms aceptados</p>
+            <p className="text-xs font-medium text-text-secondary mb-2">{t('editLot.incotermsAccepted')}</p>
             <div className="flex flex-wrap gap-2">
               {availableIncoterms.map((it) => {
                 const active = incotermsAceptados.includes(it);
@@ -322,7 +322,7 @@ function EditLotContent() {
           </div>
 
           <div>
-            <p className="text-xs font-medium text-text-secondary mb-2">Términos de pago aceptados</p>
+            <p className="text-xs font-medium text-text-secondary mb-2">{t('editLot.paymentTermsAccepted')}</p>
             <div className="flex flex-wrap gap-2">
               {ALL_TERMINOS_PAGO.map((tp) => {
                 const active = terminosPagoAceptados.includes(tp);
@@ -348,35 +348,35 @@ function EditLotContent() {
 
         {/* Logistics location */}
         <div className="bg-card rounded-card border border-border p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-text-primary">Ubicación y notas</h2>
+          <h2 className="text-sm font-semibold text-text-primary">{t('editLot.locationHeader')}</h2>
           <Input
-            label="Pickup Location"
+            label={t('editLot.pickup')}
             {...register('direccionRecogida')}
             error={errors.direccionRecogida?.message}
           />
           <Input
-            label="Available From"
+            label={t('editLot.availableFrom')}
             type="date"
             {...register('fechaDisponibilidad')}
             error={errors.fechaDisponibilidad?.message}
           />
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">Additional Comments</label>
+            <label className="block text-sm font-medium text-text-primary mb-1">{t('editLot.comments')}</label>
             <textarea
               {...register('comentariosAdicionales')}
               rows={3}
               className="w-full px-3 py-2.5 rounded-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors resize-none"
-              placeholder="Optional notes..."
+              placeholder={t('editLot.commentsPh')}
             />
           </div>
         </div>
 
         <div className="flex gap-3 justify-end">
           <Link href={`/seller/lots/${id}`}>
-            <Button variant="outline" type="button">Cancelar</Button>
+            <Button variant="outline" type="button">{t('editOrder.cancel')}</Button>
           </Link>
           <Button variant="primary" type="submit" loading={isSubmitting}>
-            Save Changes
+            {t('editOrder.save')}
           </Button>
         </div>
       </form>
@@ -399,6 +399,7 @@ function CalibreRow({
   canRemove: boolean;
   onRemove: () => void;
 }) {
+  const t = useT();
   return (
     <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
       {calibreOptions.length > 1 ? (
@@ -407,7 +408,7 @@ function CalibreRow({
           {...register(`calibres.${index}.calibre`)}
           error={errors.calibres?.[index]?.calibre?.message}
         >
-          <option value="">Select caliber...</option>
+          <option value="">{t('editOrder.selectCaliber')}</option>
           {calibreOptions.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
