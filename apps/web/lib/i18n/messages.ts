@@ -408,6 +408,61 @@ export type MessageKey =
   | 'contract.docs.intro'
   | 'contract.docs.sellerInvoice'
   | 'contract.docs.platformInvoice'
+  // buyer-only contract keys
+  | 'contract.buyerTitle'
+  | 'contract.backToOrders'
+  | 'contract.summary.amountToSeller'
+  | 'contract.commission.amountToPay'
+  | 'contract.commission.helpBuyer'
+  | 'contract.document.watermarkBuyer'
+  | 'contract.signatures.seller'
+  | 'contract.signatures.buyerYou'
+  | 'contract.signatures.sellerPending'
+  | 'contract.signatures.buyerWillSignOnPay'
+  | 'contract.sellerNotSignedYet'
+  | 'contract.sellerSignedBanner.title'
+  | 'contract.sellerSignedBanner.before'
+  | 'contract.sellerSignedBanner.deadlineWord'
+  | 'contract.sellerSignedBanner.after'
+  | 'contract.signAndPay'
+  | 'contract.deadlineExpiredBuyer.title'
+  | 'contract.deadlineExpiredBuyer.desc'
+  | 'contract.openSellerChat'
+  | 'contract.expired.descBuyer'
+  | 'contract.cancelled.byBuyerSelf'
+  | 'contract.cancelled.bySeller'
+  | 'contract.cancelled.backToOrders'
+  | 'contract.signed.titleBuyer'
+  | 'contract.signed.descBuyer'
+  | 'contract.docs.introBuyer'
+  | 'contract.docs.escrow'
+  | 'contract.docs.escrowSub'
+  | 'contract.docs.sellerInvoiceBuyer'
+  | 'contract.docs.platformInvoiceBuyer'
+  | 'contract.docs.watermarkAmber'
+  // sign modal
+  | 'contract.signModal.title'
+  | 'contract.signModal.warning1'
+  | 'contract.signModal.warning2'
+  | 'contract.signModal.fieldLabel'
+  | 'contract.signModal.placeholder'
+  | 'contract.signModal.fieldHelp'
+  | 'contract.signModal.ack'
+  | 'contract.signModal.cancel'
+  | 'contract.signModal.confirm'
+  // payment banners
+  | 'contract.payment.processing.title'
+  | 'contract.payment.processing.desc'
+  | 'contract.payment.finalizing.title'
+  | 'contract.payment.finalizing.desc1'
+  | 'contract.payment.finalizing.desc2'
+  | 'contract.payment.refresh'
+  | 'contract.payment.reconcile'
+  | 'contract.payment.stuck.title'
+  | 'contract.payment.stuck.desc'
+  | 'contract.payment.cancelled.title'
+  | 'contract.payment.cancelled.desc'
+  | 'contract.downloadFail'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -813,6 +868,58 @@ export const messages: Record<Locale, Messages> = {
     'contract.docs.intro': 'Tras la firma del contrato hemos generado automáticamente la factura de tu venta y la de la comisión de Primar-IA.',
     'contract.docs.sellerInvoice': 'Tu factura (venta al comprador)',
     'contract.docs.platformInvoice': 'Factura comisión Primar-IA (referencia)',
+    'contract.buyerTitle': 'Contrato — Firma y pago',
+    'contract.backToOrders': 'Volver a pedidos',
+    'contract.summary.amountToSeller': 'Importe a pagar al vendedor',
+    'contract.commission.amountToPay': 'Importe a pagar',
+    'contract.commission.helpBuyer': 'Esta comisión la paga el comprador (tú) directamente a Primar-IA por el servicio de matchmaking. El importe de la mercancía lo pagas directamente al vendedor según las condiciones acordadas en el contrato.',
+    'contract.document.watermarkBuyer': 'Revisa el contrato con calma antes de firmar. Lleva marca de agua hasta que firmes y pagues la comisión.',
+    'contract.signatures.seller': 'Vendedor',
+    'contract.signatures.buyerYou': 'Comprador (tú)',
+    'contract.signatures.sellerPending': 'Pendiente — debe firmar primero',
+    'contract.signatures.buyerWillSignOnPay': 'Firmarás al pagar la comisión',
+    'contract.sellerNotSignedYet': 'El vendedor todavía no ha firmado. Podrás firmar y pagar cuando el vendedor complete su firma.',
+    'contract.sellerSignedBanner.title': 'El vendedor ha firmado',
+    'contract.sellerSignedBanner.before': 'Tienes hasta',
+    'contract.sellerSignedBanner.deadlineWord': '48 horas hábiles',
+    'contract.sellerSignedBanner.after': 'para firmar y pagar la comisión. Pasado ese plazo el contrato caducará.',
+    'contract.signAndPay': 'Firmar y pagar comisión',
+    'contract.deadlineExpiredBuyer.title': 'Plazo de firma vencido',
+    'contract.deadlineExpiredBuyer.desc': 'El plazo de 48 horas hábiles expiró el {date}. El contrato pasará a caducado en breve. Habla con el vendedor por chat si quieres reabrir la operación.',
+    'contract.openSellerChat': 'Abrir chat con el vendedor',
+    'contract.expired.descBuyer': 'El plazo de 48 horas hábiles para firmar y pagar ha vencido. Habla con el vendedor por chat si quieres iniciar de nuevo.',
+    'contract.cancelled.byBuyerSelf': 'Cancelaste este contrato el',
+    'contract.cancelled.bySeller': 'El vendedor canceló este contrato el',
+    'contract.cancelled.backToOrders': 'Volver a mis pedidos',
+    'contract.signed.titleBuyer': 'Contrato firmado y comisión pagada',
+    'contract.signed.descBuyer': 'Comisión pagada el {date}. Ahora procede el pago del importe al vendedor según las condiciones del contrato.',
+    'contract.docs.introBuyer': 'Hemos generado automáticamente las facturas y el resguardo con las instrucciones para que pagues al vendedor.',
+    'contract.docs.escrow': 'Resguardo de pago al vendedor',
+    'contract.docs.escrowSub': 'IBAN, importe y referencia para tu transferencia',
+    'contract.docs.sellerInvoiceBuyer': 'Factura del vendedor (mercancía)',
+    'contract.docs.platformInvoiceBuyer': 'Factura Primar-IA (comisión)',
+    'contract.docs.watermarkAmber': 'Revisa el contrato con calma antes de firmar.',
+    'contract.signModal.title': 'Firma irrevocable',
+    'contract.signModal.warning1': 'Aviso importante. Al firmar y pagar la comisión, aceptas el contrato de forma vinculante e irrevocable. No podrás deshacer la firma ni recuperar la comisión.',
+    'contract.signModal.warning2': 'Si dejas de cumplir las condiciones acordadas, podrás incurrir en responsabilidades legales según el Código de Comercio y el Reglamento (UE) 910/2014 (eIDAS).',
+    'contract.signModal.fieldLabel': 'Tu firma (nombre y apellidos)',
+    'contract.signModal.placeholder': 'Ej: Juan García López',
+    'contract.signModal.fieldHelp': 'Esto se considera firma electrónica simple según el Reglamento eIDAS.',
+    'contract.signModal.ack': 'Entiendo que esta firma es irrevocable y que al continuar acepto el contrato en su totalidad.',
+    'contract.signModal.cancel': 'Cancelar',
+    'contract.signModal.confirm': 'Confirmar y pagar',
+    'contract.payment.processing.title': 'Procesando tu pago…',
+    'contract.payment.processing.desc': 'Stripe ha confirmado el pago. Estamos finalizando la firma y el contrato. Esto suele tardar unos segundos.',
+    'contract.payment.finalizing.title': 'El pago se está finalizando',
+    'contract.payment.finalizing.desc1': 'Tu pago se ha enviado a Stripe pero aún no hemos recibido la confirmación final. No vuelvas a pulsar «Firmar y pagar» — ya está en curso.',
+    'contract.payment.finalizing.desc2': 'Si llevas más de un minuto esperando, pulsa «Reconciliar con Stripe»: comprobamos directamente en Stripe el estado del pago y forzamos la finalización del contrato.',
+    'contract.payment.refresh': 'Refrescar',
+    'contract.payment.reconcile': 'Reconciliar con Stripe',
+    'contract.payment.stuck.title': 'El pago tarda más de lo habitual',
+    'contract.payment.stuck.desc': 'Stripe ya nos confirmó el cobro pero la finalización está tardando más de lo normal. No reintentes — el pago está en curso. Si en unos minutos no ves el contrato firmado, contacta con soporte.',
+    'contract.payment.cancelled.title': 'Pago cancelado',
+    'contract.payment.cancelled.desc': 'Cancelaste el pago en Stripe. Puedes reintentar cuando quieras, siempre que el vendedor no haya caducado su firma.',
+    'contract.downloadFail': 'No se pudo descargar el contrato.',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -1212,6 +1319,58 @@ export const messages: Record<Locale, Messages> = {
     'contract.docs.intro': "After signing we've auto-generated your sale invoice and Primar-IA's commission invoice.",
     'contract.docs.sellerInvoice': 'Your invoice (sale to buyer)',
     'contract.docs.platformInvoice': 'Primar-IA commission invoice (reference)',
+    'contract.buyerTitle': 'Contract — Sign and pay',
+    'contract.backToOrders': 'Back to orders',
+    'contract.summary.amountToSeller': 'Amount to pay the seller',
+    'contract.commission.amountToPay': 'Amount to pay',
+    'contract.commission.helpBuyer': 'This commission is paid by the buyer (you) directly to Primar-IA for the matchmaking service. The goods amount is paid directly to the seller per the agreed contract terms.',
+    'contract.document.watermarkBuyer': 'Review the contract carefully before signing. It bears a watermark until you sign and pay the commission.',
+    'contract.signatures.seller': 'Seller',
+    'contract.signatures.buyerYou': 'Buyer (you)',
+    'contract.signatures.sellerPending': 'Pending — must sign first',
+    'contract.signatures.buyerWillSignOnPay': "You'll sign when paying the commission",
+    'contract.sellerNotSignedYet': "The seller hasn't signed yet. You'll be able to sign and pay once they complete their signature.",
+    'contract.sellerSignedBanner.title': 'The seller has signed',
+    'contract.sellerSignedBanner.before': 'You have until',
+    'contract.sellerSignedBanner.deadlineWord': '48 business hours',
+    'contract.sellerSignedBanner.after': 'to sign and pay the commission. After that the contract will expire.',
+    'contract.signAndPay': 'Sign and pay commission',
+    'contract.deadlineExpiredBuyer.title': 'Signing deadline expired',
+    'contract.deadlineExpiredBuyer.desc': 'The 48 business-hours window expired on {date}. The contract will move to expired shortly. Chat with the seller if you want to reopen the deal.',
+    'contract.openSellerChat': 'Open chat with the seller',
+    'contract.expired.descBuyer': 'The 48 business-hours window to sign and pay has expired. Chat with the seller if you want to restart.',
+    'contract.cancelled.byBuyerSelf': 'You cancelled this contract on',
+    'contract.cancelled.bySeller': 'The seller cancelled this contract on',
+    'contract.cancelled.backToOrders': 'Back to my orders',
+    'contract.signed.titleBuyer': 'Contract signed and commission paid',
+    'contract.signed.descBuyer': 'Commission paid on {date}. Now proceed with paying the goods amount to the seller per the contract terms.',
+    'contract.docs.introBuyer': "We've auto-generated the invoices and the payment slip with instructions to pay the seller.",
+    'contract.docs.escrow': 'Payment slip to the seller',
+    'contract.docs.escrowSub': 'IBAN, amount and reference for your bank transfer',
+    'contract.docs.sellerInvoiceBuyer': "Seller's invoice (goods)",
+    'contract.docs.platformInvoiceBuyer': 'Primar-IA invoice (commission)',
+    'contract.docs.watermarkAmber': 'Review the contract carefully before signing.',
+    'contract.signModal.title': 'Irrevocable signature',
+    'contract.signModal.warning1': 'Important notice. By signing and paying the commission you accept the contract in a binding and irrevocable way. You will not be able to undo the signature or recover the commission.',
+    'contract.signModal.warning2': 'If you fail to meet the agreed terms, you may face legal liability under the Spanish Commercial Code and EU Regulation 910/2014 (eIDAS).',
+    'contract.signModal.fieldLabel': 'Your signature (first and last name)',
+    'contract.signModal.placeholder': 'E.g. John García López',
+    'contract.signModal.fieldHelp': 'This counts as a simple electronic signature under the eIDAS Regulation.',
+    'contract.signModal.ack': 'I understand this signature is irrevocable and that by continuing I accept the contract in its entirety.',
+    'contract.signModal.cancel': 'Cancel',
+    'contract.signModal.confirm': 'Confirm and pay',
+    'contract.payment.processing.title': 'Processing your payment…',
+    'contract.payment.processing.desc': 'Stripe confirmed the payment. We are finalising the signature and the contract. This usually takes a few seconds.',
+    'contract.payment.finalizing.title': 'Payment is being finalised',
+    'contract.payment.finalizing.desc1': "Your payment was sent to Stripe but we haven't received the final confirmation yet. Don't press “Sign and pay” again — it's already in progress.",
+    'contract.payment.finalizing.desc2': 'If you have been waiting more than a minute, press "Reconcile with Stripe": we check the payment status directly with Stripe and force the contract finalisation.',
+    'contract.payment.refresh': 'Refresh',
+    'contract.payment.reconcile': 'Reconcile with Stripe',
+    'contract.payment.stuck.title': 'Payment is taking longer than usual',
+    'contract.payment.stuck.desc': 'Stripe already confirmed the charge but the finalisation is taking longer than usual. Do not retry — the payment is in progress. If you do not see the contract signed in a few minutes, contact support.',
+    'contract.payment.cancelled.title': 'Payment cancelled',
+    'contract.payment.cancelled.desc': "You cancelled the payment on Stripe. You can retry whenever you want, as long as the seller's signature hasn't expired.",
+    'contract.downloadFail': 'Could not download the contract.',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",
