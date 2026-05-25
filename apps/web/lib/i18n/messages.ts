@@ -642,6 +642,80 @@ export type MessageKey =
   | 'lotDetail.publish'
   | 'lotDetail.edit'
   | 'lotDetail.cancel'
+  // ─── order detail ────────────────────────────────────────────────────────
+  | 'orderDetail.loadFail'
+  | 'orderDetail.notFound'
+  | 'orderDetail.backToOrders'
+  | 'orderDetail.title'
+  | 'orderDetail.coverage'
+  | 'orderDetail.edit'
+  | 'orderDetail.close'
+  | 'orderDetail.contract'
+  | 'orderDetail.cancelConfirmWithContrib'
+  | 'orderDetail.cancelConfirm'
+  | 'orderDetail.cancelFail'
+  | 'orderDetail.rejectConfirm'
+  | 'orderDetail.rejectReason'
+  | 'orderDetail.rejectFail'
+  | 'orderDetail.hiddenMatches.one'
+  | 'orderDetail.hiddenMatches.many'
+  | 'orderDetail.closedTitle'
+  | 'orderDetail.closedDesc'
+  | 'orderDetail.acceptedContrib.one'
+  | 'orderDetail.acceptedContrib.many'
+  | 'orderDetail.acceptedDesc'
+  | 'orderDetail.signAndPay'
+  | 'orderDetail.preAuthTitle'
+  | 'orderDetail.preAuthDesc'
+  | 'orderDetail.requestedCalibres'
+  | 'orderDetail.col.calibre'
+  | 'orderDetail.col.quantity'
+  | 'orderDetail.col.maxPrice'
+  | 'orderDetail.noCalibres'
+  | 'orderDetail.sellerOffers'
+  | 'orderDetail.noOffers'
+  | 'orderDetail.noOffersHint'
+  | 'orderDetail.matchScore'
+  | 'orderDetail.totalLabel'
+  | 'orderDetail.proposalReadyPulse'
+  | 'orderDetail.rejectProposal'
+  | 'orderDetail.completed'
+  | 'orderDetail.invoice'
+  | 'orderDetail.viewContract'
+  | 'orderDetail.openChat'
+  | 'orderDetail.openDispute'
+  | 'orderDetail.shipmentFrom'
+  | 'orderDetail.delivered'
+  | 'orderDetail.lotPhotos'
+  | 'orderDetail.deliveryReceivedPrompt'
+  | 'orderDetail.qrCodePlaceholder'
+  | 'orderDetail.confirm'
+  | 'orderDetail.qrHelp'
+  | 'orderDetail.codeFail'
+  | 'orderDetail.codeMissing'
+  | 'orderDetail.deliveryConfirmed'
+  | 'orderDetail.alreadyRated'
+  | 'orderDetail.rateSeller'
+  | 'orderDetail.waitingSellerSig'
+  | 'orderDetail.sellerSignedAwaitYou'
+  | 'orderDetail.bothSignedAwaitShipment'
+  | 'orderDetail.details'
+  | 'orderDetail.product'
+  | 'orderDetail.variety'
+  | 'orderDetail.totalQty'
+  | 'orderDetail.incoterm'
+  | 'orderDetail.destination'
+  | 'orderDetail.frequency'
+  | 'orderDetail.deliveryBy'
+  | 'orderDetail.notes'
+  | 'orderDetail.proposalTooltip'
+  | 'orderDetail.matchEstado.PROPUESTO'
+  | 'orderDetail.matchEstado.ENVIADO_VENDEDOR'
+  | 'orderDetail.matchEstado.ACEPTADO_VENDEDOR'
+  | 'orderDetail.matchEstado.RECHAZADO_VENDEDOR'
+  | 'orderDetail.matchEstado.PENDIENTE_PAGO'
+  | 'orderDetail.matchEstado.CONFIRMADO'
+  | 'orderDetail.matchEstado.CANCELADO'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -1273,6 +1347,79 @@ export const messages: Record<Locale, Messages> = {
     'lotDetail.publish': 'Publicar lote',
     'lotDetail.edit': 'Editar lote',
     'lotDetail.cancel': 'Cancelar lote',
+    'orderDetail.loadFail': 'Error al cargar los detalles del pedido.',
+    'orderDetail.notFound': 'Pedido no encontrado.',
+    'orderDetail.backToOrders': 'Volver a mis pedidos',
+    'orderDetail.title': 'Pedido',
+    'orderDetail.coverage': 'Cobertura',
+    'orderDetail.edit': 'Editar',
+    'orderDetail.close': 'Cerrar',
+    'orderDetail.contract': 'Contrato',
+    'orderDetail.cancelConfirmWithContrib': 'Este pedido tiene aportaciones de vendedor comprometidas. Sólo se cancelará la parte no comprometida. Las cantidades comprometidas se mantendrán y el pedido pasará a completado. ¿Continuar?',
+    'orderDetail.cancelConfirm': '¿Seguro que quieres cerrar este pedido? Esta acción no se puede deshacer.',
+    'orderDetail.cancelFail': 'No se pudo cancelar el pedido.',
+    'orderDetail.rejectConfirm': '¿Rechazar esta propuesta? El vendedor dejará de verla en sus ofertas.',
+    'orderDetail.rejectReason': 'Propuesta rechazada por el comprador desde la vista de pedido.',
+    'orderDetail.rejectFail': 'No se pudo rechazar la propuesta.',
+    'orderDetail.hiddenMatches.one': 'Tienes {n} match pendiente de mostrar',
+    'orderDetail.hiddenMatches.many': 'Tienes {n} matches pendientes de mostrar',
+    'orderDetail.closedTitle': 'Pedido cerrado — todas las entregas confirmadas',
+    'orderDetail.closedDesc': 'El pago se ha liberado al vendedor o vendedores. Este pedido está archivado.',
+    'orderDetail.acceptedContrib.one': '{n} contribución de vendedor aceptada',
+    'orderDetail.acceptedContrib.many': '{n} contribuciones de vendedor aceptadas',
+    'orderDetail.acceptedDesc': 'Firma el contrato y paga la comisión de Primar-IA para cerrar el acuerdo. El importe de la mercancía lo pagas al vendedor por transferencia según el plazo pactado.',
+    'orderDetail.signAndPay': 'Firmar y pagar comisión',
+    'orderDetail.preAuthTitle': 'Pago preautorizado',
+    'orderDetail.preAuthDesc': 'El importe se libera al vendedor cuando confirmes la entrega.',
+    'orderDetail.requestedCalibres': 'Calibres solicitados',
+    'orderDetail.col.calibre': 'CALIBRE',
+    'orderDetail.col.quantity': 'CANT (kg)',
+    'orderDetail.col.maxPrice': 'PRECIO MÁX (€/kg)',
+    'orderDetail.noCalibres': 'Sin calibres definidos',
+    'orderDetail.sellerOffers': 'Ofertas de vendedores',
+    'orderDetail.noOffers': 'Sin propuestas aún.',
+    'orderDetail.noOffersHint': 'Cuando un vendedor te haga una propuesta concreta aparecerá aquí.',
+    'orderDetail.matchScore': 'Match',
+    'orderDetail.totalLabel': 'Total',
+    'orderDetail.proposalReadyPulse': 'El vendedor ha hecho una propuesta — acción requerida',
+    'orderDetail.rejectProposal': 'Rechazar propuesta',
+    'orderDetail.completed': 'Completado',
+    'orderDetail.invoice': 'Factura',
+    'orderDetail.viewContract': 'Ver contrato',
+    'orderDetail.openChat': 'Abrir chat',
+    'orderDetail.openDispute': 'Abrir incidencia',
+    'orderDetail.shipmentFrom': 'Envío de',
+    'orderDetail.delivered': 'Entregado',
+    'orderDetail.lotPhotos': '📸 Fotos de preparación del lote',
+    'orderDetail.deliveryReceivedPrompt': '📦 ¿Has recibido el envío? Confirma la entrega para liberar el pago.',
+    'orderDetail.qrCodePlaceholder': 'Introduce el código QR / verificación…',
+    'orderDetail.confirm': 'Confirmar',
+    'orderDetail.qrHelp': 'El código viene impreso en la etiqueta QR pegada al lote. El pago se libera al vendedor cuando lo confirmes.',
+    'orderDetail.codeFail': 'No se pudo verificar el código.',
+    'orderDetail.codeMissing': 'Introduce el código de verificación.',
+    'orderDetail.deliveryConfirmed': 'Confirmaste la entrega. Pago liberado.',
+    'orderDetail.alreadyRated': 'Ya has valorado esta transacción.',
+    'orderDetail.rateSeller': 'Valorar al vendedor',
+    'orderDetail.waitingSellerSig': 'Esperando a que el vendedor firme el contrato.',
+    'orderDetail.sellerSignedAwaitYou': 'El vendedor ha firmado. Falta tu firma y el pago de la comisión para cerrar el acuerdo — usa el botón «Firmar y pagar comisión» de arriba.',
+    'orderDetail.bothSignedAwaitShipment': 'Contrato firmado por ambas partes. El código QR aparecerá en cuanto el vendedor marque la mercancía como enviada.',
+    'orderDetail.details': 'Detalles del pedido',
+    'orderDetail.product': 'Producto',
+    'orderDetail.variety': 'Variedad',
+    'orderDetail.totalQty': 'Cantidad total',
+    'orderDetail.incoterm': 'Incoterm',
+    'orderDetail.destination': 'Destino',
+    'orderDetail.frequency': 'Frecuencia',
+    'orderDetail.deliveryBy': 'Entrega antes de',
+    'orderDetail.notes': 'Notas',
+    'orderDetail.proposalTooltip': 'El vendedor ha hecho una propuesta — acción requerida',
+    'orderDetail.matchEstado.PROPUESTO': 'Propuesto',
+    'orderDetail.matchEstado.ENVIADO_VENDEDOR': 'Enviado al vendedor',
+    'orderDetail.matchEstado.ACEPTADO_VENDEDOR': 'Propuesta',
+    'orderDetail.matchEstado.RECHAZADO_VENDEDOR': 'Rechazado',
+    'orderDetail.matchEstado.PENDIENTE_PAGO': 'Pendiente de pago',
+    'orderDetail.matchEstado.CONFIRMADO': 'Confirmado',
+    'orderDetail.matchEstado.CANCELADO': 'Cancelado',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -1898,6 +2045,79 @@ export const messages: Record<Locale, Messages> = {
     'lotDetail.publish': 'Publish lot',
     'lotDetail.edit': 'Edit lot',
     'lotDetail.cancel': 'Cancel lot',
+    'orderDetail.loadFail': 'Failed to load order details.',
+    'orderDetail.notFound': 'Order not found.',
+    'orderDetail.backToOrders': 'Back to my orders',
+    'orderDetail.title': 'Order',
+    'orderDetail.coverage': 'Coverage',
+    'orderDetail.edit': 'Edit',
+    'orderDetail.close': 'Close',
+    'orderDetail.contract': 'Contract',
+    'orderDetail.cancelConfirmWithContrib': 'This order has committed seller contributions. Only the uncommitted part will be cancelled. The committed quantities will be kept and the order will be marked as completed. Continue?',
+    'orderDetail.cancelConfirm': 'Are you sure you want to close this order? This cannot be undone.',
+    'orderDetail.cancelFail': 'Failed to cancel order.',
+    'orderDetail.rejectConfirm': 'Reject this proposal? The seller will no longer see it in their offers.',
+    'orderDetail.rejectReason': 'Proposal rejected by the buyer from the order view.',
+    'orderDetail.rejectFail': 'Failed to reject the proposal.',
+    'orderDetail.hiddenMatches.one': 'You have {n} match pending to display',
+    'orderDetail.hiddenMatches.many': 'You have {n} matches pending to display',
+    'orderDetail.closedTitle': 'Order closed — all deliveries confirmed',
+    'orderDetail.closedDesc': 'Payment has been released to the seller(s). This order is now archived.',
+    'orderDetail.acceptedContrib.one': '{n} accepted seller contribution',
+    'orderDetail.acceptedContrib.many': '{n} accepted seller contributions',
+    'orderDetail.acceptedDesc': "Sign the contract and pay the Primar-IA commission to close the deal. The goods amount is paid to the seller by bank transfer per the agreed terms.",
+    'orderDetail.signAndPay': 'Sign and pay commission',
+    'orderDetail.preAuthTitle': 'Payment pre-authorised',
+    'orderDetail.preAuthDesc': 'The amount is released to the seller when you confirm delivery.',
+    'orderDetail.requestedCalibres': 'Requested calibres',
+    'orderDetail.col.calibre': 'CALIBRE',
+    'orderDetail.col.quantity': 'QTY (kg)',
+    'orderDetail.col.maxPrice': 'MAX PRICE (€/kg)',
+    'orderDetail.noCalibres': 'No calibres defined',
+    'orderDetail.sellerOffers': 'Seller offers',
+    'orderDetail.noOffers': 'No proposals yet.',
+    'orderDetail.noOffersHint': 'When a seller makes a concrete proposal it will appear here.',
+    'orderDetail.matchScore': 'Match',
+    'orderDetail.totalLabel': 'Total',
+    'orderDetail.proposalReadyPulse': 'The seller has made a proposal — action required',
+    'orderDetail.rejectProposal': 'Reject proposal',
+    'orderDetail.completed': 'Completed',
+    'orderDetail.invoice': 'Invoice',
+    'orderDetail.viewContract': 'View contract',
+    'orderDetail.openChat': 'Open chat',
+    'orderDetail.openDispute': 'Open dispute',
+    'orderDetail.shipmentFrom': 'Shipment from',
+    'orderDetail.delivered': 'Delivered',
+    'orderDetail.lotPhotos': '📸 Lot preparation photos',
+    'orderDetail.deliveryReceivedPrompt': '📦 Received the shipment? Confirm delivery to release payment.',
+    'orderDetail.qrCodePlaceholder': 'Enter the QR / verification code…',
+    'orderDetail.confirm': 'Confirm',
+    'orderDetail.qrHelp': 'The code is printed on the QR label attached to the lot. Payment is released to the seller once confirmed.',
+    'orderDetail.codeFail': 'Could not verify the code.',
+    'orderDetail.codeMissing': 'Enter the verification code.',
+    'orderDetail.deliveryConfirmed': 'You confirmed delivery. Payment released.',
+    'orderDetail.alreadyRated': "You've already rated this transaction.",
+    'orderDetail.rateSeller': 'Rate the seller',
+    'orderDetail.waitingSellerSig': 'Waiting for the seller to sign the contract.',
+    'orderDetail.sellerSignedAwaitYou': "The seller has signed. Your signature and commission payment are pending — use the “Sign and pay commission” button above.",
+    'orderDetail.bothSignedAwaitShipment': 'Contract signed by both parties. The QR code will appear as soon as the seller marks the goods as shipped.',
+    'orderDetail.details': 'Order details',
+    'orderDetail.product': 'Product',
+    'orderDetail.variety': 'Variety',
+    'orderDetail.totalQty': 'Total quantity',
+    'orderDetail.incoterm': 'Incoterm',
+    'orderDetail.destination': 'Destination',
+    'orderDetail.frequency': 'Frequency',
+    'orderDetail.deliveryBy': 'Deliver by',
+    'orderDetail.notes': 'Notes',
+    'orderDetail.proposalTooltip': 'The seller has made a proposal — action required',
+    'orderDetail.matchEstado.PROPUESTO': 'Proposed',
+    'orderDetail.matchEstado.ENVIADO_VENDEDOR': 'Sent to seller',
+    'orderDetail.matchEstado.ACEPTADO_VENDEDOR': 'Proposal',
+    'orderDetail.matchEstado.RECHAZADO_VENDEDOR': 'Rejected',
+    'orderDetail.matchEstado.PENDIENTE_PAGO': 'Pending payment',
+    'orderDetail.matchEstado.CONFIRMADO': 'Confirmed',
+    'orderDetail.matchEstado.CANCELADO': 'Cancelled',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",

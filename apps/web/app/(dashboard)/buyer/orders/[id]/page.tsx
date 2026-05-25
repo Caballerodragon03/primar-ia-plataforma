@@ -13,6 +13,8 @@ import { CoverageBar } from '@/components/ui/CoverageBar';
 import { DisputeModal } from '@/components/ui/DisputeModal';
 import { ScoreBadge } from '@/components/ui/ScoreBadge';
 import { RatingModal } from '@/components/RatingModal';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 interface Match {
   id: string;
@@ -67,35 +69,29 @@ interface ContractInfo {
 
 type CalibreItem = { calibre: string; cantidad_kg: number; precio_max_kg: number };
 
-function formatEur(amount: number): string {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
-}
-
-const MATCH_STATE_LABELS: Record<string, string> = {
-  PROPUESTO: 'Propuesto',
-  ENVIADO_VENDEDOR: 'Enviado al vendedor',
-  // Para el comprador, "ACEPTADO_VENDEDOR" significa que el vendedor le ha
-  // hecho una propuesta concreta — no que él la haya aceptado. Renombramos
-  // para evitar confusión (el seller view usa otro label).
-  ACEPTADO_VENDEDOR: 'Propuesta',
-  RECHAZADO_VENDEDOR: 'Rechazado',
-  PENDIENTE_PAGO: 'Pendiente de pago',
-  CONFIRMADO: 'Confirmado',
-  CANCELADO: 'Cancelado',
+const MATCH_STATE_LABEL_KEYS: Record<string, MessageKey> = {
+  PROPUESTO: 'orderDetail.matchEstado.PROPUESTO',
+  ENVIADO_VENDEDOR: 'orderDetail.matchEstado.ENVIADO_VENDEDOR',
+  ACEPTADO_VENDEDOR: 'orderDetail.matchEstado.ACEPTADO_VENDEDOR',
+  RECHAZADO_VENDEDOR: 'orderDetail.matchEstado.RECHAZADO_VENDEDOR',
+  PENDIENTE_PAGO: 'orderDetail.matchEstado.PENDIENTE_PAGO',
+  CONFIRMADO: 'orderDetail.matchEstado.CONFIRMADO',
+  CANCELADO: 'orderDetail.matchEstado.CANCELADO',
 };
 
 function DeliveryConfirmInline({ transaccionId, onConfirmed }: { transaccionId: string; onConfirmed: () => void }) {
+  const t = useT();
   const [code, setCode] = useState('');
   const [confirming, setConfirming] = useState(false);
 
   const handleConfirm = async () => {
-    if (!code.trim()) { alert('Enter the verification code.'); return; }
+    if (!code.trim()) { alert(t('orderDetail.codeMissing')); return; }
     setConfirming(true);
     try {
       await api.post(`/contracts/${transaccionId}/confirm-delivery`, { qrToken: code.trim() });
       onConfirmed();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'No se pudo verificar el código.';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('orderDetail.codeFail');
       alert(msg);
     } finally {
       setConfirming(false);
@@ -104,26 +100,29 @@ function DeliveryConfirmInline({ transaccionId, onConfirmed }: { transaccionId: 
 
   return (
     <div className="p-4 space-y-3 bg-amber-50 border-t border-amber-100">
-      <p className="text-xs font-semibold text-amber-900">📦 Received the shipment? Confirm delivery to release payment.</p>
+      <p className="text-xs font-semibold text-amber-900">{t('orderDetail.deliveryReceivedPrompt')}</p>
       <div className="flex gap-2">
         <input
           type="text"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="Introduce el código QR / verificación…"
+          placeholder={t('orderDetail.qrCodePlaceholder')}
           className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
           onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
         />
         <Button variant="primary" size="sm" loading={confirming} onClick={handleConfirm}>
-          Confirm
+          {t('orderDetail.confirm')}
         </Button>
       </div>
-      <p className="text-[11px] text-amber-700">The code is printed on the QR label attached to the lot. Payment will be released to the seller once confirmed.</p>
+      <p className="text-[11px] text-amber-700">{t('orderDetail.qrHelp')}</p>
     </div>
   );
 }
 
 export default function OrderDetailPage() {
+  const t = useT();
+  const { locale } = useLocale();
+  const dateLoc = locale === 'en' ? 'en-GB' : 'es-ES';
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { id } = params;
@@ -166,7 +165,7 @@ export default function OrderDetailPage() {
         setTxInfoMap(map);
       }
     } catch {
-      setError('Error al cargar los detalles del pedido.');
+      setError(t('orderDetail.loadFail'));
     } finally {
       setIsLoading(false);
     }
@@ -182,8 +181,8 @@ export default function OrderDetailPage() {
       ['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado)
     );
     const msg = hasContributions
-      ? 'This order has committed seller contributions. Only the uncommitted part will be cancelled. The committed quantities will be kept and the order will be marked as completed. Continue?'
-      : '¿Seguro que quieres cerrar este pedido? Esta acción no se puede deshacer.';
+      ? t('orderDetail.cancelConfirmWithContrib')
+      : t('orderDetail.cancelConfirm');
     if (!confirm(msg)) return;
     setCancelling(true);
     try {
@@ -197,7 +196,7 @@ export default function OrderDetailPage() {
       }
     } catch (err: unknown) {
       const errMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-        ?? 'No se pudo cancelar el pedido.';
+        ?? t('orderDetail.cancelFail');
       setError(errMsg);
       setCancelling(false);
     }
@@ -209,15 +208,15 @@ export default function OrderDetailPage() {
   // engine won't re-create this specific lote↔pedido match (only PROPUESTO /
   // ENVIADO_VENDEDOR are upsertable; CANCELADO is terminal).
   const handleRejectMatch = async (matchId: string) => {
-    if (!confirm('¿Rechazar esta propuesta? El vendedor dejará de verla en sus ofertas.')) return;
+    if (!confirm(t('orderDetail.rejectConfirm'))) return;
     setRejectingMatchId(matchId);
     try {
       await api.post(`/contracts/match/${matchId}/cancel`, {
-        motivo: 'Propuesta rechazada por el comprador desde la vista de pedido.',
+        motivo: t('orderDetail.rejectReason'),
       });
       await fetchOrder();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'No se pudo rechazar la propuesta.';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('orderDetail.rejectFail');
       alert(msg);
     } finally {
       setRejectingMatchId(null);
@@ -251,8 +250,8 @@ const openDisputeModal = (match: Match) => {
   if (error || !order) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-600 mb-4">{error ?? 'Pedido no encontrado.'}</p>
-        <Button variant="outline" onClick={() => router.push('/buyer/orders')}>Volver a pedidos</Button>
+        <p className="text-red-600 mb-4">{error ?? t('orderDetail.notFound')}</p>
+        <Button variant="outline" onClick={() => router.push('/buyer/orders')}>{t('orderDetail.backToOrders')}</Button>
       </div>
     );
   }
@@ -279,18 +278,18 @@ const openDisputeModal = (match: Match) => {
       {/* Back */}
       <Link href="/buyer/orders" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="w-4 h-4" />
-        Volver a mis pedidos
+        {t('orderDetail.backToOrders')}
       </Link>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-foreground">Pedido #{shortId}: {productName}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('orderDetail.title')} #{shortId}: {productName}</h1>
             <StatusBadge status={order.estado} />
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-muted-foreground">Cobertura</span>
+            <span className="text-sm text-muted-foreground">{t('orderDetail.coverage')}</span>
             <CoverageBar percentage={displayCoverage} className="w-48" />
             <span className="text-sm font-semibold text-foreground">{Math.round(displayCoverage)}%</span>
           </div>
@@ -299,18 +298,18 @@ const openDisputeModal = (match: Match) => {
           {['BORRADOR', 'ACTIVO', 'PARCIALMENTE_CUBIERTO'].includes(order.estado) && (
             <Link href={`/buyer/orders/${id}/edit`}>
               <Button variant="outline" size="sm" className="flex items-center gap-1">
-                <Edit2 className="w-4 h-4" /> Edit
+                <Edit2 className="w-4 h-4" /> {t('orderDetail.edit')}
               </Button>
             </Link>
           )}
           {!['CANCELADO', 'CERRADO', 'TOTALMENTE_CUBIERTO'].includes(order.estado) && (
             <Button variant="ghost" size="sm" loading={cancelling} onClick={handleCancel} className="flex items-center gap-1">
-              <X className="w-4 h-4" /> Close
+              <X className="w-4 h-4" /> {t('orderDetail.close')}
             </Button>
           )}
           {order.contratoPdfUrl && (
             <a href={order.contratoPdfUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="primary" size="sm"><Download className="w-4 h-4" /> Contrato</Button>
+              <Button variant="primary" size="sm"><Download className="w-4 h-4" /> {t('orderDetail.contract')}</Button>
             </a>
           )}
         </div>
@@ -329,10 +328,12 @@ const openDisputeModal = (match: Match) => {
             <Lock className="w-5 h-5 text-yellow-600 shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-yellow-900">
-                Tienes {order.hiddenMatchesCount} match{(order.hiddenMatchesCount ?? 0) > 1 ? 'es' : ''} pendiente{(order.hiddenMatchesCount ?? 0) > 1 ? 's' : ''} de mostrar
+                {((order.hiddenMatchesCount ?? 0) === 1
+                  ? t('orderDetail.hiddenMatches.one')
+                  : t('orderDetail.hiddenMatches.many')).replace('{n}', String(order.hiddenMatchesCount))}
               </p>
               <p className="text-xs text-yellow-700 mt-0.5">
-                Tu plan actual aplica 24 h de retraso a los nuevos matches. Suscríbete para verlos al instante →
+                {t('lotDetail.hiddenMatchesDesc')}
               </p>
             </div>
           </div>
@@ -344,8 +345,8 @@ const openDisputeModal = (match: Match) => {
         <div className="bg-green-50 border border-green-200 rounded-card p-4 flex items-center gap-3">
           <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-green-900">Order Closed — All deliveries confirmed</p>
-            <p className="text-xs text-green-700 mt-0.5">Payment has been released to the seller(s). This order is now archived.</p>
+            <p className="text-sm font-semibold text-green-900">{t('orderDetail.closedTitle')}</p>
+            <p className="text-xs text-green-700 mt-0.5">{t('orderDetail.closedDesc')}</p>
           </div>
         </div>
       )}
@@ -359,15 +360,17 @@ const openDisputeModal = (match: Match) => {
           <Lock className="w-5 h-5 text-amber-500 shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-semibold text-amber-900">
-              {acceptedMatches.length} contribución{acceptedMatches.length > 1 ? 'es' : ''} de vendedor aceptada{acceptedMatches.length > 1 ? 's' : ''}
+              {(acceptedMatches.length === 1
+                ? t('orderDetail.acceptedContrib.one')
+                : t('orderDetail.acceptedContrib.many')).replace('{n}', String(acceptedMatches.length))}
             </p>
             <p className="text-xs text-amber-700 mt-0.5">
-              Firma el contrato y paga la comisión de Primar-IA para cerrar el acuerdo. El importe de la mercancía lo pagas al vendedor por transferencia según el plazo pactado.
+              {t('orderDetail.acceptedDesc')}
             </p>
           </div>
           <Link href={`/buyer/contracts/${acceptedMatches[0]!.id}`}>
             <Button variant="primary" size="sm">
-              Firmar y pagar comisión
+              {t('orderDetail.signAndPay')}
             </Button>
           </Link>
         </div>
@@ -378,8 +381,8 @@ const openDisputeModal = (match: Match) => {
         <div className="bg-green-50 border border-green-200 rounded-card p-4 flex items-center gap-3">
           <Lock className="w-5 h-5 text-green-600 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-green-900">Payment pre-authorized</p>
-            <p className="text-xs text-green-700 mt-0.5">El importe se libera al vendedor cuando confirmes la entrega.</p>
+            <p className="text-sm font-semibold text-green-900">{t('orderDetail.preAuthTitle')}</p>
+            <p className="text-xs text-green-700 mt-0.5">{t('orderDetail.preAuthDesc')}</p>
           </div>
         </div>
       )}
@@ -390,23 +393,23 @@ const openDisputeModal = (match: Match) => {
           {/* Calibres requested */}
           <div className="bg-card rounded-card border border-border shadow-soft overflow-x-auto">
             <div className="px-5 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">Calibres solicitados</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t('orderDetail.requestedCalibres')}</h2>
             </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted/50">
-                  {['CALIBRE', 'CANT (kg)', 'PRECIO MÁX (€/kg)'].map((h) => (
+                  {[t('orderDetail.col.calibre'), t('orderDetail.col.quantity'), t('orderDetail.col.maxPrice')].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
                 {calibres.length === 0 ? (
-                  <tr><td colSpan={3} className="px-4 py-6 text-center text-xs text-muted-foreground">Sin calibres definidos</td></tr>
+                  <tr><td colSpan={3} className="px-4 py-6 text-center text-xs text-muted-foreground">{t('orderDetail.noCalibres')}</td></tr>
                 ) : calibres.map((c, i) => (
                   <tr key={i} className="hover:bg-accent/50">
                     <td className="px-4 py-2.5 font-medium">{c.calibre || '—'}</td>
-                    <td className="px-4 py-2.5">{Number(c.cantidad_kg).toLocaleString('es-ES')}</td>
+                    <td className="px-4 py-2.5">{Number(c.cantidad_kg).toLocaleString(dateLoc)}</td>
                     <td className="px-4 py-2.5">€{Number(c.precio_max_kg).toFixed(3)}</td>
                   </tr>
                 ))}
@@ -430,13 +433,13 @@ const openDisputeModal = (match: Match) => {
             <div className="px-5 py-3 border-b border-border flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold text-foreground">
-                Ofertas de vendedores ({visibleMatches.length})
+                {t('orderDetail.sellerOffers')} ({visibleMatches.length})
               </h2>
             </div>
             {visibleMatches.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-sm text-muted-foreground">Sin propuestas aún.</p>
-                <p className="text-xs text-muted-foreground mt-1">Cuando un vendedor te haga una propuesta concreta aparecerá aquí.</p>
+                <p className="text-sm text-muted-foreground">{t('orderDetail.noOffers')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('orderDetail.noOffersHint')}</p>
               </div>
             ) : (
               <ul className="divide-y divide-border/50">
@@ -468,13 +471,13 @@ const openDisputeModal = (match: Match) => {
                                 m.scoreMatching >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
                                 'bg-muted text-muted-foreground',
                               ].join(' ')}>
-                                Match {Math.round(m.scoreMatching * 100)}/100
+                                {t('orderDetail.matchScore')} {Math.round(m.scoreMatching * 100)}/100
                               </span>
                             )}
                           </div>
                           <div className="mt-1 flex items-baseline gap-2 flex-wrap text-xs text-text-secondary">
                             <span>
-                              <span className="font-medium text-foreground">{kg.toLocaleString('es-ES')}</span> kg
+                              <span className="font-medium text-foreground">{kg.toLocaleString(dateLoc)}</span> kg
                             </span>
                             <span aria-hidden>·</span>
                             <span>
@@ -484,7 +487,7 @@ const openDisputeModal = (match: Match) => {
                               <>
                                 <span aria-hidden>·</span>
                                 <span>
-                                  Total <span className="font-medium text-foreground">€{totalEur.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                  {t('orderDetail.totalLabel')} <span className="font-medium text-foreground">€{totalEur.toLocaleString(dateLoc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </span>
                               </>
                             )}
@@ -498,10 +501,10 @@ const openDisputeModal = (match: Match) => {
                             m.estado === 'CONFIRMADO' ? 'bg-blue-100 text-blue-700' :
                             'bg-muted text-muted-foreground',
                           ].join(' ')}>
-                            {MATCH_STATE_LABELS[m.estado] ?? m.estado}
+                            {(() => { const k = MATCH_STATE_LABEL_KEYS[m.estado]; return k ? t(k) : m.estado; })()}
                           </span>
                           {m.estado === 'ACEPTADO_VENDEDOR' && (
-                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="El vendedor ha hecho una propuesta — acción requerida" />
+                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title={t('orderDetail.proposalTooltip')} />
                           )}
                           {/* X button: only when the buyer can still walk
                               away from this proposal (pre-payment). After
@@ -515,8 +518,8 @@ const openDisputeModal = (match: Match) => {
                               onClick={() => handleRejectMatch(m.id)}
                               disabled={rejectingMatchId === m.id}
                               className="inline-flex items-center justify-center w-6 h-6 rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors"
-                              title="Rechazar propuesta"
-                              aria-label="Rechazar propuesta"
+                              title={t('orderDetail.rejectProposal')}
+                              aria-label={t('orderDetail.rejectProposal')}
                             >
                               <XCircle className="w-4 h-4" />
                             </button>
@@ -529,14 +532,14 @@ const openDisputeModal = (match: Match) => {
                         {order.estado === 'CERRADO' ? (
                           <>
                             <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Completado
+                              <CheckCircle2 className="w-3.5 h-3.5" /> {t('orderDetail.completed')}
                             </span>
                             {m.transaccion?.id && (
                               <button
                                 onClick={async () => { try { const r = await api.get(`/invoices/buyer/${m.transaccion!.id}/html`, { responseType: 'text' }); window.open(URL.createObjectURL(new Blob([r.data], { type: 'text/html' })), '_blank'); } catch { /* ignore */ } }}
                                 className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
                               >
-                                <Download className="w-3 h-3" /> Factura
+                                <Download className="w-3 h-3" /> {t('orderDetail.invoice')}
                               </button>
                             )}
                           </>
@@ -545,12 +548,12 @@ const openDisputeModal = (match: Match) => {
                             {canPayThis && (
                               <Link href={`/buyer/contracts/${m.id}`}>
                                 <Button variant="primary" size="sm">
-                                  Firmar y pagar comisión
+                                  {t('orderDetail.signAndPay')}
                                 </Button>
                               </Link>
                             )}
                             {isLive && (
-                              <Link href={`/buyer/contracts/${m.id}`} title="Ver contrato" aria-label="Ver contrato">
+                              <Link href={`/buyer/contracts/${m.id}`} title={t('orderDetail.viewContract')} aria-label={t('orderDetail.viewContract')}>
                                 <Button variant="outline" size="sm" className="!px-2">
                                   <FileText className="w-4 h-4" />
                                 </Button>
@@ -561,7 +564,7 @@ const openDisputeModal = (match: Match) => {
                                 pantalla del contrato (mark-received tras el
                                 aviso del vendedor de envío). */}
                             {m.transaccion?.id && (
-                              <Link href={`/buyer/messages?tx=${m.transaccion.id}`} title="Abrir chat" aria-label="Abrir chat">
+                              <Link href={`/buyer/messages?tx=${m.transaccion.id}`} title={t('orderDetail.openChat')} aria-label={t('orderDetail.openChat')}>
                                 <Button variant="ghost" size="sm" className="!px-2">
                                   <MessageSquare className="w-4 h-4" />
                                 </Button>
@@ -573,8 +576,8 @@ const openDisputeModal = (match: Match) => {
                                 size="sm"
                                 onClick={() => openDisputeModal(m)}
                                 className="!px-2 ml-auto text-red-500 hover:text-red-700 hover:bg-red-50"
-                                title="Abrir incidencia"
-                                aria-label="Abrir incidencia"
+                                title={t('orderDetail.openDispute')}
+                                aria-label={t('orderDetail.openDispute')}
                               >
                                 <AlertTriangle className="w-4 h-4" />
                               </Button>
@@ -601,11 +604,11 @@ const openDisputeModal = (match: Match) => {
                   <div className="px-5 py-3 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-primary" />
-                      <h2 className="text-sm font-semibold text-foreground">Envío de {sellerName}</h2>
+                      <h2 className="text-sm font-semibold text-foreground">{t('orderDetail.shipmentFrom')} {sellerName}</h2>
                     </div>
                     {info.qrUsado && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-[11px] font-medium bg-green-100 text-green-700">
-                        <CheckCircle2 className="w-3 h-3" /> Entregado
+                        <CheckCircle2 className="w-3 h-3" /> {t('orderDetail.delivered')}
                       </span>
                     )}
                   </div>
@@ -613,7 +616,7 @@ const openDisputeModal = (match: Match) => {
                   {/* Lot photos */}
                   {(info.fotosLoteUrls?.length ?? 0) > 0 && (
                     <div className="p-4 border-b border-border">
-                      <p className="text-xs font-medium text-foreground mb-2">📸 Fotos de preparación del lote</p>
+                      <p className="text-xs font-medium text-foreground mb-2">{t('orderDetail.lotPhotos')}</p>
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {info.fotosLoteUrls.map((url, i) => (
                           <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-border hover:shadow-soft-md transition-shadow">
@@ -635,10 +638,10 @@ const openDisputeModal = (match: Match) => {
                     <div className="p-4 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-green-700">
                         <CheckCircle2 className="w-4 h-4" />
-                        <p className="text-sm font-medium">Confirmaste la entrega. Pago liberado.</p>
+                        <p className="text-sm font-medium">{t('orderDetail.deliveryConfirmed')}</p>
                       </div>
                       {info.hasRated ? (
-                        <p className="text-xs text-muted-foreground">Ya has valorado esta transacción.</p>
+                        <p className="text-xs text-muted-foreground">{t('orderDetail.alreadyRated')}</p>
                       ) : (
                         <Button
                           variant="outline"
@@ -646,7 +649,7 @@ const openDisputeModal = (match: Match) => {
                           className="flex items-center gap-1 text-yellow-600 border-yellow-300 hover:bg-yellow-50"
                           onClick={() => setRatingTx({ transaccionId: m.transaccion!.id, vendedorId: info.vendedorId })}
                         >
-                          <Star className="w-3.5 h-3.5" /> Valorar al vendedor
+                          <Star className="w-3.5 h-3.5" /> {t('orderDetail.rateSeller')}
                         </Button>
                       )}
                     </div>
@@ -657,17 +660,17 @@ const openDisputeModal = (match: Match) => {
                       pedía firmar+pagar al comprador. */}
                   {!info.qrToken && !info.firmaVendedor && (
                     <div className="p-4 text-xs text-muted-foreground">
-                      Esperando a que el vendedor firme el contrato.
+                      {t('orderDetail.waitingSellerSig')}
                     </div>
                   )}
                   {!info.qrToken && info.firmaVendedor && !info.firmaComprador && (
                     <div className="p-4 text-xs text-amber-700 bg-amber-50 border-t border-amber-200">
-                      El vendedor ha firmado. Falta tu firma y el pago de la comisión para cerrar el acuerdo — usa el botón &laquo;Firmar y pagar comisión&raquo; de arriba.
+                      {t('orderDetail.sellerSignedAwaitYou')}
                     </div>
                   )}
                   {!info.qrToken && info.firmaVendedor && info.firmaComprador && (
                     <div className="p-4 text-xs text-muted-foreground">
-                      Contrato firmado por ambas partes. El código QR aparecerá en cuanto el vendedor marque la mercancía como enviada.
+                      {t('orderDetail.bothSignedAwaitShipment')}
                     </div>
                   )}
                 </div>
@@ -678,18 +681,18 @@ const openDisputeModal = (match: Match) => {
         {/* Right: order details */}
         <div className="space-y-5">
           <div className="bg-card rounded-card border border-border shadow-soft p-5">
-            <h2 className="text-sm font-semibold text-foreground mb-4">Detalles del pedido</h2>
+            <h2 className="text-sm font-semibold text-foreground mb-4">{t('orderDetail.details')}</h2>
             <dl className="space-y-3">
               {[
-                { label: 'Producto', value: order.producto.nombre },
-                order.variedad ? { label: 'Variedad', value: order.variedad.nombre } : null,
-                { label: 'Cantidad total', value: `${order.totalKg.toLocaleString('es-ES')} kg` },
-                { label: 'Incoterm', value: order.incoterm },
-                order.destinoFinal ? { label: 'Destino', value: order.destinoFinal } : null,
-                order.frecuencia ? { label: 'Frecuencia', value: order.frecuencia } : null,
+                { label: t('orderDetail.product'), value: order.producto.nombre },
+                order.variedad ? { label: t('orderDetail.variety'), value: order.variedad.nombre } : null,
+                { label: t('orderDetail.totalQty'), value: `${order.totalKg.toLocaleString(dateLoc)} kg` },
+                { label: t('orderDetail.incoterm'), value: order.incoterm },
+                order.destinoFinal ? { label: t('orderDetail.destination'), value: order.destinoFinal } : null,
+                order.frecuencia ? { label: t('orderDetail.frequency'), value: order.frecuencia } : null,
                 order.fechaEntregaDeseada ? {
-                  label: 'Entrega antes de',
-                  value: new Date(order.fechaEntregaDeseada).toLocaleDateString('es-ES'),
+                  label: t('orderDetail.deliveryBy'),
+                  value: new Date(order.fechaEntregaDeseada).toLocaleDateString(dateLoc),
                 } : null,
                 // Phase 14M v3.12 — fila "Logística est." retirada: era
                 // un dato que el comprador introducía sin que Primar-IA lo
@@ -705,7 +708,7 @@ const openDisputeModal = (match: Match) => {
 
           {order.notasAdicionales && (
             <div className="bg-card rounded-card border border-border shadow-soft p-5">
-              <h2 className="text-sm font-semibold text-foreground mb-2">Notas</h2>
+              <h2 className="text-sm font-semibold text-foreground mb-2">{t('orderDetail.notes')}</h2>
               <p className="text-xs text-muted-foreground leading-relaxed">{order.notasAdicionales}</p>
             </div>
           )}
