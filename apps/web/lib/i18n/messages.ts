@@ -1356,6 +1356,31 @@ export type MessageKey =
   | 'delivery.fail'
   | 'delivery.success'
   | 'delivery.back'
+  | 'delivery.loadFail'
+  | 'delivery.notFound'
+  | 'delivery.cameraFail'
+  | 'delivery.enterCode'
+  | 'delivery.verifyFail'
+  | 'delivery.notSignedTitle'
+  | 'delivery.notSignedDesc'
+  | 'delivery.backToOrder'
+  | 'delivery.shipmentDetails'
+  | 'delivery.product'
+  | 'delivery.quantity'
+  | 'delivery.seller'
+  | 'delivery.status'
+  | 'delivery.lotPhotos'
+  | 'delivery.confirmedTitle'
+  | 'delivery.confirmedDesc'
+  | 'delivery.viewClosed'
+  | 'delivery.allOrders'
+  | 'delivery.scanTitle'
+  | 'delivery.scanDesc'
+  | 'delivery.closeCamera'
+  | 'delivery.openCamera'
+  | 'delivery.manualTitle'
+  | 'delivery.manualDesc'
+  | 'delivery.codePlaceholder'
   | 'report.title'
   | 'report.subtitle'
   | 'report.problem'
@@ -2725,6 +2750,31 @@ export const messages: Record<Locale, Messages> = {
     'delivery.fail': 'No se pudo verificar el código.',
     'delivery.success': 'Entrega confirmada. Pago liberado al vendedor.',
     'delivery.back': 'Volver al pedido',
+    'delivery.loadFail': 'No se pudo cargar la información de entrega.',
+    'delivery.notFound': 'No encontrado.',
+    'delivery.cameraFail': 'No se pudo acceder a la cámara. Introduce el código manualmente.',
+    'delivery.enterCode': 'Introduce el código QR.',
+    'delivery.verifyFail': 'Falló la verificación.',
+    'delivery.notSignedTitle': 'Contrato aún sin firmar por ambas partes',
+    'delivery.notSignedDesc': 'Ambas partes deben firmar el contrato antes de poder confirmar la entrega.',
+    'delivery.backToOrder': 'Volver al pedido',
+    'delivery.shipmentDetails': 'Detalles del envío',
+    'delivery.product': 'Producto',
+    'delivery.quantity': 'Cantidad',
+    'delivery.seller': 'Vendedor',
+    'delivery.status': 'Estado',
+    'delivery.lotPhotos': 'Fotos de preparación del lote',
+    'delivery.confirmedTitle': 'Entrega confirmada',
+    'delivery.confirmedDesc': 'El pago se ha liberado al vendedor. Este pedido está cerrado.',
+    'delivery.viewClosed': 'Ver pedidos cerrados',
+    'delivery.allOrders': 'Todos los pedidos',
+    'delivery.scanTitle': 'Escanear código QR',
+    'delivery.scanDesc': 'Escanea el código QR pegado en el lote, o introduce el código de verificación manualmente.',
+    'delivery.closeCamera': 'Cerrar cámara',
+    'delivery.openCamera': 'Abrir cámara',
+    'delivery.manualTitle': 'Código de verificación manual',
+    'delivery.manualDesc': 'Si no puedes escanear el QR, introduce el código impreso en la etiqueta.',
+    'delivery.codePlaceholder': 'Introduce el código de verificación…',
     'report.title': 'Reportar incidencia',
     'report.subtitle': 'Cuéntanos qué ha pasado y nuestro equipo lo revisará.',
     'report.problem': 'Tipo de incidencia',
@@ -4087,6 +4137,31 @@ export const messages: Record<Locale, Messages> = {
     'delivery.fail': 'Could not verify the code.',
     'delivery.success': 'Delivery confirmed. Payment released to the seller.',
     'delivery.back': 'Back to order',
+    'delivery.loadFail': 'Could not load delivery info.',
+    'delivery.notFound': 'Not found.',
+    'delivery.cameraFail': 'Could not access camera. Please enter the code manually.',
+    'delivery.enterCode': 'Please enter the QR code.',
+    'delivery.verifyFail': 'Verification failed.',
+    'delivery.notSignedTitle': 'Contract not yet fully signed',
+    'delivery.notSignedDesc': 'Both parties must sign the contract before delivery confirmation is available.',
+    'delivery.backToOrder': 'Back to order',
+    'delivery.shipmentDetails': 'Shipment details',
+    'delivery.product': 'Product',
+    'delivery.quantity': 'Quantity',
+    'delivery.seller': 'Seller',
+    'delivery.status': 'Status',
+    'delivery.lotPhotos': 'Lot preparation photos',
+    'delivery.confirmedTitle': 'Delivery confirmed',
+    'delivery.confirmedDesc': 'Payment has been released to the seller. This order is now closed.',
+    'delivery.viewClosed': 'View closed orders',
+    'delivery.allOrders': 'All orders',
+    'delivery.scanTitle': 'Scan QR code',
+    'delivery.scanDesc': 'Scan the QR code attached to the lot, or enter the verification code manually.',
+    'delivery.closeCamera': 'Close camera',
+    'delivery.openCamera': 'Open camera',
+    'delivery.manualTitle': 'Manual verification code',
+    'delivery.manualDesc': 'If you cannot scan the QR, enter the code printed on the label.',
+    'delivery.codePlaceholder': 'Enter verification code…',
     'report.title': 'Report incident',
     'report.subtitle': "Tell us what happened and our team will review it.",
     'report.problem': 'Type of issue',
