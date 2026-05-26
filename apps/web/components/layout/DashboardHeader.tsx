@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { Bell, ChevronRight, LogOut, Settings, User } from 'lucide-react';
+import { Bell, ChevronRight, LogOut, Menu, Settings, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
@@ -103,9 +103,20 @@ export function DashboardHeader() {
   const messagesHref = user?.role === 'COMPRADOR' ? '/buyer/messages' : '/seller/messages';
 
   return (
-    <header className="h-[var(--header-height)] bg-card/80 backdrop-blur-md border-b border-border/50 flex items-center justify-between px-6 flex-shrink-0 sticky top-0 z-30">
+    <header className="h-[var(--header-height)] bg-card/80 backdrop-blur-md border-b border-border/50 flex items-center justify-between gap-2 px-3 md:px-6 flex-shrink-0 sticky top-0 z-30">
+      {/* Phase 14N — Hamburguesa (solo mobile). Emite evento global que
+          MobileSidebar escucha para abrirse. */}
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new Event('mobile-sidebar:open'))}
+        className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg hover:bg-accent transition-colors cursor-pointer flex-shrink-0"
+        aria-label={t('sidebar.expand')}
+      >
+        <Menu className="w-5 h-5 text-foreground" />
+      </button>
+
       {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1.5 text-sm" aria-label="Breadcrumb">
+      <nav className="flex-1 min-w-0 flex items-center gap-1.5 text-sm overflow-hidden" aria-label="Breadcrumb">
         {breadcrumbs.map((crumb, i) => (
           <div key={crumb.href} className="flex items-center gap-1.5">
             {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}

@@ -195,7 +195,10 @@ export function Sidebar() {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'relative min-h-screen bg-card border-r border-border/50 flex flex-col flex-shrink-0 shadow-soft-sm transition-all duration-300 ease-out',
+          // Phase 14N — `hidden md:flex` para que en mobile no compita
+          // por el ancho con el contenido. La versión mobile se entrega
+          // vía MobileSidebar (Sheet drawer) abierto desde el header.
+          'relative min-h-screen bg-card border-r border-border/50 hidden md:flex flex-col flex-shrink-0 shadow-soft-sm transition-all duration-300 ease-out',
           collapsed ? 'w-[var(--sidebar-width-collapsed)]' : 'w-[var(--sidebar-width)]'
         )}
       >
