@@ -1092,6 +1092,45 @@ export type MessageKey =
   | 'market.totalVolume'
   | 'market.totalMatches'
   | 'market.avgPrice'
+  | 'market.analysisTitle'
+  | 'market.analysisDesc'
+  | 'market.weekly.title'
+  | 'market.weekly.week'
+  | 'market.weekly.generated'
+  | 'market.weekly.officialBulletin'
+  | 'market.weekly.alza'
+  | 'market.weekly.baja'
+  | 'market.sentiment.alcista'
+  | 'market.sentiment.bajista'
+  | 'market.sentiment.mixto'
+  | 'market.sentiment.estable'
+  | 'market.byProduct'
+  | 'market.confirmedOpsDays'
+  | 'market.emptyNotEnough'
+  | 'market.col.product2'
+  | 'market.col.priceAvg2'
+  | 'market.col.variation7d'
+  | 'market.col.volume2'
+  | 'market.col.txCount'
+  | 'market.row.hide'
+  | 'market.row.more'
+  | 'market.detail.lockedTitle'
+  | 'market.detail.lockedDesc'
+  | 'market.detail.viewPlans'
+  | 'market.detail.loadFail'
+  | 'market.detail.noDaily'
+  | 'market.detail.kpi.current'
+  | 'market.detail.kpi.variation'
+  | 'market.detail.kpi.totalVolume'
+  | 'market.detail.kpi.daysWithData'
+  | 'market.detail.priceHistoryHeader'
+  | 'market.detail.calibreBreakdownHeader'
+  | 'market.detail.noCalibre'
+  | 'market.detail.col.calibre'
+  | 'market.detail.col.avgPrice'
+  | 'market.detail.col.volume'
+  | 'market.detail.col.ops'
+  | 'market.tooltip.priceAvg'
   // ─── Profile pages ───────────────────────────────────────────────────────
   | 'profile.loadFail'
   | 'profile.saveFail'
@@ -2269,6 +2308,45 @@ export const messages: Record<Locale, Messages> = {
     'market.totalVolume': 'Volumen total',
     'market.totalMatches': 'Matches',
     'market.avgPrice': 'Precio medio',
+    'market.analysisTitle': 'Análisis de Mercado',
+    'market.analysisDesc': 'Precios reales en Primar-IA y análisis semanal del boletín oficial del MAPA.',
+    'market.weekly.title': 'Análisis semanal — Boletín MAPA',
+    'market.weekly.week': 'Semana',
+    'market.weekly.generated': 'Generado el',
+    'market.weekly.officialBulletin': 'Boletín oficial',
+    'market.weekly.alza': 'Al alza',
+    'market.weekly.baja': 'A la baja',
+    'market.sentiment.alcista': 'Alcista',
+    'market.sentiment.bajista': 'Bajista',
+    'market.sentiment.mixto': 'Mixto',
+    'market.sentiment.estable': 'Estable',
+    'market.byProduct': 'Mercado por producto',
+    'market.confirmedOpsDays': 'Operaciones confirmadas en los últimos {n} días',
+    'market.emptyNotEnough': 'Aún no hay suficientes transacciones confirmadas para mostrar datos de mercado.',
+    'market.col.product2': 'Producto',
+    'market.col.priceAvg2': 'Precio medio',
+    'market.col.variation7d': 'Variación (7d)',
+    'market.col.volume2': 'Volumen',
+    'market.col.txCount': 'Transacciones',
+    'market.row.hide': 'Ocultar',
+    'market.row.more': 'Más detalles',
+    'market.detail.lockedTitle': 'El análisis detallado requiere suscripción',
+    'market.detail.lockedDesc': 'Accede a histórico de precios diario y desglose por calibre con cualquiera de nuestros planes.',
+    'market.detail.viewPlans': 'Ver planes',
+    'market.detail.loadFail': 'Error al cargar el detalle',
+    'market.detail.noDaily': 'Aún no hay suficientes datos diarios de {product} en este periodo.',
+    'market.detail.kpi.current': 'Precio actual',
+    'market.detail.kpi.variation': 'Var. en periodo',
+    'market.detail.kpi.totalVolume': 'Volumen total',
+    'market.detail.kpi.daysWithData': 'Días con datos',
+    'market.detail.priceHistoryHeader': 'Histórico diario de precio medio',
+    'market.detail.calibreBreakdownHeader': 'Desglose por calibre',
+    'market.detail.noCalibre': 'Sin calibre',
+    'market.detail.col.calibre': 'Calibre',
+    'market.detail.col.avgPrice': 'Precio medio',
+    'market.detail.col.volume': 'Volumen',
+    'market.detail.col.ops': 'Ops.',
+    'market.tooltip.priceAvg': 'Precio medio',
     'profile.loadFail': 'No se pudo cargar el perfil.',
     'profile.saveFail': 'Error al guardar el perfil.',
     'profile.saveSuccess': 'Cambios guardados.',
@@ -3435,6 +3513,45 @@ export const messages: Record<Locale, Messages> = {
     'market.totalVolume': 'Total volume',
     'market.totalMatches': 'Matches',
     'market.avgPrice': 'Avg. price',
+    'market.analysisTitle': 'Market analysis',
+    'market.analysisDesc': 'Real prices on Primar-IA plus weekly analysis from the official MAPA bulletin.',
+    'market.weekly.title': 'Weekly analysis — MAPA bulletin',
+    'market.weekly.week': 'Week',
+    'market.weekly.generated': 'Generated on',
+    'market.weekly.officialBulletin': 'Official bulletin',
+    'market.weekly.alza': 'Rising',
+    'market.weekly.baja': 'Falling',
+    'market.sentiment.alcista': 'Bullish',
+    'market.sentiment.bajista': 'Bearish',
+    'market.sentiment.mixto': 'Mixed',
+    'market.sentiment.estable': 'Stable',
+    'market.byProduct': 'Market by product',
+    'market.confirmedOpsDays': 'Confirmed operations in the last {n} days',
+    'market.emptyNotEnough': "Not enough confirmed transactions yet to show market data.",
+    'market.col.product2': 'Product',
+    'market.col.priceAvg2': 'Avg. price',
+    'market.col.variation7d': 'Variation (7d)',
+    'market.col.volume2': 'Volume',
+    'market.col.txCount': 'Transactions',
+    'market.row.hide': 'Hide',
+    'market.row.more': 'More details',
+    'market.detail.lockedTitle': 'Detailed analysis requires subscription',
+    'market.detail.lockedDesc': 'Access daily price history and calibre breakdown with any of our plans.',
+    'market.detail.viewPlans': 'See plans',
+    'market.detail.loadFail': 'Failed to load detail',
+    'market.detail.noDaily': "Not enough daily data for {product} in this period.",
+    'market.detail.kpi.current': 'Current price',
+    'market.detail.kpi.variation': 'Period variation',
+    'market.detail.kpi.totalVolume': 'Total volume',
+    'market.detail.kpi.daysWithData': 'Days with data',
+    'market.detail.priceHistoryHeader': 'Daily average price history',
+    'market.detail.calibreBreakdownHeader': 'Calibre breakdown',
+    'market.detail.noCalibre': 'No calibre',
+    'market.detail.col.calibre': 'Calibre',
+    'market.detail.col.avgPrice': 'Avg. price',
+    'market.detail.col.volume': 'Volume',
+    'market.detail.col.ops': 'Ops.',
+    'market.tooltip.priceAvg': 'Avg. price',
     'profile.loadFail': 'Could not load the profile.',
     'profile.saveFail': 'Failed to save the profile.',
     'profile.saveSuccess': 'Changes saved.',

@@ -23,6 +23,8 @@ import {
   Minus,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 const PRIMARY = '#E1C44D';
 const SECONDARY = '#0B2E33';
@@ -81,16 +83,19 @@ const WINDOWS = [
   { label: '1a', days: 365 },
 ];
 
-function sentimentBadge(s?: string): { label: string; classes: string } {
+function sentimentBadge(s?: string): { labelKey: MessageKey; classes: string } {
   switch ((s ?? '').toLowerCase()) {
-    case 'alcista': return { label: 'Alcista', classes: 'bg-green-100 text-green-800 border-green-200' };
-    case 'bajista': return { label: 'Bajista', classes: 'bg-red-100 text-red-800 border-red-200' };
-    case 'mixto':   return { label: 'Mixto',   classes: 'bg-amber-100 text-amber-800 border-amber-200' };
-    default:        return { label: 'Estable', classes: 'bg-blue-100 text-blue-800 border-blue-200' };
+    case 'alcista': return { labelKey: 'market.sentiment.alcista', classes: 'bg-green-100 text-green-800 border-green-200' };
+    case 'bajista': return { labelKey: 'market.sentiment.bajista', classes: 'bg-red-100 text-red-800 border-red-200' };
+    case 'mixto':   return { labelKey: 'market.sentiment.mixto', classes: 'bg-amber-100 text-amber-800 border-amber-200' };
+    default:        return { labelKey: 'market.sentiment.estable', classes: 'bg-blue-100 text-blue-800 border-blue-200' };
   }
 }
 
 export function MarketDashboard() {
+  const t = useT();
+  const { locale } = useLocale();
+  const numLoc = locale === 'en' ? 'en-GB' : 'es-ES';
   const [prices, setPrices] = useState<PriceRow[]>([]);
   const [days, setDays] = useState<number>(90);
   const [report, setReport] = useState<Report | null>(null);
@@ -116,9 +121,9 @@ export function MarketDashboard() {
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">Análisis de Mercado</h1>
+        <h1 className="text-2xl font-bold text-text-primary">{t('market.analysisTitle')}</h1>
         <p className="text-sm text-text-secondary">
-          Precios reales en Primar-IA y análisis semanal del boletín oficial del MAPA.
+          {t('market.analysisDesc')}
         </p>
       </div>
 
@@ -129,18 +134,18 @@ export function MarketDashboard() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <FileText className="w-4 h-4 text-secondary" />
-                <h2 className="text-base font-semibold text-foreground">Análisis semanal — Boletín MAPA</h2>
+                <h2 className="text-base font-semibold text-foreground">{t('market.weekly.title')}</h2>
                 {sentiment && (
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${sentiment.classes}`}>
-                    {sentiment.label}
+                    {t(sentiment.labelKey)}
                   </span>
                 )}
               </div>
               <p className="text-xs text-text-muted">
-                Semana {report.semana} · {report.periodo}
+                {t('market.weekly.week')} {report.semana} · {report.periodo}
                 {report.createdAt && (
                   <span className="ml-2 text-[10px] text-text-muted/70">
-                    · Generado el {new Date(report.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    · {t('market.weekly.generated')} {new Date(report.createdAt).toLocaleDateString(numLoc, { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </span>
                 )}
               </p>
@@ -151,7 +156,7 @@ export function MarketDashboard() {
               rel="noopener noreferrer"
               className="text-xs text-secondary hover:underline flex items-center gap-1"
             >
-              Boletín oficial <ExternalLink className="w-3 h-3" />
+              {t('market.weekly.officialBulletin')} <ExternalLink className="w-3 h-3" />
             </a>
           </div>
           <p className="text-sm text-foreground leading-relaxed">{report.resumen}</p>
@@ -160,7 +165,7 @@ export function MarketDashboard() {
               {report.highlights.alza && report.highlights.alza.length > 0 && (
                 <div className="bg-green-50 border border-green-200 rounded-input p-3">
                   <div className="flex items-center gap-1.5 mb-1.5 text-green-800 font-medium text-xs">
-                    <TrendingUp className="w-3.5 h-3.5" /> Al alza
+                    <TrendingUp className="w-3.5 h-3.5" /> {t('market.weekly.alza')}
                   </div>
                   <ul className="space-y-0.5 text-xs text-green-900">
                     {report.highlights.alza.map((x, i) => <li key={i}>• {x}</li>)}
@@ -170,7 +175,7 @@ export function MarketDashboard() {
               {report.highlights.baja && report.highlights.baja.length > 0 && (
                 <div className="bg-red-50 border border-red-200 rounded-input p-3">
                   <div className="flex items-center gap-1.5 mb-1.5 text-red-800 font-medium text-xs">
-                    <TrendingDown className="w-3.5 h-3.5" /> A la baja
+                    <TrendingDown className="w-3.5 h-3.5" /> {t('market.weekly.baja')}
                   </div>
                   <ul className="space-y-0.5 text-xs text-red-900">
                     {report.highlights.baja.map((x, i) => <li key={i}>• {x}</li>)}
@@ -186,9 +191,9 @@ export function MarketDashboard() {
       <section className="bg-card border border-border rounded-card p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Mercado por producto</h2>
+            <h2 className="text-base font-semibold text-foreground">{t('market.byProduct')}</h2>
             <p className="text-xs text-text-muted">
-              Operaciones confirmadas en los últimos {days} días
+              {t('market.confirmedOpsDays').replace('{n}', String(days))}
             </p>
           </div>
           <div className="inline-flex rounded-input border border-border overflow-hidden text-xs">
@@ -213,17 +218,17 @@ export function MarketDashboard() {
           </div>
         ) : prices.length === 0 ? (
           <p className="text-sm text-text-muted italic py-10 text-center">
-            Aún no hay suficientes transacciones confirmadas para mostrar datos de mercado.
+            {t('market.emptyNotEnough')}
           </p>
         ) : (
           <div className="space-y-2">
             {/* Header */}
             <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_auto] gap-3 px-3 py-2 text-xs font-medium text-text-secondary border-b border-border">
-              <span>Producto</span>
-              <span className="text-right">Precio medio</span>
-              <span className="text-right">Variación (7d)</span>
-              <span className="text-right">Volumen</span>
-              <span className="text-right">Transacciones</span>
+              <span>{t('market.col.product2')}</span>
+              <span className="text-right">{t('market.col.priceAvg2')}</span>
+              <span className="text-right">{t('market.col.variation7d')}</span>
+              <span className="text-right">{t('market.col.volume2')}</span>
+              <span className="text-right">{t('market.col.txCount')}</span>
               <span />
             </div>
 
@@ -259,6 +264,9 @@ function ProductRow({
   windowDays: number;
   onToggle: () => void;
 }) {
+  const t = useT();
+  const { locale } = useLocale();
+  const numLoc = locale === 'en' ? 'en-GB' : 'es-ES';
   const delta = row.deltaPct;
   const deltaColor =
     delta === null ? 'text-muted-foreground' :
@@ -282,20 +290,20 @@ function ProductRow({
         className="w-full grid grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_auto] gap-3 px-3 py-3 text-sm text-left items-center"
       >
         <div className="font-medium text-foreground col-span-2 md:col-span-1">{row.producto}</div>
-        <div className="text-right font-semibold text-foreground">{row.avgPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg</div>
+        <div className="text-right font-semibold text-foreground">{row.avgPrice.toLocaleString(numLoc, { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg</div>
         <div className={`text-right font-medium ${deltaColor} flex items-center justify-end gap-1`}>
           <DeltaIcon className="w-3.5 h-3.5" />
           {delta === null ? '—' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}%`}
         </div>
         <div className="text-right text-text-secondary text-xs md:text-sm">
-          {row.totalKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg
+          {row.totalKg.toLocaleString(numLoc, { maximumFractionDigits: 0 })} kg
         </div>
         <div className="text-right text-text-secondary text-xs md:text-sm">
           {row.numTransacciones}
         </div>
         <div className="text-right">
           <span className="text-xs text-secondary font-medium flex items-center justify-end gap-1">
-            {expanded ? 'Ocultar' : 'Más detalles'}
+            {expanded ? t('market.row.hide') : t('market.row.more')}
             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </span>
         </div>
@@ -322,6 +330,7 @@ function ProductDetailLazy({
   productName: string;
   days: number;
 }) {
+  const t = useT();
   const [detail, setDetail] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
@@ -337,7 +346,7 @@ function ProductDetailLazy({
       .catch((err: unknown) => {
         const status = (err as { response?: { status?: number } })?.response?.status;
         if (status === 403) setAccessDenied(true);
-        else setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Error al cargar el detalle');
+        else setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('market.detail.loadFail'));
       })
       .finally(() => setLoading(false));
   }, [productoId, days]);
@@ -347,16 +356,16 @@ function ProductDetailLazy({
       <div className="bg-gradient-to-br from-primary/10 to-amber-50 border border-primary/40 rounded-card p-6 text-center">
         <Lock className="w-8 h-8 text-secondary mx-auto mb-2" />
         <h3 className="text-base font-semibold text-foreground mb-1">
-          El análisis detallado requiere suscripción
+          {t('market.detail.lockedTitle')}
         </h3>
         <p className="text-xs text-text-secondary mb-3 max-w-md mx-auto">
-          Accede a histórico de precios diario y desglose por calibre con cualquiera de nuestros planes.
+          {t('market.detail.lockedDesc')}
         </p>
         <Link
           href="../subscription"
           className="inline-block bg-primary text-foreground font-semibold px-4 py-1.5 rounded-button hover:opacity-90 transition-opacity text-xs"
         >
-          Ver planes
+          {t('market.detail.viewPlans')}
         </Link>
       </div>
     );
@@ -383,13 +392,16 @@ function ProductDetailLazy({
 // ── Detail content (charts + tables) ───────────────────────────────────────────
 
 function ProductDetailContent({ detail, productName }: { detail: ProductDetail; productName: string }) {
+  const t = useT();
+  const { locale } = useLocale();
+  const numLoc = locale === 'en' ? 'en-GB' : 'es-ES';
   const hasHistory = detail.priceHistory.length > 0;
   const hasCalibres = detail.calibreBreakdown.length > 0;
 
   if (!hasHistory) {
     return (
       <p className="text-sm text-text-muted italic py-6 text-center">
-        Aún no hay suficientes datos diarios de {productName} en este periodo.
+        {t('market.detail.noDaily').replace('{product}', productName)}
       </p>
     );
   }
@@ -401,36 +413,36 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
 
   const chartData = detail.priceHistory.map((p) => ({
     ...p,
-    dia: new Date(p.dia).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
+    dia: new Date(p.dia).toLocaleDateString(numLoc, { day: '2-digit', month: 'short' }),
   }));
 
   return (
     <div className="space-y-5">
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <Kpi label="Precio actual" value={`${lastPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg`} />
+        <Kpi label={t('market.detail.kpi.current')} value={`${lastPrice.toLocaleString(numLoc, { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg`} />
         <Kpi
-          label="Var. en periodo"
+          label={t('market.detail.kpi.variation')}
           value={`${periodDelta >= 0 ? '+' : ''}${periodDelta.toFixed(1)}%`}
           positive={periodDelta >= 0}
         />
-        <Kpi label="Volumen total" value={`${totalKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg`} />
-        <Kpi label="Días con datos" value={detail.priceHistory.length.toString()} />
+        <Kpi label={t('market.detail.kpi.totalVolume')} value={`${totalKg.toLocaleString(numLoc, { maximumFractionDigits: 0 })} kg`} />
+        <Kpi label={t('market.detail.kpi.daysWithData')} value={detail.priceHistory.length.toString()} />
       </div>
 
       {/* Price history chart */}
       <div>
         <h3 className="text-xs font-medium text-text-secondary mb-2 uppercase tracking-wide">
-          Histórico diario de precio medio
+          {t('market.detail.priceHistoryHeader')}
         </h3>
         <div className="h-56 bg-card rounded-input border border-border p-2">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
               <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} width={60} />
+              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v.toLocaleString(numLoc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} width={60} />
               <Tooltip
-                formatter={(v: number) => [`${v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg`, 'Precio medio']}
+                formatter={(v: number) => [`${v.toLocaleString(numLoc, { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg`, t('market.tooltip.priceAvg')]}
                 contentStyle={{ fontSize: 12 }}
               />
               <Line type="monotone" dataKey="avgPrice" stroke={SECONDARY} strokeWidth={2} dot={{ r: 2 }} />
@@ -443,13 +455,13 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
       {hasCalibres && (
         <div>
           <h3 className="text-xs font-medium text-text-secondary mb-2 uppercase tracking-wide">
-            Desglose por calibre
+            {t('market.detail.calibreBreakdownHeader')}
           </h3>
           <div className="grid md:grid-cols-2 gap-3">
             <div className="h-56 bg-card rounded-input border border-border p-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={detail.calibreBreakdown.map((c) => ({ ...c, calibre: c.calibre || 'Sin calibre' }))}
+                  data={detail.calibreBreakdown.map((c) => ({ ...c, calibre: c.calibre || t('market.detail.noCalibre') }))}
                   margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
@@ -467,19 +479,19 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs font-medium text-text-secondary border-b border-border">
-                    <th className="py-2 px-3">Calibre</th>
-                    <th className="py-2 px-3 text-right">Precio medio</th>
-                    <th className="py-2 px-3 text-right">Volumen</th>
-                    <th className="py-2 px-3 text-right">Ops.</th>
+                    <th className="py-2 px-3">{t('market.detail.col.calibre')}</th>
+                    <th className="py-2 px-3 text-right">{t('market.detail.col.avgPrice')}</th>
+                    <th className="py-2 px-3 text-right">{t('market.detail.col.volume')}</th>
+                    <th className="py-2 px-3 text-right">{t('market.detail.col.ops')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {detail.calibreBreakdown.map((c) => (
                     <tr key={c.calibre} className="border-b border-border/40 last:border-0">
                       <td className="py-1.5 px-3 font-medium text-foreground">{c.calibre || '—'}</td>
-                      <td className="py-1.5 px-3 text-right">{c.avgPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg</td>
+                      <td className="py-1.5 px-3 text-right">{c.avgPrice.toLocaleString(numLoc, { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg</td>
                       <td className="py-1.5 px-3 text-right text-text-secondary">
-                        {c.totalKg.toLocaleString('es-ES', { maximumFractionDigits: 0 })} kg
+                        {c.totalKg.toLocaleString(numLoc, { maximumFractionDigits: 0 })} kg
                       </td>
                       <td className="py-1.5 px-3 text-right text-text-secondary">{c.n}</td>
                     </tr>
