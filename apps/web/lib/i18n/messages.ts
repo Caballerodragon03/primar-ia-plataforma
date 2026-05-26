@@ -1174,6 +1174,32 @@ export type MessageKey =
   | 'profile.delete.confirm'
   | 'profile.delete.fail'
   | 'profile.logout'
+  | 'profile.tab.account'
+  | 'profile.tab.company'
+  | 'profile.tab.tutoriales'
+  | 'profile.subtitle'
+  | 'profile.contactPerson'
+  | 'profile.fullName'
+  | 'profile.preferences'
+  | 'profile.phonePh'
+  | 'profile.saveError'
+  | 'profile.passwordError'
+  | 'profile.passwordUpdateButton'
+  | 'profile.company.lockedBanner.before'
+  | 'profile.company.lockedBanner.after'
+  | 'profile.company.loading'
+  | 'profile.company.razonSocial'
+  | 'profile.company.cifNif'
+  | 'profile.company.formaJuridica'
+  | 'profile.company.direccionFiscal'
+  | 'profile.company.ciudad'
+  | 'profile.company.codigoPostal'
+  | 'profile.company.pais'
+  | 'profile.company.iban'
+  | 'profile.company.ibanStripe'
+  | 'profile.tab.documents'
+  | 'profile.tab.contracts'
+  | 'profile.sellerSubtitle'
   // ─── Tutorials ───────────────────────────────────────────────────────────
   | 'tutorials.title'
   | 'tutorials.subtitle'
@@ -2445,6 +2471,32 @@ export const messages: Record<Locale, Messages> = {
     'profile.delete.confirm': '¿Seguro que quieres eliminar tu cuenta? Esta acción no se puede deshacer.',
     'profile.delete.fail': 'No se pudo eliminar la cuenta. Contacta con soporte.',
     'profile.logout': 'Cerrar sesión',
+    'profile.tab.account': 'Cuenta',
+    'profile.tab.company': 'Datos de empresa',
+    'profile.tab.tutoriales': 'Tutoriales',
+    'profile.subtitle': 'Gestiona tu cuenta y los datos de tu empresa.',
+    'profile.contactPerson': 'Persona de contacto',
+    'profile.fullName': 'Nombre',
+    'profile.preferences': 'Preferencias',
+    'profile.phonePh': '+34 600 000 000',
+    'profile.saveError': 'Error al guardar los cambios.',
+    'profile.passwordError': 'Error al cambiar la contraseña.',
+    'profile.passwordUpdateButton': 'Actualizar contraseña',
+    'profile.company.lockedBanner.before': 'Los datos de empresa quedan bloqueados una vez verificados. Escribe a',
+    'profile.company.lockedBanner.after': 'para solicitar cambios.',
+    'profile.company.loading': 'Cargando…',
+    'profile.company.razonSocial': 'Razón social',
+    'profile.company.cifNif': 'CIF / NIF',
+    'profile.company.formaJuridica': 'Forma jurídica',
+    'profile.company.direccionFiscal': 'Dirección fiscal',
+    'profile.company.ciudad': 'Ciudad',
+    'profile.company.codigoPostal': 'Código postal',
+    'profile.company.pais': 'País',
+    'profile.company.iban': 'IBAN',
+    'profile.company.ibanStripe': 'Gestionado de forma segura por Stripe',
+    'profile.tab.documents': 'Mis documentos',
+    'profile.tab.contracts': 'Incoterms',
+    'profile.sellerSubtitle': 'Gestiona tu cuenta, los datos de tu empresa y tus certificaciones.',
     'tutorials.title': 'Tutoriales',
     'tutorials.subtitle': 'Aprende a sacar el máximo de Primar-IA en unos minutos.',
     'tutorials.completed': 'Completado',
@@ -3706,6 +3758,32 @@ export const messages: Record<Locale, Messages> = {
     'profile.delete.confirm': 'Are you sure you want to delete your account? This cannot be undone.',
     'profile.delete.fail': 'Could not delete the account. Contact support.',
     'profile.logout': 'Log out',
+    'profile.tab.account': 'Account',
+    'profile.tab.company': 'Company details',
+    'profile.tab.tutoriales': 'Tutorials',
+    'profile.subtitle': 'Manage your account and company details.',
+    'profile.contactPerson': 'Contact person',
+    'profile.fullName': 'Name',
+    'profile.preferences': 'Preferences',
+    'profile.phonePh': '+34 600 000 000',
+    'profile.saveError': 'Failed to save changes.',
+    'profile.passwordError': 'Failed to change password.',
+    'profile.passwordUpdateButton': 'Update password',
+    'profile.company.lockedBanner.before': 'Company details are locked once verified. Email',
+    'profile.company.lockedBanner.after': 'to request changes.',
+    'profile.company.loading': 'Loading…',
+    'profile.company.razonSocial': 'Legal name',
+    'profile.company.cifNif': 'CIF / NIF',
+    'profile.company.formaJuridica': 'Legal form',
+    'profile.company.direccionFiscal': 'Tax address',
+    'profile.company.ciudad': 'City',
+    'profile.company.codigoPostal': 'Postal code',
+    'profile.company.pais': 'Country',
+    'profile.company.iban': 'IBAN',
+    'profile.company.ibanStripe': 'Managed securely by Stripe',
+    'profile.tab.documents': 'My documents',
+    'profile.tab.contracts': 'Incoterms',
+    'profile.sellerSubtitle': 'Manage your account, company details and certifications.',
     'tutorials.title': 'Tutorials',
     'tutorials.subtitle': 'Learn how to get the most out of Primar-IA in a few minutes.',
     'tutorials.completed': 'Completed',

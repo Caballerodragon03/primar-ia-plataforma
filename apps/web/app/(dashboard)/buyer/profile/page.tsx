@@ -4,17 +4,15 @@ import { useSearchParams } from 'next/navigation';
 import { Lock, Building2, User, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { TutorialsSection } from '@/components/tutorials/TutorialsSection';
 import { LanguageToggle } from '@/components/profile/LanguageToggle';
+import { useT } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 type Tab = 'account' | 'company' | 'tutoriales';
 
-// Phase 14L — datos de empresa del comprador. Antes la tab mostraba '—'
-// literal en todos los campos por no haber fetch (igual que pasaba con el
-// vendedor en 14B).
 interface CompanyData {
   razonSocial: string | null;
   cifNif: string | null;
@@ -26,24 +24,18 @@ interface CompanyData {
   iban: string | null;
 }
 
-// Phase 14M v3.37 — LANGUAGE_OPTIONS retirado: el viejo Select se sustituye
-// por <LanguageToggle> arriba en la tab (cambio instantáneo de UI vía
-// LocaleProvider + persistencia en backend idiomaPreferido).
-
 function BuyerProfileContent() {
+  const t = useT();
   const { user } = useAuthStore();
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as Tab | null) ?? 'account';
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 
-  // Account settings state
   const [phone, setPhone] = useState('');
-  // Phase 14M v3.37 — `language` retirado, ahora vive en LocaleProvider.
   const [savingAccount, setSavingAccount] = useState(false);
   const [accountSuccess, setAccountSuccess] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
 
-  // Company tab state (fetched lazily on first activation)
   const [company, setCompany] = useState<CompanyData | null>(null);
   const [loadingCompany, setLoadingCompany] = useState(false);
 
@@ -68,7 +60,6 @@ function BuyerProfileContent() {
       .finally(() => setLoadingCompany(false));
   }, [activeTab, company]);
 
-  // Change password state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -82,7 +73,6 @@ function BuyerProfileContent() {
     setAccountError(null);
     setAccountSuccess(false);
     try {
-      // idiomaPreferido se persiste de forma independiente vía LanguageToggle.
       await api.patch('/auth/profile', { telefono: phone });
       setAccountSuccess(true);
       setTimeout(() => setAccountSuccess(false), 3000);
@@ -91,7 +81,7 @@ function BuyerProfileContent() {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : undefined;
-      setAccountError(msg ?? 'Error al guardar los cambios.');
+      setAccountError(msg ?? t('profile.saveError'));
     } finally {
       setSavingAccount(false);
     }
@@ -100,7 +90,7 @@ function BuyerProfileContent() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      setPasswordError('Las contraseñas no coinciden.');
+      setPasswordError(t('profile.password.mismatch'));
       return;
     }
     setSavingPassword(true);
@@ -121,28 +111,38 @@ function BuyerProfileContent() {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : undefined;
-      setPasswordError(msg ?? 'Error al cambiar la contraseña.');
+      setPasswordError(msg ?? t('profile.passwordError'));
     } finally {
       setSavingPassword(false);
     }
   };
 
-  const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
-    { key: 'account', label: 'Cuenta', icon: User },
-    { key: 'company', label: 'Datos de empresa', icon: Building2 },
-    { key: 'tutoriales', label: 'Tutoriales', icon: GraduationCap },
+  const tabs: { key: Tab; labelKey: MessageKey; icon: React.ElementType }[] = [
+    { key: 'account', labelKey: 'profile.tab.account', icon: User },
+    { key: 'company', labelKey: 'profile.tab.company', icon: Building2 },
+    { key: 'tutoriales', labelKey: 'profile.tab.tutoriales', icon: GraduationCap },
+  ];
+
+  const companyRows: { labelKey: MessageKey; value: string }[] = [
+    { labelKey: 'profile.company.razonSocial', value: company?.razonSocial ?? '—' },
+    { labelKey: 'profile.company.cifNif', value: company?.cifNif ?? '—' },
+    { labelKey: 'profile.company.formaJuridica', value: company?.formaJuridica ?? '—' },
+    { labelKey: 'profile.company.direccionFiscal', value: company?.direccionFiscal ?? '—' },
+    { labelKey: 'profile.company.ciudad', value: company?.ciudad ?? '—' },
+    { labelKey: 'profile.company.codigoPostal', value: company?.codigoPostal ?? '—' },
+    { labelKey: 'profile.company.pais', value: company?.pais ?? '—' },
+    { labelKey: 'profile.company.iban', value: company?.iban ?? t('profile.company.ibanStripe') },
   ];
 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground">Perfil</h1>
-        <p className="text-sm text-muted-foreground">Gestiona tu cuenta y los datos de tu empresa.</p>
+        <h1 className="text-xl font-semibold text-foreground">{t('profile.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('profile.subtitle')}</p>
       </div>
 
-      {/* Sub-nav tabs */}
       <div className="flex gap-1 border-b border-border mb-6">
-        {tabs.map(({ key, label, icon: Icon }) => (
+        {tabs.map(({ key, labelKey, icon: Icon }) => (
           <button
             key={key}
             type="button"
@@ -155,91 +155,84 @@ function BuyerProfileContent() {
             ].join(' ')}
           >
             <Icon className="w-4 h-4" />
-            {label}
+            {t(labelKey)}
           </button>
         ))}
       </div>
 
-      {/* Account Settings */}
       {activeTab === 'account' && (
         <div className="space-y-6 animate-stagger">
-          {/* Phase 14M v3.37 — toggle de idioma UI (localStorage). */}
           <LanguageToggle />
-          {/* Contact info */}
           <div className="bg-card rounded-card border border-border p-6 space-y-4">
-            <h2 className="text-sm font-semibold text-foreground">Persona de contacto</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t('profile.contactPerson')}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">Nombre</p>
+                <p className="text-xs text-muted-foreground mb-0.5">{t('profile.fullName')}</p>
                 <p className="text-sm font-medium text-foreground">
                   {user?.nombre} {user?.apellidos}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">Correo</p>
+                <p className="text-xs text-muted-foreground mb-0.5">{t('profile.email')}</p>
                 <p className="text-sm font-medium text-foreground">{user?.email}</p>
               </div>
             </div>
           </div>
 
-          {/* Editable fields */}
           <form onSubmit={handleSaveAccount} className="bg-card rounded-card border border-border p-6 space-y-4">
-            <h2 className="text-sm font-semibold text-foreground">Preferencias</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t('profile.preferences')}</h2>
             <Input
-              label="Teléfono"
+              label={t('profile.phone')}
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+34 600 000 000"
+              placeholder={t('profile.phonePh')}
             />
-            {/* Phase 14M v3.37 — Select de idioma retirado; ahora vive
-                en <LanguageToggle> al inicio de esta tab. */}
             {accountError && (
               <p role="alert" className="text-xs text-red-500">⚠ {accountError}</p>
             )}
             {accountSuccess && (
-              <p className="text-xs text-green-600">Cambios guardados correctamente.</p>
+              <p className="text-xs text-green-600">{t('profile.saveSuccess')}</p>
             )}
             <div className="flex justify-end">
               <Button type="submit" loading={savingAccount}>
-                Guardar cambios
+                {t('profile.save')}
               </Button>
             </div>
           </form>
 
-          {/* Change password */}
           <form onSubmit={handleChangePassword} className="bg-card rounded-card border border-border p-6 space-y-4">
             <div className="flex items-center gap-2 mb-1">
               <Lock className="w-4 h-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">Cambiar contraseña</h2>
+              <h2 className="text-sm font-semibold text-foreground">{t('profile.password.title')}</h2>
             </div>
             <Input
-              label="Contraseña actual"
+              label={t('profile.password.current')}
               showPasswordToggle
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
             />
             <Input
-              label="Nueva contraseña"
+              label={t('profile.password.new')}
               showPasswordToggle
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
             />
             <Input
-              label="Confirmar nueva contraseña"
+              label={t('profile.password.confirm')}
               showPasswordToggle
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              error={confirmPassword && newPassword !== confirmPassword ? 'Las contraseñas no coinciden' : undefined}
+              error={confirmPassword && newPassword !== confirmPassword ? t('profile.password.mismatch') : undefined}
             />
             {passwordError && (
               <p role="alert" className="text-xs text-red-500">⚠ {passwordError}</p>
             )}
             {passwordSuccess && (
-              <p className="text-xs text-green-600">Contraseña actualizada correctamente.</p>
+              <p className="text-xs text-green-600">{t('profile.password.success')}</p>
             )}
             <div className="flex justify-end">
               <Button
@@ -247,44 +240,33 @@ function BuyerProfileContent() {
                 loading={savingPassword}
                 disabled={!currentPassword || !newPassword || !confirmPassword}
               >
-                Actualizar contraseña
+                {t('profile.passwordUpdateButton')}
               </Button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Company Information */}
       {activeTab === 'company' && (
         <div className="space-y-4">
-          {/* Locked banner */}
           <div className="flex items-start gap-3 px-4 py-3 rounded-card bg-yellow-50 border border-primary/30">
             <Lock className="w-4 h-4 text-secondary mt-0.5 flex-shrink-0" />
             <p className="text-sm text-secondary">
-              Los datos de empresa quedan bloqueados una vez verificados. Escribe a{' '}
+              {t('profile.company.lockedBanner.before')}{' '}
               <a href="mailto:support@primar-ia.com" className="underline font-medium">
                 support@primar-ia.com
               </a>{' '}
-              para solicitar cambios.
+              {t('profile.company.lockedBanner.after')}
             </p>
           </div>
 
           <div className="bg-card rounded-card border border-border p-6 space-y-4">
             {loadingCompany ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Cargando…</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('profile.company.loading')}</p>
             ) : (
-              [
-                { label: 'Razón social', value: company?.razonSocial ?? '—' },
-                { label: 'CIF / NIF', value: company?.cifNif ?? '—' },
-                { label: 'Forma jurídica', value: company?.formaJuridica ?? '—' },
-                { label: 'Dirección fiscal', value: company?.direccionFiscal ?? '—' },
-                { label: 'Ciudad', value: company?.ciudad ?? '—' },
-                { label: 'Código postal', value: company?.codigoPostal ?? '—' },
-                { label: 'País', value: company?.pais ?? '—' },
-                { label: 'IBAN', value: company?.iban ?? 'Gestionado de forma segura por Stripe' },
-              ].map(({ label, value }) => (
-                <div key={label} className="grid grid-cols-2 gap-4 py-2 border-b border-border last:border-0">
-                  <p className="text-xs text-muted-foreground font-medium">{label}</p>
+              companyRows.map(({ labelKey, value }) => (
+                <div key={labelKey} className="grid grid-cols-2 gap-4 py-2 border-b border-border last:border-0">
+                  <p className="text-xs text-muted-foreground font-medium">{t(labelKey)}</p>
                   <p className="text-sm text-foreground">{value}</p>
                 </div>
               ))

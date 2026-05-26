@@ -12,6 +12,8 @@ import { FileDropzone } from '@/components/ui/FileDropzone';
 import { IncotermWizard } from '@/components/ui/IncotermWizard';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { useT } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 type Tab = 'account' | 'company' | 'documents' | 'contracts' | 'tutoriales';
 
@@ -56,6 +58,7 @@ function formatDate(iso: string | null): string {
 }
 
 function SellerProfileContent() {
+  const t = useT();
   const { user } = useAuthStore();
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as Tab | null) ?? 'account';
@@ -310,24 +313,24 @@ function SellerProfileContent() {
     );
   };
 
-  const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
-    { key: 'account', label: 'Cuenta', icon: User },
-    { key: 'company', label: 'Datos de empresa', icon: Building2 },
-    { key: 'documents', label: 'Mis documentos', icon: FileCheck2 },
-    { key: 'contracts', label: 'Incoterms', icon: FileText },
-    { key: 'tutoriales', label: 'Tutoriales', icon: GraduationCap },
+  const tabs: { key: Tab; labelKey: MessageKey; icon: React.ElementType }[] = [
+    { key: 'account', labelKey: 'profile.tab.account', icon: User },
+    { key: 'company', labelKey: 'profile.tab.company', icon: Building2 },
+    { key: 'documents', labelKey: 'profile.tab.documents', icon: FileCheck2 },
+    { key: 'contracts', labelKey: 'profile.tab.contracts', icon: FileText },
+    { key: 'tutoriales', labelKey: 'profile.tab.tutoriales', icon: GraduationCap },
   ];
 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground">Perfil</h1>
-        <p className="text-sm text-muted-foreground">Gestiona tu cuenta, los datos de tu empresa y tus certificaciones.</p>
+        <h1 className="text-xl font-semibold text-foreground">{t('profile.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('profile.sellerSubtitle')}</p>
       </div>
 
       {/* Sub-nav tabs */}
       <div className="flex gap-1 border-b border-border mb-6">
-        {tabs.map(({ key, label, icon: Icon }) => (
+        {tabs.map(({ key, labelKey, icon: Icon }) => (
           <button
             key={key}
             type="button"
@@ -340,7 +343,7 @@ function SellerProfileContent() {
             ].join(' ')}
           >
             <Icon className="w-4 h-4" />
-            {label}
+            {t(labelKey)}
           </button>
         ))}
       </div>
