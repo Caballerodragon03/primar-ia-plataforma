@@ -21,6 +21,7 @@ import dynamic from 'next/dynamic';
 import type { EventData, Step } from 'react-joyride';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 // react-joyride usa APIs del DOM en mount → cargar dinámicamente sin SSR.
 const Joyride = dynamic(() => import('react-joyride').then((m) => m.Joyride), { ssr: false });
@@ -31,74 +32,60 @@ interface IntroTutorialProps {
 }
 
 export function IntroTutorial({ role, onComplete }: IntroTutorialProps) {
+  const t = useT();
   const router = useRouter();
   const [run, setRun] = useState(true);
 
   const steps = useMemo<Step[]>(() => {
     const profileHref = role === 'VENDEDOR' ? '/seller/profile' : '/buyer/profile';
-    const reputacionMsg =
-      'Tu puntuación se calcula con cada operación: cuantas más transacciones cierres con éxito, ' +
-      'mejor reputación tendrás en la plataforma — y mejores condiciones desbloquearás.';
     return [
       {
         target: 'body',
         placement: 'center' as const,
-        title: '¡Bienvenido a Primar-IA!',
-        content:
-          'En este recorrido te enseñamos los apartados principales en menos de 1 minuto. ' +
-          'Puedes saltarlo cuando quieras y verlo de nuevo desde tu perfil.',
+        title: t('tutorials.intro.welcome.title'),
+        content: t('tutorials.intro.welcome.content'),
         disableBeacon: true,
       },
       {
         target: '[data-tutorial="sidebar"]',
         placement: 'right' as const,
-        title: 'Menú principal',
-        content:
-          role === 'VENDEDOR'
-            ? 'Desde aquí accedes a tus Lotes, Matches con compradores, Contratos, Mensajes y más.'
-            : 'Desde aquí accedes a tus Pedidos, Mensajes, Contratos, Estadísticas y más.',
+        title: t('tutorials.intro.sidebar.title'),
+        content: role === 'VENDEDOR'
+          ? t('tutorials.intro.sidebar.contentSeller')
+          : t('tutorials.intro.sidebar.contentBuyer'),
       },
       {
         target: '[data-tutorial="header"]',
         placement: 'bottom' as const,
-        title: 'Notificaciones y cuenta',
-        content:
-          'Arriba a la derecha verás tus notificaciones, el acceso al perfil y la opción de cerrar sesión.',
+        title: t('tutorials.intro.header.title'),
+        content: t('tutorials.intro.header.content'),
       },
       {
-        // Phase 14M v2 — paso 4 con placement center sobre body para
-        // evitar que el tooltip se salga de pantalla cuando el contenido
-        // principal ocupa todo el viewport.
         target: 'body',
         placement: 'center' as const,
-        title: 'Tu panel',
-        content:
-          role === 'VENDEDOR'
-            ? 'En el panel verás tus lotes activos, matches pendientes y operaciones en curso. ' +
-              'Crea un lote y la plataforma lo emparejará automáticamente con compradores compatibles.'
-            : 'En el panel verás tus pedidos activos y las ofertas de los vendedores. ' +
-              'Crea un pedido y la plataforma te traerá lotes que encajen con tus calibres y precio.',
+        title: t('tutorials.intro.panel.title'),
+        content: role === 'VENDEDOR'
+          ? t('tutorials.intro.panel.contentSeller')
+          : t('tutorials.intro.panel.contentBuyer'),
         disableBeacon: true,
       },
       {
         target: 'body',
         placement: 'center' as const,
-        title: 'Tu reputación se construye operando',
-        content: reputacionMsg,
+        title: t('tutorials.intro.reputation.title'),
+        content: t('tutorials.intro.reputation.content'),
         disableBeacon: true,
       },
       {
         target: 'body',
         placement: 'center' as const,
-        title: 'Más tutoriales en tu perfil',
-        content:
-          'En Perfil → Tutoriales tienes guías para los flujos principales (crear lote, hacer pedido, ' +
-          'abrir una incidencia…). Te llevamos ahora para que les eches un vistazo.',
+        title: t('tutorials.intro.moreTutorials.title'),
+        content: t('tutorials.intro.moreTutorials.content'),
         disableBeacon: true,
         data: { goToProfile: profileHref },
       },
     ];
-  }, [role]);
+  }, [role, t]);
 
   async function persistComplete() {
     try {
@@ -133,12 +120,12 @@ export function IntroTutorial({ role, onComplete }: IntroTutorialProps) {
       continuous
       onEvent={(data) => { void handleCallback(data); }}
       locale={{
-        back: 'Atrás',
-        close: 'Cerrar',
-        last: 'Ir a mi perfil',
-        next: 'Siguiente',
-        open: 'Abrir',
-        skip: 'Saltar tutorial',
+        back: t('tutorials.intro.locale.back'),
+        close: t('tutorials.intro.locale.close'),
+        last: t('tutorials.intro.locale.last'),
+        next: t('tutorials.intro.locale.next'),
+        open: t('tutorials.intro.locale.open'),
+        skip: t('tutorials.intro.locale.skip'),
       }}
       options={{
         showProgress: true,

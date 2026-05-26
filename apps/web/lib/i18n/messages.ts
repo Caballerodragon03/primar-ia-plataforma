@@ -1191,6 +1191,62 @@ export type MessageKey =
   | 'tutorials.error.title'
   | 'tutorials.error.body'
   | 'tutorials.error.close'
+  | 'tutorials.banner.testMode'
+  | 'tutorials.banner.followingTour'
+  | 'tutorials.banner.nothingSaved'
+  | 'tutorials.banner.exit'
+  | 'tutorials.flow.crearLote'
+  | 'tutorials.flow.hacerPedido'
+  | 'tutorials.boundary.title'
+  | 'tutorials.boundary.body'
+  | 'tutorials.boundary.reload'
+  | 'tutorials.launcher.title'
+  | 'tutorials.launcher.subtitle'
+  | 'tutorials.launcher.duration'
+  | 'tutorials.launcher.start'
+  | 'tutorials.launcher.close'
+  | 'tutorials.intro.welcome.title'
+  | 'tutorials.intro.welcome.content'
+  | 'tutorials.intro.sidebar.title'
+  | 'tutorials.intro.sidebar.contentSeller'
+  | 'tutorials.intro.sidebar.contentBuyer'
+  | 'tutorials.intro.header.title'
+  | 'tutorials.intro.header.content'
+  | 'tutorials.intro.panel.title'
+  | 'tutorials.intro.panel.contentSeller'
+  | 'tutorials.intro.panel.contentBuyer'
+  | 'tutorials.intro.reputation.title'
+  | 'tutorials.intro.reputation.content'
+  | 'tutorials.intro.moreTutorials.title'
+  | 'tutorials.intro.moreTutorials.content'
+  | 'tutorials.intro.locale.back'
+  | 'tutorials.intro.locale.close'
+  | 'tutorials.intro.locale.last'
+  | 'tutorials.intro.locale.next'
+  | 'tutorials.intro.locale.open'
+  | 'tutorials.intro.locale.skip'
+  | 'tutorials.section.title'
+  | 'tutorials.section.subtitle'
+  | 'tutorials.section.loading'
+  | 'tutorials.section.minutes'
+  | 'tutorials.section.completed'
+  | 'tutorials.section.comingSoon'
+  | 'tutorials.section.replay'
+  | 'tutorials.section.start'
+  | 'tutorials.catalog.intro.title'
+  | 'tutorials.catalog.intro.desc'
+  | 'tutorials.catalog.crearLote.title'
+  | 'tutorials.catalog.crearLote.desc'
+  | 'tutorials.catalog.hacerPedido.title'
+  | 'tutorials.catalog.hacerPedido.desc'
+  | 'tutorials.catalog.incidencia.title'
+  | 'tutorials.catalog.incidencia.desc'
+  | 'tutorials.runner.back'
+  | 'tutorials.runner.close'
+  | 'tutorials.runner.last'
+  | 'tutorials.runner.next'
+  | 'tutorials.runner.open'
+  | 'tutorials.runner.skip'
   // ─── Tasks pages (lot/order tasks) ───────────────────────────────────────
   | 'tasks.title'
   | 'tasks.empty'
@@ -2405,6 +2461,62 @@ export const messages: Record<Locale, Messages> = {
     'tutorials.error.title': 'No pudimos mostrar este tutorial',
     'tutorials.error.body': 'Algo ha fallado al iniciar el tour. Vuelve a intentarlo en unos segundos.',
     'tutorials.error.close': 'Cerrar',
+    'tutorials.banner.testMode': 'Modo prueba',
+    'tutorials.banner.followingTour': 'estás siguiendo el tutorial',
+    'tutorials.banner.nothingSaved': 'Nada de lo que hagas se guarda.',
+    'tutorials.banner.exit': 'Salir del tutorial',
+    'tutorials.flow.crearLote': 'Crear y vender un lote',
+    'tutorials.flow.hacerPedido': 'Hacer un pedido',
+    'tutorials.boundary.title': 'El tutorial encontró un error',
+    'tutorials.boundary.body': 'Hemos cerrado el modo prueba para que la app vuelva a funcionar con normalidad. Recarga la página para continuar.',
+    'tutorials.boundary.reload': 'Recargar',
+    'tutorials.launcher.title': 'Tour guiado de la plataforma',
+    'tutorials.launcher.subtitle': 'Empieza con un tour interactivo para conocer Primar-IA paso a paso.',
+    'tutorials.launcher.duration': '~3 minutos',
+    'tutorials.launcher.start': 'Empezar tour',
+    'tutorials.launcher.close': 'Cerrar',
+    'tutorials.intro.welcome.title': '¡Bienvenido a Primar-IA!',
+    'tutorials.intro.welcome.content': 'En este recorrido te enseñamos los apartados principales en menos de 1 minuto. Puedes saltarlo cuando quieras y verlo de nuevo desde tu perfil.',
+    'tutorials.intro.sidebar.title': 'Menú principal',
+    'tutorials.intro.sidebar.contentSeller': 'Desde aquí accedes a tus Lotes, Matches con compradores, Contratos, Mensajes y más.',
+    'tutorials.intro.sidebar.contentBuyer': 'Desde aquí accedes a tus Pedidos, Mensajes, Contratos, Estadísticas y más.',
+    'tutorials.intro.header.title': 'Notificaciones y cuenta',
+    'tutorials.intro.header.content': 'Arriba a la derecha verás tus notificaciones, el acceso al perfil y la opción de cerrar sesión.',
+    'tutorials.intro.panel.title': 'Tu panel',
+    'tutorials.intro.panel.contentSeller': 'En el panel verás tus lotes activos, matches pendientes y operaciones en curso. Crea un lote y la plataforma lo emparejará automáticamente con compradores compatibles.',
+    'tutorials.intro.panel.contentBuyer': 'En el panel verás tus pedidos activos y las ofertas de los vendedores. Crea un pedido y la plataforma te traerá lotes que encajen con tus calibres y precio.',
+    'tutorials.intro.reputation.title': 'Tu reputación se construye operando',
+    'tutorials.intro.reputation.content': 'Tu puntuación se calcula con cada operación: cuantas más transacciones cierres con éxito, mejor reputación tendrás en la plataforma — y mejores condiciones desbloquearás.',
+    'tutorials.intro.moreTutorials.title': 'Más tutoriales en tu perfil',
+    'tutorials.intro.moreTutorials.content': 'En Perfil → Tutoriales tienes guías para los flujos principales (crear lote, hacer pedido, abrir una incidencia…). Te llevamos ahora para que les eches un vistazo.',
+    'tutorials.intro.locale.back': 'Atrás',
+    'tutorials.intro.locale.close': 'Cerrar',
+    'tutorials.intro.locale.last': 'Ir a mi perfil',
+    'tutorials.intro.locale.next': 'Siguiente',
+    'tutorials.intro.locale.open': 'Abrir',
+    'tutorials.intro.locale.skip': 'Saltar tutorial',
+    'tutorials.section.title': 'Aprende a usar la plataforma',
+    'tutorials.section.subtitle': 'Guías cortas para los flujos principales. No son obligatorias y puedes hacerlas en cualquier orden.',
+    'tutorials.section.loading': 'Cargando…',
+    'tutorials.section.minutes': 'min',
+    'tutorials.section.completed': 'Completado',
+    'tutorials.section.comingSoon': 'Próximamente',
+    'tutorials.section.replay': 'Repetir',
+    'tutorials.section.start': 'Empezar',
+    'tutorials.catalog.intro.title': 'Introducción a Primar-IA',
+    'tutorials.catalog.intro.desc': 'Recorrido por el menú, las notificaciones y tu panel. Incluye cómo se construye tu reputación con cada operación.',
+    'tutorials.catalog.crearLote.title': 'Crear y vender un lote (flujo completo)',
+    'tutorials.catalog.crearLote.desc': 'Recorrido con datos simulados: publicar lote, recibir matches, firmar contrato, enviar y cobrar.',
+    'tutorials.catalog.hacerPedido.title': 'Hacer un pedido (flujo completo)',
+    'tutorials.catalog.hacerPedido.desc': 'Recorrido con datos simulados: crear pedido, recibir ofertas, firmar contrato, pagar comisión, recibir mercancía.',
+    'tutorials.catalog.incidencia.title': 'Abrir una incidencia',
+    'tutorials.catalog.incidencia.desc': 'Qué hacer si algo no llega como debía: pasos para abrir disputa y resolución.',
+    'tutorials.runner.back': 'Atrás',
+    'tutorials.runner.close': 'Salir',
+    'tutorials.runner.last': 'Terminar',
+    'tutorials.runner.next': 'Continuar',
+    'tutorials.runner.open': 'Abrir',
+    'tutorials.runner.skip': 'Salir del tutorial',
     'tasks.title': 'Tareas pendientes',
     'tasks.empty': 'Sin tareas pendientes.',
     'tasks.back': 'Volver',
@@ -3610,6 +3722,62 @@ export const messages: Record<Locale, Messages> = {
     'tutorials.error.title': "Couldn't show this tutorial",
     'tutorials.error.body': "Something went wrong starting the tour. Try again in a few seconds.",
     'tutorials.error.close': 'Close',
+    'tutorials.banner.testMode': 'Test mode',
+    'tutorials.banner.followingTour': "you're following the tutorial",
+    'tutorials.banner.nothingSaved': 'Nothing you do is saved.',
+    'tutorials.banner.exit': 'Exit tutorial',
+    'tutorials.flow.crearLote': 'Create and sell a lot',
+    'tutorials.flow.hacerPedido': 'Place an order',
+    'tutorials.boundary.title': 'The tutorial hit an error',
+    'tutorials.boundary.body': "We've closed test mode so the app works normally again. Reload the page to continue.",
+    'tutorials.boundary.reload': 'Reload',
+    'tutorials.launcher.title': 'Guided platform tour',
+    'tutorials.launcher.subtitle': 'Start with an interactive tour to learn Primar-IA step by step.',
+    'tutorials.launcher.duration': '~3 minutes',
+    'tutorials.launcher.start': 'Start tour',
+    'tutorials.launcher.close': 'Close',
+    'tutorials.intro.welcome.title': 'Welcome to Primar-IA!',
+    'tutorials.intro.welcome.content': "We'll walk you through the main sections in under a minute. You can skip it any time and re-launch it from your profile.",
+    'tutorials.intro.sidebar.title': 'Main menu',
+    'tutorials.intro.sidebar.contentSeller': 'From here you reach your Lots, Matches with buyers, Contracts, Messages and more.',
+    'tutorials.intro.sidebar.contentBuyer': 'From here you reach your Orders, Messages, Contracts, Stats and more.',
+    'tutorials.intro.header.title': 'Notifications and account',
+    'tutorials.intro.header.content': 'Top right you have notifications, profile access and the logout option.',
+    'tutorials.intro.panel.title': 'Your dashboard',
+    'tutorials.intro.panel.contentSeller': "On the dashboard you'll see your active lots, pending matches and live operations. Create a lot and the platform will auto-match compatible buyers.",
+    'tutorials.intro.panel.contentBuyer': "On the dashboard you'll see your active orders and seller offers. Create an order and the platform brings you matching lots.",
+    'tutorials.intro.reputation.title': 'Your reputation grows by operating',
+    'tutorials.intro.reputation.content': 'Your score is computed with every operation: the more successful transactions you close, the better your reputation — unlocking better terms.',
+    'tutorials.intro.moreTutorials.title': 'More tutorials on your profile',
+    'tutorials.intro.moreTutorials.content': "Under Profile → Tutorials you have guides for the main flows (create lot, place order, open a claim…). We'll take you there now.",
+    'tutorials.intro.locale.back': 'Back',
+    'tutorials.intro.locale.close': 'Close',
+    'tutorials.intro.locale.last': 'Go to my profile',
+    'tutorials.intro.locale.next': 'Next',
+    'tutorials.intro.locale.open': 'Open',
+    'tutorials.intro.locale.skip': 'Skip tutorial',
+    'tutorials.section.title': 'Learn to use the platform',
+    'tutorials.section.subtitle': 'Short guides for the main flows. Not mandatory and you can do them in any order.',
+    'tutorials.section.loading': 'Loading…',
+    'tutorials.section.minutes': 'min',
+    'tutorials.section.completed': 'Completed',
+    'tutorials.section.comingSoon': 'Coming soon',
+    'tutorials.section.replay': 'Replay',
+    'tutorials.section.start': 'Start',
+    'tutorials.catalog.intro.title': 'Intro to Primar-IA',
+    'tutorials.catalog.intro.desc': 'Tour of the menu, notifications and your dashboard. Includes how your reputation grows with each operation.',
+    'tutorials.catalog.crearLote.title': 'Create and sell a lot (full flow)',
+    'tutorials.catalog.crearLote.desc': 'Simulated walkthrough: publish lot, receive matches, sign contract, ship and get paid.',
+    'tutorials.catalog.hacerPedido.title': 'Place an order (full flow)',
+    'tutorials.catalog.hacerPedido.desc': 'Simulated walkthrough: create order, receive offers, sign contract, pay commission, receive goods.',
+    'tutorials.catalog.incidencia.title': 'Open a claim',
+    'tutorials.catalog.incidencia.desc': "What to do if something doesn't arrive as expected: steps to open a dispute and resolution.",
+    'tutorials.runner.back': 'Back',
+    'tutorials.runner.close': 'Exit',
+    'tutorials.runner.last': 'Finish',
+    'tutorials.runner.next': 'Continue',
+    'tutorials.runner.open': 'Open',
+    'tutorials.runner.skip': 'Exit tutorial',
     'tasks.title': 'Pending tasks',
     'tasks.empty': 'No pending tasks.',
     'tasks.back': 'Back',

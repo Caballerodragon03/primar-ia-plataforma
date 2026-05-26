@@ -19,10 +19,12 @@ import type { Step, EventData } from 'react-joyride';
 import { useTutorialStore } from '@/store/tutorial.store';
 import { CREAR_LOTE_FLOW, HACER_PEDIDO_FLOW, type FlowStep } from './tutorialFlows';
 import { api } from '@/lib/api';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 const Joyride = dynamic(() => import('react-joyride').then((m) => m.Joyride), { ssr: false });
 
 export function TutorialRunner() {
+  const t = useT();
   const { flow, step, next, goto, end } = useTutorialStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -131,12 +133,12 @@ export function TutorialRunner() {
       continuous
       onEvent={handleCallback}
       locale={{
-        back: 'Atrás',
-        close: 'Salir',
-        last: 'Terminar',
-        next: 'Continuar',
-        open: 'Abrir',
-        skip: 'Salir del tutorial',
+        back: t('tutorials.runner.back'),
+        close: t('tutorials.runner.close'),
+        last: t('tutorials.runner.last'),
+        next: t('tutorials.runner.next'),
+        open: t('tutorials.runner.open'),
+        skip: t('tutorials.runner.skip'),
       }}
       options={{
         buttons: ['skip', 'back', 'primary'],
