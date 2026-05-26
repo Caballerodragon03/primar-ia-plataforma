@@ -7,6 +7,7 @@ import { ArrowLeft, QrCode, Upload, CheckCircle2, ImageIcon, Printer, Loader2, S
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { RatingModal } from '@/components/RatingModal';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 
 interface ContractInfo {
   transaccionId: string;
@@ -87,6 +88,9 @@ function QRCodeDisplay({ value }: { value: string }) {
 }
 
 export default function SellerQRPage() {
+  const t = useT();
+  const { locale } = useLocale();
+  const numLoc = locale === 'en' ? 'en-GB' : 'es-ES';
   const { id, txId } = useParams<{ id: string; txId: string }>();
   const [contract, setContract] = useState<ContractInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,15 +107,15 @@ export default function SellerQRPage() {
         setContract(data.data);
         setPhotoUrls(data.data.fotosLoteUrls ?? []);
       })
-      .catch(() => setError('Could not load contract info.'))
+      .catch(() => setError(t('qr.loadContract')))
       .finally(() => setLoading(false));
   }, [txId]);
 
   const handlePhotoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { alert('Please select an image file.'); return; }
-    if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB.'); return; }
+    if (!file.type.startsWith('image/')) { alert(t('qr.imageOnly')); return; }
+    if (file.size > 10 * 1024 * 1024) { alert(t('qr.imageMax')); return; }
 
     setUploadingPhoto(true);
     try {
@@ -124,7 +128,7 @@ export default function SellerQRPage() {
       const url: string = data.data.url;
       setPhotoUrls((prev) => [...prev, url]);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Upload failed.';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('qr.uploadFail');
       alert(msg);
     } finally {
       setUploadingPhoto(false);
@@ -137,13 +141,13 @@ export default function SellerQRPage() {
   };
 
   const handleUploadPhotos = async () => {
-    if (photoUrls.length === 0) { alert('Add at least one photo URL.'); return; }
+    if (photoUrls.length === 0) { alert(t('qr.addPhotos')); return; }
     setUploading(true);
     try {
       await api.post(`/contracts/${txId}/photos`, { photoUrls });
-      alert('Photos uploaded successfully! The buyer will be able to see them.');
+      alert(t('qr.savePhotosSuccess'));
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to upload photos.';
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('qr.savePhotosFail');
       alert(msg);
     } finally {
       setUploading(false);
@@ -166,8 +170,8 @@ export default function SellerQRPage() {
   if (error || !contract) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-600 mb-4">{error || 'Not found.'}</p>
-        <Link href={`/seller/lots/${id}`}><Button variant="outline">Back to Lot</Button></Link>
+        <p className="text-red-600 mb-4">{error || t('qr.notFound')}</p>
+        <Link href={`/seller/lots/${id}`}><Button variant="outline">{t('qr.backToLot')}</Button></Link>
       </div>
     );
   }
@@ -176,14 +180,14 @@ export default function SellerQRPage() {
     return (
       <div className="p-6 max-w-2xl mx-auto space-y-6">
         <Link href={`/seller/lots/${id}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" /> Back to Lot
+          <ArrowLeft className="w-4 h-4" /> {t('qr.backToLot')}
         </Link>
         <div className="bg-amber-50 border border-amber-200 rounded-card p-6 text-center">
           <QrCode className="w-10 h-10 text-amber-400 mx-auto mb-3" />
-          <p className="text-sm font-semibold text-amber-900">QR code not yet generated</p>
-          <p className="text-xs text-amber-700 mt-1">Both parties must sign the contract before the QR code is generated.</p>
+          <p className="text-sm font-semibold text-amber-900">{t('qr.notGeneratedTitle')}</p>
+          <p className="text-xs text-amber-700 mt-1">{t('qr.notGeneratedDesc')}</p>
           <Link href={`/seller/lots/${id}`}>
-            <Button variant="primary" size="sm" className="mt-4">Volver al lote</Button>
+            <Button variant="primary" size="sm" className="mt-4">{t('qr.backToLot')}</Button>
           </Link>
         </div>
       </div>
@@ -193,34 +197,34 @@ export default function SellerQRPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <Link href={`/seller/lots/${id}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground print:hidden">
-        <ArrowLeft className="w-4 h-4" /> Back to Lot
+        <ArrowLeft className="w-4 h-4" /> {t('qr.backToLot')}
       </Link>
 
       <div className="flex items-center gap-3">
         <QrCode className="w-6 h-6 text-primary" />
-        <h1 className="text-xl font-bold text-foreground">QR Code & Lot Photos</h1>
+        <h1 className="text-xl font-bold text-foreground">{t('qr.pageTitle')}</h1>
       </div>
 
       {/* QR Code */}
       <div className="bg-card rounded-card border border-border shadow-soft p-6 text-center" id="qr-print-area">
-        <h2 className="text-sm font-semibold text-foreground mb-4">Lot Verification QR Code</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-4">{t('qr.lotVerification')}</h2>
         <div className="inline-block">
           <QRCodeDisplay value={contract.qrToken} />
         </div>
-        <p className="text-xs text-muted-foreground mt-3">Print this QR code and attach it to the lot before shipping.</p>
-        <p className="text-xs text-muted-foreground mt-1">The buyer will scan this code to confirm delivery.</p>
+        <p className="text-xs text-muted-foreground mt-3">{t('qr.printHint')}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t('qr.buyerScans')}</p>
 
         <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-          <p className="text-xs text-muted-foreground mb-1">Verification Code (manual entry):</p>
+          <p className="text-xs text-muted-foreground mb-1">{t('qr.manualEntryLabel')}</p>
           <p className="text-sm font-mono font-bold text-foreground select-all break-all">{contract.qrToken}</p>
         </div>
 
         {contract.qrUsado && (
           <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
             <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto mb-1" />
-            <p className="text-xs font-semibold text-green-900">Delivery confirmed by buyer</p>
+            <p className="text-xs font-semibold text-green-900">{t('qr.deliveryConfirmedByBuyer')}</p>
             {contract.hasRated ? (
-              <p className="text-xs text-muted-foreground text-center">Ya has valorado esta transacción.</p>
+              <p className="text-xs text-muted-foreground text-center">{t('qr.alreadyRated')}</p>
             ) : (
               <Button
                 variant="outline"
@@ -228,7 +232,7 @@ export default function SellerQRPage() {
                 className="flex items-center gap-1 text-yellow-600 border-yellow-300 hover:bg-yellow-50 mx-auto"
                 onClick={() => setShowRating(true)}
               >
-                <Star className="w-3.5 h-3.5" /> Rate Buyer
+                <Star className="w-3.5 h-3.5" /> {t('qr.rateBuyer')}
               </Button>
             )}
           </div>
@@ -236,19 +240,19 @@ export default function SellerQRPage() {
 
         <div className="mt-4 print:hidden">
           <Button variant="outline" size="sm" onClick={handlePrint} className="flex items-center gap-2 mx-auto">
-            <Printer className="w-4 h-4" /> Print QR Code
+            <Printer className="w-4 h-4" /> {t('qr.printBtn')}
           </Button>
         </div>
       </div>
 
       {/* Shipment info */}
       <div className="bg-card rounded-card border border-border shadow-soft p-5 print:hidden">
-        <h2 className="text-sm font-semibold text-foreground mb-3">Shipment</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-3">{t('qr.shipment')}</h2>
         <dl className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
-          <div><dt className="text-xs text-muted-foreground">Product</dt><dd className="font-medium">{contract.producto}{contract.variedad ? ` — ${contract.variedad}` : ''}</dd></div>
-          <div><dt className="text-xs text-muted-foreground">Quantity</dt><dd className="font-medium">{contract.cantidadKg.toLocaleString('es-ES')} kg</dd></div>
-          <div><dt className="text-xs text-muted-foreground">Buyer</dt><dd className="font-medium">{contract.comprador.nombre}</dd></div>
-          <div><dt className="text-xs text-muted-foreground">Status</dt><dd className="font-medium">{contract.estado}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">{t('qr.product')}</dt><dd className="font-medium">{contract.producto}{contract.variedad ? ` — ${contract.variedad}` : ''}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">{t('qr.quantity')}</dt><dd className="font-medium">{contract.cantidadKg.toLocaleString(numLoc)} kg</dd></div>
+          <div><dt className="text-xs text-muted-foreground">{t('qr.buyer')}</dt><dd className="font-medium">{contract.comprador.nombre}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">{t('qr.status')}</dt><dd className="font-medium">{contract.estado}</dd></div>
         </dl>
       </div>
 
@@ -256,9 +260,9 @@ export default function SellerQRPage() {
       {!contract.qrUsado && (
         <div className="bg-card rounded-card border border-border shadow-soft p-5 space-y-4 print:hidden">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <ImageIcon className="w-4 h-4" /> Lot Preparation Photos
+            <ImageIcon className="w-4 h-4" /> {t('qr.photosTitle')}
           </h2>
-          <p className="text-xs text-muted-foreground">Upload photos of the prepared lot. The buyer will see these before delivery.</p>
+          <p className="text-xs text-muted-foreground">{t('qr.photosDesc')}</p>
 
           {/* Existing photos */}
           {photoUrls.length > 0 && (
@@ -293,12 +297,12 @@ export default function SellerQRPage() {
               className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-border rounded-lg text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors w-full justify-center disabled:opacity-50"
             >
               {uploadingPhoto ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t('qr.uploading')}</>
               ) : (
-                <><Upload className="w-4 h-4" /> Click to upload photo</>
+                <><Upload className="w-4 h-4" /> {t('qr.clickToUpload')}</>
               )}
             </button>
-            <p className="text-xs text-muted-foreground text-center">JPG or PNG, max 10MB each</p>
+            <p className="text-xs text-muted-foreground text-center">{t('qr.photoFormat')}</p>
           </div>
 
           <Button
@@ -307,7 +311,7 @@ export default function SellerQRPage() {
             onClick={handleUploadPhotos}
             className="flex items-center gap-2"
           >
-            <Upload className="w-4 h-4" /> Save Photos
+            <Upload className="w-4 h-4" /> {t('qr.savePhotos')}
           </Button>
         </div>
       )}
@@ -316,7 +320,7 @@ export default function SellerQRPage() {
       {contract.qrUsado && photoUrls.length > 0 && (
         <div className="bg-card rounded-card border border-border shadow-soft p-5 print:hidden">
           <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <ImageIcon className="w-4 h-4" /> Lot Photos
+            <ImageIcon className="w-4 h-4" /> {t('qr.photosUploaded')}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {photoUrls.map((url, i) => (

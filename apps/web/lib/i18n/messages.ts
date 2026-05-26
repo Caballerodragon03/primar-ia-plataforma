@@ -1333,6 +1333,38 @@ export type MessageKey =
   | 'qr.back'
   | 'qr.loadFail'
   | 'qr.redirecting'
+  | 'qr.loadContract'
+  | 'qr.imageOnly'
+  | 'qr.imageMax'
+  | 'qr.uploadFail'
+  | 'qr.addPhotos'
+  | 'qr.savePhotosFail'
+  | 'qr.savePhotosSuccess'
+  | 'qr.backToLot'
+  | 'qr.notFound'
+  | 'qr.notGeneratedTitle'
+  | 'qr.notGeneratedDesc'
+  | 'qr.pageTitle'
+  | 'qr.lotVerification'
+  | 'qr.printHint'
+  | 'qr.buyerScans'
+  | 'qr.manualEntryLabel'
+  | 'qr.deliveryConfirmedByBuyer'
+  | 'qr.alreadyRated'
+  | 'qr.rateBuyer'
+  | 'qr.printBtn'
+  | 'qr.shipment'
+  | 'qr.product'
+  | 'qr.quantity'
+  | 'qr.buyer'
+  | 'qr.status'
+  | 'qr.photosTitle'
+  | 'qr.photosDesc'
+  | 'qr.uploading'
+  | 'qr.clickToUpload'
+  | 'qr.photoFormat'
+  | 'qr.savePhotos'
+  | 'qr.photosUploaded'
   | 'confirm.loadFail'
   | 'confirm.notFound'
   | 'confirm.noTx'
@@ -2727,6 +2759,38 @@ export const messages: Record<Locale, Messages> = {
     'qr.back': 'Volver',
     'qr.loadFail': 'No se pudo cargar el QR.',
     'qr.redirecting': 'Redirigiendo al detalle del pedido…',
+    'qr.loadContract': 'No se pudo cargar la información del contrato.',
+    'qr.imageOnly': 'Selecciona un archivo de imagen.',
+    'qr.imageMax': 'La imagen debe ser menor de 10MB.',
+    'qr.uploadFail': 'Subida fallida.',
+    'qr.addPhotos': 'Añade al menos una foto.',
+    'qr.savePhotosFail': 'No se pudieron guardar las fotos.',
+    'qr.savePhotosSuccess': '¡Fotos guardadas! El comprador podrá verlas.',
+    'qr.backToLot': 'Volver al lote',
+    'qr.notFound': 'No encontrado.',
+    'qr.notGeneratedTitle': 'Código QR aún no generado',
+    'qr.notGeneratedDesc': 'Ambas partes deben firmar el contrato antes de generar el QR.',
+    'qr.pageTitle': 'Código QR y fotos del lote',
+    'qr.lotVerification': 'Código QR de verificación del lote',
+    'qr.printHint': 'Imprime este QR y pégalo en el lote antes de enviar.',
+    'qr.buyerScans': 'El comprador escaneará este código para confirmar la entrega.',
+    'qr.manualEntryLabel': 'Código de verificación (entrada manual):',
+    'qr.deliveryConfirmedByBuyer': 'Entrega confirmada por el comprador',
+    'qr.alreadyRated': 'Ya has valorado esta transacción.',
+    'qr.rateBuyer': 'Valorar comprador',
+    'qr.printBtn': 'Imprimir QR',
+    'qr.shipment': 'Envío',
+    'qr.product': 'Producto',
+    'qr.quantity': 'Cantidad',
+    'qr.buyer': 'Comprador',
+    'qr.status': 'Estado',
+    'qr.photosTitle': 'Fotos de preparación del lote',
+    'qr.photosDesc': 'Sube fotos del lote preparado. El comprador las verá antes de la entrega.',
+    'qr.uploading': 'Subiendo…',
+    'qr.clickToUpload': 'Pulsa para subir una foto',
+    'qr.photoFormat': 'JPG o PNG, máximo 10MB cada una',
+    'qr.savePhotos': 'Guardar fotos',
+    'qr.photosUploaded': 'Fotos del lote',
     'confirm.loadFail': 'No se pudieron cargar los detalles del pedido.',
     'confirm.notFound': 'Pedido no encontrado.',
     'confirm.noTx': 'No se encontró transacción para este pedido.',
@@ -4114,6 +4178,38 @@ export const messages: Record<Locale, Messages> = {
     'qr.back': 'Back',
     'qr.loadFail': 'Could not load the QR.',
     'qr.redirecting': 'Redirecting to order details…',
+    'qr.loadContract': 'Could not load contract info.',
+    'qr.imageOnly': 'Please select an image file.',
+    'qr.imageMax': 'Image must be under 10MB.',
+    'qr.uploadFail': 'Upload failed.',
+    'qr.addPhotos': 'Add at least one photo.',
+    'qr.savePhotosFail': 'Failed to save photos.',
+    'qr.savePhotosSuccess': 'Photos saved! The buyer will be able to see them.',
+    'qr.backToLot': 'Back to lot',
+    'qr.notFound': 'Not found.',
+    'qr.notGeneratedTitle': 'QR code not yet generated',
+    'qr.notGeneratedDesc': 'Both parties must sign the contract before the QR code is generated.',
+    'qr.pageTitle': 'QR code & lot photos',
+    'qr.lotVerification': 'Lot verification QR code',
+    'qr.printHint': 'Print this QR code and attach it to the lot before shipping.',
+    'qr.buyerScans': 'The buyer will scan this code to confirm delivery.',
+    'qr.manualEntryLabel': 'Verification code (manual entry):',
+    'qr.deliveryConfirmedByBuyer': 'Delivery confirmed by buyer',
+    'qr.alreadyRated': "You've already rated this transaction.",
+    'qr.rateBuyer': 'Rate buyer',
+    'qr.printBtn': 'Print QR code',
+    'qr.shipment': 'Shipment',
+    'qr.product': 'Product',
+    'qr.quantity': 'Quantity',
+    'qr.buyer': 'Buyer',
+    'qr.status': 'Status',
+    'qr.photosTitle': 'Lot preparation photos',
+    'qr.photosDesc': "Upload photos of the prepared lot. The buyer will see these before delivery.",
+    'qr.uploading': 'Uploading…',
+    'qr.clickToUpload': 'Click to upload photo',
+    'qr.photoFormat': 'JPG or PNG, max 10MB each',
+    'qr.savePhotos': 'Save photos',
+    'qr.photosUploaded': 'Lot photos',
     'confirm.loadFail': 'Failed to load order details.',
     'confirm.notFound': 'Order not found.',
     'confirm.noTx': 'No transaction found for this order.',
