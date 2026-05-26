@@ -431,7 +431,7 @@ export default function BuyerMatchContractPage() {
       <div className="bg-card border border-border rounded-card divide-y divide-border shadow-soft">
         <div data-tutorial="contract-resumen" className="p-5">
           <h2 className="text-sm font-semibold text-foreground mb-3">{t('contract.summary')}</h2>
-          <dl className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6 text-sm">
             {info.producto && (
               <>
                 <dt className="text-text-secondary">{t('contract.summary.product')}</dt>
@@ -479,7 +479,7 @@ export default function BuyerMatchContractPage() {
 
         <div data-tutorial="contract-comision" className="p-5">
           <h2 className="text-sm font-semibold text-foreground mb-3">{t('contract.commission.title')}</h2>
-          <div className="grid grid-cols-2 gap-y-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-sm">
             <span className="text-text-secondary">{t('contract.commission.amountToPay')}</span>
             <span className="font-medium text-right">{formatEur(info.comisionEstimada, locale)}</span>
             <span className="text-text-secondary">{t('contract.commission.percent')}</span>

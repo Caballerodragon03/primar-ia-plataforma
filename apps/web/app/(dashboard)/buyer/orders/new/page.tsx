@@ -321,7 +321,7 @@ export default function CreateOrderPage() {
           <div data-tutorial="form-producto" className="bg-card rounded-card border border-border p-5 space-y-4">
             <h2 className="font-semibold text-text-primary">{t('orderForm.commercialDetails')}</h2>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
                 label={t('orderForm.product')}
                 required
@@ -351,7 +351,7 @@ export default function CreateOrderPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select label={t('orderForm.frequency')} {...register('frecuencia')}>
                 <option value="">{t('orderForm.frequency.placeholder')}</option>
                 {FREQUENCIES.map((f) => <option key={f.value} value={f.value}>{t(f.labelKey)}</option>)}
@@ -384,7 +384,7 @@ export default function CreateOrderPage() {
                 {t('orderForm.noCalibreCheckbox')}
               </label>
               {noCalibre ? (
-                <div className="grid grid-cols-2 gap-2 mt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                   <div className="space-y-1">
                     <p className="text-xs font-medium text-text-secondary px-1">{t('orderForm.quantityKg')}</p>
                     <Input

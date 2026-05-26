@@ -240,7 +240,7 @@ export function DisputeModal({
                   className="hidden"
                 />
                 {evidenceUrls.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {evidenceUrls.map((url, i) => (
                       <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

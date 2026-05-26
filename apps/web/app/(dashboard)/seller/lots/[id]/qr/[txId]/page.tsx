@@ -248,7 +248,7 @@ export default function SellerQRPage() {
       {/* Shipment info */}
       <div className="bg-card rounded-card border border-border shadow-soft p-5 print:hidden">
         <h2 className="text-sm font-semibold text-foreground mb-3">{t('qr.shipment')}</h2>
-        <dl className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6 text-sm">
           <div><dt className="text-xs text-muted-foreground">{t('qr.product')}</dt><dd className="font-medium">{contract.producto}{contract.variedad ? ` — ${contract.variedad}` : ''}</dd></div>
           <div><dt className="text-xs text-muted-foreground">{t('qr.quantity')}</dt><dd className="font-medium">{contract.cantidadKg.toLocaleString(numLoc)} kg</dd></div>
           <div><dt className="text-xs text-muted-foreground">{t('qr.buyer')}</dt><dd className="font-medium">{contract.comprador.nombre}</dd></div>

@@ -152,7 +152,7 @@ export default function EditOrderPage() {
           <h2 className="text-sm font-semibold text-text-primary">{t('orderDetail.requestedCalibres')}</h2>
           <div className="space-y-3">
             {fields.map((field, i) => (
-              <div key={field.id} className="grid grid-cols-3 gap-3 items-end">
+              <div key={field.id} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                 {calibreOptions.length > 1 ? (
                   <Select
                     label={t('editOrder.caliber')}

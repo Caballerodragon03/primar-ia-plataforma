@@ -165,7 +165,7 @@ function BuyerProfileContent() {
           <LanguageToggle />
           <div className="bg-card rounded-card border border-border p-6 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">{t('profile.contactPerson')}</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground mb-0.5">{t('profile.fullName')}</p>
                 <p className="text-sm font-medium text-foreground">
@@ -265,7 +265,7 @@ function BuyerProfileContent() {
               <p className="text-sm text-muted-foreground text-center py-4">{t('profile.company.loading')}</p>
             ) : (
               companyRows.map(({ labelKey, value }) => (
-                <div key={labelKey} className="grid grid-cols-2 gap-4 py-2 border-b border-border last:border-0">
+                <div key={labelKey} className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-4 py-2 border-b border-border last:border-0">
                   <p className="text-xs text-muted-foreground font-medium">{t(labelKey)}</p>
                   <p className="text-sm text-foreground">{value}</p>
                 </div>

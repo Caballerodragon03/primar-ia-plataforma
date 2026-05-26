@@ -152,7 +152,7 @@ export function RatingModal({ transaccionId, destinatarioId, tipo, onClose, onSu
       />
 
       {/* Panel */}
-      <div className="relative z-10 bg-card rounded-card shadow-xl w-full max-w-md flex flex-col">
+      <div className="relative z-10 bg-card rounded-card shadow-xl w-full max-w-md flex flex-col max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h2 id="rating-modal-title" className="font-semibold text-foreground text-base">

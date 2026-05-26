@@ -432,7 +432,7 @@ export default function PublishLotPage() {
         {/* Product Details */}
         <section data-tutorial="form-producto" className="bg-card rounded-card border border-border p-5 space-y-4">
           <h2 className="font-semibold text-text-primary">{t('lotForm.productDetails')}</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label={t('lotForm.product')}
               required
@@ -550,7 +550,7 @@ export default function PublishLotPage() {
               <p className="mt-1 text-xs text-red-500">{errors.direccionRecogida.message}</p>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               type="date"
               label={t('lotForm.availableFrom')}

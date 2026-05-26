@@ -143,7 +143,7 @@ export default function BuyerDisputeDetailPage() {
         {dispute.evidenciasUrls.length > 0 && (
           <div>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{t('disputes.evidence')}</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {dispute.evidenciasUrls.map((url, i) => (
                 <button key={i} onClick={() => setLightbox(url)} className="aspect-square rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity cursor-pointer">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -163,7 +163,7 @@ export default function BuyerDisputeDetailPage() {
           {dispute.evidenciasVendedorUrls && dispute.evidenciasVendedorUrls.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{t('disputes.sellerEvidence')}</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {dispute.evidenciasVendedorUrls.map((url, i) => (
                   <button key={i} onClick={() => setLightbox(url)} className="aspect-square rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity cursor-pointer">
                     {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -356,7 +356,7 @@ function SellerProfileContent() {
           {/* Contact info */}
           <div className="bg-card rounded-card border border-border p-6 space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Persona de contacto</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground mb-0.5">Nombre</p>
                 <p className="text-sm font-medium text-foreground">
@@ -483,7 +483,7 @@ function SellerProfileContent() {
                     : '—',
                 },
               ].map(({ label, value }) => (
-                <div key={label} className="grid grid-cols-2 gap-4 py-2 border-b border-border last:border-0">
+                <div key={label} className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-4 py-2 border-b border-border last:border-0">
                   <p className="text-xs text-muted-foreground font-medium">{label}</p>
                   <p className="text-sm text-foreground">{value}</p>
                 </div>

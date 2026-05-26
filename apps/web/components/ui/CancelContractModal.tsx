@@ -53,7 +53,7 @@ export function CancelContractModal({ matchId, onClose, onSuccess }: CancelContr
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-card border border-border shadow-xl max-w-md w-full p-6 space-y-5">
+      <div className="bg-card rounded-card border border-border shadow-xl max-w-md w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center gap-2">
           <XCircle className="w-5 h-5 text-red-600" />
           <h3 className="text-base font-bold text-foreground">{t('cancelModal.title')}</h3>

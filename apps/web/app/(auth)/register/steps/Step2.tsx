@@ -116,7 +116,7 @@ export function Step2({ onNext, onBack }: Step2Props) {
             error={errors.direccionFiscal?.message}
             {...register('direccionFiscal')}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label={t('register.step2.city')}
               placeholder="Valencia"
@@ -142,7 +142,7 @@ export function Step2({ onNext, onBack }: Step2Props) {
       <div>
         <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3">{t('register.step2.legalContactHeader')}</h3>
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label={t('register.step2.name')}
               placeholder="Juan"

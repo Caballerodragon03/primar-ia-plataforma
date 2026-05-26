@@ -75,8 +75,8 @@ export function PaymentModal({
         aria-hidden="true"
       />
 
-      <div className="relative w-full max-w-md bg-card rounded-card shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="relative w-full max-w-md bg-card rounded-card shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h2 id="payment-modal-title" className="text-lg font-semibold text-foreground">
             Confirmar y pagar
           </h2>
@@ -118,7 +118,7 @@ export function PaymentModal({
 
             <fieldset>
               <legend className="text-sm font-medium text-foreground mb-2">Método de pago</legend>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label
                   className={[
                     'flex items-center gap-2.5 border rounded-lg px-3 py-2.5 cursor-pointer transition-colors',

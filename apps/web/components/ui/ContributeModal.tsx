@@ -263,7 +263,7 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
                   />
                   {/* Phase 14J — desglose para que el vendedor entienda de
                       dónde sale el máximo y pueda decidir cuánto poner. */}
-                  <div className="grid grid-cols-3 gap-2 text-[11px] text-text-secondary">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-text-secondary">
                     <div className="bg-muted/40 rounded px-2 py-1">
                       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pedido pide</div>
                       <div className="font-medium text-text-primary">{c.pedidoTotal.toLocaleString('es-ES')} kg</div>
