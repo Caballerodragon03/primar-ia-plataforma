@@ -1,11 +1,12 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Paperclip, MessageSquare, TrendingUp, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
+import { Send, Paperclip, MessageSquare, TrendingUp, CheckCircle2, XCircle, RotateCcw, ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { NegotiationCard, type NegotiacionData } from './NegotiationCard';
 import { NegotiationOfferModal } from './NegotiationOfferModal';
 import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import type { MessageKey } from '@/lib/i18n/messages';
 
 type TxEstado =
@@ -124,6 +125,9 @@ function formatConvTime(iso: string, locale: 'es' | 'en'): string {
 export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: ChatViewProps) {
   const t = useT();
   const { locale } = useLocale();
+  // Phase 14N — vista única en mobile: lista hasta seleccionar conv,
+  // luego solo conv con botón back. Desktop sigue con doble panel.
+  const isMobile = useIsMobile();
   const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialTransaccionId ?? null);
@@ -288,10 +292,19 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
 
   const selectedConv = conversations.find((c) => c.transaccionId === selectedId);
 
+  // Phase 14N — control de visibilidad responsive:
+  //   mobile + selectedId → solo chat. mobile sin sel → solo lista.
+  //   desktop → siempre ambos paneles.
+  const showList = !isMobile || !selectedId;
+  const showChat = !isMobile || !!selectedId;
+
   return (
     <div className="flex h-full min-h-0 overflow-hidden rounded-card border border-border bg-card">
       {/* Left panel — conversation list */}
-      <div className="w-[240px] flex-shrink-0 border-r border-border flex flex-col">
+      <div className={[
+        'w-full md:w-[240px] flex-shrink-0 md:border-r md:border-border flex-col',
+        showList ? 'flex' : 'hidden md:flex',
+      ].join(' ')}>
         <div className="p-4 border-b border-border">
           <h2 className="text-sm font-semibold text-foreground">{t('chat.title')}</h2>
         </div>
@@ -372,7 +385,10 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
       </div>
 
       {/* Right panel — active conversation */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={[
+        'flex-1 flex-col min-w-0',
+        showChat ? 'flex' : 'hidden md:flex',
+      ].join(' ')}>
         {!selectedId ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground gap-3">
             <MessageSquare className="w-10 h-10 text-gray-200" />
@@ -382,6 +398,15 @@ export function ChatView({ role, initialTransaccionId, autoOpenOffer = false }: 
           <>
             {/* Header */}
             <div className="px-4 py-3 border-b border-border flex items-center gap-3">
+              {/* Phase 14N — botón back en mobile para volver a la lista */}
+              <button
+                type="button"
+                onClick={() => setSelectedId(null)}
+                className="md:hidden inline-flex items-center justify-center w-9 h-9 -ml-1 rounded-lg hover:bg-accent flex-shrink-0"
+                aria-label="Back"
+              >
+                <ArrowLeft className="w-5 h-5 text-foreground" />
+              </button>
               {selectedConv && (() => {
                 const closed = isClosed(selectedConv.estado);
                 const meta = closed ? estadoMeta(selectedConv.estado) : null;
