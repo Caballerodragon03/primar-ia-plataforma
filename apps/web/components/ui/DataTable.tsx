@@ -84,14 +84,14 @@ export function DataTable<T>({
             ))}
           </div>
         )}
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             placeholder={searchPlaceholder}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="pl-9 pr-4 py-2 text-sm border border-input rounded-input focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-card w-64 shadow-soft-sm hover:shadow-soft transition-all duration-200 placeholder:text-muted-foreground"
+            className="pl-9 pr-4 py-2 text-sm border border-input rounded-input focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-card w-full sm:w-64 shadow-soft-sm hover:shadow-soft transition-all duration-200 placeholder:text-muted-foreground"
           />
         </div>
       </div>
