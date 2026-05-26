@@ -2,8 +2,10 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { ChatView } from '@/components/ui/ChatView';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 function BuyerMessages() {
+  const t = useT();
   const params = useSearchParams();
   const tx = params.get('tx') ?? undefined;
   // Phase 14G — ?propose=1 → ChatView abre el modal de propuesta nada más
@@ -12,8 +14,8 @@ function BuyerMessages() {
   return (
     <div className="h-[calc(100vh-theme(spacing.16)-theme(spacing.12))] flex flex-col">
       <div className="mb-4">
-        <h1 className="text-xl font-semibold text-foreground">Mensajes</h1>
-        <p className="text-sm text-muted-foreground">Chatea con tus vendedores sobre pedidos activos.</p>
+        <h1 className="text-xl font-semibold text-foreground">{t('messagesPage.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('messagesPage.subtitleBuyer')}</p>
       </div>
       <div className="flex-1 min-h-0">
         <ChatView role="buyer" initialTransaccionId={tx} autoOpenOffer={autoOpenOffer} />

@@ -17,6 +17,8 @@ import { KPICard } from '@/components/ui/KPICard';
 import { DataTable } from '@/components/ui/DataTable';
 import { TrendingUp, DollarSign, ShoppingCart, CheckCircle2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import { useMemo } from 'react';
 
 const PRIMARY = '#E1C44D';
 
@@ -33,22 +35,24 @@ type AnalyticsData = {
   topVendedores: { farmer: string; volume: number; value: number; orders: number }[];
 };
 
-const farmerColumns: ColumnDef<AnalyticsData['topVendedores'][number], string>[] = [
-  { accessorKey: 'farmer', header: 'VENDEDOR' },
-  {
-    accessorKey: 'volume',
-    header: 'VOLUMEN (kg)',
-    cell: ({ getValue }) => getValue<number>().toLocaleString('es-ES'),
-  },
-  {
-    accessorKey: 'value',
-    header: 'VALOR (€)',
-    cell: ({ getValue }) => `€${getValue<number>().toLocaleString('es-ES', { maximumFractionDigits: 0 })}`,
-  },
-  { accessorKey: 'orders', header: 'MATCHES' },
-];
-
 export default function BuyerAnalyticsPage() {
+  const t = useT();
+  const { locale } = useLocale();
+  const numLoc = locale === 'en' ? 'en-GB' : 'es-ES';
+  const farmerColumns = useMemo<ColumnDef<AnalyticsData['topVendedores'][number], string>[]>(() => [
+    { accessorKey: 'farmer', header: t('analytics.col.farmer') },
+    {
+      accessorKey: 'volume',
+      header: t('analytics.col.volume'),
+      cell: ({ getValue }) => getValue<number>().toLocaleString(numLoc),
+    },
+    {
+      accessorKey: 'value',
+      header: t('analytics.col.value'),
+      cell: ({ getValue }) => `€${getValue<number>().toLocaleString(numLoc, { maximumFractionDigits: 0 })}`,
+    },
+    { accessorKey: 'orders', header: t('analytics.col.matches') },
+  ], [t, numLoc]);
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -63,7 +67,7 @@ export default function BuyerAnalyticsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-foreground">Analíticas de compras</h1>
+        <h1 className="text-xl font-bold text-foreground">{t('analytics.buyerTitle')}</h1>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-stagger">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-24 bg-muted animate-pulse rounded-card" />
@@ -77,12 +81,12 @@ export default function BuyerAnalyticsPage() {
   if (!data || data.totalOrders === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-foreground">Analíticas de compras</h1>
+        <h1 className="text-xl font-bold text-foreground">{t('analytics.buyerTitle')}</h1>
         <div className="bg-card rounded-card border border-border p-10 text-center">
           <ShoppingCart className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-          <p className="text-sm font-medium text-text-primary">Sin datos aún</p>
+          <p className="text-sm font-medium text-text-primary">{t('analytics.empty')}</p>
           <p className="text-xs text-text-secondary mt-1">
-            Create and publish your first order to start seeing your purchase analytics.
+            {t('analytics.emptyBuyerHint')}
           </p>
         </div>
       </div>
@@ -98,27 +102,27 @@ export default function BuyerAnalyticsPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-stagger">
         <KPICard
-          label="Total Orders"
+          label={t('analytics.kpi.totalOrders')}
           value={String(data.totalOrders)}
-          sub={`${data.activeOrders} active · ${data.coveredOrders} covered`}
+          sub={t('analytics.kpi.subActiveCovered').replace('{a}', String(data.activeOrders)).replace('{c}', String(data.coveredOrders))}
           icon={<ShoppingCart className="w-4 h-4" />}
         />
         <KPICard
-          label="Total Spend"
-          value={hasMatches ? `€${data.totalGasto.toLocaleString('es-ES', { maximumFractionDigits: 0 })}` : '—'}
-          sub="De lotes comprometidos"
+          label={t('analytics.kpi.totalSpend')}
+          value={hasMatches ? `€${data.totalGasto.toLocaleString(numLoc, { maximumFractionDigits: 0 })}` : '—'}
+          sub={t('analytics.kpi.subFromCommitted')}
           icon={<DollarSign className="w-4 h-4" />}
         />
         <KPICard
-          label="Volume Purchased"
-          value={hasMatches ? `${data.totalVolumen.toLocaleString('es-ES')} kg` : '—'}
-          sub="En todos los pedidos"
+          label={t('analytics.kpi.volumePurchased')}
+          value={hasMatches ? `${data.totalVolumen.toLocaleString(numLoc)} kg` : '—'}
+          sub={t('analytics.kpi.subAllOrders')}
           icon={<TrendingUp className="w-4 h-4" />}
         />
         <KPICard
-          label="Avg. Price / kg"
-          value={hasMatches ? `${data.avgPrecioKg.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg` : '—'}
-          sub="Media ponderada"
+          label={t('analytics.kpi.avgPrice')}
+          value={hasMatches ? `${data.avgPrecioKg.toLocaleString(numLoc, { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg` : '—'}
+          sub={t('analytics.kpi.subWeighted')}
           icon={<CheckCircle2 className="w-4 h-4 text-green-500" />}
         />
       </div>
@@ -126,7 +130,7 @@ export default function BuyerAnalyticsPage() {
       {/* Volume over time */}
       <div className="bg-card rounded-card border border-border p-5">
         <h2 className="text-sm font-semibold text-foreground mb-4">
-          Volumen comprado a lo largo del tiempo (kg) — Últimos 12 meses
+          {t('analytics.volBuyerHeader')}
         </h2>
         {hasMatches ? (
           <ResponsiveContainer width="100%" height={260}>
@@ -143,13 +147,13 @@ export default function BuyerAnalyticsPage() {
                 tick={{ fontSize: 11, fill: '#6B7280' }}
                 tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
               />
-              <Tooltip formatter={(v: number) => [`${v.toLocaleString('es-ES')} kg`, 'Volume']} />
+              <Tooltip formatter={(v: number) => [`${v.toLocaleString(numLoc)} kg`, t('analytics.tooltip.volume')]} />
               <Area type="monotone" dataKey="kg" stroke={PRIMARY} strokeWidth={2} fill="url(#buyerVolumeGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         ) : (
           <p className="text-xs text-text-muted text-center py-10">
-            No matched volume yet. Matches appear once a seller accepts your order.
+            {t('analytics.noMatchedVolume')}
           </p>
         )}
       </div>
@@ -158,7 +162,7 @@ export default function BuyerAnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-stagger">
         {/* Top products */}
         <div className="bg-card rounded-card border border-border p-5">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Productos más comprados por volumen (kg)</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-4">{t('analytics.topProductsBuyer')}</h2>
           {data.topProducts.length > 0 ? (
             <ResponsiveContainer width="100%" height={Math.max(140, data.topProducts.length * 44)}>
               <BarChart
@@ -173,47 +177,47 @@ export default function BuyerAnalyticsPage() {
                   tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
                 />
                 <YAxis type="category" dataKey="product" tick={{ fontSize: 11, fill: '#6B7280' }} width={100} />
-                <Tooltip formatter={(v: number) => [`${v.toLocaleString('es-ES')} kg`, 'Volume']} />
+                <Tooltip formatter={(v: number) => [`${v.toLocaleString(numLoc)} kg`, t('analytics.tooltip.volume')]} />
                 <Bar dataKey="kg" fill={PRIMARY} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-xs text-text-muted text-center py-8">No product data yet.</p>
+            <p className="text-xs text-text-muted text-center py-8">{t('analytics.noProductData')}</p>
           )}
         </div>
 
         {/* Orders by category */}
         <div className="bg-card rounded-card border border-border p-5">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Pedidos por categoría de producto</h2>
+          <h2 className="text-sm font-semibold text-foreground mb-4">{t('analytics.ordersByCategory')}</h2>
           {data.ordersByCategory.length > 0 ? (
             <ResponsiveContainer width="100%" height={Math.max(140, data.ordersByCategory.length * 44)}>
               <BarChart data={data.ordersByCategory} margin={{ top: 4, right: 8, left: 0, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
                 <XAxis dataKey="category" tick={{ fontSize: 10, fill: '#6B7280' }} angle={-20} textAnchor="end" />
                 <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} allowDecimals={false} />
-                <Tooltip formatter={(v: number) => [v, 'Orders']} />
+                <Tooltip formatter={(v: number) => [v, t('analytics.tooltip.orders')]} />
                 <Bar dataKey="orders" fill={PRIMARY} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-xs text-text-muted text-center py-8">No category data yet.</p>
+            <p className="text-xs text-text-muted text-center py-8">{t('analytics.noCategoryData')}</p>
           )}
         </div>
       </div>
 
       {/* Top sellers table */}
       <div className="bg-card rounded-card border border-border p-5">
-        <h2 className="text-sm font-semibold text-foreground mb-4">Top vendedores por volumen</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-4">{t('analytics.topSellers')}</h2>
         {data.topVendedores.length > 0 ? (
           <DataTable
             data={data.topVendedores}
             columns={farmerColumns}
-            searchPlaceholder="Buscar vendedores..."
-            emptyMessage="Sin datos de vendedores disponibles."
+            searchPlaceholder={t('analytics.searchSellers')}
+            emptyMessage={t('analytics.noSellerDataAvailable')}
           />
         ) : (
           <p className="text-xs text-text-muted text-center py-8">
-            No seller data yet. Data appears once matches are confirmed.
+            {t('analytics.noSellerData')}
           </p>
         )}
       </div>

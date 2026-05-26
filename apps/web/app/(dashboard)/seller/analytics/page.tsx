@@ -15,6 +15,7 @@ import {
 import { KPICard } from '@/components/ui/KPICard';
 import { TrendingUp, DollarSign, Package, CheckCircle2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 
 const PRIMARY = '#E1C44D';
 
@@ -30,6 +31,9 @@ type AnalyticsData = {
 };
 
 export default function SellerAnalyticsPage() {
+  const t = useT();
+  const { locale } = useLocale();
+  const numLoc = locale === 'en' ? 'en-GB' : 'es-ES';
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,7 +48,7 @@ export default function SellerAnalyticsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-foreground">Analíticas de ventas</h1>
+        <h1 className="text-xl font-bold text-foreground">{t('analytics.sellerTitle')}</h1>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-stagger">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-24 bg-muted animate-pulse rounded-card" />
@@ -59,12 +63,12 @@ export default function SellerAnalyticsPage() {
   if (!data || data.totalLots === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-foreground">Analíticas de ventas</h1>
+        <h1 className="text-xl font-bold text-foreground">{t('analytics.sellerTitle')}</h1>
         <div className="bg-card rounded-card border border-border p-10 text-center">
           <TrendingUp className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-          <p className="text-sm font-medium text-text-primary">Sin datos aún</p>
+          <p className="text-sm font-medium text-text-primary">{t('analytics.empty')}</p>
           <p className="text-xs text-text-secondary mt-1">
-            Publish your first lot and complete a match to see your analytics here.
+            {t('analytics.emptySellerHint')}
           </p>
         </div>
       </div>
@@ -80,27 +84,27 @@ export default function SellerAnalyticsPage() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-stagger">
         <KPICard
-          label="Total Volume Matched"
-          value={hasMatches ? `${data.totalVolumen.toLocaleString('es-ES')} kg` : '—'}
-          sub={`${data.activeLots} active lot${data.activeLots !== 1 ? 's' : ''}`}
+          label={t('analytics.kpi.totalVolMatched')}
+          value={hasMatches ? `${data.totalVolumen.toLocaleString(numLoc)} kg` : '—'}
+          sub={(data.activeLots === 1 ? t('analytics.kpi.subActiveLotsOne') : t('analytics.kpi.subActiveLotsMany')).replace('{n}', String(data.activeLots))}
           icon={<Package className="w-4 h-4" />}
         />
         <KPICard
-          label="Total Value"
-          value={hasMatches ? `${data.totalValor.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €` : '—'}
-          sub="De matches confirmados"
+          label={t('analytics.kpi.totalValue')}
+          value={hasMatches ? `${data.totalValor.toLocaleString(numLoc, { maximumFractionDigits: 0 })} €` : '—'}
+          sub={t('analytics.kpi.subFromConfirmed')}
           icon={<DollarSign className="w-4 h-4" />}
         />
         <KPICard
-          label="Avg. Price / kg"
-          value={hasMatches ? `${data.avgPrecioKg.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg` : '—'}
-          sub="En todos los calibres"
+          label={t('analytics.kpi.avgPrice')}
+          value={hasMatches ? `${data.avgPrecioKg.toLocaleString(numLoc, { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg` : '—'}
+          sub={t('analytics.kpi.subAcrossCalibres')}
           icon={<TrendingUp className="w-4 h-4" />}
         />
         <KPICard
-          label="Lots Sold"
+          label={t('analytics.kpi.lotsSold')}
           value={String(data.soldLots)}
-          sub={`of ${data.totalLots} total lots`}
+          sub={t('analytics.kpi.subOfTotal').replace('{n}', String(data.totalLots))}
           icon={<CheckCircle2 className="w-4 h-4 text-green-500" />}
         />
       </div>
@@ -108,7 +112,7 @@ export default function SellerAnalyticsPage() {
       {/* Volume over time */}
       <div className="bg-card rounded-card border border-border p-5">
         <h2 className="text-sm font-semibold text-foreground mb-4">
-          Volumen comprometido a lo largo del tiempo (kg) — Últimos 12 meses
+          {t('analytics.volSellerHeader')}
         </h2>
         {hasMatches ? (
           <ResponsiveContainer width="100%" height={260}>
@@ -125,7 +129,7 @@ export default function SellerAnalyticsPage() {
                 tick={{ fontSize: 11, fill: '#6B7280' }}
                 tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
               />
-              <Tooltip formatter={(v: number) => [`${v.toLocaleString('es-ES')} kg`, 'Volume']} />
+              <Tooltip formatter={(v: number) => [`${v.toLocaleString(numLoc)} kg`, t('analytics.tooltip.volume')]} />
               <Area
                 type="monotone"
                 dataKey="kg"
@@ -137,7 +141,7 @@ export default function SellerAnalyticsPage() {
           </ResponsiveContainer>
         ) : (
           <p className="text-xs text-text-muted text-center py-10">
-            No matched volume yet. Complete your first match to see the chart.
+            {t('analytics.noMatchedVolumeSeller')}
           </p>
         )}
       </div>
@@ -145,7 +149,7 @@ export default function SellerAnalyticsPage() {
       {/* Top products */}
       <div className="bg-card rounded-card border border-border p-5">
         <h2 className="text-sm font-semibold text-foreground mb-4">
-          Productos más vendidos por volumen (kg)
+          {t('analytics.topProductsSeller')}
         </h2>
         {data.topProducts.length > 0 ? (
           <ResponsiveContainer width="100%" height={Math.max(140, data.topProducts.length * 44)}>
@@ -166,25 +170,25 @@ export default function SellerAnalyticsPage() {
                 tick={{ fontSize: 11, fill: '#6B7280' }}
                 width={100}
               />
-              <Tooltip formatter={(v: number) => [`${v.toLocaleString('es-ES')} kg`, 'Volume']} />
+              <Tooltip formatter={(v: number) => [`${v.toLocaleString(numLoc)} kg`, t('analytics.tooltip.volume')]} />
               <Bar dataKey="kg" fill={PRIMARY} radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         ) : (
           <p className="text-xs text-text-muted text-center py-8">
-            No product data available yet.
+            {t('analytics.noProductDataSeller')}
           </p>
         )}
       </div>
 
       {/* Lot summary */}
       <div className="bg-card rounded-card border border-border p-5">
-        <h2 className="text-sm font-semibold text-foreground mb-4">Resumen de lotes</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-4">{t('analytics.lotSummary')}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center animate-stagger">
           {[
-            { label: 'Total lotes', value: data.totalLots },
-            { label: 'Activos', value: data.activeLots },
-            { label: 'Vendidos', value: data.soldLots },
+            { label: t('analytics.lotSummary.total'), value: data.totalLots },
+            { label: t('analytics.lotSummary.active'), value: data.activeLots },
+            { label: t('analytics.lotSummary.sold'), value: data.soldLots },
           ].map(({ label, value }) => (
             <div key={label} className="bg-muted/50 rounded-input p-4">
               <p className="text-2xl font-bold text-text-primary">{value}</p>

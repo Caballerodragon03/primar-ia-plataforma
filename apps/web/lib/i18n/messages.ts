@@ -908,6 +908,56 @@ export type MessageKey =
   | 'negModal.submit'
   | 'negModal.submitCounter'
   | 'negModal.pricePh'
+  // ─── messages pages ──────────────────────────────────────────────────────
+  | 'messagesPage.title'
+  | 'messagesPage.subtitleSeller'
+  | 'messagesPage.subtitleBuyer'
+  // ─── analytics ───────────────────────────────────────────────────────────
+  | 'analytics.sellerTitle'
+  | 'analytics.buyerTitle'
+  | 'analytics.empty'
+  | 'analytics.emptySellerHint'
+  | 'analytics.emptyBuyerHint'
+  | 'analytics.kpi.totalOrders'
+  | 'analytics.kpi.totalSpend'
+  | 'analytics.kpi.volumePurchased'
+  | 'analytics.kpi.avgPrice'
+  | 'analytics.kpi.totalVolMatched'
+  | 'analytics.kpi.totalValue'
+  | 'analytics.kpi.lotsSold'
+  | 'analytics.kpi.subActiveCovered'
+  | 'analytics.kpi.subFromCommitted'
+  | 'analytics.kpi.subAllOrders'
+  | 'analytics.kpi.subWeighted'
+  | 'analytics.kpi.subFromConfirmed'
+  | 'analytics.kpi.subAcrossCalibres'
+  | 'analytics.kpi.subOfTotal'
+  | 'analytics.kpi.subActiveLotsOne'
+  | 'analytics.kpi.subActiveLotsMany'
+  | 'analytics.volBuyerHeader'
+  | 'analytics.volSellerHeader'
+  | 'analytics.topProductsBuyer'
+  | 'analytics.topProductsSeller'
+  | 'analytics.ordersByCategory'
+  | 'analytics.topSellers'
+  | 'analytics.noMatchedVolume'
+  | 'analytics.noMatchedVolumeSeller'
+  | 'analytics.noProductData'
+  | 'analytics.noProductDataSeller'
+  | 'analytics.noCategoryData'
+  | 'analytics.noSellerData'
+  | 'analytics.searchSellers'
+  | 'analytics.noSellerDataAvailable'
+  | 'analytics.lotSummary'
+  | 'analytics.lotSummary.total'
+  | 'analytics.lotSummary.active'
+  | 'analytics.lotSummary.sold'
+  | 'analytics.col.farmer'
+  | 'analytics.col.volume'
+  | 'analytics.col.value'
+  | 'analytics.col.matches'
+  | 'analytics.tooltip.volume'
+  | 'analytics.tooltip.orders'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -1797,6 +1847,54 @@ export const messages: Record<Locale, Messages> = {
     'negModal.submit': 'Enviar propuesta',
     'negModal.submitCounter': 'Contraoferta',
     'negModal.pricePh': '€/kg',
+    'messagesPage.title': 'Mensajes',
+    'messagesPage.subtitleSeller': 'Chat con tus compradores sobre operaciones activas.',
+    'messagesPage.subtitleBuyer': 'Chatea con tus vendedores sobre pedidos activos.',
+    'analytics.sellerTitle': 'Analíticas de ventas',
+    'analytics.buyerTitle': 'Analíticas de compras',
+    'analytics.empty': 'Sin datos aún',
+    'analytics.emptySellerHint': 'Publica tu primer lote y completa un match para ver tus analíticas aquí.',
+    'analytics.emptyBuyerHint': 'Crea y publica tu primer pedido para empezar a ver tus analíticas de compra.',
+    'analytics.kpi.totalOrders': 'Pedidos totales',
+    'analytics.kpi.totalSpend': 'Gasto total',
+    'analytics.kpi.volumePurchased': 'Volumen comprado',
+    'analytics.kpi.avgPrice': 'Precio medio / kg',
+    'analytics.kpi.totalVolMatched': 'Volumen total matcheado',
+    'analytics.kpi.totalValue': 'Valor total',
+    'analytics.kpi.lotsSold': 'Lotes vendidos',
+    'analytics.kpi.subActiveCovered': '{a} activos · {c} cubiertos',
+    'analytics.kpi.subFromCommitted': 'De lotes comprometidos',
+    'analytics.kpi.subAllOrders': 'En todos los pedidos',
+    'analytics.kpi.subWeighted': 'Media ponderada',
+    'analytics.kpi.subFromConfirmed': 'De matches confirmados',
+    'analytics.kpi.subAcrossCalibres': 'En todos los calibres',
+    'analytics.kpi.subOfTotal': 'de {n} lotes totales',
+    'analytics.kpi.subActiveLotsOne': '{n} lote activo',
+    'analytics.kpi.subActiveLotsMany': '{n} lotes activos',
+    'analytics.volBuyerHeader': 'Volumen comprado a lo largo del tiempo (kg) — Últimos 12 meses',
+    'analytics.volSellerHeader': 'Volumen comprometido a lo largo del tiempo (kg) — Últimos 12 meses',
+    'analytics.topProductsBuyer': 'Productos más comprados por volumen (kg)',
+    'analytics.topProductsSeller': 'Productos más vendidos por volumen (kg)',
+    'analytics.ordersByCategory': 'Pedidos por categoría de producto',
+    'analytics.topSellers': 'Top vendedores por volumen',
+    'analytics.noMatchedVolume': 'Aún no hay volumen matcheado. Los matches aparecen cuando un vendedor acepta tu pedido.',
+    'analytics.noMatchedVolumeSeller': 'Aún no hay volumen matcheado. Completa tu primer match para ver el gráfico.',
+    'analytics.noProductData': 'Aún no hay datos de productos.',
+    'analytics.noProductDataSeller': 'Aún no hay datos de productos disponibles.',
+    'analytics.noCategoryData': 'Aún no hay datos por categoría.',
+    'analytics.noSellerData': 'Aún no hay datos de vendedores. Los datos aparecen cuando se confirman matches.',
+    'analytics.searchSellers': 'Buscar vendedores…',
+    'analytics.noSellerDataAvailable': 'Sin datos de vendedores disponibles.',
+    'analytics.lotSummary': 'Resumen de lotes',
+    'analytics.lotSummary.total': 'Total lotes',
+    'analytics.lotSummary.active': 'Activos',
+    'analytics.lotSummary.sold': 'Vendidos',
+    'analytics.col.farmer': 'VENDEDOR',
+    'analytics.col.volume': 'VOLUMEN (kg)',
+    'analytics.col.value': 'VALOR (€)',
+    'analytics.col.matches': 'MATCHES',
+    'analytics.tooltip.volume': 'Volumen',
+    'analytics.tooltip.orders': 'Pedidos',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -2680,6 +2778,54 @@ export const messages: Record<Locale, Messages> = {
     'negModal.submit': 'Send proposal',
     'negModal.submitCounter': 'Counter-offer',
     'negModal.pricePh': '€/kg',
+    'messagesPage.title': 'Messages',
+    'messagesPage.subtitleSeller': 'Chat with your buyers about active deals.',
+    'messagesPage.subtitleBuyer': 'Chat with your sellers about active orders.',
+    'analytics.sellerTitle': 'Sales analytics',
+    'analytics.buyerTitle': 'Purchase analytics',
+    'analytics.empty': 'No data yet',
+    'analytics.emptySellerHint': 'Publish your first lot and complete a match to see your analytics here.',
+    'analytics.emptyBuyerHint': 'Create and publish your first order to start seeing your purchase analytics.',
+    'analytics.kpi.totalOrders': 'Total orders',
+    'analytics.kpi.totalSpend': 'Total spend',
+    'analytics.kpi.volumePurchased': 'Volume purchased',
+    'analytics.kpi.avgPrice': 'Avg. price / kg',
+    'analytics.kpi.totalVolMatched': 'Total volume matched',
+    'analytics.kpi.totalValue': 'Total value',
+    'analytics.kpi.lotsSold': 'Lots sold',
+    'analytics.kpi.subActiveCovered': '{a} active · {c} covered',
+    'analytics.kpi.subFromCommitted': 'From committed lots',
+    'analytics.kpi.subAllOrders': 'Across all orders',
+    'analytics.kpi.subWeighted': 'Weighted average',
+    'analytics.kpi.subFromConfirmed': 'From confirmed matches',
+    'analytics.kpi.subAcrossCalibres': 'Across all calibres',
+    'analytics.kpi.subOfTotal': 'of {n} total lots',
+    'analytics.kpi.subActiveLotsOne': '{n} active lot',
+    'analytics.kpi.subActiveLotsMany': '{n} active lots',
+    'analytics.volBuyerHeader': 'Volume purchased over time (kg) — Last 12 months',
+    'analytics.volSellerHeader': 'Volume committed over time (kg) — Last 12 months',
+    'analytics.topProductsBuyer': 'Top products purchased by volume (kg)',
+    'analytics.topProductsSeller': 'Top products sold by volume (kg)',
+    'analytics.ordersByCategory': 'Orders by product category',
+    'analytics.topSellers': 'Top sellers by volume',
+    'analytics.noMatchedVolume': 'No matched volume yet. Matches appear once a seller accepts your order.',
+    'analytics.noMatchedVolumeSeller': 'No matched volume yet. Complete your first match to see the chart.',
+    'analytics.noProductData': 'No product data yet.',
+    'analytics.noProductDataSeller': 'No product data available yet.',
+    'analytics.noCategoryData': 'No category data yet.',
+    'analytics.noSellerData': 'No seller data yet. Data appears once matches are confirmed.',
+    'analytics.searchSellers': 'Search sellers…',
+    'analytics.noSellerDataAvailable': 'No seller data available.',
+    'analytics.lotSummary': 'Lot summary',
+    'analytics.lotSummary.total': 'Total lots',
+    'analytics.lotSummary.active': 'Active',
+    'analytics.lotSummary.sold': 'Sold',
+    'analytics.col.farmer': 'SELLER',
+    'analytics.col.volume': 'VOLUME (kg)',
+    'analytics.col.value': 'VALUE (€)',
+    'analytics.col.matches': 'MATCHES',
+    'analytics.tooltip.volume': 'Volume',
+    'analytics.tooltip.orders': 'Orders',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",
