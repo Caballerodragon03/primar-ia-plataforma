@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 interface PlanCardProps {
   name: string;
@@ -11,6 +12,7 @@ interface PlanCardProps {
 }
 
 export function PlanCard({ name, price, features, badge, isCurrent, onSelect, popular }: PlanCardProps) {
+  const t = useT();
   return (
     <div
       className={[
@@ -21,7 +23,7 @@ export function PlanCard({ name, price, features, badge, isCurrent, onSelect, po
     >
       {popular && (
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full">
-          Popular
+          {t('plan.popular')}
         </span>
       )}
 
@@ -29,11 +31,11 @@ export function PlanCard({ name, price, features, badge, isCurrent, onSelect, po
 
       <div className="mt-2 mb-4">
         {price === 0 ? (
-          <span className="text-2xl font-bold text-text-primary">Gratis</span>
+          <span className="text-2xl font-bold text-text-primary">{t('plan.free')}</span>
         ) : (
           <>
             <span className="text-2xl font-bold text-text-primary">{price / 100}€</span>
-            <span className="text-sm text-text-secondary">/mes</span>
+            <span className="text-sm text-text-secondary">{t('plan.perMonth')}</span>
           </>
         )}
       </div>
@@ -60,14 +62,14 @@ export function PlanCard({ name, price, features, badge, isCurrent, onSelect, po
           disabled
           className="w-full py-2.5 px-4 rounded-[8px] bg-muted text-muted-foreground text-sm font-medium cursor-not-allowed"
         >
-          Tu Plan Actual
+          {t('plan.current')}
         </button>
       ) : (
         <button
           onClick={onSelect}
           className="w-full py-2.5 px-4 rounded-[8px] bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
         >
-          Mejorar Plan
+          {t('plan.upgrade')}
         </button>
       )}
     </div>

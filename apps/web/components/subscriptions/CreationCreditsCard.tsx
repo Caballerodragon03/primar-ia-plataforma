@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Coins, Clock } from 'lucide-react';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 interface Credits {
   available: number;
@@ -14,8 +15,8 @@ interface CreationCreditsCardProps {
   itemLabel?: string; // "lote" | "pedido"
 }
 
-function formatCountdown(ms: number): string {
-  if (ms <= 0) return 'ahora';
+function formatCountdown(ms: number, nowLabel: string): string {
+  if (ms <= 0) return nowLabel;
   const totalMinutes = Math.floor(ms / (60 * 1000));
   const days = Math.floor(totalMinutes / (60 * 24));
   const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
@@ -26,11 +27,12 @@ function formatCountdown(ms: number): string {
 }
 
 export function CreationCreditsCard({ credits, itemLabel = 'creación' }: CreationCreditsCardProps) {
+  const t = useT();
   const [now, setNow] = useState<number>(Date.now());
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 60_000); // tick every minute
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(Date.now()), 60_000); // tick every minute
+    return () => clearInterval(timer);
   }, []);
 
   if (!credits || !credits.isFreeTier) return null;
@@ -47,7 +49,7 @@ export function CreationCreditsCard({ credits, itemLabel = 'creación' }: Creati
       <div className="flex items-center gap-2 mb-2">
         <Coins className={`w-4 h-4 ${empty ? 'text-red-600' : 'text-amber-700'}`} />
         <p className={`text-sm font-semibold ${empty ? 'text-red-800' : 'text-amber-900'}`}>
-          Créditos de {itemLabel} disponibles: {available} / {max}
+          {t('credits.title').replace('{item}', itemLabel)}: {available} / {max}
         </p>
       </div>
       <div className="flex gap-1 mb-2">
@@ -64,14 +66,14 @@ export function CreationCreditsCard({ credits, itemLabel = 'creación' }: Creati
       {nextRegenAt ? (
         <div className="flex items-center gap-1.5 text-xs text-amber-800">
           <Clock className="w-3 h-3" />
-          <span>Próximo crédito en <span className="font-medium">{formatCountdown(ms)}</span></span>
+          <span>{t('credits.nextIn')} <span className="font-medium">{formatCountdown(ms, t('credits.now'))}</span></span>
         </div>
       ) : (
-        <p className="text-xs text-amber-700">Tienes el máximo de créditos disponibles.</p>
+        <p className="text-xs text-amber-700">{t('credits.atMax')}</p>
       )}
       {empty && (
         <p className="text-xs text-red-700 mt-1.5">
-          Sin créditos. Mejora tu plan para crear sin límites.
+          {t('credits.empty')}
         </p>
       )}
     </div>

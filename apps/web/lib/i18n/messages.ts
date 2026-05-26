@@ -958,6 +958,218 @@ export type MessageKey =
   | 'analytics.col.matches'
   | 'analytics.tooltip.volume'
   | 'analytics.tooltip.orders'
+  // ─── subscription components ─────────────────────────────────────────────
+  | 'credits.title'
+  | 'credits.now'
+  | 'credits.nextIn'
+  | 'credits.atMax'
+  | 'credits.empty'
+  | 'plan.popular'
+  | 'plan.free'
+  | 'plan.perMonth'
+  | 'plan.current'
+  | 'plan.upgrade'
+  | 'plan.seller.cosecha.name'
+  | 'plan.seller.campo.name'
+  | 'plan.seller.finca.name'
+  | 'plan.buyer.mercado.name'
+  | 'plan.buyer.lonja.name'
+  | 'plan.buyer.central.name'
+  | 'plan.badge.campo'
+  | 'plan.badge.finca'
+  | 'plan.badge.lonja'
+  | 'plan.badge.central'
+  | 'plan.feature.lotes3'
+  | 'plan.feature.photos3'
+  | 'plan.feature.matches15min'
+  | 'plan.feature.analytics30d'
+  | 'plan.feature.certs3'
+  | 'plan.feature.negotiation'
+  | 'plan.feature.lotes15'
+  | 'plan.feature.photos10'
+  | 'plan.feature.matchesNow'
+  | 'plan.feature.analyticsFull'
+  | 'plan.feature.certs5'
+  | 'plan.feature.exportCsv'
+  | 'plan.feature.harvestEstim'
+  | 'plan.feature.support24h'
+  | 'plan.feature.lotesUnlimited'
+  | 'plan.feature.photosUnlimited'
+  | 'plan.feature.matchesAlerts'
+  | 'plan.feature.analyticsTrends'
+  | 'plan.feature.certsUnlimited'
+  | 'plan.feature.exportCsvPdf'
+  | 'plan.feature.supportPhone'
+  | 'plan.feature.orders5'
+  | 'plan.feature.commissionStandard'
+  | 'plan.feature.invoiceDownload'
+  | 'plan.feature.orders20'
+  | 'plan.feature.ordersUnlimited'
+  | 'plan.feature.commissionDiscount'
+  | 'plan.feature.exportStats'
+  | 'plan.feature.supportDedicated'
+  // ─── IncotermWizard ──────────────────────────────────────────────────────
+  | 'incotermWizard.title'
+  | 'incotermWizard.q1'
+  | 'incotermWizard.q1.iShip'
+  | 'incotermWizard.q1.otherPicks'
+  | 'incotermWizard.q1.indifferent'
+  | 'incotermWizard.q2'
+  | 'incotermWizard.q2.exwLabel'
+  | 'incotermWizard.q2.exwDesc'
+  | 'incotermWizard.q2.fcaLabel'
+  | 'incotermWizard.q2.fcaDesc'
+  | 'incotermWizard.q3'
+  | 'incotermWizard.q3.localTransportLabel'
+  | 'incotermWizard.q3.localTransportDesc'
+  | 'incotermWizard.q3.fullDoorLabel'
+  | 'incotermWizard.q3.fullDoorDesc'
+  | 'incotermWizard.recommended'
+  | 'incotermWizard.acceptedInList'
+  | 'incotermWizard.willAdd'
+  | 'incotermWizard.back'
+  | 'incotermWizard.cancel'
+  | 'incotermWizard.apply'
+  | 'incotermWizard.open'
+  // ─── MarketDashboard ─────────────────────────────────────────────────────
+  | 'market.title'
+  | 'market.subtitle'
+  | 'market.loadFail'
+  | 'market.lastUpdated'
+  | 'market.filterProduct'
+  | 'market.allProducts'
+  | 'market.filterCategory'
+  | 'market.allCategories'
+  | 'market.empty'
+  | 'market.emptyHint'
+  | 'market.col.product'
+  | 'market.col.variety'
+  | 'market.col.category'
+  | 'market.col.priceAvg'
+  | 'market.col.priceMin'
+  | 'market.col.priceMax'
+  | 'market.col.volume'
+  | 'market.col.matches'
+  | 'market.col.trend'
+  | 'market.trend.up'
+  | 'market.trend.down'
+  | 'market.trend.flat'
+  | 'market.searchPh'
+  | 'market.noResults'
+  | 'market.export'
+  | 'market.totalProducts'
+  | 'market.totalVolume'
+  | 'market.totalMatches'
+  | 'market.avgPrice'
+  // ─── Profile pages ───────────────────────────────────────────────────────
+  | 'profile.loadFail'
+  | 'profile.saveFail'
+  | 'profile.saveSuccess'
+  | 'profile.section.account'
+  | 'profile.section.company'
+  | 'profile.section.address'
+  | 'profile.section.contact'
+  | 'profile.section.bank'
+  | 'profile.section.tax'
+  | 'profile.section.preferences'
+  | 'profile.email'
+  | 'profile.phone'
+  | 'profile.razonSocial'
+  | 'profile.legalForm'
+  | 'profile.cifNif'
+  | 'profile.street'
+  | 'profile.city'
+  | 'profile.zip'
+  | 'profile.country'
+  | 'profile.name'
+  | 'profile.lastName'
+  | 'profile.position'
+  | 'profile.iban'
+  | 'profile.swift'
+  | 'profile.regimenFiscal'
+  | 'profile.notEditable'
+  | 'profile.cancel'
+  | 'profile.password.title'
+  | 'profile.password.current'
+  | 'profile.password.new'
+  | 'profile.password.confirm'
+  | 'profile.password.change'
+  | 'profile.password.mismatch'
+  | 'profile.password.tooShort'
+  | 'profile.password.success'
+  | 'profile.password.fail'
+  | 'profile.delete.title'
+  | 'profile.delete.desc'
+  | 'profile.delete.button'
+  | 'profile.delete.confirm'
+  | 'profile.delete.fail'
+  | 'profile.logout'
+  // ─── Tutorials ───────────────────────────────────────────────────────────
+  | 'tutorials.title'
+  | 'tutorials.subtitle'
+  | 'tutorials.completed'
+  | 'tutorials.start'
+  | 'tutorials.replay'
+  | 'tutorials.skip'
+  | 'tutorials.next'
+  | 'tutorials.back'
+  | 'tutorials.finish'
+  | 'tutorials.banner.title'
+  | 'tutorials.banner.body'
+  | 'tutorials.banner.cta'
+  | 'tutorials.banner.dismiss'
+  | 'tutorials.error.title'
+  | 'tutorials.error.body'
+  | 'tutorials.error.close'
+  // ─── Tasks pages (lot/order tasks) ───────────────────────────────────────
+  | 'tasks.title'
+  | 'tasks.empty'
+  | 'tasks.back'
+  | 'tasks.type.firma'
+  | 'tasks.type.pago'
+  | 'tasks.type.envio'
+  | 'tasks.type.recepcion'
+  | 'tasks.type.valoracion'
+  | 'tasks.action'
+  // ─── QR / delivery / report ──────────────────────────────────────────────
+  | 'qr.title'
+  | 'qr.subtitle'
+  | 'qr.codeLabel'
+  | 'qr.copyCode'
+  | 'qr.copied'
+  | 'qr.deliveryInstructions'
+  | 'qr.back'
+  | 'qr.loadFail'
+  | 'delivery.title'
+  | 'delivery.confirmTitle'
+  | 'delivery.confirmDesc'
+  | 'delivery.codePh'
+  | 'delivery.confirm'
+  | 'delivery.fail'
+  | 'delivery.success'
+  | 'delivery.back'
+  | 'report.title'
+  | 'report.subtitle'
+  | 'report.problem'
+  | 'report.describe'
+  | 'report.evidence'
+  | 'report.submit'
+  | 'report.fail'
+  | 'report.success'
+  | 'report.back'
+  // ─── Harvest estimation ──────────────────────────────────────────────────
+  | 'harvest.title'
+  | 'harvest.subtitle'
+  | 'harvest.product'
+  | 'harvest.variety'
+  | 'harvest.hectares'
+  | 'harvest.expectedYield'
+  | 'harvest.estimate'
+  | 'harvest.estimateResult'
+  | 'harvest.totalKg'
+  | 'harvest.priceRange'
+  | 'harvest.revenue'
+  | 'harvest.fail'
   | 'common.retry'
   // ─── pending approval banner ─────────────────────────────────────────────
   | 'pendingBanner.title'
@@ -1895,6 +2107,210 @@ export const messages: Record<Locale, Messages> = {
     'analytics.col.matches': 'MATCHES',
     'analytics.tooltip.volume': 'Volumen',
     'analytics.tooltip.orders': 'Pedidos',
+    'credits.title': 'Créditos de {item} disponibles',
+    'credits.now': 'ahora',
+    'credits.nextIn': 'Próximo crédito en',
+    'credits.atMax': 'Tienes el máximo de créditos disponibles.',
+    'credits.empty': 'Sin créditos. Mejora tu plan para crear sin límites.',
+    'plan.popular': 'Popular',
+    'plan.free': 'Gratis',
+    'plan.perMonth': '/mes',
+    'plan.current': 'Tu Plan Actual',
+    'plan.upgrade': 'Mejorar Plan',
+    'plan.seller.cosecha.name': 'Cosecha',
+    'plan.seller.campo.name': 'Campo',
+    'plan.seller.finca.name': 'Finca',
+    'plan.buyer.mercado.name': 'Mercado',
+    'plan.buyer.lonja.name': 'Lonja',
+    'plan.buyer.central.name': 'Central',
+    'plan.badge.campo': 'Vendedor Activo',
+    'plan.badge.finca': 'Vendedor Pro',
+    'plan.badge.lonja': 'Comprador Verificado',
+    'plan.badge.central': 'Comprador Premium',
+    'plan.feature.lotes3': '3 lotes activos',
+    'plan.feature.photos3': '3 fotos por lote',
+    'plan.feature.matches15min': 'Matches con retraso de 15 min',
+    'plan.feature.analytics30d': 'Analíticas últimos 30 días',
+    'plan.feature.certs3': '3 certificados',
+    'plan.feature.negotiation': 'Negociación en chat completa',
+    'plan.feature.lotes15': '15 lotes activos',
+    'plan.feature.photos10': '10 fotos por lote',
+    'plan.feature.matchesNow': 'Matches inmediatos',
+    'plan.feature.analyticsFull': 'Analíticas completas (12 meses)',
+    'plan.feature.certs5': '5 certificados',
+    'plan.feature.exportCsv': 'Export CSV',
+    'plan.feature.harvestEstim': 'Estimación de cosecha',
+    'plan.feature.support24h': 'Soporte prioritario (24h)',
+    'plan.feature.lotesUnlimited': 'Lotes ilimitados',
+    'plan.feature.photosUnlimited': 'Fotos ilimitadas',
+    'plan.feature.matchesAlerts': 'Matches inmediatos + alertas',
+    'plan.feature.analyticsTrends': 'Analíticas + tendencias de mercado',
+    'plan.feature.certsUnlimited': 'Certificados ilimitados',
+    'plan.feature.exportCsvPdf': 'Export CSV + informes PDF',
+    'plan.feature.supportPhone': 'Soporte prioritario + teléfono',
+    'plan.feature.orders5': '5 pedidos activos',
+    'plan.feature.commissionStandard': 'Comisión estándar',
+    'plan.feature.invoiceDownload': 'Descarga de facturas/contratos',
+    'plan.feature.orders20': '20 pedidos activos',
+    'plan.feature.ordersUnlimited': 'Pedidos ilimitados',
+    'plan.feature.commissionDiscount': 'Descuento -0,4pp en comisión',
+    'plan.feature.exportStats': 'Export estadísticas CSV + PDF',
+    'plan.feature.supportDedicated': 'Soporte dedicado + teléfono',
+    'incotermWizard.title': '¿Cuáles aceptas?',
+    'incotermWizard.q1': '¿Quién transporta?',
+    'incotermWizard.q1.iShip': 'Yo envío',
+    'incotermWizard.q1.otherPicks': 'Otro recoge',
+    'incotermWizard.q1.indifferent': 'Indiferente (más matches)',
+    'incotermWizard.q2': '¿Hasta dónde transportas?',
+    'incotermWizard.q2.exwLabel': 'Solo carga en mi origen (EXW)',
+    'incotermWizard.q2.exwDesc': 'El comprador carga y se lo lleva.',
+    'incotermWizard.q2.fcaLabel': 'Cargado en transporte del comprador (FCA)',
+    'incotermWizard.q2.fcaDesc': 'Yo cargo en su camión en mi origen.',
+    'incotermWizard.q3': '¿Hasta qué punto pagas el transporte?',
+    'incotermWizard.q3.localTransportLabel': 'Transporte local (FOB/CFR/CIF…)',
+    'incotermWizard.q3.localTransportDesc': 'Cubres hasta el puerto o frontera local.',
+    'incotermWizard.q3.fullDoorLabel': 'Hasta puerta del comprador (DAP/DDP)',
+    'incotermWizard.q3.fullDoorDesc': 'Tú asumes el transporte completo.',
+    'incotermWizard.recommended': 'Recomendado',
+    'incotermWizard.acceptedInList': 'Ya está en tu lista',
+    'incotermWizard.willAdd': 'Lo añadiremos a tu lista',
+    'incotermWizard.back': 'Atrás',
+    'incotermWizard.cancel': 'Cancelar',
+    'incotermWizard.apply': 'Añadir incoterm',
+    'incotermWizard.open': '¿No sabes cuál elegir? Te ayudamos',
+    'market.title': 'Mercado',
+    'market.subtitle': 'Precios y volumen de mercado por producto en Primar-IA',
+    'market.loadFail': 'No se pudieron cargar los datos de mercado.',
+    'market.lastUpdated': 'Actualizado',
+    'market.filterProduct': 'Producto',
+    'market.allProducts': 'Todos los productos',
+    'market.filterCategory': 'Categoría',
+    'market.allCategories': 'Todas las categorías',
+    'market.empty': 'Sin datos de mercado todavía',
+    'market.emptyHint': 'Aparecerán datos cuando haya matches confirmados en la plataforma.',
+    'market.col.product': 'PRODUCTO',
+    'market.col.variety': 'VARIEDAD',
+    'market.col.category': 'CATEGORÍA',
+    'market.col.priceAvg': 'PRECIO MEDIO',
+    'market.col.priceMin': 'MÍN',
+    'market.col.priceMax': 'MÁX',
+    'market.col.volume': 'VOLUMEN',
+    'market.col.matches': 'MATCHES',
+    'market.col.trend': 'TENDENCIA',
+    'market.trend.up': 'Subiendo',
+    'market.trend.down': 'Bajando',
+    'market.trend.flat': 'Estable',
+    'market.searchPh': 'Buscar producto…',
+    'market.noResults': 'Sin resultados con el filtro aplicado.',
+    'market.export': 'Exportar CSV',
+    'market.totalProducts': 'Productos',
+    'market.totalVolume': 'Volumen total',
+    'market.totalMatches': 'Matches',
+    'market.avgPrice': 'Precio medio',
+    'profile.loadFail': 'No se pudo cargar el perfil.',
+    'profile.saveFail': 'Error al guardar el perfil.',
+    'profile.saveSuccess': 'Cambios guardados.',
+    'profile.section.account': 'Cuenta',
+    'profile.section.company': 'Datos de la empresa',
+    'profile.section.address': 'Dirección fiscal',
+    'profile.section.contact': 'Persona de contacto legal',
+    'profile.section.bank': 'Datos bancarios',
+    'profile.section.tax': 'Régimen fiscal',
+    'profile.section.preferences': 'Preferencias',
+    'profile.email': 'Email',
+    'profile.phone': 'Teléfono',
+    'profile.razonSocial': 'Razón social',
+    'profile.legalForm': 'Forma jurídica',
+    'profile.cifNif': 'CIF / NIF',
+    'profile.street': 'Calle y número',
+    'profile.city': 'Ciudad',
+    'profile.zip': 'Código postal',
+    'profile.country': 'País',
+    'profile.name': 'Nombre',
+    'profile.lastName': 'Apellidos',
+    'profile.position': 'Cargo',
+    'profile.iban': 'IBAN',
+    'profile.swift': 'SWIFT / BIC',
+    'profile.regimenFiscal': 'Régimen fiscal',
+    'profile.notEditable': 'No editable — contacta con soporte para cambiarlo.',
+    'profile.cancel': 'Cancelar',
+    'profile.password.title': 'Cambiar contraseña',
+    'profile.password.current': 'Contraseña actual',
+    'profile.password.new': 'Contraseña nueva',
+    'profile.password.confirm': 'Confirmar contraseña nueva',
+    'profile.password.change': 'Cambiar contraseña',
+    'profile.password.mismatch': 'Las contraseñas no coinciden.',
+    'profile.password.tooShort': 'La contraseña debe tener al menos 12 caracteres.',
+    'profile.password.success': 'Contraseña actualizada correctamente.',
+    'profile.password.fail': 'No se pudo actualizar la contraseña.',
+    'profile.delete.title': 'Eliminar cuenta',
+    'profile.delete.desc': 'Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.',
+    'profile.delete.button': 'Eliminar mi cuenta',
+    'profile.delete.confirm': '¿Seguro que quieres eliminar tu cuenta? Esta acción no se puede deshacer.',
+    'profile.delete.fail': 'No se pudo eliminar la cuenta. Contacta con soporte.',
+    'profile.logout': 'Cerrar sesión',
+    'tutorials.title': 'Tutoriales',
+    'tutorials.subtitle': 'Aprende a sacar el máximo de Primar-IA en unos minutos.',
+    'tutorials.completed': 'Completado',
+    'tutorials.start': 'Empezar',
+    'tutorials.replay': 'Repetir',
+    'tutorials.skip': 'Saltar',
+    'tutorials.next': 'Siguiente',
+    'tutorials.back': 'Atrás',
+    'tutorials.finish': 'Finalizar',
+    'tutorials.banner.title': 'Te damos la bienvenida a Primar-IA',
+    'tutorials.banner.body': 'Empieza con un tour de 2 minutos para conocer la plataforma.',
+    'tutorials.banner.cta': 'Empezar tour',
+    'tutorials.banner.dismiss': 'Ahora no',
+    'tutorials.error.title': 'No pudimos mostrar este tutorial',
+    'tutorials.error.body': 'Algo ha fallado al iniciar el tour. Vuelve a intentarlo en unos segundos.',
+    'tutorials.error.close': 'Cerrar',
+    'tasks.title': 'Tareas pendientes',
+    'tasks.empty': 'Sin tareas pendientes.',
+    'tasks.back': 'Volver',
+    'tasks.type.firma': 'Firma de contrato',
+    'tasks.type.pago': 'Pago de comisión',
+    'tasks.type.envio': 'Envío de mercancía',
+    'tasks.type.recepcion': 'Confirmar recepción',
+    'tasks.type.valoracion': 'Valorar transacción',
+    'tasks.action': 'Ir a la tarea',
+    'qr.title': 'Código QR del envío',
+    'qr.subtitle': 'Pega el código en el exterior del lote para que el comprador pueda confirmar la entrega.',
+    'qr.codeLabel': 'Código de verificación',
+    'qr.copyCode': 'Copiar código',
+    'qr.copied': '¡Copiado!',
+    'qr.deliveryInstructions': 'El comprador deberá introducir este código al recibir la mercancía para liberar el pago.',
+    'qr.back': 'Volver',
+    'qr.loadFail': 'No se pudo cargar el QR.',
+    'delivery.title': 'Confirmar entrega',
+    'delivery.confirmTitle': 'Introduce el código de verificación',
+    'delivery.confirmDesc': 'El código viene impreso en la etiqueta QR pegada al lote.',
+    'delivery.codePh': 'Código QR / verificación…',
+    'delivery.confirm': 'Confirmar entrega',
+    'delivery.fail': 'No se pudo verificar el código.',
+    'delivery.success': 'Entrega confirmada. Pago liberado al vendedor.',
+    'delivery.back': 'Volver al pedido',
+    'report.title': 'Reportar incidencia',
+    'report.subtitle': 'Cuéntanos qué ha pasado y nuestro equipo lo revisará.',
+    'report.problem': 'Tipo de incidencia',
+    'report.describe': 'Describe la incidencia',
+    'report.evidence': 'Evidencias (fotos / PDFs)',
+    'report.submit': 'Enviar reporte',
+    'report.fail': 'No se pudo enviar el reporte.',
+    'report.success': 'Reporte enviado. Te contactaremos en menos de 48 h.',
+    'report.back': 'Volver',
+    'harvest.title': 'Estimación de cosecha',
+    'harvest.subtitle': 'Calcula tu volumen y revenue esperado en función de hectáreas y rendimiento.',
+    'harvest.product': 'Producto',
+    'harvest.variety': 'Variedad',
+    'harvest.hectares': 'Hectáreas',
+    'harvest.expectedYield': 'Rendimiento esperado (kg/ha)',
+    'harvest.estimate': 'Estimar',
+    'harvest.estimateResult': 'Resultado de la estimación',
+    'harvest.totalKg': 'Volumen total estimado',
+    'harvest.priceRange': 'Rango de precios actual',
+    'harvest.revenue': 'Revenue estimado',
+    'harvest.fail': 'No se pudo calcular la estimación.',
     'common.retry': 'Reintentar',
     'pendingBanner.title': 'Cuenta pendiente de aprobación.',
     'pendingBanner.bodySeller': 'Estamos revisando tu solicitud como vendedor.',
@@ -2826,6 +3242,210 @@ export const messages: Record<Locale, Messages> = {
     'analytics.col.matches': 'MATCHES',
     'analytics.tooltip.volume': 'Volume',
     'analytics.tooltip.orders': 'Orders',
+    'credits.title': 'Available {item} credits',
+    'credits.now': 'now',
+    'credits.nextIn': 'Next credit in',
+    'credits.atMax': 'You have the maximum credits available.',
+    'credits.empty': 'No credits left. Upgrade your plan to create without limits.',
+    'plan.popular': 'Popular',
+    'plan.free': 'Free',
+    'plan.perMonth': '/month',
+    'plan.current': 'Your current plan',
+    'plan.upgrade': 'Upgrade plan',
+    'plan.seller.cosecha.name': 'Harvest',
+    'plan.seller.campo.name': 'Field',
+    'plan.seller.finca.name': 'Farm',
+    'plan.buyer.mercado.name': 'Market',
+    'plan.buyer.lonja.name': 'Wholesale',
+    'plan.buyer.central.name': 'Central',
+    'plan.badge.campo': 'Active seller',
+    'plan.badge.finca': 'Pro seller',
+    'plan.badge.lonja': 'Verified buyer',
+    'plan.badge.central': 'Premium buyer',
+    'plan.feature.lotes3': '3 active lots',
+    'plan.feature.photos3': '3 photos per lot',
+    'plan.feature.matches15min': 'Matches with 15-min delay',
+    'plan.feature.analytics30d': 'Last 30 days analytics',
+    'plan.feature.certs3': '3 certificates',
+    'plan.feature.negotiation': 'Full chat negotiation',
+    'plan.feature.lotes15': '15 active lots',
+    'plan.feature.photos10': '10 photos per lot',
+    'plan.feature.matchesNow': 'Instant matches',
+    'plan.feature.analyticsFull': 'Full analytics (12 months)',
+    'plan.feature.certs5': '5 certificates',
+    'plan.feature.exportCsv': 'CSV export',
+    'plan.feature.harvestEstim': 'Harvest estimation',
+    'plan.feature.support24h': 'Priority support (24h)',
+    'plan.feature.lotesUnlimited': 'Unlimited lots',
+    'plan.feature.photosUnlimited': 'Unlimited photos',
+    'plan.feature.matchesAlerts': 'Instant matches + alerts',
+    'plan.feature.analyticsTrends': 'Analytics + market trends',
+    'plan.feature.certsUnlimited': 'Unlimited certificates',
+    'plan.feature.exportCsvPdf': 'CSV export + PDF reports',
+    'plan.feature.supportPhone': 'Priority support + phone',
+    'plan.feature.orders5': '5 active orders',
+    'plan.feature.commissionStandard': 'Standard commission',
+    'plan.feature.invoiceDownload': 'Invoice / contract downloads',
+    'plan.feature.orders20': '20 active orders',
+    'plan.feature.ordersUnlimited': 'Unlimited orders',
+    'plan.feature.commissionDiscount': '-0.4pp commission discount',
+    'plan.feature.exportStats': 'CSV + PDF stats export',
+    'plan.feature.supportDedicated': 'Dedicated support + phone',
+    'incotermWizard.title': 'Which do you accept?',
+    'incotermWizard.q1': 'Who transports?',
+    'incotermWizard.q1.iShip': 'I ship',
+    'incotermWizard.q1.otherPicks': 'Buyer picks up',
+    'incotermWizard.q1.indifferent': "I'm flexible (more matches)",
+    'incotermWizard.q2': 'How far do you transport?',
+    'incotermWizard.q2.exwLabel': 'Just load at my origin (EXW)',
+    'incotermWizard.q2.exwDesc': 'The buyer loads and takes it.',
+    'incotermWizard.q2.fcaLabel': "Loaded on the buyer's transport (FCA)",
+    'incotermWizard.q2.fcaDesc': "I load it on their truck at my origin.",
+    'incotermWizard.q3': 'How far do you pay for transport?',
+    'incotermWizard.q3.localTransportLabel': 'Local transport (FOB/CFR/CIF…)',
+    'incotermWizard.q3.localTransportDesc': 'You cover up to local port or border.',
+    'incotermWizard.q3.fullDoorLabel': "To the buyer's door (DAP/DDP)",
+    'incotermWizard.q3.fullDoorDesc': 'You cover the entire transport.',
+    'incotermWizard.recommended': 'Recommended',
+    'incotermWizard.acceptedInList': 'Already in your list',
+    'incotermWizard.willAdd': "We'll add it to your list",
+    'incotermWizard.back': 'Back',
+    'incotermWizard.cancel': 'Cancel',
+    'incotermWizard.apply': 'Add incoterm',
+    'incotermWizard.open': "Not sure which to pick? We'll help",
+    'market.title': 'Market',
+    'market.subtitle': 'Market prices and volume by product on Primar-IA',
+    'market.loadFail': 'Could not load market data.',
+    'market.lastUpdated': 'Updated',
+    'market.filterProduct': 'Product',
+    'market.allProducts': 'All products',
+    'market.filterCategory': 'Category',
+    'market.allCategories': 'All categories',
+    'market.empty': 'No market data yet',
+    'market.emptyHint': "Data will appear once there are confirmed matches on the platform.",
+    'market.col.product': 'PRODUCT',
+    'market.col.variety': 'VARIETY',
+    'market.col.category': 'CATEGORY',
+    'market.col.priceAvg': 'AVG PRICE',
+    'market.col.priceMin': 'MIN',
+    'market.col.priceMax': 'MAX',
+    'market.col.volume': 'VOLUME',
+    'market.col.matches': 'MATCHES',
+    'market.col.trend': 'TREND',
+    'market.trend.up': 'Up',
+    'market.trend.down': 'Down',
+    'market.trend.flat': 'Flat',
+    'market.searchPh': 'Search product…',
+    'market.noResults': 'No results with the current filter.',
+    'market.export': 'Export CSV',
+    'market.totalProducts': 'Products',
+    'market.totalVolume': 'Total volume',
+    'market.totalMatches': 'Matches',
+    'market.avgPrice': 'Avg. price',
+    'profile.loadFail': 'Could not load the profile.',
+    'profile.saveFail': 'Failed to save the profile.',
+    'profile.saveSuccess': 'Changes saved.',
+    'profile.section.account': 'Account',
+    'profile.section.company': 'Company details',
+    'profile.section.address': 'Tax address',
+    'profile.section.contact': 'Legal contact person',
+    'profile.section.bank': 'Bank details',
+    'profile.section.tax': 'Tax regime',
+    'profile.section.preferences': 'Preferences',
+    'profile.email': 'Email',
+    'profile.phone': 'Phone',
+    'profile.razonSocial': 'Legal name',
+    'profile.legalForm': 'Legal form',
+    'profile.cifNif': 'CIF / NIF',
+    'profile.street': 'Street and number',
+    'profile.city': 'City',
+    'profile.zip': 'Postal code',
+    'profile.country': 'Country',
+    'profile.name': 'First name',
+    'profile.lastName': 'Last name',
+    'profile.position': 'Position',
+    'profile.iban': 'IBAN',
+    'profile.swift': 'SWIFT / BIC',
+    'profile.regimenFiscal': 'Tax regime',
+    'profile.notEditable': 'Not editable — contact support to change it.',
+    'profile.cancel': 'Cancel',
+    'profile.password.title': 'Change password',
+    'profile.password.current': 'Current password',
+    'profile.password.new': 'New password',
+    'profile.password.confirm': 'Confirm new password',
+    'profile.password.change': 'Change password',
+    'profile.password.mismatch': 'Passwords do not match.',
+    'profile.password.tooShort': 'Password must be at least 12 characters.',
+    'profile.password.success': 'Password updated successfully.',
+    'profile.password.fail': 'Could not update the password.',
+    'profile.delete.title': 'Delete account',
+    'profile.delete.desc': 'This will permanently delete your account and all your data. This cannot be undone.',
+    'profile.delete.button': 'Delete my account',
+    'profile.delete.confirm': 'Are you sure you want to delete your account? This cannot be undone.',
+    'profile.delete.fail': 'Could not delete the account. Contact support.',
+    'profile.logout': 'Log out',
+    'tutorials.title': 'Tutorials',
+    'tutorials.subtitle': 'Learn how to get the most out of Primar-IA in a few minutes.',
+    'tutorials.completed': 'Completed',
+    'tutorials.start': 'Start',
+    'tutorials.replay': 'Replay',
+    'tutorials.skip': 'Skip',
+    'tutorials.next': 'Next',
+    'tutorials.back': 'Back',
+    'tutorials.finish': 'Finish',
+    'tutorials.banner.title': 'Welcome to Primar-IA',
+    'tutorials.banner.body': 'Start with a 2-minute tour to get to know the platform.',
+    'tutorials.banner.cta': 'Start tour',
+    'tutorials.banner.dismiss': 'Not now',
+    'tutorials.error.title': "Couldn't show this tutorial",
+    'tutorials.error.body': "Something went wrong starting the tour. Try again in a few seconds.",
+    'tutorials.error.close': 'Close',
+    'tasks.title': 'Pending tasks',
+    'tasks.empty': 'No pending tasks.',
+    'tasks.back': 'Back',
+    'tasks.type.firma': 'Contract signature',
+    'tasks.type.pago': 'Commission payment',
+    'tasks.type.envio': 'Ship goods',
+    'tasks.type.recepcion': 'Confirm receipt',
+    'tasks.type.valoracion': 'Rate transaction',
+    'tasks.action': 'Go to task',
+    'qr.title': 'Shipment QR code',
+    'qr.subtitle': 'Stick the code on the outside of the lot so the buyer can confirm delivery.',
+    'qr.codeLabel': 'Verification code',
+    'qr.copyCode': 'Copy code',
+    'qr.copied': 'Copied!',
+    'qr.deliveryInstructions': 'The buyer must enter this code on receipt to release payment.',
+    'qr.back': 'Back',
+    'qr.loadFail': 'Could not load the QR.',
+    'delivery.title': 'Confirm delivery',
+    'delivery.confirmTitle': 'Enter the verification code',
+    'delivery.confirmDesc': 'The code is printed on the QR label attached to the lot.',
+    'delivery.codePh': 'QR / verification code…',
+    'delivery.confirm': 'Confirm delivery',
+    'delivery.fail': 'Could not verify the code.',
+    'delivery.success': 'Delivery confirmed. Payment released to the seller.',
+    'delivery.back': 'Back to order',
+    'report.title': 'Report incident',
+    'report.subtitle': "Tell us what happened and our team will review it.",
+    'report.problem': 'Type of issue',
+    'report.describe': 'Describe the issue',
+    'report.evidence': 'Evidence (photos / PDFs)',
+    'report.submit': 'Submit report',
+    'report.fail': 'Could not submit the report.',
+    'report.success': "Report submitted. We'll contact you within 48 h.",
+    'report.back': 'Back',
+    'harvest.title': 'Harvest estimation',
+    'harvest.subtitle': 'Estimate your expected volume and revenue based on hectares and yield.',
+    'harvest.product': 'Product',
+    'harvest.variety': 'Variety',
+    'harvest.hectares': 'Hectares',
+    'harvest.expectedYield': 'Expected yield (kg/ha)',
+    'harvest.estimate': 'Estimate',
+    'harvest.estimateResult': 'Estimation result',
+    'harvest.totalKg': 'Estimated total volume',
+    'harvest.priceRange': 'Current price range',
+    'harvest.revenue': 'Estimated revenue',
+    'harvest.fail': 'Could not compute the estimation.',
     'common.retry': 'Retry',
     'pendingBanner.title': 'Account pending approval.',
     'pendingBanner.bodySeller': "We're reviewing your seller application.",
