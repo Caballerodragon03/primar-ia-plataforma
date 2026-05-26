@@ -1292,6 +1292,22 @@ export type MessageKey =
   | 'qr.deliveryInstructions'
   | 'qr.back'
   | 'qr.loadFail'
+  | 'qr.redirecting'
+  | 'confirm.loadFail'
+  | 'confirm.notFound'
+  | 'confirm.noTx'
+  | 'confirm.releaseFail'
+  | 'confirm.backToOrders'
+  | 'confirm.successTitle'
+  | 'confirm.successDesc'
+  | 'confirm.summary'
+  | 'confirm.product'
+  | 'confirm.farmerId'
+  | 'confirm.quantity'
+  | 'confirm.orderId'
+  | 'confirm.releaseBtn'
+  | 'confirm.reportBtn'
+  | 'confirm.warning'
   | 'delivery.title'
   | 'delivery.confirmTitle'
   | 'delivery.confirmDesc'
@@ -1309,6 +1325,25 @@ export type MessageKey =
   | 'report.fail'
   | 'report.success'
   | 'report.back'
+  | 'report.orderHash'
+  | 'report.descMin'
+  | 'report.descPh'
+  | 'report.descRequired'
+  | 'report.evidenceLabel'
+  | 'report.evidenceHint'
+  | 'report.uploaded'
+  | 'report.minChars'
+  | 'report.uploadFail'
+  | 'report.submitFail'
+  | 'report.remove'
+  | 'report.cancel'
+  | 'report.issue.CALIDAD'
+  | 'report.issue.CANTIDAD'
+  | 'report.issue.EMPAQUETADO'
+  | 'report.issue.CALIBRES'
+  | 'report.issue.PRODUCTO_DIFERENTE'
+  | 'report.issue.OTRO'
+  | 'report.issueType'
   // ─── Harvest estimation ──────────────────────────────────────────────────
   | 'harvest.title'
   | 'harvest.subtitle'
@@ -2586,6 +2621,22 @@ export const messages: Record<Locale, Messages> = {
     'qr.deliveryInstructions': 'El comprador deberá introducir este código al recibir la mercancía para liberar el pago.',
     'qr.back': 'Volver',
     'qr.loadFail': 'No se pudo cargar el QR.',
+    'qr.redirecting': 'Redirigiendo al detalle del pedido…',
+    'confirm.loadFail': 'No se pudieron cargar los detalles del pedido.',
+    'confirm.notFound': 'Pedido no encontrado.',
+    'confirm.noTx': 'No se encontró transacción para este pedido.',
+    'confirm.releaseFail': 'No se pudo liberar el pago. Contacta con soporte.',
+    'confirm.backToOrders': 'Volver a pedidos',
+    'confirm.successTitle': '¡Lote recibido correctamente!',
+    'confirm.successDesc': 'Revisa los detalles antes de liberar el pago.',
+    'confirm.summary': 'Resumen de entrega',
+    'confirm.product': 'Producto',
+    'confirm.farmerId': 'ID vendedor',
+    'confirm.quantity': 'Cantidad',
+    'confirm.orderId': 'Pedido',
+    'confirm.releaseBtn': 'Marcar como inspeccionado y liberar pago',
+    'confirm.reportBtn': 'Reportar incidencia',
+    'confirm.warning': 'Liberar el pago es irreversible. Confirma solo si el lote ha sido inspeccionado y aceptado.',
     'delivery.title': 'Confirmar entrega',
     'delivery.confirmTitle': 'Introduce el código de verificación',
     'delivery.confirmDesc': 'El código viene impreso en la etiqueta QR pegada al lote.',
@@ -2603,6 +2654,25 @@ export const messages: Record<Locale, Messages> = {
     'report.fail': 'No se pudo enviar el reporte.',
     'report.success': 'Reporte enviado. Te contactaremos en menos de 48 h.',
     'report.back': 'Volver',
+    'report.orderHash': 'Pedido #',
+    'report.descMin': 'mín. caracteres',
+    'report.descPh': 'Describe la incidencia con detalle…',
+    'report.descRequired': 'La descripción debe tener al menos {n} caracteres',
+    'report.evidenceLabel': 'Archivos de evidencia',
+    'report.evidenceHint': 'Sube hasta 6 archivos (máx 10 MB cada uno). {n}/6 subidos.',
+    'report.uploaded': 'subidos',
+    'report.minChars': 'min chars',
+    'report.uploadFail': 'No se pudo subir el archivo.',
+    'report.submitFail': 'No se pudo enviar el reporte. Inténtalo de nuevo.',
+    'report.remove': 'Quitar',
+    'report.cancel': 'Cancelar',
+    'report.issue.CALIDAD': 'Problema de calidad',
+    'report.issue.CANTIDAD': 'Problema de cantidad',
+    'report.issue.EMPAQUETADO': 'Problema de empaquetado',
+    'report.issue.CALIBRES': 'Problema de calibres',
+    'report.issue.PRODUCTO_DIFERENTE': 'Producto diferente',
+    'report.issue.OTRO': 'Otro',
+    'report.issueType': 'Tipo de incidencia',
     'harvest.title': 'Estimación de cosecha',
     'harvest.subtitle': 'Calcula tu volumen y revenue esperado en función de hectáreas y rendimiento.',
     'harvest.product': 'Producto',
@@ -3873,6 +3943,22 @@ export const messages: Record<Locale, Messages> = {
     'qr.deliveryInstructions': 'The buyer must enter this code on receipt to release payment.',
     'qr.back': 'Back',
     'qr.loadFail': 'Could not load the QR.',
+    'qr.redirecting': 'Redirecting to order details…',
+    'confirm.loadFail': 'Failed to load order details.',
+    'confirm.notFound': 'Order not found.',
+    'confirm.noTx': 'No transaction found for this order.',
+    'confirm.releaseFail': 'Failed to release payment. Please contact support.',
+    'confirm.backToOrders': 'Back to orders',
+    'confirm.successTitle': 'Lot received successfully!',
+    'confirm.successDesc': 'Please review the details below before releasing payment.',
+    'confirm.summary': 'Delivery summary',
+    'confirm.product': 'Product',
+    'confirm.farmerId': 'Farmer ID',
+    'confirm.quantity': 'Quantity',
+    'confirm.orderId': 'Order ID',
+    'confirm.releaseBtn': 'Mark as inspected & release payment',
+    'confirm.reportBtn': 'Report an issue',
+    'confirm.warning': 'Releasing payment is irreversible. Only confirm if the lot has been inspected and accepted.',
     'delivery.title': 'Confirm delivery',
     'delivery.confirmTitle': 'Enter the verification code',
     'delivery.confirmDesc': 'The code is printed on the QR label attached to the lot.',
@@ -3890,6 +3976,25 @@ export const messages: Record<Locale, Messages> = {
     'report.fail': 'Could not submit the report.',
     'report.success': "Report submitted. We'll contact you within 48 h.",
     'report.back': 'Back',
+    'report.orderHash': 'Order #',
+    'report.descMin': 'min chars',
+    'report.descPh': 'Describe the issue in detail…',
+    'report.descRequired': 'Description must be at least {n} characters',
+    'report.evidenceLabel': 'Evidence files',
+    'report.evidenceHint': 'Upload up to 6 files (max 10 MB each). {n}/6 uploaded.',
+    'report.uploaded': 'uploaded',
+    'report.minChars': 'min chars',
+    'report.uploadFail': 'Failed to upload file.',
+    'report.submitFail': 'Failed to submit report. Please try again.',
+    'report.remove': 'Remove',
+    'report.cancel': 'Cancel',
+    'report.issue.CALIDAD': 'Quality issue',
+    'report.issue.CANTIDAD': 'Quantity issue',
+    'report.issue.EMPAQUETADO': 'Packaging issue',
+    'report.issue.CALIBRES': 'Caliber/size issue',
+    'report.issue.PRODUCTO_DIFERENTE': 'Different product',
+    'report.issue.OTRO': 'Other',
+    'report.issueType': 'Issue type',
     'harvest.title': 'Harvest estimation',
     'harvest.subtitle': 'Estimate your expected volume and revenue based on hectares and yield.',
     'harvest.product': 'Product',

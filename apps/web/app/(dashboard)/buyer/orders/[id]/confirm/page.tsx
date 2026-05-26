@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 
 interface OrderSummary {
   id: string;
@@ -21,6 +22,9 @@ interface OrderSummary {
 }
 
 export default function ConfirmReceptionPage() {
+  const t = useT();
+  const { locale } = useLocale();
+  const numLoc = locale === 'en' ? 'en-GB' : 'es-ES';
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { id } = params;
@@ -39,11 +43,11 @@ export default function ConfirmReceptionPage() {
       const { data } = await api.get(`/orders/${id}`);
       setOrder(data.data);
     } catch {
-      setFetchError('Failed to load order details.');
+      setFetchError(t('confirm.loadFail'));
     } finally {
       setIsLoading(false);
     }
-  }, [id]);
+  }, [id, t]);
 
   useEffect(() => {
     fetchOrder();
@@ -53,7 +57,7 @@ export default function ConfirmReceptionPage() {
     if (!order) return;
     const match = order.matches.find((m) => m.transaccionId);
     if (!match?.transaccionId) {
-      setReleaseError('No transaction found for this order.');
+      setReleaseError(t('confirm.noTx'));
       return;
     }
     setReleaseError(null);
@@ -64,7 +68,7 @@ export default function ConfirmReceptionPage() {
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setReleaseError(
-        axiosErr.response?.data?.message ?? 'Failed to release payment. Please contact support.'
+        axiosErr.response?.data?.message ?? t('confirm.releaseFail')
       );
     } finally {
       setIsReleasing(false);
@@ -73,7 +77,6 @@ export default function ConfirmReceptionPage() {
 
   const handleReportIssue = async () => {
     setIsReporting(true);
-    // Navigate to issue report flow (Phase 2)
     router.push(`/buyer/orders/${id}?report=true`);
   };
 
@@ -102,9 +105,9 @@ export default function ConfirmReceptionPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center space-y-3">
-          <p className="text-red-600">{fetchError ?? 'Pedido no encontrado.'}</p>
+          <p className="text-red-600">{fetchError ?? t('confirm.notFound')}</p>
           <Button variant="outline" onClick={() => router.push('/buyer/orders')}>
-            Back to Orders
+            {t('confirm.backToOrders')}
           </Button>
         </div>
       </div>
@@ -114,55 +117,52 @@ export default function ConfirmReceptionPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
-        {/* Success header */}
         <div className="text-center space-y-3">
           <div className="flex justify-center">
             <CheckCircle2 className="w-16 h-16 text-green-500" strokeWidth={1.5} />
           </div>
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold text-foreground">Lot Received Successfully!</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('confirm.successTitle')}</h1>
             <p className="text-sm text-muted-foreground">
-              Please review the details below before releasing payment.
+              {t('confirm.successDesc')}
             </p>
           </div>
         </div>
 
-        {/* Details card */}
         <div className="bg-card rounded-card border border-border shadow-soft p-6 space-y-4">
           <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
-            Delivery Summary
+            {t('confirm.summary')}
           </h2>
 
           <dl className="space-y-3">
             <div className="flex justify-between items-center">
-              <dt className="text-sm text-muted-foreground">Product</dt>
+              <dt className="text-sm text-muted-foreground">{t('confirm.product')}</dt>
               <dd className="text-sm font-medium text-foreground text-right max-w-[60%]">{productName}</dd>
             </div>
             <div className="border-t border-gray-100" />
             <div className="flex justify-between items-center">
-              <dt className="text-sm text-muted-foreground">Farmer ID</dt>
+              <dt className="text-sm text-muted-foreground">{t('confirm.farmerId')}</dt>
               <dd className="text-sm font-mono text-foreground">
                 {primaryMatch ? primaryMatch.vendedorId.slice(-8).toUpperCase() : '—'}
               </dd>
             </div>
             <div className="border-t border-gray-100" />
             <div className="flex justify-between items-center">
-              <dt className="text-sm text-muted-foreground">Quantity</dt>
+              <dt className="text-sm text-muted-foreground">{t('confirm.quantity')}</dt>
               <dd className="text-sm font-medium text-foreground">
                 {primaryMatch
-                  ? `${parseFloat(primaryMatch.cantidadKg).toLocaleString('es-ES')} kg`
-                  : `${order.totalKg.toLocaleString('es-ES')} kg`}
+                  ? `${parseFloat(primaryMatch.cantidadKg).toLocaleString(numLoc)} kg`
+                  : `${order.totalKg.toLocaleString(numLoc)} kg`}
               </dd>
             </div>
             <div className="border-t border-gray-100" />
             <div className="flex justify-between items-center">
-              <dt className="text-sm text-muted-foreground">Order ID</dt>
+              <dt className="text-sm text-muted-foreground">{t('confirm.orderId')}</dt>
               <dd className="text-sm font-mono font-medium text-foreground">#{shortOrderId}</dd>
             </div>
           </dl>
         </div>
 
-        {/* Error */}
         {releaseError && (
           <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
             <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
@@ -170,7 +170,6 @@ export default function ConfirmReceptionPage() {
           </div>
         )}
 
-        {/* Actions */}
         <div className="space-y-3">
           <Button
             variant="primary"
@@ -178,7 +177,7 @@ export default function ConfirmReceptionPage() {
             onClick={handleReleasePayment}
             className="w-full"
           >
-            Mark as Inspected & Release Payment
+            {t('confirm.releaseBtn')}
           </Button>
           <Button
             variant="ghost"
@@ -186,12 +185,12 @@ export default function ConfirmReceptionPage() {
             disabled={isReleasing || isReporting}
             className="w-full text-red-600 hover:bg-red-50"
           >
-            Report an Issue
+            {t('confirm.reportBtn')}
           </Button>
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Releasing payment is irreversible. Only confirm if the lot has been inspected and accepted.
+          {t('confirm.warning')}
         </p>
       </div>
     </div>
