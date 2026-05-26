@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 interface IncotermWizardProps {
   onComplete: () => void;
@@ -19,49 +21,55 @@ const INCOTERMS = [
   { code: 'CIF', name: 'Coste, Seguro y Flete', scope: 'mar', desc: 'Solo marítimo. Pagas el flete y seguro hasta destino, pero el riesgo pasa al embarcar.' },
 ];
 
-const QUESTIONS = [
+type QuestionDef = {
+  id: string;
+  textKey: MessageKey;
+  options: { value: string; labelKey: MessageKey }[];
+};
+
+const QUESTIONS: QuestionDef[] = [
   {
     id: 'v1',
-    text: '¿A dónde envías habitualmente tus productos?',
+    textKey: 'incotermWizard.q.v1.text',
     options: [
-      { value: 'nacional', label: '🇪🇸 Solo en España (nacional)' },
-      { value: 'ue', label: '🇪🇺 A otros países de la UE' },
-      { value: 'extraue', label: '🌍 Fuera de la UE (exportación)' },
+      { value: 'nacional', labelKey: 'incotermWizard.q.v1.nacional' },
+      { value: 'ue', labelKey: 'incotermWizard.q.v1.ue' },
+      { value: 'extraue', labelKey: 'incotermWizard.q.v1.extraue' },
     ],
   },
   {
     id: 'v2',
-    text: '¿Quién organiza el transporte?',
+    textKey: 'incotermWizard.q.v2.text',
     options: [
-      { value: 'comprador', label: 'El comprador lo gestiona todo' },
-      { value: 'vendedor', label: 'Yo (el vendedor) contrato el transporte' },
-      { value: 'compartido', label: 'Lo compartimos / servicio de Primar-IA' },
+      { value: 'comprador', labelKey: 'incotermWizard.q.v2.comprador' },
+      { value: 'vendedor', labelKey: 'incotermWizard.q.v2.vendedor' },
+      { value: 'compartido', labelKey: 'incotermWizard.q.v2.compartido' },
     ],
   },
   {
     id: 'v3',
-    text: '¿Quién asume el seguro de la mercancía?',
+    textKey: 'incotermWizard.q.v3.text',
     options: [
-      { value: 'comprador', label: 'El comprador se asegura' },
-      { value: 'vendedor', label: 'Prefiero asegurarla yo' },
-      { value: 'ninguno', label: 'Sin seguro específico' },
+      { value: 'comprador', labelKey: 'incotermWizard.q.v3.comprador' },
+      { value: 'vendedor', labelKey: 'incotermWizard.q.v3.vendedor' },
+      { value: 'ninguno', labelKey: 'incotermWizard.q.v3.ninguno' },
     ],
   },
   {
     id: 'v4',
-    text: '¿Tienes experiencia con aduanas e importación?',
+    textKey: 'incotermWizard.q.v4.text',
     options: [
-      { value: 'si', label: 'Sí, gestiono exportaciones habitualmente' },
-      { value: 'no', label: 'No, prefiero una operación simple' },
+      { value: 'si', labelKey: 'incotermWizard.q.v4.si' },
+      { value: 'no', labelKey: 'incotermWizard.q.v4.no' },
     ],
   },
   {
     id: 'v5',
-    text: '¿Cuándo quieres que el riesgo pase al comprador?',
+    textKey: 'incotermWizard.q.v5.text',
     options: [
-      { value: 'recogida', label: 'Cuando recoge en mi explotación / almacén' },
-      { value: 'entrega', label: 'Al entregar en destino' },
-      { value: 'puerto', label: 'En el puerto o terminal de origen' },
+      { value: 'recogida', labelKey: 'incotermWizard.q.v5.recogida' },
+      { value: 'entrega', labelKey: 'incotermWizard.q.v5.entrega' },
+      { value: 'puerto', labelKey: 'incotermWizard.q.v5.puerto' },
     ],
   },
 ];
@@ -88,6 +96,7 @@ function getRecommendation(answers: Answers): string {
 }
 
 export function IncotermWizard({ onComplete }: IncotermWizardProps) {
+  const t = useT();
   // step 0 = welcome, steps 1-5 = questions, step 6 = results
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
@@ -151,7 +160,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
         <div className="w-full max-w-lg mb-6">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-text-secondary font-medium">
-              {step <= 5 ? `Pregunta ${step} de 5` : 'Resultados'}
+              {step <= 5 ? t('incotermWizard.progress.question').replace('{n}', String(step)) : t('incotermWizard.progress.results')}
             </span>
             <span className="text-xs text-text-secondary">{Math.round(progressPercent)}%</span>
           </div>
@@ -173,14 +182,14 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
             </div>
             <div className="space-y-2">
               <h1 className="text-xl font-bold text-text-primary">
-                Configura tus Incoterms
+                {t('incotermWizard.welcome.title')}
               </h1>
               <p className="text-text-secondary text-sm leading-relaxed">
-                Antes de publicar tu primer lote, vamos a ver qué tipos de contrato puedes usar 🌿
+                {t('incotermWizard.welcome.desc')}
               </p>
             </div>
             <Button variant="primary" size="lg" onClick={handleNext} className="w-full">
-              Comenzar →
+              {t('incotermWizard.welcome.start')}
             </Button>
           </div>
         )}
@@ -189,7 +198,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
         {step >= 1 && step <= 5 && currentQuestion && (
           <div className="p-8 space-y-6">
             <h2 className="text-lg font-semibold text-text-primary leading-snug">
-              {currentQuestion.text}
+              {t(currentQuestion.textKey)}
             </h2>
             <div className="space-y-2.5">
               {currentQuestion.options.map((opt) => {
@@ -206,7 +215,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
                         : 'bg-card border-border text-text-secondary hover:border-primary hover:bg-accent/50',
                     ].join(' ')}
                   >
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </button>
                 );
               })}
@@ -220,14 +229,14 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
                 }}
                 className="text-sm text-text-secondary hover:text-text-primary transition-colors"
               >
-                ← Anterior
+                {t('incotermWizard.prev')}
               </button>
               <Button
                 variant="primary"
                 disabled={!pending}
                 onClick={handleNext}
               >
-                Siguiente →
+                {t('incotermWizard.next')}
               </Button>
             </div>
           </div>
@@ -237,9 +246,9 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
         {step === 6 && recommended && (
           <div className="p-8 space-y-6">
             <div className="space-y-1">
-              <h2 className="text-lg font-bold text-text-primary">Tu Incoterm recomendado</h2>
+              <h2 className="text-lg font-bold text-text-primary">{t('incotermWizard.results.title')}</h2>
               <p className="text-sm text-text-secondary">
-                Basado en tus respuestas, te sugerimos empezar con:
+                {t('incotermWizard.results.desc')}
               </p>
             </div>
 
@@ -253,7 +262,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
                       {rec.code}
                     </span>
                     <span className="font-semibold text-text-primary">{rec.name}</span>
-                    <span className="ml-auto text-xs text-primary-dark-dark font-medium">Recomendado</span>
+                    <span className="ml-auto text-xs text-primary-dark-dark font-medium">{t('incotermWizard.recommended')}</span>
                   </div>
                   <p className="text-sm text-text-secondary leading-relaxed">{rec.desc}</p>
                 </div>
@@ -263,7 +272,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
             {/* All incoterms as toggleable chips */}
             <div className="space-y-2">
               <p className="text-sm font-medium text-text-secondary">
-                Selecciona otros Incoterms que también quieras usar:
+                {t('incotermWizard.results.selectOthers')}
               </p>
               <div className="flex flex-wrap gap-2">
                 {INCOTERMS.map((inc) => {
@@ -301,7 +310,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
                 }}
                 className="text-sm text-text-secondary hover:text-text-primary transition-colors"
               >
-                ← Volver
+                {t('incotermWizard.results.back')}
               </button>
               <Button
                 variant="primary"
@@ -309,7 +318,7 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
                 onClick={handleConfirm}
                 disabled={selected.size === 0}
               >
-                Confirmar y comenzar →
+                {t('incotermWizard.results.confirm')}
               </Button>
             </div>
           </div>

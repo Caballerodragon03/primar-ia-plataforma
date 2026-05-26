@@ -1031,6 +1031,37 @@ export type MessageKey =
   | 'incotermWizard.cancel'
   | 'incotermWizard.apply'
   | 'incotermWizard.open'
+  | 'incotermWizard.progress.question'
+  | 'incotermWizard.progress.results'
+  | 'incotermWizard.welcome.title'
+  | 'incotermWizard.welcome.desc'
+  | 'incotermWizard.welcome.start'
+  | 'incotermWizard.prev'
+  | 'incotermWizard.next'
+  | 'incotermWizard.results.title'
+  | 'incotermWizard.results.desc'
+  | 'incotermWizard.results.selectOthers'
+  | 'incotermWizard.results.back'
+  | 'incotermWizard.results.confirm'
+  | 'incotermWizard.q.v1.text'
+  | 'incotermWizard.q.v1.nacional'
+  | 'incotermWizard.q.v1.ue'
+  | 'incotermWizard.q.v1.extraue'
+  | 'incotermWizard.q.v2.text'
+  | 'incotermWizard.q.v2.comprador'
+  | 'incotermWizard.q.v2.vendedor'
+  | 'incotermWizard.q.v2.compartido'
+  | 'incotermWizard.q.v3.text'
+  | 'incotermWizard.q.v3.comprador'
+  | 'incotermWizard.q.v3.vendedor'
+  | 'incotermWizard.q.v3.ninguno'
+  | 'incotermWizard.q.v4.text'
+  | 'incotermWizard.q.v4.si'
+  | 'incotermWizard.q.v4.no'
+  | 'incotermWizard.q.v5.text'
+  | 'incotermWizard.q.v5.recogida'
+  | 'incotermWizard.q.v5.entrega'
+  | 'incotermWizard.q.v5.puerto'
   // ─── MarketDashboard ─────────────────────────────────────────────────────
   | 'market.title'
   | 'market.subtitle'
@@ -2178,6 +2209,37 @@ export const messages: Record<Locale, Messages> = {
     'incotermWizard.cancel': 'Cancelar',
     'incotermWizard.apply': 'Añadir incoterm',
     'incotermWizard.open': '¿No sabes cuál elegir? Te ayudamos',
+    'incotermWizard.progress.question': 'Pregunta {n} de 5',
+    'incotermWizard.progress.results': 'Resultados',
+    'incotermWizard.welcome.title': 'Configura tus Incoterms',
+    'incotermWizard.welcome.desc': 'Antes de publicar tu primer lote, vamos a ver qué tipos de contrato puedes usar 🌿',
+    'incotermWizard.welcome.start': 'Comenzar →',
+    'incotermWizard.prev': '← Anterior',
+    'incotermWizard.next': 'Siguiente →',
+    'incotermWizard.results.title': 'Tu Incoterm recomendado',
+    'incotermWizard.results.desc': 'Basado en tus respuestas, te sugerimos empezar con:',
+    'incotermWizard.results.selectOthers': 'Selecciona otros Incoterms que también quieras usar:',
+    'incotermWizard.results.back': '← Volver',
+    'incotermWizard.results.confirm': 'Confirmar y comenzar →',
+    'incotermWizard.q.v1.text': '¿A dónde envías habitualmente tus productos?',
+    'incotermWizard.q.v1.nacional': '🇪🇸 Solo en España (nacional)',
+    'incotermWizard.q.v1.ue': '🇪🇺 A otros países de la UE',
+    'incotermWizard.q.v1.extraue': '🌍 Fuera de la UE (exportación)',
+    'incotermWizard.q.v2.text': '¿Quién organiza el transporte?',
+    'incotermWizard.q.v2.comprador': 'El comprador lo gestiona todo',
+    'incotermWizard.q.v2.vendedor': 'Yo (el vendedor) contrato el transporte',
+    'incotermWizard.q.v2.compartido': 'Lo compartimos / servicio de Primar-IA',
+    'incotermWizard.q.v3.text': '¿Quién asume el seguro de la mercancía?',
+    'incotermWizard.q.v3.comprador': 'El comprador se asegura',
+    'incotermWizard.q.v3.vendedor': 'Prefiero asegurarla yo',
+    'incotermWizard.q.v3.ninguno': 'Sin seguro específico',
+    'incotermWizard.q.v4.text': '¿Tienes experiencia con aduanas e importación?',
+    'incotermWizard.q.v4.si': 'Sí, gestiono exportaciones habitualmente',
+    'incotermWizard.q.v4.no': 'No, prefiero una operación simple',
+    'incotermWizard.q.v5.text': '¿Cuándo quieres que el riesgo pase al comprador?',
+    'incotermWizard.q.v5.recogida': 'Cuando recoge en mi explotación / almacén',
+    'incotermWizard.q.v5.entrega': 'Al entregar en destino',
+    'incotermWizard.q.v5.puerto': 'En el puerto o terminal de origen',
     'market.title': 'Mercado',
     'market.subtitle': 'Precios y volumen de mercado por producto en Primar-IA',
     'market.loadFail': 'No se pudieron cargar los datos de mercado.',
@@ -3313,6 +3375,37 @@ export const messages: Record<Locale, Messages> = {
     'incotermWizard.cancel': 'Cancel',
     'incotermWizard.apply': 'Add incoterm',
     'incotermWizard.open': "Not sure which to pick? We'll help",
+    'incotermWizard.progress.question': 'Question {n} of 5',
+    'incotermWizard.progress.results': 'Results',
+    'incotermWizard.welcome.title': 'Configure your Incoterms',
+    'incotermWizard.welcome.desc': "Before publishing your first lot, let's go through which contract types you can use 🌿",
+    'incotermWizard.welcome.start': 'Start →',
+    'incotermWizard.prev': '← Previous',
+    'incotermWizard.next': 'Next →',
+    'incotermWizard.results.title': 'Your recommended Incoterm',
+    'incotermWizard.results.desc': 'Based on your answers, we suggest starting with:',
+    'incotermWizard.results.selectOthers': 'Pick other Incoterms you also want to use:',
+    'incotermWizard.results.back': '← Back',
+    'incotermWizard.results.confirm': 'Confirm and start →',
+    'incotermWizard.q.v1.text': 'Where do you usually ship your products?',
+    'incotermWizard.q.v1.nacional': '🇪🇸 Only within Spain (domestic)',
+    'incotermWizard.q.v1.ue': '🇪🇺 To other EU countries',
+    'incotermWizard.q.v1.extraue': '🌍 Outside the EU (export)',
+    'incotermWizard.q.v2.text': 'Who organises the transport?',
+    'incotermWizard.q.v2.comprador': 'The buyer handles everything',
+    'incotermWizard.q.v2.vendedor': 'I (the seller) hire the transport',
+    'incotermWizard.q.v2.compartido': 'We share it / Primar-IA service',
+    'incotermWizard.q.v3.text': 'Who takes the goods insurance?',
+    'incotermWizard.q.v3.comprador': 'The buyer insures it',
+    'incotermWizard.q.v3.vendedor': 'I prefer to insure it myself',
+    'incotermWizard.q.v3.ninguno': 'No specific insurance',
+    'incotermWizard.q.v4.text': 'Do you have experience with customs and import?',
+    'incotermWizard.q.v4.si': 'Yes, I handle exports regularly',
+    'incotermWizard.q.v4.no': 'No, I prefer a simple operation',
+    'incotermWizard.q.v5.text': 'When do you want the risk to pass to the buyer?',
+    'incotermWizard.q.v5.recogida': 'When they pick up at my farm / warehouse',
+    'incotermWizard.q.v5.entrega': 'On delivery at destination',
+    'incotermWizard.q.v5.puerto': 'At the port or terminal of origin',
     'market.title': 'Market',
     'market.subtitle': 'Market prices and volume by product on Primar-IA',
     'market.loadFail': 'Could not load market data.',
