@@ -137,6 +137,25 @@ export default function MyLotsPage() {
         isLoading={isLoading}
         emptyMessage={t('lots.empty')}
         onRowClick={(row) => router.push(`/seller/lots/${row.id}`)}
+        mobileCard={(row) => (
+          <div className="space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <Link
+                href={`/seller/lots/${row.id}`}
+                className="text-secondary font-semibold hover:text-primary transition-colors text-sm"
+              >
+                #{row.id.slice(-6).toUpperCase()}
+              </Link>
+              <StatusBadge status={row.estado} />
+            </div>
+            <p className="text-sm font-medium text-foreground truncate">{row.producto.nombre}</p>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{row.totalKg.toLocaleString()} kg</span>
+              <span>{new Date(row.fechaDisponibilidad).toLocaleDateString(locale === 'en' ? 'en-GB' : 'es-ES')}</span>
+            </div>
+            <CoverageBar percentage={row.coverage} />
+          </div>
+        )}
       />
     </div>
   );
