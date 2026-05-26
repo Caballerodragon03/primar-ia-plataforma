@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, FileText, CreditCard, Package, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n/messages';
 
 interface ContractTask {
   matchId: string;
@@ -47,11 +49,11 @@ interface TasksData {
   expiredOrders: ExpiryTask[];
 }
 
-const TYPE_CONFIG: Record<string, { title: string; icon: React.ReactNode; color: string }> = {
-  contracts: { title: 'Contratos por firmar y pagar', icon: <FileText className="w-5 h-5" />, color: 'amber' },
-  offers: { title: 'Ofertas pendientes de autorizar', icon: <CreditCard className="w-5 h-5" />, color: 'blue' },
-  deliveries: { title: 'Entregas pendientes de confirmar', icon: <Package className="w-5 h-5" />, color: 'green' },
-  expiry: { title: 'Pedidos con fecha de entrega vencida', icon: <Clock className="w-5 h-5" />, color: 'red' },
+const TYPE_CONFIG: Record<string, { titleKey: MessageKey; icon: React.ReactNode; color: string; emptyKey: MessageKey }> = {
+  contracts: { titleKey: 'tasks.buyer.contracts', icon: <FileText className="w-5 h-5" />, color: 'amber', emptyKey: 'tasks.empty.buyer.contracts' },
+  offers: { titleKey: 'tasks.buyer.offers', icon: <CreditCard className="w-5 h-5" />, color: 'blue', emptyKey: 'tasks.empty.buyer.offers' },
+  deliveries: { titleKey: 'tasks.buyer.deliveries', icon: <Package className="w-5 h-5" />, color: 'green', emptyKey: 'tasks.empty.buyer.deliveries' },
+  expiry: { titleKey: 'tasks.buyer.expiry', icon: <Clock className="w-5 h-5" />, color: 'red', emptyKey: 'tasks.empty.buyer.expiry' },
 };
 
 function shortId(id: string) {
@@ -59,6 +61,9 @@ function shortId(id: string) {
 }
 
 export default function BuyerTaskListPage() {
+  const t = useT();
+  const { locale } = useLocale();
+  const numLoc = locale === 'en' ? 'en-GB' : 'es-ES';
   const { type } = useParams<{ type: string }>();
   const [tasks, setTasks] = useState<TasksData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,7 +107,7 @@ export default function BuyerTaskListPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <Link href="/buyer" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        <ArrowLeft className="w-4 h-4" /> {t('tasks.backToDashboard')}
       </Link>
 
       <div className="flex items-center gap-3">
@@ -114,7 +119,7 @@ export default function BuyerTaskListPage() {
         }`}>
           {config.icon}
         </div>
-        <h1 className="text-xl font-bold text-foreground">{config.title}</h1>
+        <h1 className="text-xl font-bold text-foreground">{t(config.titleKey)}</h1>
       </div>
 
       {loading ? (
@@ -124,12 +129,12 @@ export default function BuyerTaskListPage() {
       ) : error ? (
         <p className="text-sm text-red-500 text-center py-8">Error: {error}</p>
       ) : !tasks ? (
-        <p className="text-sm text-muted-foreground text-center py-8">Could not load tasks.</p>
+        <p className="text-sm text-muted-foreground text-center py-8">{t('tasks.loadFail')}</p>
       ) : type === 'contracts' ? (
         <TaskList
           items={tasks.contracts}
-          emptyMsg="No contracts pending your signature."
-          emptyCta={{ label: 'Crear pedido nuevo', href: '/buyer/orders/new' }}
+          emptyMsg={t('tasks.empty.buyer.contracts')}
+          emptyCta={{ label: t('tasks.createNewOrder'), href: '/buyer/orders/new' }}
           renderItem={(item) => (
             <Link
               key={item.matchId}
@@ -142,10 +147,10 @@ export default function BuyerTaskListPage() {
                     {shortId(item.orderId)} — {item.producto}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Vendedor: {item.counterpart} · {item.cantidadKg.toLocaleString('es-ES')} kg
+                    {t('tasks.seller')}: {item.counterpart} · {item.cantidadKg.toLocaleString(numLoc)} kg
                   </p>
                 </div>
-                <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-badge">Firmar y pagar →</span>
+                <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-badge">{t('tasks.pay')}</span>
               </div>
             </Link>
           )}
@@ -153,8 +158,8 @@ export default function BuyerTaskListPage() {
       ) : type === 'offers' ? (
         <TaskList
           items={tasks.offers}
-          emptyMsg="No offers awaiting payment authorization."
-          emptyCta={{ label: 'Crear pedido nuevo', href: '/buyer/orders/new' }}
+          emptyMsg={t('tasks.empty.buyer.offers')}
+          emptyCta={{ label: t('tasks.createNewOrder'), href: '/buyer/orders/new' }}
           renderItem={(item) => (
             <Link
               key={item.matchId}
@@ -167,10 +172,10 @@ export default function BuyerTaskListPage() {
                     {shortId(item.orderId)} — {item.producto}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Seller: {item.seller} · {item.cantidadKg.toLocaleString('es-ES')} kg · €{item.precioKg.toFixed(3)}/kg
+                    {t('tasks.seller')}: {item.seller} · {item.cantidadKg.toLocaleString(numLoc)} kg · €{item.precioKg.toFixed(3)}/kg
                   </p>
                 </div>
-                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-badge">Authorize →</span>
+                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-badge">{t('tasks.review')}</span>
               </div>
             </Link>
           )}
@@ -178,8 +183,8 @@ export default function BuyerTaskListPage() {
       ) : type === 'deliveries' ? (
         <TaskList
           items={tasks.deliveries}
-          emptyMsg="No deliveries pending confirmation."
-          emptyCta={{ label: 'Crear pedido nuevo', href: '/buyer/orders/new' }}
+          emptyMsg={t('tasks.empty.buyer.deliveries')}
+          emptyCta={{ label: t('tasks.createNewOrder'), href: '/buyer/orders/new' }}
           renderItem={(item) => (
             <Link
               key={item.txId}
@@ -192,10 +197,10 @@ export default function BuyerTaskListPage() {
                     {shortId(item.orderId)} — {item.producto}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Seller: {item.seller} · {item.cantidadKg.toLocaleString('es-ES')} kg
+                    {t('tasks.seller')}: {item.seller} · {item.cantidadKg.toLocaleString(numLoc)} kg
                   </p>
                 </div>
-                <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-badge">Confirm →</span>
+                <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-badge">{t('tasks.confirm')}</span>
               </div>
             </Link>
           )}
@@ -203,8 +208,8 @@ export default function BuyerTaskListPage() {
       ) : type === 'expiry' ? (
         <TaskList
           items={tasks.expiredOrders ?? []}
-          emptyMsg="No orders past their delivery date."
-          emptyCta={{ label: 'Crear pedido nuevo', href: '/buyer/orders/new' }}
+          emptyMsg={t('tasks.empty.buyer.expiry')}
+          emptyCta={{ label: t('tasks.createNewOrder'), href: '/buyer/orders/new' }}
           renderItem={(item) => (
             <div
               key={item.orderId}
@@ -216,14 +221,14 @@ export default function BuyerTaskListPage() {
                     {shortId(item.orderId)} — {item.producto}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Due: {new Date(item.fechaEntrega).toLocaleDateString('es-ES')} · Coverage: {item.coverage}% · {item.totalKg.toLocaleString('es-ES')} kg
+                    {new Date(item.fechaEntrega).toLocaleDateString(numLoc)} · {item.coverage}% · {item.totalKg.toLocaleString(numLoc)} kg
                   </p>
                 </div>
-                <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-badge">Expired</span>
+                <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-badge">{t('tasks.expired')}</span>
               </div>
               <div className="flex items-end gap-3">
                 <div className="flex-1">
-                  <label className="text-xs text-muted-foreground block mb-1">Extend to new date</label>
+                  <label className="text-xs text-muted-foreground block mb-1">{t('tasks.extendLabel')}</label>
                   <input
                     type="date"
                     className="w-full px-3 py-1.5 border border-border rounded-input text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -237,21 +242,21 @@ export default function BuyerTaskListPage() {
                   disabled={!extendDate[item.orderId] || actionLoading === item.orderId}
                   className="px-4 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-40 transition-colors"
                 >
-                  {actionLoading === item.orderId ? 'Saving...' : 'Extend'}
+                  {actionLoading === item.orderId ? t('tasks.saving') : t('tasks.extend')}
                 </button>
                 <button
                   onClick={() => handleCloseOrder(item.orderId)}
                   disabled={actionLoading === item.orderId}
                   className="px-4 py-1.5 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-40 transition-colors"
                 >
-                  Close Order
+                  {t('tasks.closeOrder')}
                 </button>
               </div>
             </div>
           )}
         />
       ) : (
-        <p className="text-sm text-muted-foreground text-center py-8">Unknown task type.</p>
+        <p className="text-sm text-muted-foreground text-center py-8">{t('tasks.unknownType')}</p>
       )}
     </div>
   );
@@ -268,12 +273,13 @@ function TaskList<T>({
   emptyCta: { label: string; href: string };
   renderItem: (item: T) => React.ReactNode;
 }) {
+  const t = useT();
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
         <CheckCircle2 className="w-10 h-10 text-green-400" />
         <div>
-          <p className="text-sm font-semibold text-foreground">¡Estás al día!</p>
+          <p className="text-sm font-semibold text-foreground">{t('tasks.allCaughtUp')}</p>
           <p className="text-xs text-muted-foreground mt-1">{emptyMsg}</p>
         </div>
         <Link
@@ -287,7 +293,7 @@ function TaskList<T>({
   }
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">{items.length} pending task{items.length !== 1 ? 's' : ''}</p>
+      <p className="text-xs text-muted-foreground">{items.length} {items.length === 1 ? t('tasks.pendingTaskOne') : t('tasks.pendingTaskMany')}</p>
       {items.map(renderItem)}
     </div>
   );

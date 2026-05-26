@@ -1283,6 +1283,46 @@ export type MessageKey =
   | 'tasks.type.recepcion'
   | 'tasks.type.valoracion'
   | 'tasks.action'
+  | 'tasks.backToDashboard'
+  | 'tasks.loadFail'
+  | 'tasks.unknownType'
+  | 'tasks.allCaughtUp'
+  | 'tasks.pendingTaskOne'
+  | 'tasks.pendingTaskMany'
+  | 'tasks.lotPrefix'
+  | 'tasks.buyer'
+  | 'tasks.seller'
+  | 'tasks.sign'
+  | 'tasks.prepare'
+  | 'tasks.review'
+  | 'tasks.expired'
+  | 'tasks.ended'
+  | 'tasks.sold'
+  | 'tasks.extendLabel'
+  | 'tasks.saving'
+  | 'tasks.extend'
+  | 'tasks.closeLot'
+  | 'tasks.closeOrder'
+  | 'tasks.publishNewLot'
+  | 'tasks.createNewOrder'
+  | 'tasks.empty.seller.contracts'
+  | 'tasks.empty.seller.photos'
+  | 'tasks.empty.seller.matches'
+  | 'tasks.empty.seller.expiry'
+  | 'tasks.empty.buyer.contracts'
+  | 'tasks.empty.buyer.offers'
+  | 'tasks.empty.buyer.deliveries'
+  | 'tasks.empty.buyer.expiry'
+  | 'tasks.seller.contracts'
+  | 'tasks.seller.photos'
+  | 'tasks.seller.matches'
+  | 'tasks.seller.expiry'
+  | 'tasks.buyer.contracts'
+  | 'tasks.buyer.offers'
+  | 'tasks.buyer.deliveries'
+  | 'tasks.buyer.expiry'
+  | 'tasks.confirm'
+  | 'tasks.pay'
   // ─── QR / delivery / report ──────────────────────────────────────────────
   | 'qr.title'
   | 'qr.subtitle'
@@ -2613,6 +2653,46 @@ export const messages: Record<Locale, Messages> = {
     'tasks.type.recepcion': 'Confirmar recepción',
     'tasks.type.valoracion': 'Valorar transacción',
     'tasks.action': 'Ir a la tarea',
+    'tasks.backToDashboard': 'Volver al panel',
+    'tasks.loadFail': 'No se pudieron cargar las tareas.',
+    'tasks.unknownType': 'Tipo de tarea desconocido.',
+    'tasks.allCaughtUp': '¡Estás al día!',
+    'tasks.pendingTaskOne': 'tarea pendiente',
+    'tasks.pendingTaskMany': 'tareas pendientes',
+    'tasks.lotPrefix': 'Lote',
+    'tasks.buyer': 'Comprador',
+    'tasks.seller': 'Vendedor',
+    'tasks.sign': 'Firmar →',
+    'tasks.prepare': 'Preparar →',
+    'tasks.review': 'Revisar →',
+    'tasks.expired': 'Caducado',
+    'tasks.ended': 'Finalizado',
+    'tasks.sold': 'Vendido',
+    'tasks.extendLabel': 'Extender a nueva fecha',
+    'tasks.saving': 'Guardando…',
+    'tasks.extend': 'Extender',
+    'tasks.closeLot': 'Cerrar lote',
+    'tasks.closeOrder': 'Cerrar pedido',
+    'tasks.publishNewLot': 'Publicar lote nuevo',
+    'tasks.createNewOrder': 'Crear pedido nuevo',
+    'tasks.empty.seller.contracts': 'No hay contratos pendientes de tu firma.',
+    'tasks.empty.seller.photos': 'No hay envíos pendientes de QR o foto.',
+    'tasks.empty.seller.matches': 'No hay ofertas de match pendientes de revisión.',
+    'tasks.empty.seller.expiry': 'No hay lotes con fecha de disponibilidad vencida.',
+    'tasks.empty.buyer.contracts': 'No hay contratos pendientes de firmar y pagar.',
+    'tasks.empty.buyer.offers': 'No hay ofertas pendientes de autorizar.',
+    'tasks.empty.buyer.deliveries': 'No hay entregas pendientes de confirmar.',
+    'tasks.empty.buyer.expiry': 'No hay pedidos con fecha de entrega vencida.',
+    'tasks.seller.contracts': 'Contratos por firmar',
+    'tasks.seller.photos': 'Preparación de envío y QR',
+    'tasks.seller.matches': 'Ofertas por revisar',
+    'tasks.seller.expiry': 'Lotes con disponibilidad caducada',
+    'tasks.buyer.contracts': 'Contratos por firmar y pagar',
+    'tasks.buyer.offers': 'Ofertas pendientes de autorizar',
+    'tasks.buyer.deliveries': 'Entregas pendientes de confirmar',
+    'tasks.buyer.expiry': 'Pedidos con fecha de entrega vencida',
+    'tasks.confirm': 'Confirmar →',
+    'tasks.pay': 'Pagar →',
     'qr.title': 'Código QR del envío',
     'qr.subtitle': 'Pega el código en el exterior del lote para que el comprador pueda confirmar la entrega.',
     'qr.codeLabel': 'Código de verificación',
@@ -3935,6 +4015,46 @@ export const messages: Record<Locale, Messages> = {
     'tasks.type.recepcion': 'Confirm receipt',
     'tasks.type.valoracion': 'Rate transaction',
     'tasks.action': 'Go to task',
+    'tasks.backToDashboard': 'Back to dashboard',
+    'tasks.loadFail': 'Could not load tasks.',
+    'tasks.unknownType': 'Unknown task type.',
+    'tasks.allCaughtUp': "You're all caught up!",
+    'tasks.pendingTaskOne': 'pending task',
+    'tasks.pendingTaskMany': 'pending tasks',
+    'tasks.lotPrefix': 'Lot',
+    'tasks.buyer': 'Buyer',
+    'tasks.seller': 'Seller',
+    'tasks.sign': 'Sign →',
+    'tasks.prepare': 'Prepare →',
+    'tasks.review': 'Review →',
+    'tasks.expired': 'Expired',
+    'tasks.ended': 'Ended',
+    'tasks.sold': 'Sold',
+    'tasks.extendLabel': 'Extend to new date',
+    'tasks.saving': 'Saving…',
+    'tasks.extend': 'Extend',
+    'tasks.closeLot': 'Close lot',
+    'tasks.closeOrder': 'Close order',
+    'tasks.publishNewLot': 'Publish new lot',
+    'tasks.createNewOrder': 'Create new order',
+    'tasks.empty.seller.contracts': 'No contracts pending your signature.',
+    'tasks.empty.seller.photos': 'No shipments pending QR or photo upload.',
+    'tasks.empty.seller.matches': 'No pending match offers to review.',
+    'tasks.empty.seller.expiry': 'No lots past their availability date.',
+    'tasks.empty.buyer.contracts': 'No contracts pending signature and payment.',
+    'tasks.empty.buyer.offers': 'No offers pending authorisation.',
+    'tasks.empty.buyer.deliveries': 'No deliveries pending confirmation.',
+    'tasks.empty.buyer.expiry': 'No orders past their delivery date.',
+    'tasks.seller.contracts': 'Contracts to sign',
+    'tasks.seller.photos': 'Shipment & QR preparation',
+    'tasks.seller.matches': 'Offers to review',
+    'tasks.seller.expiry': 'Lots with expired availability',
+    'tasks.buyer.contracts': 'Contracts to sign and pay',
+    'tasks.buyer.offers': 'Offers pending authorisation',
+    'tasks.buyer.deliveries': 'Deliveries pending confirmation',
+    'tasks.buyer.expiry': 'Orders with expired delivery date',
+    'tasks.confirm': 'Confirm →',
+    'tasks.pay': 'Pay →',
     'qr.title': 'Shipment QR code',
     'qr.subtitle': 'Stick the code on the outside of the lot so the buyer can confirm delivery.',
     'qr.codeLabel': 'Verification code',
