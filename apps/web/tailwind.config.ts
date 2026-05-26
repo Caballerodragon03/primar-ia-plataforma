@@ -7,6 +7,16 @@ const config: Config = {
     '../../packages/ui/src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
+    // Phase 14N — añadimos breakpoint xs:375 para targetear iPhone SE/
+    // mini sin perder los defaults (sm:640, md:768, lg:1024, xl:1280).
+    screens: {
+      xs: '375px',
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       colors: {
         border: 'hsl(var(--border))',
