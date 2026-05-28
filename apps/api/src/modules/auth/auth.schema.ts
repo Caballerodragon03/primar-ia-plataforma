@@ -12,7 +12,10 @@ export const registerSchema = z.object({
   role: z.enum(['VENDEDOR', 'COMPRADOR']),
   // Company details
   razonSocial: z.string().min(2),
-  cifNif: z.string().transform((v) => v.toUpperCase().replace(/[^A-Z0-9]/g, '')).pipe(z.string().regex(/^[A-Z0-9]{9}$/, 'CIF/NIF invalido — debe tener exactamente 9 caracteres alfanuméricos')),
+  // Tax ID: acepta CIF/NIF español + VAT IDs internacionales (DE, FR, IT, UK,
+  // etc.). Normalizamos a mayúsculas y eliminamos espacios/guiones. 4-20
+  // caracteres alfanuméricos para cubrir todos los formatos UE + terceros.
+  cifNif: z.string().transform((v) => v.toUpperCase().replace(/[^A-Z0-9]/g, '')).pipe(z.string().regex(/^[A-Z0-9]{4,20}$/, 'Tax ID inválido — 4 a 20 caracteres alfanuméricos')),
   formaJuridica: z.string().optional(),
   direccionFiscal: z.string().min(5),
   ciudad: z.string().optional(),

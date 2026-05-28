@@ -36,7 +36,9 @@ const ibanRegex = /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/;
 const step2Schema = z.object({
   role: z.enum(['VENDEDOR', 'COMPRADOR']).optional(),
   razonSocial: z.string().min(2, 'Obligatorio'),
-  cifNif: z.string().regex(/^[A-Z0-9]{9}$/, 'Debe ser 9 caracteres alfanuméricos (ej. B12345678)'),
+  // Acepta CIF/NIF español + VAT IDs internacionales (4-20 caracteres
+  // alfanuméricos). Coincide con backend en apps/api/.../auth.schema.ts.
+  cifNif: z.string().regex(/^[A-Z0-9]{4,20}$/, 'Tax ID inválido — 4 a 20 caracteres alfanuméricos'),
   formaJuridica: z.string().optional(),
   direccionFiscal: z.string().min(5, 'Obligatorio'),
   ciudad: z.string().optional(),

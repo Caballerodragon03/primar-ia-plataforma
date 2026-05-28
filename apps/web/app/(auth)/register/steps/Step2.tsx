@@ -98,7 +98,7 @@ export function Step2({ onNext, onBack }: Step2Props) {
             error={errors.cifNif?.message}
             {...register('cifNif', {
               onChange: (e: ChangeEvent<HTMLInputElement>) => {
-                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9);
+                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
               },
             })}
           />
