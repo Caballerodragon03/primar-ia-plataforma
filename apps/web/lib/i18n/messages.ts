@@ -1025,6 +1025,36 @@ export type MessageKey =
   | 'plan.feature.commissionDiscount'
   | 'plan.feature.exportStats'
   | 'plan.feature.supportDedicated'
+  | 'plan.feature.credits3regenWeek'
+  | 'plan.feature.creditsUnlimited'
+  | 'plan.feature.commissionMore'
+  | 'commissions.back'
+  | 'commissions.title'
+  | 'commissions.intro'
+  | 'commissions.whoPays.title'
+  | 'commissions.whoPays.body'
+  | 'commissions.baseTiers.title'
+  | 'commissions.baseTiers.desc'
+  | 'commissions.baseTiers.colTicket'
+  | 'commissions.baseTiers.colPct'
+  | 'commissions.planDiscount.title'
+  | 'commissions.planDiscount.desc'
+  | 'commissions.planDiscount.colPlan'
+  | 'commissions.planDiscount.colDiscount'
+  | 'commissions.volumeDiscount.title'
+  | 'commissions.volumeDiscount.desc'
+  | 'commissions.volumeDiscount.colVolume'
+  | 'commissions.volumeDiscount.colDiscount'
+  | 'commissions.caps.title'
+  | 'commissions.caps.min'
+  | 'commissions.caps.max'
+  | 'commissions.caps.floor'
+  | 'commissions.example.title'
+  | 'commissions.example.line1'
+  | 'commissions.example.line2'
+  | 'commissions.example.line3'
+  | 'commissions.example.total'
+  | 'commissions.footer'
   // ─── IncotermWizard ──────────────────────────────────────────────────────
   | 'incotermWizard.title'
   | 'incotermWizard.q1'
@@ -2446,7 +2476,7 @@ export const messages: Record<Locale, Messages> = {
     'plan.badge.lonja': 'Comprador Verificado',
     'plan.badge.central': 'Comprador Premium',
     'plan.feature.lotes3': 'Hasta 3 lotes activos en publicación',
-    'plan.feature.photos3': '3 fotos por lote (jpg/png ≤ 5 MB)',
+    'plan.feature.photos3': '3 fotos por lote',
     'plan.feature.matches15min': 'Matches con 24 h de retraso (los planes de pago los reciben antes)',
     'plan.feature.analytics30d': 'Panel de analíticas: últimos 30 días',
     'plan.feature.certs3': '3 certificados de calidad (BIO, GLOBALG.A.P., IFS…)',
@@ -2471,9 +2501,39 @@ export const messages: Record<Locale, Messages> = {
     'plan.feature.invoiceDownload': 'Descarga PDF de facturas y contratos firmados',
     'plan.feature.orders20': 'Hasta 20 pedidos activos + badge "Comprador Verificado"',
     'plan.feature.ordersUnlimited': 'Pedidos activos ilimitados',
-    'plan.feature.commissionDiscount': 'Descuento −0,4 pp sobre la comisión estándar (ahorro por operación)',
+    'plan.feature.commissionDiscount': 'Descuento −1,0 pp sobre la comisión estándar (ahorro por operación)',
     'plan.feature.exportStats': 'Exportar estadísticas a CSV y PDF',
     'plan.feature.supportDedicated': 'Account manager dedicado + soporte telefónico',
+    'plan.feature.credits3regenWeek': '3 créditos de creación (se regenera 1 cada semana hasta el máximo)',
+    'plan.feature.creditsUnlimited': 'Creaciones ilimitadas (sin créditos, solo limitado por el máximo activo)',
+    'plan.feature.commissionMore': 'ver más',
+    'commissions.back': 'Volver',
+    'commissions.title': 'Cómo funciona la comisión Primar-IA',
+    'commissions.intro': 'La comisión es la ÚNICA cantidad que Primar-IA cobra por intermediar una operación. Se calcula sobre el importe total del contrato (mercancía + logística), y se compone de un porcentaje base por ticket más descuentos por plan de suscripción y por volumen de compra confirmado.',
+    'commissions.whoPays.title': '¿Quién paga la comisión?',
+    'commissions.whoPays.body': 'La comisión la paga SIEMPRE el comprador a Primar-IA en el momento de firmar el contrato (vía Stripe). El vendedor recibe el 100% del importe acordado fuera de la plataforma, por transferencia, según el término de pago pactado. Primar-IA no cobra ni paga la mercancía — solo intermedia contrato y comisión.',
+    'commissions.baseTiers.title': '1. Porcentaje base por ticket',
+    'commissions.baseTiers.desc': 'El porcentaje base depende del valor total del contrato. Cuanto mayor es la operación, menor es el porcentaje.',
+    'commissions.baseTiers.colTicket': 'Valor del contrato',
+    'commissions.baseTiers.colPct': 'Comisión base',
+    'commissions.planDiscount.title': '2. Descuento por plan de suscripción',
+    'commissions.planDiscount.desc': 'Los compradores con plan de pago obtienen un descuento permanente sobre el porcentaje base. Se aplica en TODAS sus operaciones.',
+    'commissions.planDiscount.colPlan': 'Plan del comprador',
+    'commissions.planDiscount.colDiscount': 'Descuento',
+    'commissions.volumeDiscount.title': '3. Descuento por volumen confirmado',
+    'commissions.volumeDiscount.desc': 'Se calcula sobre el volumen comprado y entregado en los últimos 30 días. Cuanto más compras (y completas sin incidencias), más bajo es tu porcentaje en la siguiente operación.',
+    'commissions.volumeDiscount.colVolume': 'Volumen últimos 30 días',
+    'commissions.volumeDiscount.colDiscount': 'Descuento',
+    'commissions.caps.title': 'Topes y mínimos',
+    'commissions.caps.min': 'Mínimo 5 € por operación (cubre coste administrativo).',
+    'commissions.caps.max': 'Máximo 5 000 € por operación (tope absoluto, da igual el tamaño).',
+    'commissions.caps.floor': 'El porcentaje final tras descuentos nunca baja del 0 % — los descuentos solo restan, no generan crédito.',
+    'commissions.example.title': 'Ejemplo práctico',
+    'commissions.example.line1': 'Comprador con plan LONJA y 60 000 € de volumen en los últimos 30 días firma un contrato de 8 000 €.',
+    'commissions.example.line2': 'Base por ticket (2 000–10 000 €): 3,0 %. Descuento plan LONJA: −0,5 pp. Descuento volumen (25k–100k €): −0,1 pp.',
+    'commissions.example.line3': 'Porcentaje final: 3,0 − 0,5 − 0,1 = 2,4 %. Comisión: 8 000 € × 2,4 % = 192,00 €.',
+    'commissions.example.total': 'Total que paga el comprador a Primar-IA: 192,00 €. El vendedor recibe los 8 000 € íntegros por transferencia según el plazo del contrato.',
+    'commissions.footer': 'Estos valores son los implementados a fecha de hoy. Cualquier cambio se notifica con 30 días de antelación a usuarios activos.',
     'incotermWizard.title': '¿Cuáles aceptas?',
     'incotermWizard.q1': '¿Quién transporta?',
     'incotermWizard.q1.iShip': 'Yo envío',
@@ -3882,7 +3942,7 @@ export const messages: Record<Locale, Messages> = {
     'plan.badge.lonja': 'Verified buyer',
     'plan.badge.central': 'Premium buyer',
     'plan.feature.lotes3': 'Up to 3 active lots published',
-    'plan.feature.photos3': '3 photos per lot (jpg/png ≤ 5 MB)',
+    'plan.feature.photos3': '3 photos per lot',
     'plan.feature.matches15min': 'Matches with 24h delay (paid plans get them sooner)',
     'plan.feature.analytics30d': 'Analytics dashboard: last 30 days',
     'plan.feature.certs3': '3 quality certificates (BIO, GLOBALG.A.P., IFS…)',
@@ -3907,9 +3967,39 @@ export const messages: Record<Locale, Messages> = {
     'plan.feature.invoiceDownload': 'PDF download of invoices and signed contracts',
     'plan.feature.orders20': 'Up to 20 active orders + "Verified buyer" badge',
     'plan.feature.ordersUnlimited': 'Unlimited active orders',
-    'plan.feature.commissionDiscount': '−0.4 pp off the standard commission (saved per operation)',
+    'plan.feature.commissionDiscount': '−1.0 pp off the standard commission (saved per operation)',
     'plan.feature.exportStats': 'Export statistics to CSV and PDF',
     'plan.feature.supportDedicated': 'Dedicated account manager + phone support',
+    'plan.feature.credits3regenWeek': '3 creation credits (1 regenerates per week up to the cap)',
+    'plan.feature.creditsUnlimited': 'Unlimited creations (no credits — only capped by active limit)',
+    'plan.feature.commissionMore': 'see more',
+    'commissions.back': 'Back',
+    'commissions.title': 'How the Primar-IA commission works',
+    'commissions.intro': 'The commission is the ONLY amount Primar-IA charges for intermediating an operation. It is calculated on the total contract amount (goods + logistics) and combines a base ticket percentage with subscription-plan and confirmed-volume discounts.',
+    'commissions.whoPays.title': 'Who pays the commission?',
+    'commissions.whoPays.body': 'The commission is ALWAYS paid by the buyer to Primar-IA at the time of signing the contract (via Stripe). The seller receives 100% of the agreed amount off-platform via wire transfer, per the agreed payment term. Primar-IA does not collect or pay for the goods — it only intermediates contract and commission.',
+    'commissions.baseTiers.title': '1. Base percentage by ticket',
+    'commissions.baseTiers.desc': 'The base percentage depends on the total contract value. The bigger the operation, the lower the percentage.',
+    'commissions.baseTiers.colTicket': 'Contract value',
+    'commissions.baseTiers.colPct': 'Base commission',
+    'commissions.planDiscount.title': '2. Subscription-plan discount',
+    'commissions.planDiscount.desc': "Buyers on a paid plan get a permanent discount on the base percentage. It applies to ALL their operations.",
+    'commissions.planDiscount.colPlan': "Buyer's plan",
+    'commissions.planDiscount.colDiscount': 'Discount',
+    'commissions.volumeDiscount.title': '3. Confirmed-volume discount',
+    'commissions.volumeDiscount.desc': "Computed on the volume purchased AND delivered in the last 30 days. The more you buy (and close without incidents), the lower your percentage on the next operation.",
+    'commissions.volumeDiscount.colVolume': 'Volume last 30 days',
+    'commissions.volumeDiscount.colDiscount': 'Discount',
+    'commissions.caps.title': 'Caps and minimums',
+    'commissions.caps.min': 'Minimum €5 per operation (covers admin cost).',
+    'commissions.caps.max': "Maximum €5,000 per operation (absolute cap, regardless of size).",
+    'commissions.caps.floor': "The final percentage after discounts never goes below 0% — discounts only subtract, they don't generate credit.",
+    'commissions.example.title': 'Worked example',
+    'commissions.example.line1': 'A buyer on the LONJA plan with €60,000 of volume in the last 30 days signs an €8,000 contract.',
+    'commissions.example.line2': 'Base by ticket (€2,000–€10,000): 3.0%. LONJA plan discount: −0.5 pp. Volume discount (€25k–€100k): −0.1 pp.',
+    'commissions.example.line3': 'Final percentage: 3.0 − 0.5 − 0.1 = 2.4%. Commission: €8,000 × 2.4% = €192.00.',
+    'commissions.example.total': 'Total the buyer pays to Primar-IA: €192.00. The seller receives the full €8,000 by wire transfer per the contract term.',
+    'commissions.footer': "These values reflect what's implemented today. Any change is notified 30 days in advance to active users.",
     'incotermWizard.title': 'Which do you accept?',
     'incotermWizard.q1': 'Who transports?',
     'incotermWizard.q1.iShip': 'I ship',

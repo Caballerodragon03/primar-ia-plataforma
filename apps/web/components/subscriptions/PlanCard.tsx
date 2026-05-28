@@ -1,10 +1,20 @@
 'use client';
+import Link from 'next/link';
 import { useT } from '@/lib/i18n/LocaleProvider';
+
+export interface PlanFeature {
+  text: string;
+  /** Si la feature es "Comisión estándar" se resalta y se renderiza
+   *  un "(ver más)" detrás que enlaza a `/commissions`. Para cualquier
+   *  otra feature `highlight` queda undefined. */
+  highlight?: boolean;
+  moreLink?: { href: string; label: string };
+}
 
 interface PlanCardProps {
   name: string;
   price: number;
-  features: string[];
+  features: PlanFeature[];
   badge: string | null;
   isCurrent: boolean;
   onSelect?: () => void;
@@ -52,7 +62,20 @@ export function PlanCard({ name, price, features, badge, isCurrent, onSelect, po
             <svg className="w-4 h-4 mt-0.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            {f}
+            <span>
+              <span className={f.highlight ? 'font-semibold text-foreground' : ''}>{f.text}</span>
+              {f.moreLink && (
+                <>
+                  {' '}
+                  <Link
+                    href={f.moreLink.href}
+                    className="text-primary hover:underline font-medium whitespace-nowrap"
+                  >
+                    ({f.moreLink.label})
+                  </Link>
+                </>
+              )}
+            </span>
           </li>
         ))}
       </ul>
