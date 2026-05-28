@@ -6,6 +6,7 @@ import { CheckCircle2, XCircle, Loader2, MailCheck } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Logo } from '@/components/brand/Logo';
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 /**
  * Phase 14M v3.32 — Página que cierra el flujo de verificación de email.
@@ -14,13 +15,12 @@ import { Button } from '@/components/ui/Button';
  * pero esta página NO existía → cualquiera que pinchaba veía un 404 ("this
  * page doesn't exist"). Ahora lee el token de la query, lo manda al endpoint
  * GET /auth/verify-email/:token y muestra el resultado.
+ *
+ * Phase 15 — internacionalizada: respeta el idioma del usuario (ES/EN) via
+ * useT() en lugar de tener todas las copias en hardcoded ES.
  */
 type Status = 'loading' | 'success' | 'pending-admin' | 'error';
 
-// Phase 14M v3.34 — Next.js 14 exige que useSearchParams se ejecute dentro
-// de un <Suspense> boundary o falla el build con
-// "useSearchParams() should be wrapped in a suspense boundary". El default
-// export hace de wrapper y el VerifyEmailContent es el componente real.
 export default function VerifyEmailPage() {
   return (
     <Suspense fallback={<VerifyEmailFallback />}>
@@ -38,7 +38,7 @@ function VerifyEmailFallback() {
         </div>
         <div className="bg-card border border-border rounded-card p-8 shadow-soft text-center space-y-4">
           <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
-          <h1 className="text-xl font-bold text-foreground">Verificando tu cuenta…</h1>
+          <h1 className="text-xl font-bold text-foreground">Verifying…</h1>
         </div>
       </div>
     </div>
@@ -46,25 +46,23 @@ function VerifyEmailFallback() {
 }
 
 function VerifyEmailContent() {
+  const t = useT();
   const params = useSearchParams();
   const token = params.get('token');
   const [status, setStatus] = useState<Status>('loading');
-  const [role, setRole] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>('');
 
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setErrorMsg('Falta el token de verificación en la URL.');
+      setErrorMsg(t('auth.verify.tokenMissing'));
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await api.get(`/auth/verify-email/${encodeURIComponent(token)}`);
+        await api.get(`/auth/verify-email/${encodeURIComponent(token)}`);
         if (cancelled) return;
-        const r = (data?.data?.role ?? data?.role ?? null) as string | null;
-        setRole(r);
         // Phase 14M v3.35 — ambos roles ahora pasan por aprobación admin
         // (antes los compradores eran auto-VERIFICADO_ACTIVO). Tras
         // confirmar el email pueden hacer login pero el banner del
@@ -73,13 +71,13 @@ function VerifyEmailContent() {
       } catch (err: unknown) {
         if (cancelled) return;
         const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-          ?? 'No se pudo verificar el email. El enlace puede haber caducado o ya haber sido usado.';
+          ?? t('auth.verify.body.errorDefault');
         setErrorMsg(msg);
         setStatus('error');
       }
     })();
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, t]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
@@ -92,20 +90,20 @@ function VerifyEmailContent() {
           {status === 'loading' && (
             <>
               <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
-              <h1 className="text-xl font-bold text-foreground">Verificando tu cuenta…</h1>
-              <p className="text-sm text-text-secondary">Un segundo, comprobando el enlace.</p>
+              <h1 className="text-xl font-bold text-foreground">{t('auth.verify.title.loading')}</h1>
+              <p className="text-sm text-text-secondary">{t('auth.verify.subtitle.loading')}</p>
             </>
           )}
 
           {status === 'success' && (
             <>
               <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto" />
-              <h1 className="text-xl font-bold text-foreground">¡Email verificado!</h1>
+              <h1 className="text-xl font-bold text-foreground">{t('auth.verify.title.success')}</h1>
               <p className="text-sm text-text-secondary">
-                Tu cuenta está activa. Ya puedes iniciar sesión y empezar a usar Primar-IA.
+                {t('auth.verify.body.success')}
               </p>
               <Link href="/login">
-                <Button variant="primary" className="w-full mt-2">Iniciar sesión</Button>
+                <Button variant="primary" className="w-full mt-2">{t('auth.verify.btn.signIn')}</Button>
               </Link>
             </>
           )}
@@ -113,14 +111,12 @@ function VerifyEmailContent() {
           {status === 'pending-admin' && (
             <>
               <MailCheck className="w-12 h-12 text-yellow-500 mx-auto" />
-              <h1 className="text-xl font-bold text-foreground">Email confirmado</h1>
+              <h1 className="text-xl font-bold text-foreground">{t('auth.verify.title.pending')}</h1>
               <p className="text-sm text-text-secondary">
-                Hemos confirmado tu email. Tu cuenta está pendiente de aprobación manual por un
-                administrador — suele tardar menos de 24 h hábiles. Te avisaremos por email
-                cuando esté activa. Mientras tanto puedes hacer login y navegar la plataforma.
+                {t('auth.verify.body.pending')}
               </p>
               <Link href="/login">
-                <Button variant="primary" className="w-full mt-2">Iniciar sesión</Button>
+                <Button variant="primary" className="w-full mt-2">{t('auth.verify.btn.signIn')}</Button>
               </Link>
             </>
           )}
@@ -128,14 +124,14 @@ function VerifyEmailContent() {
           {status === 'error' && (
             <>
               <XCircle className="w-12 h-12 text-red-500 mx-auto" />
-              <h1 className="text-xl font-bold text-foreground">No se pudo verificar</h1>
+              <h1 className="text-xl font-bold text-foreground">{t('auth.verify.title.error')}</h1>
               <p className="text-sm text-text-secondary">{errorMsg}</p>
               <div className="flex flex-col gap-2 mt-2">
                 <Link href="/login">
-                  <Button variant="outline" className="w-full">Volver al login</Button>
+                  <Button variant="outline" className="w-full">{t('auth.verify.btn.backLogin')}</Button>
                 </Link>
                 <Link href="/register">
-                  <Button variant="ghost" className="w-full">Crear cuenta nueva</Button>
+                  <Button variant="ghost" className="w-full">{t('auth.verify.btn.newAccount')}</Button>
                 </Link>
               </div>
             </>
@@ -143,7 +139,7 @@ function VerifyEmailContent() {
         </div>
 
         <p className="text-xs text-text-muted text-center mt-4">
-          ¿Problemas? Contacta con soporte: soporte@primar-ia.com
+          {t('auth.verify.support')}
         </p>
       </div>
     </div>

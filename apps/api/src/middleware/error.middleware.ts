@@ -4,11 +4,26 @@ import { ZodError } from 'zod';
 export class AppError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
+  /**
+   * Optional stable error code for the frontend to map to localized i18n
+   * strings (e.g. EMAIL_NOT_VERIFIED, ACCOUNT_REJECTED, ACCOUNT_SUSPENDED).
+   * `message` is the fallback Spanish text — clients prefer `errorCode`.
+   */
+  public readonly errorCode?: string;
 
-  constructor(message: string, statusCode: number = 500, isOperational: boolean = true) {
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    isOperationalOrCode: boolean | string = true,
+  ) {
     super(message);
     this.statusCode = statusCode;
-    this.isOperational = isOperational;
+    if (typeof isOperationalOrCode === 'string') {
+      this.isOperational = true;
+      this.errorCode = isOperationalOrCode;
+    } else {
+      this.isOperational = isOperationalOrCode;
+    }
     Object.setPrototypeOf(this, AppError.prototype);
   }
 }
@@ -23,6 +38,7 @@ export function errorHandler(
     res.status(err.statusCode).json({
       success: false,
       error: err.message,
+      ...(err.errorCode ? { errorCode: err.errorCode } : {}),
     });
     return;
   }

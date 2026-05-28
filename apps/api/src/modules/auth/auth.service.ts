@@ -96,7 +96,7 @@ export class AuthService {
       include: { empresa: true },
     });
 
-    if (!user) throw new AppError('Credenciales invalidas', 401);
+    if (!user) throw new AppError('Credenciales invalidas', 401, 'INVALID_CREDENTIALS');
 
     // Check account lock
     if (user.lockedUntil && user.lockedUntil > new Date()) {
@@ -113,7 +113,7 @@ export class AuthService {
         updateData.lockedUntil = new Date(Date.now() + LOCK_TIME_MS);
       }
       await prisma.user.update({ where: { id: user.id }, data: updateData });
-      throw new AppError('Credenciales invalidas', 401);
+      throw new AppError('Credenciales invalidas', 401, 'INVALID_CREDENTIALS');
     }
 
     // Phase 14M v3.35 — gate de estado en el login (revisado de v3.32):
@@ -128,13 +128,22 @@ export class AuthService {
       throw new AppError(
         'Verifica tu email antes de iniciar sesión. Revisa tu bandeja de entrada para el enlace de verificación.',
         403,
+        'EMAIL_NOT_VERIFIED',
       );
     }
     if (user.estado === 'RECHAZADO') {
-      throw new AppError('Tu cuenta ha sido rechazada. Contacta con soporte para más información.', 403);
+      throw new AppError(
+        'Tu cuenta ha sido rechazada. Contacta con soporte para más información.',
+        403,
+        'ACCOUNT_REJECTED',
+      );
     }
     if (user.estado === 'SUSPENDIDO') {
-      throw new AppError('Tu cuenta está suspendida. Contacta con soporte.', 403);
+      throw new AppError(
+        'Tu cuenta está suspendida. Contacta con soporte.',
+        403,
+        'ACCOUNT_SUSPENDED',
+      );
     }
     // Pasan: EMAIL_VERIFICADO, PENDIENTE_VERIFICACION, PENDIENTE_ACLARACION,
     // VERIFICADO_ACTIVO. Si aparece un estado nuevo en el enum lo permitimos

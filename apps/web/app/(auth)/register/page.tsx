@@ -14,7 +14,6 @@ import { Step4 } from './steps/Step4';
 import { api } from '@/lib/api';
 import { Logo } from '@/components/brand/Logo';
 import { LogoIcon } from '@/components/brand/LogoIcon';
-import { Progress } from '@/components/shadcn/progress';
 import { useT } from '@/lib/i18n/LocaleProvider';
 import type { RegisterFormData } from './types';
 
@@ -206,19 +205,13 @@ export default function RegisterPage() {
             <p className="text-muted-foreground text-sm">{t('auth.register.tagline')}</p>
           </div>
 
-          {/* Progress bar */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">
-                {t('auth.register.stepOf').replace('{n}', String(currentStep))}
-              </span>
-              <span className="text-xs font-medium text-foreground">{STEP_LABELS[currentStep - 1]}</span>
-            </div>
-            <Progress value={(currentStep / 4) * 100} className="h-1.5" />
-          </div>
-
           <div className="bg-card rounded-2xl shadow-soft-md border border-border/50 p-8">
-            <StepProgress currentStep={currentStep} totalSteps={4} stepLabels={STEP_LABELS} />
+            <StepProgress
+              currentStep={currentStep}
+              totalSteps={4}
+              stepLabels={STEP_LABELS}
+              stepOfLabel={t('auth.register.stepOf').replace('{n}', String(currentStep))}
+            />
 
             {serverError && (
               <div role="alert" className="mb-5 flex items-start gap-2.5 p-3 rounded-lg bg-destructive/5 border border-destructive/20 text-sm text-destructive">

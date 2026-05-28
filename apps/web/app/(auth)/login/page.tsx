@@ -45,8 +45,18 @@ export default function LoginPage() {
       else if (user.role === 'ADMIN') router.push('/admin/dashboard');
       else router.push('/seller');
     } catch (err: unknown) {
-      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('auth.login.serverErrorFallback');
-      setServerError(message);
+      const resp = (err as { response?: { data?: { error?: string; errorCode?: string } } })?.response?.data;
+      // Si el backend envía un errorCode estable lo mapeamos a i18n para
+      // respetar el idioma del usuario (ES/EN). Si no, fallback al mensaje
+      // crudo del backend (puede estar en español por compat).
+      const codeMap: Record<string, string> = {
+        EMAIL_NOT_VERIFIED: t('auth.login.errEmailNotVerified'),
+        ACCOUNT_REJECTED: t('auth.login.errAccountRejected'),
+        ACCOUNT_SUSPENDED: t('auth.login.errAccountSuspended'),
+        INVALID_CREDENTIALS: t('auth.login.errInvalidCredentials'),
+      };
+      const localized = resp?.errorCode ? codeMap[resp.errorCode] : undefined;
+      setServerError(localized ?? resp?.error ?? t('auth.login.serverErrorFallback'));
     }
   };
 

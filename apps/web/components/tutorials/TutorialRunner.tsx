@@ -17,23 +17,25 @@ import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Step, EventData } from 'react-joyride';
 import { useTutorialStore } from '@/store/tutorial.store';
-import { CREAR_LOTE_FLOW, HACER_PEDIDO_FLOW, type FlowStep } from './tutorialFlows';
+import { getCrearLoteFlow, getHacerPedidoFlow, type FlowStep, type SupportedLocale } from './tutorialFlows';
 import { api } from '@/lib/api';
-import { useT } from '@/lib/i18n/LocaleProvider';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 
 const Joyride = dynamic(() => import('react-joyride').then((m) => m.Joyride), { ssr: false });
 
 export function TutorialRunner() {
   const t = useT();
+  const { locale } = useLocale();
   const { flow, step, next, goto, end } = useTutorialStore();
   const router = useRouter();
   const pathname = usePathname();
 
   const flowSteps = useMemo<FlowStep[]>(() => {
-    if (flow === 'crear-lote') return CREAR_LOTE_FLOW;
-    if (flow === 'hacer-pedido') return HACER_PEDIDO_FLOW;
+    const loc: SupportedLocale = locale === 'en' ? 'EN' : 'ES';
+    if (flow === 'crear-lote') return getCrearLoteFlow(loc);
+    if (flow === 'hacer-pedido') return getHacerPedidoFlow(loc);
     return [];
-  }, [flow]);
+  }, [flow, locale]);
 
   const current = flowSteps[step];
 

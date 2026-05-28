@@ -2,17 +2,22 @@ interface StepProgressProps {
   currentStep: number;
   totalSteps: number;
   stepLabels: string[];
+  /**
+   * Localized "Step X of Y" label. If not provided, falls back to English.
+   */
+  stepOfLabel?: string;
 }
 
-export function StepProgress({ currentStep, totalSteps, stepLabels }: StepProgressProps) {
+export function StepProgress({ currentStep, totalSteps, stepLabels, stepOfLabel }: StepProgressProps) {
   const progressPct = ((currentStep - 1) / (totalSteps - 1)) * 100;
   const label = stepLabels[currentStep - 1] ?? '';
+  const stepText = stepOfLabel ?? `Step ${currentStep} of ${totalSteps}`;
 
   return (
     <div className="w-full mb-8">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-medium text-secondary uppercase tracking-wide">
-          Step {currentStep} of {totalSteps}
+          {stepText}
         </p>
         <p className="text-xs font-semibold text-foreground">{label}</p>
       </div>
@@ -24,7 +29,7 @@ export function StepProgress({ currentStep, totalSteps, stepLabels }: StepProgre
           aria-valuenow={currentStep}
           aria-valuemin={1}
           aria-valuemax={totalSteps}
-          aria-label={`Step ${currentStep} of ${totalSteps}: ${label}`}
+          aria-label={`${stepText}: ${label}`}
         />
       </div>
       <div className="flex justify-between mt-2">
