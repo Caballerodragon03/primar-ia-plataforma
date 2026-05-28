@@ -29,7 +29,7 @@ export const registerSchema = z.object({
   // compradores los pagan por transferencia al IBAN del vendedor). Validamos
   // en el servicio en función del rol.
   iban: z.string().trim().transform((v) => v.toUpperCase().replace(/\s+/g, '')).pipe(
-    z.string().regex(ibanRegex, 'IBAN inválido — formato esperado ESxx XXXX XXXX XXXX XXXX XXXX')
+    z.string().regex(ibanRegex, 'IBAN inválido — acepta cualquier IBAN internacional (ES, DE, FR, IT, GB, NL…)')
   ).optional(),
   swiftBic: z.string().optional(),
   regimenFiscal: z.enum(['GENERAL', 'AGRARIO', 'RECARGO_EQUIVALENCIA', 'EXENTO']).optional(),
