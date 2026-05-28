@@ -1049,11 +1049,21 @@ export type MessageKey =
   | 'commissions.caps.min'
   | 'commissions.caps.max'
   | 'commissions.caps.floor'
-  | 'commissions.example.title'
-  | 'commissions.example.line1'
-  | 'commissions.example.line2'
-  | 'commissions.example.line3'
-  | 'commissions.example.total'
+  | 'commissions.calc.title'
+  | 'commissions.calc.desc'
+  | 'commissions.calc.amountLabel'
+  | 'commissions.calc.volumeLabel'
+  | 'commissions.calc.volumeHint'
+  | 'commissions.calc.tierFree'
+  | 'commissions.calc.tierMid'
+  | 'commissions.calc.tierTop'
+  | 'commissions.calc.rowBase'
+  | 'commissions.calc.rowPlanDisc'
+  | 'commissions.calc.rowVolDisc'
+  | 'commissions.calc.rowFinalPct'
+  | 'commissions.calc.rowCommission'
+  | 'commissions.calc.savings'
+  | 'commissions.calc.note'
   | 'commissions.footer'
   // ─── IncotermWizard ──────────────────────────────────────────────────────
   | 'incotermWizard.title'
@@ -2528,11 +2538,21 @@ export const messages: Record<Locale, Messages> = {
     'commissions.caps.min': 'Mínimo 5 € por operación (cubre coste administrativo).',
     'commissions.caps.max': 'Máximo 5 000 € por operación (tope absoluto, da igual el tamaño).',
     'commissions.caps.floor': 'El porcentaje final tras descuentos nunca baja del 0 % — los descuentos solo restan, no generan crédito.',
-    'commissions.example.title': 'Ejemplo práctico',
-    'commissions.example.line1': 'Comprador con plan LONJA y 60 000 € de volumen en los últimos 30 días firma un contrato de 8 000 €.',
-    'commissions.example.line2': 'Base por ticket (2 000–10 000 €): 3,0 %. Descuento plan LONJA: −0,5 pp. Descuento volumen (25k–100k €): −0,1 pp.',
-    'commissions.example.line3': 'Porcentaje final: 3,0 − 0,5 − 0,1 = 2,4 %. Comisión: 8 000 € × 2,4 % = 192,00 €.',
-    'commissions.example.total': 'Total que paga el comprador a Primar-IA: 192,00 €. El vendedor recibe los 8 000 € íntegros por transferencia según el plazo del contrato.',
+    'commissions.calc.title': 'Calculadora de comisión',
+    'commissions.calc.desc': 'Introduce el importe del contrato y, opcionalmente, tu volumen comprado en los últimos 30 días. Comparamos lo que pagarías de comisión en cada plan de comprador.',
+    'commissions.calc.amountLabel': 'Importe del contrato',
+    'commissions.calc.volumeLabel': 'Tu volumen últimos 30 días (opcional)',
+    'commissions.calc.volumeHint': 'Solo cuenta volumen confirmado y entregado sin incidencias.',
+    'commissions.calc.tierFree': 'Free',
+    'commissions.calc.tierMid': 'Mid',
+    'commissions.calc.tierTop': 'Top',
+    'commissions.calc.rowBase': 'Base por ticket',
+    'commissions.calc.rowPlanDisc': 'Descuento por plan',
+    'commissions.calc.rowVolDisc': 'Descuento por volumen',
+    'commissions.calc.rowFinalPct': 'Porcentaje final',
+    'commissions.calc.rowCommission': 'Comisión a pagar',
+    'commissions.calc.savings': 'Ahorras {n} vs Mercado',
+    'commissions.calc.note': 'Los importes ya incluyen los topes (mínimo 5 €, máximo 5 000 €). Cálculo en tiempo real con los porcentajes vigentes.',
     'commissions.footer': 'Estos valores son los implementados a fecha de hoy. Cualquier cambio se notifica con 30 días de antelación a usuarios activos.',
     'incotermWizard.title': '¿Cuáles aceptas?',
     'incotermWizard.q1': '¿Quién transporta?',
@@ -3994,11 +4014,21 @@ export const messages: Record<Locale, Messages> = {
     'commissions.caps.min': 'Minimum €5 per operation (covers admin cost).',
     'commissions.caps.max': "Maximum €5,000 per operation (absolute cap, regardless of size).",
     'commissions.caps.floor': "The final percentage after discounts never goes below 0% — discounts only subtract, they don't generate credit.",
-    'commissions.example.title': 'Worked example',
-    'commissions.example.line1': 'A buyer on the LONJA plan with €60,000 of volume in the last 30 days signs an €8,000 contract.',
-    'commissions.example.line2': 'Base by ticket (€2,000–€10,000): 3.0%. LONJA plan discount: −0.5 pp. Volume discount (€25k–€100k): −0.1 pp.',
-    'commissions.example.line3': 'Final percentage: 3.0 − 0.5 − 0.1 = 2.4%. Commission: €8,000 × 2.4% = €192.00.',
-    'commissions.example.total': 'Total the buyer pays to Primar-IA: €192.00. The seller receives the full €8,000 by wire transfer per the contract term.',
+    'commissions.calc.title': 'Commission calculator',
+    'commissions.calc.desc': "Enter the contract amount and, optionally, your purchase volume in the last 30 days. We compare what you'd pay in commission across each buyer plan.",
+    'commissions.calc.amountLabel': 'Contract amount',
+    'commissions.calc.volumeLabel': 'Your volume last 30 days (optional)',
+    'commissions.calc.volumeHint': 'Only counts confirmed volume delivered without incidents.',
+    'commissions.calc.tierFree': 'Free',
+    'commissions.calc.tierMid': 'Mid',
+    'commissions.calc.tierTop': 'Top',
+    'commissions.calc.rowBase': 'Base by ticket',
+    'commissions.calc.rowPlanDisc': 'Plan discount',
+    'commissions.calc.rowVolDisc': 'Volume discount',
+    'commissions.calc.rowFinalPct': 'Final percentage',
+    'commissions.calc.rowCommission': 'Commission due',
+    'commissions.calc.savings': 'You save {n} vs Market',
+    'commissions.calc.note': 'Amounts already include the caps (€5 min, €5,000 max). Computed live with the current percentages.',
     'commissions.footer': "These values reflect what's implemented today. Any change is notified 30 days in advance to active users.",
     'incotermWizard.title': 'Which do you accept?',
     'incotermWizard.q1': 'Who transports?',

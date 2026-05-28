@@ -15,13 +15,42 @@
  * packages/shared/src/commission.ts. Si se tocan ahí, hay que
  * actualizar también esta página.
  */
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Receipt, BadgePercent, TrendingDown, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Receipt, BadgePercent, TrendingDown, ShieldCheck, Calculator } from 'lucide-react';
+import { calcularComision, type BuyerSubscriptionTier } from '@primaria/shared';
 import { Logo } from '@/components/brand/Logo';
-import { useT } from '@/lib/i18n/LocaleProvider';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
+
+const PLAN_TIERS: Array<{ id: 'MERCADO' | 'LONJA' | 'CENTRAL'; tier: BuyerSubscriptionTier; nameKey: 'plan.buyer.mercado.name' | 'plan.buyer.lonja.name' | 'plan.buyer.central.name' }> = [
+  { id: 'MERCADO', tier: 'FREE', nameKey: 'plan.buyer.mercado.name' },
+  { id: 'LONJA',   tier: 'MID',  nameKey: 'plan.buyer.lonja.name' },
+  { id: 'CENTRAL', tier: 'TOP',  nameKey: 'plan.buyer.central.name' },
+];
 
 export default function CommissionsPage() {
   const t = useT();
+  const { locale } = useLocale();
+  const fmt = useMemo(
+    () => new Intl.NumberFormat(locale === 'en' ? 'en-GB' : 'es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }),
+    [locale],
+  );
+  const fmtPct = (pct: number) =>
+    `${(pct * 100).toLocaleString(locale === 'en' ? 'en-GB' : 'es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} %`;
+
+  // ─── Calculator state ────────────────────────────────────────────────
+  const [amount, setAmount] = useState<number>(8000);
+  const [volume, setVolume] = useState<number>(60000);
+
+  const results = useMemo(() => {
+    return PLAN_TIERS.map((p) => {
+      const r = calcularComision(amount, { subscriptionTier: p.tier, monthlyVolumeEur: volume });
+      return { ...p, result: r };
+    });
+  }, [amount, volume]);
+
+  const mercadoTotal = results.find((r) => r.id === 'MERCADO')?.result.total ?? 0;
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -209,19 +238,116 @@ export default function CommissionsPage() {
           </ul>
         </section>
 
-        {/* Example */}
-        <section className="bg-amber-50 border border-amber-200 rounded-card p-6 sm:p-8">
-          <h2 className="text-xl font-semibold text-foreground mb-3">
-            {t('commissions.example.title')}
-          </h2>
-          <div className="text-sm text-foreground space-y-2 leading-relaxed">
-            <p>{t('commissions.example.line1')}</p>
-            <p>{t('commissions.example.line2')}</p>
-            <p>{t('commissions.example.line3')}</p>
-            <p className="font-semibold pt-2 border-t border-amber-300/50">
-              {t('commissions.example.total')}
-            </p>
+        {/* Interactive calculator */}
+        <section className="bg-amber-50 border border-amber-200 rounded-card p-6 sm:p-8 shadow-soft">
+          <div className="flex items-center gap-3 mb-2">
+            <Calculator className="w-6 h-6 text-primary" />
+            <h2 className="text-xl font-semibold text-foreground">
+              {t('commissions.calc.title')}
+            </h2>
           </div>
+          <p className="text-sm text-muted-foreground mb-5">
+            {t('commissions.calc.desc')}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <label className="block">
+              <span className="block text-sm font-medium text-foreground mb-1.5">
+                {t('commissions.calc.amountLabel')}
+              </span>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={0}
+                  step={100}
+                  value={amount}
+                  onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))}
+                  className="w-full pl-3 pr-9 py-2.5 border border-border rounded-input bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
+              </div>
+            </label>
+            <label className="block">
+              <span className="block text-sm font-medium text-foreground mb-1.5">
+                {t('commissions.calc.volumeLabel')}
+              </span>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={volume}
+                  onChange={(e) => setVolume(Math.max(0, Number(e.target.value) || 0))}
+                  className="w-full pl-3 pr-9 py-2.5 border border-border rounded-input bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
+              </div>
+              <span className="block mt-1 text-xs text-muted-foreground">
+                {t('commissions.calc.volumeHint')}
+              </span>
+            </label>
+          </div>
+
+          {/* Results: one card per plan */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {results.map(({ id, tier, nameKey, result }) => {
+              const isPaid = id !== 'MERCADO';
+              const savings = isPaid ? Math.max(0, mercadoTotal - result.total) : 0;
+              return (
+                <div
+                  key={id}
+                  className={[
+                    'rounded-card border bg-card p-4 shadow-soft transition-colors',
+                    id === 'CENTRAL' ? 'border-primary ring-1 ring-primary/20' : 'border-border',
+                  ].join(' ')}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-foreground">{t(nameKey)}</span>
+                    <span className="text-[11px] text-muted-foreground uppercase tracking-wide">
+                      {tier === 'FREE' ? t('commissions.calc.tierFree') : tier === 'MID' ? t('commissions.calc.tierMid') : t('commissions.calc.tierTop')}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    <div className="flex justify-between">
+                      <span>{t('commissions.calc.rowBase')}</span>
+                      <span className="text-foreground">{fmtPct(result.porcentajeBase)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>{t('commissions.calc.rowPlanDisc')}</span>
+                      <span className="text-foreground">
+                        {result.descuentoSuscripcion > 0 ? `−${fmtPct(result.descuentoSuscripcion)}` : '—'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>{t('commissions.calc.rowVolDisc')}</span>
+                      <span className="text-foreground">
+                        {result.descuentoVolumen > 0 ? `−${fmtPct(result.descuentoVolumen)}` : '—'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between pt-1 border-t border-border/50">
+                      <span className="font-medium text-foreground">{t('commissions.calc.rowFinalPct')}</span>
+                      <span className="font-semibold text-foreground">{fmtPct(result.porcentajeFinal)}</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="text-[11px] text-muted-foreground uppercase tracking-wide mb-0.5">
+                      {t('commissions.calc.rowCommission')}
+                    </div>
+                    <div className="text-2xl font-bold text-foreground">{fmt.format(result.total)}</div>
+                    {isPaid && savings > 0 && (
+                      <div className="mt-1 text-xs font-medium text-emerald-600">
+                        {t('commissions.calc.savings').replace('{n}', fmt.format(savings))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="text-xs text-muted-foreground mt-4">
+            {t('commissions.calc.note')}
+          </p>
         </section>
 
         <p className="text-xs text-muted-foreground text-center pt-2">
