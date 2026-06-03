@@ -6,21 +6,8 @@ import { Button } from './Button';
 import { Input } from './Input';
 import { api } from '@/lib/api';
 import type { Match, CalibresSolicitados } from './MatchCard';
-
-const INCOTERM_DESCRIPTIONS: Record<string, string> = {
-  EXW: 'El comprador recoge en tu explotación y gestiona todo el transporte. Mínima responsabilidad para ti.',
-  FCA: 'Entregas al transportista del comprador en un punto acordado (lonja, cooperativa). Muy habitual en Primar-IA.',
-  CPT: 'Tú contratas el transporte hasta destino. El riesgo pasa al comprador con el primer transportista.',
-  CIP: 'Como CPT pero también debes contratar el seguro (mínimo 110% del valor). Ideal para perecederos.',
-  DAP: 'Entregas en el destino del comprador. Él solo descarga. Muy habitual en exportación.',
-  DPU: 'Como DAP pero también te encargas de la descarga en destino.',
-  DDP: 'Máxima responsabilidad: pagas todo incluido aduanas de importación. Solo con experiencia exportadora.',
-  FOB: 'Solo marítimo. Entregas a bordo del buque en el puerto de origen.',
-  CIF: 'Solo marítimo. Pagas flete y seguro hasta destino; el riesgo pasa al embarcar.',
-  CFR: 'Solo marítimo. Pagas el flete pero el riesgo pasa al embarcar. Sin seguro obligatorio.',
-  FAS: 'Solo marítimo. Entregas al costado del buque en el puerto de origen.',
-  DAT: 'Entregado en terminal de transporte. Eres responsable hasta la descarga en terminal.',
-};
+import { getIncotermInfo, type Incoterm } from '@primaria/shared';
+import { useLocale } from '@/lib/i18n/LocaleProvider';
 
 interface CalibreContribucion {
   calibre: string;
@@ -43,6 +30,7 @@ interface ContributeModalProps {
 }
 
 export function ContributeModal({ match, isOpen, onClose, onSuccess }: ContributeModalProps) {
+  const { locale } = useLocale();
   const [calibres, setCalibres] = useState<CalibreContribucion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -219,7 +207,7 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
               ⚠️ Incoterm del pedido: {match.pedido.incoterm}
             </p>
             <p className="text-xs text-amber-700">
-              {INCOTERM_DESCRIPTIONS[match.pedido.incoterm] ?? 'Revisa las condiciones de entrega antes de aceptar.'}
+              {getIncotermInfo(match.pedido.incoterm as Incoterm, locale)?.desc ?? 'Revisa las condiciones de entrega antes de aceptar.'}
             </p>
           </div>
         )}

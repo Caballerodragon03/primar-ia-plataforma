@@ -243,6 +243,36 @@ export type MessageKey =
   | 'freeTier.notice.bodyLote'
   | 'freeTier.notice.bodyPedido'
   | 'freeTier.notice.cta'
+  | 'seasonalCalendar.favTab'
+  | 'seasonalCalendar.emptyFavorites'
+  | 'seasonalCalendar.emptyCategory'
+  | 'seasonalCalendar.addFav'
+  | 'seasonalCalendar.removeFav'
+  | 'market.favorites.section'
+  | 'market.favorites.starLabel'
+  | 'potential.banner.lote'
+  | 'potential.banner.pedido'
+  | 'potential.banner.calculating'
+  | 'potential.banner.singularBuyer'
+  | 'potential.banner.pluralBuyer'
+  | 'potential.banner.singularSeller'
+  | 'potential.banner.pluralSeller'
+  | 'lotForm.step1.title'
+  | 'lotForm.step1.desc'
+  | 'lotForm.step2.title'
+  | 'lotForm.step2.desc'
+  | 'lotForm.step3.title'
+  | 'lotForm.step3.desc'
+  | 'lotForm.nextStep'
+  | 'lotForm.prevStep'
+  | 'orderForm.step1.title'
+  | 'orderForm.step1.desc'
+  | 'orderForm.step2.title'
+  | 'orderForm.step2.desc'
+  | 'orderForm.step3.title'
+  | 'orderForm.step3.desc'
+  | 'orderForm.nextStep'
+  | 'orderForm.prevStep'
   | 'matches.subtitle'
   | 'matches.incotermFilter'
   | 'matches.incotermFilterRecommended'
@@ -305,6 +335,7 @@ export type MessageKey =
   | 'orderForm.variety'
   | 'orderForm.variety.placeholder'
   | 'orderForm.variety.other'
+  | 'orderForm.variety.any'
   | 'orderForm.variety.customPlaceholder'
   | 'orderForm.frequency'
   | 'orderForm.frequency.placeholder'
@@ -1770,6 +1801,36 @@ export const messages: Record<Locale, Messages> = {
     'freeTier.notice.bodyLote': 'Cuando publiques este lote, las propuestas de matching se generarán de inmediato pero no serán visibles hasta dentro de 24 h. Mejora tu plan para que tu lote comience a recibir matches al instante.',
     'freeTier.notice.bodyPedido': 'Cuando publiques este pedido, las propuestas de matching se generarán de inmediato pero no serán visibles hasta dentro de 24 h. Mejora tu plan para que tu pedido comience a recibir matches al instante.',
     'freeTier.notice.cta': 'Ver planes y eliminar el retraso',
+    'seasonalCalendar.favTab': 'Favoritos',
+    'seasonalCalendar.emptyFavorites': 'No tienes favoritos aún. Pulsa la estrella ⭐ de un producto para añadirlo.',
+    'seasonalCalendar.emptyCategory': 'No hay datos para esta categoría',
+    'seasonalCalendar.addFav': 'Marcar como favorito',
+    'seasonalCalendar.removeFav': 'Quitar de favoritos',
+    'market.favorites.section': 'Tus favoritos',
+    'market.favorites.starLabel': 'Favorito',
+    'potential.banner.lote': 'Hay {n} {n_plural} interesados en un lote con estas características.',
+    'potential.banner.pedido': 'Hay {n} {n_plural} que podrían cubrir este pedido.',
+    'potential.banner.calculating': 'Calculando potenciales counterparties…',
+    'potential.banner.singularBuyer': 'potencial comprador',
+    'potential.banner.pluralBuyer': 'potenciales compradores',
+    'potential.banner.singularSeller': 'potencial vendedor',
+    'potential.banner.pluralSeller': 'potenciales vendedores',
+    'lotForm.step1.title': 'Producto y calibres',
+    'lotForm.step1.desc': 'Qué vendes, en qué variedad y con qué calibres.',
+    'lotForm.step2.title': 'Logística y entrega',
+    'lotForm.step2.desc': 'Dónde está el lote, fechas, incoterm y quién envía.',
+    'lotForm.step3.title': 'Pagos y publicación',
+    'lotForm.step3.desc': 'Términos de pago aceptados y publicación final.',
+    'lotForm.nextStep': 'Siguiente',
+    'lotForm.prevStep': 'Atrás',
+    'orderForm.step1.title': 'Producto y calibres',
+    'orderForm.step1.desc': 'Qué necesitas, en qué variedad y con qué calibres.',
+    'orderForm.step2.title': 'Logística y entrega',
+    'orderForm.step2.desc': 'Destino, fechas, incoterm y quién envía.',
+    'orderForm.step3.title': 'Pagos y publicación',
+    'orderForm.step3.desc': 'Términos de pago aceptados y publicación final.',
+    'orderForm.nextStep': 'Siguiente',
+    'orderForm.prevStep': 'Atrás',
     'matches.subtitle': 'Pedidos que mejor encajan con tus lotes publicados.',
     'matches.incotermFilter': 'Filtro de incoterm',
     'matches.incotermFilterRecommended': 'Recomendado',
@@ -1829,6 +1890,7 @@ export const messages: Record<Locale, Messages> = {
     'orderForm.variety': 'Variedad',
     'orderForm.variety.placeholder': 'Selecciona variedad…',
     'orderForm.variety.other': 'Otra (especificar)…',
+    'orderForm.variety.any': 'Cualquier variedad (acepta cualquiera)',
     'orderForm.variety.customPlaceholder': 'Escribe el nombre de la variedad…',
     'orderForm.frequency': 'Frecuencia',
     'orderForm.frequency.placeholder': 'Selecciona…',
@@ -2193,7 +2255,7 @@ export const messages: Record<Locale, Messages> = {
     'orderDetail.title': 'Pedido',
     'orderDetail.coverage': 'Cobertura',
     'orderDetail.edit': 'Editar',
-    'orderDetail.close': 'Cerrar',
+    'orderDetail.close': 'Cerrar pedido',
     'orderDetail.contract': 'Contrato',
     'orderDetail.cancelConfirmWithContrib': 'Este pedido tiene aportaciones de vendedor comprometidas. Sólo se cancelará la parte no comprometida. Las cantidades comprometidas se mantendrán y el pedido pasará a completado. ¿Continuar?',
     'orderDetail.cancelConfirm': '¿Seguro que quieres cerrar este pedido? Esta acción no se puede deshacer.',
@@ -3260,6 +3322,36 @@ export const messages: Record<Locale, Messages> = {
     'freeTier.notice.bodyLote': 'Once you publish this lot, match proposals will be generated immediately but not visible until 24 h later. Upgrade your plan so your lot starts receiving matches instantly.',
     'freeTier.notice.bodyPedido': 'Once you publish this order, match proposals will be generated immediately but not visible until 24 h later. Upgrade your plan so your order starts receiving matches instantly.',
     'freeTier.notice.cta': 'See plans and remove the delay',
+    'seasonalCalendar.favTab': 'Favorites',
+    'seasonalCalendar.emptyFavorites': "You haven't favorited anything yet. Tap the star ⭐ on a product to add it.",
+    'seasonalCalendar.emptyCategory': 'No data for this category',
+    'seasonalCalendar.addFav': 'Mark as favorite',
+    'seasonalCalendar.removeFav': 'Remove from favorites',
+    'market.favorites.section': 'Your favorites',
+    'market.favorites.starLabel': 'Favorite',
+    'potential.banner.lote': 'There are {n} {n_plural} interested in a lot like this.',
+    'potential.banner.pedido': 'There are {n} {n_plural} who could fulfil this order.',
+    'potential.banner.calculating': 'Calculating potential counterparties…',
+    'potential.banner.singularBuyer': 'potential buyer',
+    'potential.banner.pluralBuyer': 'potential buyers',
+    'potential.banner.singularSeller': 'potential seller',
+    'potential.banner.pluralSeller': 'potential sellers',
+    'lotForm.step1.title': 'Product and sizes',
+    'lotForm.step1.desc': 'What you sell, what variety and what sizes.',
+    'lotForm.step2.title': 'Logistics and delivery',
+    'lotForm.step2.desc': 'Where the lot is, dates, Incoterm and who ships.',
+    'lotForm.step3.title': 'Payment and publishing',
+    'lotForm.step3.desc': 'Accepted payment terms and final publish.',
+    'lotForm.nextStep': 'Next',
+    'lotForm.prevStep': 'Back',
+    'orderForm.step1.title': 'Product and sizes',
+    'orderForm.step1.desc': 'What you need, what variety and what sizes.',
+    'orderForm.step2.title': 'Logistics and delivery',
+    'orderForm.step2.desc': 'Destination, dates, Incoterm and who ships.',
+    'orderForm.step3.title': 'Payment and publishing',
+    'orderForm.step3.desc': 'Accepted payment terms and final publish.',
+    'orderForm.nextStep': 'Next',
+    'orderForm.prevStep': 'Back',
     'matches.subtitle': 'Orders that best match your published lots.',
     'matches.incotermFilter': 'Incoterm filter',
     'matches.incotermFilterRecommended': 'Recommended',
@@ -3319,6 +3411,7 @@ export const messages: Record<Locale, Messages> = {
     'orderForm.variety': 'Variety',
     'orderForm.variety.placeholder': 'Select variety…',
     'orderForm.variety.other': 'Other (specify)…',
+    'orderForm.variety.any': 'Any variety (matches all)',
     'orderForm.variety.customPlaceholder': 'Type variety name…',
     'orderForm.frequency': 'Frequency',
     'orderForm.frequency.placeholder': 'Select…',
@@ -3683,7 +3776,7 @@ export const messages: Record<Locale, Messages> = {
     'orderDetail.title': 'Order',
     'orderDetail.coverage': 'Coverage',
     'orderDetail.edit': 'Edit',
-    'orderDetail.close': 'Close',
+    'orderDetail.close': 'Close order',
     'orderDetail.contract': 'Contract',
     'orderDetail.cancelConfirmWithContrib': 'This order has committed seller contributions. Only the uncommitted part will be cancelled. The committed quantities will be kept and the order will be marked as completed. Continue?',
     'orderDetail.cancelConfirm': 'Are you sure you want to close this order? This cannot be undone.',

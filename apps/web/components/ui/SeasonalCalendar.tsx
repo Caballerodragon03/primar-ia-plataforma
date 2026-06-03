@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Star } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useFavoriteProducts } from '@/lib/hooks/useFavoriteProducts';
+import { useT } from '@/lib/i18n/LocaleProvider';
 
 type CalendarEntry = {
   producto: string;
@@ -118,10 +121,18 @@ function MonthCell({
   );
 }
 
+// Phase 16 — pseudo-category "Favoritos" appears first if user has any
+// favorites set. Otherwise the default tab is "Cítricos" (legacy).
+const FAVORITES_TAB = '__favorites__';
+
 export function SeasonalCalendar() {
+  const t = useT();
+  const { favorites, isFavorite, toggle } = useFavoriteProducts();
   const [data, setData] = useState<CalendarEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<string>('Cítricos');
+  const [activeCategory, setActiveCategory] = useState<string>(
+    favorites.length > 0 ? FAVORITES_TAB : 'Cítricos',
+  );
   const currentMonth = new Date().getMonth() + 1; // 1-12
 
   useEffect(() => {
@@ -132,9 +143,10 @@ export function SeasonalCalendar() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = data.filter(
-    (e) => CATEGORY_MAP[e.producto] === activeCategory,
-  );
+  const filtered =
+    activeCategory === FAVORITES_TAB
+      ? data.filter((e) => isFavorite(e.producto))
+      : data.filter((e) => CATEGORY_MAP[e.producto] === activeCategory);
 
   if (loading) {
     return (
@@ -148,8 +160,23 @@ export function SeasonalCalendar() {
 
   return (
     <div className="space-y-3">
-      {/* Category tabs */}
+      {/* Category tabs — "Favoritos" se muestra primera si hay alguno. */}
       <div className="flex flex-wrap gap-1">
+        {favorites.length > 0 && (
+          <button
+            onClick={() => setActiveCategory(FAVORITES_TAB)}
+            className={[
+              'px-2 py-0.5 rounded-badge text-[11px] font-medium border transition-colors flex items-center gap-1',
+              activeCategory === FAVORITES_TAB
+                ? 'bg-primary/10 border-primary text-secondary'
+                : 'border-border text-text-secondary hover:border-primary bg-card',
+            ].join(' ')}
+          >
+            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+            {t('seasonalCalendar.favTab')}
+            <span className="text-[10px] text-text-muted">({favorites.length})</span>
+          </button>
+        )}
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
@@ -180,7 +207,8 @@ export function SeasonalCalendar() {
       </div>
 
       {/* Month header */}
-      <div className="grid grid-cols-[120px_repeat(12,1fr)] gap-x-0.5 text-[9px] text-text-secondary font-medium">
+      <div className="grid grid-cols-[20px_120px_repeat(12,1fr)] gap-x-0.5 text-[9px] text-text-secondary font-medium">
+        <div />
         <div />
         {MONTHS.map((m, i) => (
           <div
@@ -198,30 +226,51 @@ export function SeasonalCalendar() {
       {/* Rows */}
       <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
         {filtered.length === 0 ? (
-          <p className="text-xs text-text-muted text-center py-4">No hay datos para esta categoría</p>
+          <p className="text-xs text-text-muted text-center py-4">
+            {activeCategory === FAVORITES_TAB
+              ? t('seasonalCalendar.emptyFavorites')
+              : t('seasonalCalendar.emptyCategory')}
+          </p>
         ) : (
-          filtered.map((entry) => (
-            <div
-              key={entry.producto}
-              className="grid grid-cols-[120px_repeat(12,1fr)] gap-x-0.5 items-center"
-              title={entry.notas}
-            >
-              <span className="text-[11px] text-text-primary truncate pr-1" title={entry.producto}>
-                {entry.producto}
-              </span>
-              {MONTHS.map((_, i) => {
-                const month = i + 1;
-                return (
-                  <MonthCell
-                    key={month}
-                    inProduccion={entry.produccion.includes(month)}
-                    inComercializacion={entry.comercializacion.includes(month)}
-                    isCurrentMonth={month === currentMonth}
+          filtered.map((entry) => {
+            const fav = isFavorite(entry.producto);
+            return (
+              <div
+                key={entry.producto}
+                className="grid grid-cols-[20px_120px_repeat(12,1fr)] gap-x-0.5 items-center"
+                title={entry.notas}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggle(entry.producto)}
+                  className="flex items-center justify-center hover:scale-110 transition-transform"
+                  aria-label={fav ? t('seasonalCalendar.removeFav') : t('seasonalCalendar.addFav')}
+                  title={fav ? t('seasonalCalendar.removeFav') : t('seasonalCalendar.addFav')}
+                >
+                  <Star
+                    className={[
+                      'w-3.5 h-3.5 transition-colors',
+                      fav ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 hover:text-yellow-400',
+                    ].join(' ')}
                   />
-                );
-              })}
-            </div>
-          ))
+                </button>
+                <span className="text-[11px] text-text-primary truncate pr-1" title={entry.producto}>
+                  {entry.producto}
+                </span>
+                {MONTHS.map((_, i) => {
+                  const month = i + 1;
+                  return (
+                    <MonthCell
+                      key={month}
+                      inProduccion={entry.produccion.includes(month)}
+                      inComercializacion={entry.comercializacion.includes(month)}
+                      isCurrentMonth={month === currentMonth}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })
         )}
       </div>
     </div>

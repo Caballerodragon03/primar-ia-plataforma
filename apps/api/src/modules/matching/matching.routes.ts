@@ -8,6 +8,7 @@ import {
   listSellerMatches,
   listLotMatches,
   getSellerHiddenMatches,
+  previewPotentialCounterparties,
   contributeToOrder,
   getAutoDistributePreview,
   getNotificationsSummary,
@@ -44,6 +45,18 @@ matchingRouter.get(
   '/seller/hidden-matches',
   requireRole('VENDEDOR'),
   asyncHandler(getSellerHiddenMatches)
+);
+
+// Phase 16 — live count of potential counterparties for the draft a user
+// is filling in /seller/lots/new or /buyer/orders/new. Limitado a los
+// roles que pueden crear lotes/pedidos (COMPRADOR + VENDEDOR). Sin el
+// requireRole, un ADMIN se enrutaría silenciosamente como SELLER y vería
+// counts de pedidos del marketplace (auth-leak menor de cantidades
+// agregadas).
+matchingRouter.post(
+  '/preview-potential-counterparties',
+  requireRole('COMPRADOR', 'VENDEDOR'),
+  asyncHandler(previewPotentialCounterparties),
 );
 
 // Auto-distribute preview (greedy by revenue, per-calibre capacity-aware)

@@ -1111,6 +1111,95 @@ export class MatchingService {
   }
 
   /**
+   * Phase 16 — Cuenta cuántos potenciales counterparties (lotes ACTIVOS si
+   * el caller es comprador, pedidos ACTIVOS si el caller es vendedor)
+   * podrían matchear con el draft que el usuario está rellenando en
+   * /seller/lots/new o /buyer/orders/new. Es una estimación en vivo —
+   * NO crea matches, solo cuenta candidates que cumplen criterios duros:
+   *
+   *   - Mismo producto.
+   *   - Variedad compatible (null = wildcard de cualquier lado).
+   *   - Incoterm aceptado (intersección con incotermsAceptados del otro).
+   *   - Calibres compatibles (si caller especifica calibres concretos, el
+   *     otro debe haberlos pedido/ofrecido también).
+   *
+   * Cumple lo que el matching real considera "hard filters" en
+   * meetsHardCriteria sin el resto del scoring. El número se refresca
+   * con debounce de 500ms en el frontend.
+   */
+  async previewPotentialCounterparties(
+    side: 'BUYER' | 'SELLER',
+    draft: {
+      productoId?: string;
+      variedadId?: string | null;
+      incoterms?: string[]; // incotermsAceptados (lo que el usuario marca)
+      calibres?: Array<{ calibre: string }>; // solo el código de calibre
+    },
+  ): Promise<{ count: number }> {
+    if (!draft.productoId) return { count: 0 };
+
+    // El comprador busca lotes; el vendedor busca pedidos.
+    if (side === 'BUYER') {
+      const lotes = await prisma.lote.findMany({
+        where: {
+          productoId: draft.productoId,
+          estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] },
+          ...(draft.variedadId && draft.variedadId.length > 0
+            ? { OR: [{ variedadId: draft.variedadId }, { variedadId: null }] }
+            : {}),
+        },
+        select: { vendedorId: true, calibres: true, incotermsAceptados: true },
+      });
+      const counterparties = new Set<string>();
+      for (const l of lotes) {
+        // Filtro incoterm: si comprador marcó incoterms, alguno tiene que
+        // estar en los aceptados por el vendedor; si no marcó nada, pasa.
+        if (draft.incoterms && draft.incoterms.length > 0) {
+          const lotInco = Array.isArray(l.incotermsAceptados) ? (l.incotermsAceptados as string[]) : [];
+          if (lotInco.length > 0 && !draft.incoterms.some((it) => lotInco.includes(it))) continue;
+        }
+        // Filtro calibres: si comprador especificó calibres, alguno debe
+        // existir entre los del lote.
+        if (draft.calibres && draft.calibres.length > 0) {
+          const lotCals = Array.isArray(l.calibres)
+            ? ((l.calibres as unknown) as Array<{ calibre?: string }>).map((c) => String(c.calibre ?? ''))
+            : [];
+          if (!draft.calibres.some((c) => lotCals.includes(c.calibre))) continue;
+        }
+        counterparties.add(l.vendedorId);
+      }
+      return { count: counterparties.size };
+    }
+
+    // SELLER busca pedidos.
+    const pedidos = await prisma.pedido.findMany({
+      where: {
+        productoId: draft.productoId,
+        estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] },
+        ...(draft.variedadId && draft.variedadId.length > 0
+          ? { OR: [{ variedadId: draft.variedadId }, { variedadId: null }] }
+          : {}),
+      },
+      select: { compradorId: true, calibresSolicitados: true, incotermsAceptados: true },
+    });
+    const counterparties = new Set<string>();
+    for (const p of pedidos) {
+      if (draft.incoterms && draft.incoterms.length > 0) {
+        const pedInco = Array.isArray(p.incotermsAceptados) ? (p.incotermsAceptados as string[]) : [];
+        if (pedInco.length > 0 && !draft.incoterms.some((it) => pedInco.includes(it))) continue;
+      }
+      if (draft.calibres && draft.calibres.length > 0) {
+        const pedCals = Array.isArray(p.calibresSolicitados)
+          ? ((p.calibresSolicitados as unknown) as Array<{ calibre?: string }>).map((c) => String(c.calibre ?? ''))
+          : [];
+        if (!draft.calibres.some((c) => pedCals.includes(c.calibre))) continue;
+      }
+      counterparties.add(p.compradorId);
+    }
+    return { count: counterparties.size };
+  }
+
+  /**
    * El vendedor acepta contribuir a un pedido con calibres específicos.
    */
   async contributeToOrder(

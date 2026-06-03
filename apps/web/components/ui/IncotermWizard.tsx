@@ -2,23 +2,27 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { useT } from '@/lib/i18n/LocaleProvider';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 import type { MessageKey } from '@/lib/i18n/messages';
+import { getIncotermInfo, type Incoterm } from '@primaria/shared';
 
 interface IncotermWizardProps {
   onComplete: () => void;
 }
 
-const INCOTERMS = [
-  { code: 'EXW', name: 'Ex Works', scope: 'nacional', desc: 'El comprador recoge en tu explotación y gestiona todo el transporte. Mínima responsabilidad para el vendedor.' },
-  { code: 'FCA', name: 'Franco Transportista', scope: 'ue', desc: 'Entregas al transportista del comprador en un punto acordado (lonja, cooperativa). Muy usado en Primar-IA.' },
-  { code: 'CPT', name: 'Transporte Pagado Hasta', scope: 'ue', desc: 'Tú contratas el transporte hasta destino, pero el riesgo pasa al comprador con el primer transportista.' },
-  { code: 'CIP', name: 'Transporte y Seguro Pagados', scope: 'ue', desc: 'Como CPT pero también contratas el seguro (mínimo 110% del valor). Ideal para productos perecederos.' },
-  { code: 'DAP', name: 'Entregado en Lugar', scope: 'intl', desc: 'Entregas en el destino del comprador. Él solo descarga y gestiona su importación. Muy habitual en exportación.' },
-  { code: 'DPU', name: 'Entregado y Descargado', scope: 'intl', desc: 'Como DAP pero también te encargas de la descarga. Máximo control del proceso de entrega.' },
-  { code: 'DDP', name: 'Entregado con Derechos Pagados', scope: 'intl', desc: 'Máxima responsabilidad: pagas todo incluido aduanas de importación. Solo recomendado con experiencia exportadora.' },
-  { code: 'FOB', name: 'Franco a Bordo', scope: 'mar', desc: 'Solo transporte marítimo. Entregas a bordo del buque en el puerto de origen.' },
-  { code: 'CIF', name: 'Coste, Seguro y Flete', scope: 'mar', desc: 'Solo marítimo. Pagas el flete y seguro hasta destino, pero el riesgo pasa al embarcar.' },
+// Phase 16 — los descs ahora vienen del paquete shared (getIncotermInfo)
+// localizados ES/EN. Aquí solo conservamos qué incoterms muestra el
+// wizard y su scope (para la lógica de recomendación).
+const WIZARD_INCOTERMS: Array<{ code: Incoterm; scope: string }> = [
+  { code: 'EXW', scope: 'nacional' },
+  { code: 'FCA', scope: 'ue' },
+  { code: 'CPT', scope: 'ue' },
+  { code: 'CIP', scope: 'ue' },
+  { code: 'DAP', scope: 'intl' },
+  { code: 'DPU', scope: 'intl' },
+  { code: 'DDP', scope: 'intl' },
+  { code: 'FOB', scope: 'mar' },
+  { code: 'CIF', scope: 'mar' },
 ];
 
 type QuestionDef = {
@@ -97,6 +101,7 @@ function getRecommendation(answers: Answers): string {
 
 export function IncotermWizard({ onComplete }: IncotermWizardProps) {
   const t = useT();
+  const { locale } = useLocale();
   // step 0 = welcome, steps 1-5 = questions, step 6 = results
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
@@ -254,17 +259,17 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
 
             {/* Recommended incoterm card */}
             {(() => {
-              const rec = INCOTERMS.find((i) => i.code === recommended)!;
+              const recInfo = getIncotermInfo(recommended as Incoterm, locale);
               return (
                 <div className="rounded-card border-2 border-primary bg-primary/5 p-5 space-y-1.5">
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 rounded bg-primary text-foreground text-xs font-bold tracking-wide">
-                      {rec.code}
+                      {recommended}
                     </span>
-                    <span className="font-semibold text-text-primary">{rec.name}</span>
+                    <span className="font-semibold text-text-primary">{recInfo.name}</span>
                     <span className="ml-auto text-xs text-primary-dark-dark font-medium">{t('incotermWizard.recommended')}</span>
                   </div>
-                  <p className="text-sm text-text-secondary leading-relaxed">{rec.desc}</p>
+                  <p className="text-sm text-text-secondary leading-relaxed">{recInfo.desc}</p>
                 </div>
               );
             })()}
@@ -275,14 +280,15 @@ export function IncotermWizard({ onComplete }: IncotermWizardProps) {
                 {t('incotermWizard.results.selectOthers')}
               </p>
               <div className="flex flex-wrap gap-2">
-                {INCOTERMS.map((inc) => {
+                {WIZARD_INCOTERMS.map((inc) => {
                   const isSelected = selected.has(inc.code);
                   const isRec = inc.code === recommended;
+                  const info = getIncotermInfo(inc.code, locale);
                   return (
                     <button
                       key={inc.code}
                       type="button"
-                      title={inc.name}
+                      title={info.name}
                       onClick={() => toggleIncoterm(inc.code)}
                       className={[
                         'px-3 py-1.5 rounded-badge text-sm font-medium border transition-all duration-150',

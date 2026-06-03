@@ -21,7 +21,7 @@ import {
   ALL_TERMINOS_PAGO,
   LOGISTICA_LABELS,
   TERMINO_PAGO_LABELS,
-  INCOTERM_INFO,
+  getIncotermInfo,
   incotermsForLogistica,
   logisticaFromIncoterm,
   isIncotermAllowedForLogistica,
@@ -225,7 +225,7 @@ export function NegotiationOfferModal({
   }
 
   const incotermTooltip = (code: string) => {
-    const info = INCOTERM_INFO[code as IncotermType];
+    const info = getIncotermInfo(code as IncotermType, locale);
     return info ? `${info.name} — ${info.desc} (${info.responsable})` : code;
   };
 
@@ -294,9 +294,9 @@ export function NegotiationOfferModal({
                 ))}
               </select>
             </div>
-            {incoterm && INCOTERM_INFO[incoterm as IncotermType] && (
+            {incoterm && getIncotermInfo(incoterm as IncotermType, locale) && (
               <p className="text-[11px] text-muted-foreground mt-1">
-                💡 <strong>{INCOTERM_INFO[incoterm as IncotermType].name}</strong> — {INCOTERM_INFO[incoterm as IncotermType].desc}
+                💡 <strong>{getIncotermInfo(incoterm as IncotermType, locale).name}</strong> — {getIncotermInfo(incoterm as IncotermType, locale).desc}
               </p>
             )}
           </div>

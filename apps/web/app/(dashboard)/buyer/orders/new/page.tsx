@@ -7,11 +7,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Trash2, Truck, Wallet, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Button, Input, Select } from '@/components/ui';
+import { Button, Input, Select, StepProgress } from '@/components/ui';
 import { ExistingEntityBanner } from '@/components/ui/ExistingEntityBanner';
 import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
+import { PotentialCounterpartiesBanner } from '@/components/ui/PotentialCounterpartiesBanner';
 import { useTutorialStore } from '@/store/tutorial.store';
-import { useT } from '@/lib/i18n/LocaleProvider';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 import {
   ALL_INCOTERMS,
   ALL_TERMINOS_PAGO,
@@ -19,14 +20,18 @@ import {
   TERMINO_PAGO_LABELS,
   incotermsForLogistica,
   logisticaFromIncoterm,
-  INCOTERM_INFO,
-  INCOTERM_DESCRIPTIONS,
+  getIncotermInfo,
   type Incoterm as IncotermType,
   type LogisticaPreferencia,
   type TerminoPago as TerminoPagoType,
 } from '@primaria/shared';
 
 const OTHER_VALUE = '__other__';
+// Phase 16 — explícita "cualquier variedad" para compradores. El backend
+// ya admite variedadId=null como wildcard (matching.service.ts:535-540),
+// así que mandar undefined / null al backend hace match con cualquier
+// variedad del mismo producto.
+const ANY_VALUE = '__any__';
 
 // Phase 14M v3.36 — calibre.min(1) hacía que noCalibre fallase la
 // validación cliente (cuando el checkbox "Sin calibrar" está marcado el
@@ -95,10 +100,14 @@ type Product = { id: string; nombre: string; variedades: { id: string; nombre: s
 export default function CreateOrderPage() {
   const router = useRouter();
   const t = useT();
+  const { locale } = useLocale();
   const [products, setProducts] = useState<Product[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [customVariety, setCustomVariety] = useState('');
+  // Phase 16 — 3-step wizard (mismo patrón que seller/lots/new).
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const inTutorialMode = useTutorialStore((s) => s.flow !== null);
 
   const {
     register,
@@ -106,6 +115,7 @@ export default function CreateOrderPage() {
     control,
     watch,
     setValue,
+    trigger,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -260,6 +270,31 @@ export default function CreateOrderPage() {
   const varieties = selectedProduct?.variedades ?? [];
   const calibreOptions = selectedProduct?.calibresDisponibles ?? [];
 
+  // Phase 16 — handlers de paso del wizard (3-step).
+  const handleNextStep = async () => {
+    let ok = true;
+    if (currentStep === 1) {
+      ok = await trigger(['productoId', 'calibresSolicitados'] as never);
+    } else if (currentStep === 2) {
+      ok = await trigger([
+        'destinoFinal',
+        'fechaEntregaDeseada',
+        'incoterm',
+        'incotermsAceptados',
+      ] as never);
+    }
+    if (!ok) return;
+    setCurrentStep((s) => Math.min(3, s + 1) as 1 | 2 | 3);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const handlePrevStep = () => {
+    setCurrentStep((s) => Math.max(1, s - 1) as 1 | 2 | 3);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const showStep1 = inTutorialMode || currentStep === 1;
+  const showStep2 = inTutorialMode || currentStep === 2;
+  const showStep3 = inTutorialMode || currentStep === 3;
+
   const onSubmit = async (values: FormValues, publish: boolean) => {
     // Phase 15 — fix bug del tutorial: si el usuario está en modo prueba
     // y pulsa "Publicar pedido" en vez del botón Continuar, antes el
@@ -274,8 +309,13 @@ export default function CreateOrderPage() {
     setIsSubmitting(true);
     setError('');
     try {
+      // ANY_VALUE → undefined (backend lo guarda como null = match cualquier
+      // variedad). OTHER_VALUE → undefined + variedadCustom con texto libre.
+      // Real ID → tal cual.
       const variedadId =
-        values.variedadId === OTHER_VALUE ? undefined : values.variedadId;
+        values.variedadId === OTHER_VALUE || values.variedadId === ANY_VALUE
+          ? undefined
+          : values.variedadId;
       const variedadCustom =
         values.variedadId === OTHER_VALUE && customVariety.trim()
           ? customVariety.trim()
@@ -326,8 +366,41 @@ export default function CreateOrderPage() {
         variedadId={selectedVariedadId}
       />
 
-      <form className="grid grid-cols-1 lg:grid-cols-2 gap-6" onSubmit={(e) => e.preventDefault()}>
-        {/* Left: Commercial Details */}
+      {/* Phase 16 — contador dinámico de potenciales vendedores. */}
+      <PotentialCounterpartiesBanner
+        kind="pedido"
+        draft={{
+          productoId: selectedProductId,
+          variedadId:
+            selectedVariedadId && selectedVariedadId !== '__other__' && selectedVariedadId !== ANY_VALUE
+              ? selectedVariedadId
+              : null,
+          incoterms: incotermsAceptados,
+          calibres: (watch('calibresSolicitados') ?? [])
+            .filter((c) => c?.calibre)
+            .map((c) => ({ calibre: c.calibre as string })),
+        }}
+      />
+
+      {/* Phase 16 — Step progress (hidden during tutorial mode). */}
+      {!inTutorialMode && (
+        <StepProgress
+          currentStep={currentStep}
+          totalSteps={3}
+          stepLabels={[t('orderForm.step1.title'), t('orderForm.step2.title'), t('orderForm.step3.title')]}
+          stepOfLabel={`${t('auth.register.stepOf').replace('{n}', String(currentStep))}`}
+        />
+      )}
+
+      {/* Phase 16 — En 3-step mode usamos layout vertical para que cada
+          step tenga toda la página. En tutorial mode mantenemos el grid
+          de 2 columnas (legacy single-page). */}
+      <form
+        className={inTutorialMode ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-6'}
+        onSubmit={(e) => e.preventDefault()}
+      >
+        {/* Step 1 — Commercial Details (producto + calibres) */}
+        {showStep1 && (
         <section className="space-y-5">
           <div data-tutorial="form-producto" className="bg-card rounded-card border border-border p-5 space-y-4">
             <h2 className="font-semibold text-text-primary">{t('orderForm.commercialDetails')}</h2>
@@ -347,6 +420,7 @@ export default function CreateOrderPage() {
               <div className="flex flex-col gap-1">
                 <Select label={t('orderForm.variety')} {...register('variedadId')}>
                   <option value="">{t('orderForm.variety.placeholder')}</option>
+                  <option value={ANY_VALUE}>{t('orderForm.variety.any')}</option>
                   {varieties.map((v) => (
                     <option key={v.id} value={v.id}>{v.nombre}</option>
                   ))}
@@ -493,8 +567,10 @@ export default function CreateOrderPage() {
             </div>
           </div>
         </section>
+        )}
 
-        {/* Right: Logistics & Terms */}
+        {/* Step 2 — Logistics (sin payment terms — esos van a step 3) */}
+        {showStep2 && (
         <section className="space-y-5">
           <div data-tutorial="form-logistica" className="bg-card rounded-card border border-border p-5 space-y-4">
             <h2 className="font-semibold text-text-primary">{t('orderForm.logisticsTitle')}</h2>
@@ -520,9 +596,9 @@ export default function CreateOrderPage() {
               >
                 {availableIncoterms.map((t) => <option key={t} value={t}>{t}</option>)}
               </Select>
-              {watchedIncoterm && INCOTERM_DESCRIPTIONS[watchedIncoterm as IncotermType] && (
+              {watchedIncoterm && (
                 <p className="text-xs text-muted-foreground mt-1 px-1">
-                  💡 {INCOTERM_DESCRIPTIONS[watchedIncoterm as IncotermType]}
+                  💡 {getIncotermInfo(watchedIncoterm as IncotermType, locale).desc}
                 </p>
               )}
             </div>
@@ -534,7 +610,7 @@ export default function CreateOrderPage() {
               <div className="flex flex-wrap gap-2">
                 {availableIncoterms.map((it) => {
                   const active = incotermsAceptados.includes(it);
-                  const info = INCOTERM_INFO[it as IncotermType];
+                  const info = getIncotermInfo(it as IncotermType, locale);
                   const tooltip = info ? `${info.name} — ${info.desc} (${info.responsable})` : it;
                   return (
                     <button
@@ -560,9 +636,9 @@ export default function CreateOrderPage() {
               {incotermsAceptados.length > 0 && (
                 <div className="mt-3 space-y-1.5">
                   {incotermsAceptados
-                    .filter((it) => INCOTERM_INFO[it as IncotermType])
+                    .filter((it) => getIncotermInfo(it as IncotermType, locale))
                     .map((it) => {
-                      const info = INCOTERM_INFO[it as IncotermType];
+                      const info = getIncotermInfo(it as IncotermType, locale);
                       return (
                         <div key={it} className="text-[11px] text-text-secondary bg-muted/40 border border-border rounded-md px-2 py-1.5">
                           <span className="font-semibold text-text-primary">{it} — {info.name}.</span>{' '}
@@ -585,7 +661,14 @@ export default function CreateOrderPage() {
                 </span>
               </p>
             </div>
+          </div>
+        </section>
+        )}
 
+        {/* Step 3 — Payment terms + extras + publish (Phase 16) */}
+        {showStep3 && (
+        <section className="space-y-5">
+          <div className="bg-card rounded-card border border-border p-5 space-y-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-text-secondary" />
@@ -657,32 +740,48 @@ export default function CreateOrderPage() {
             </div>
           </div>
         </section>
+        )}
 
-        {/* Submit row — full width */}
-        <div className="lg:col-span-2 space-y-3">
+        {/* Phase 16 — controles step-aware. */}
+        <div className={inTutorialMode ? 'lg:col-span-2 space-y-3' : 'space-y-3'}>
           {error && (
             <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-input px-4 py-2">
               {error}
             </p>
           )}
-          <div className="flex gap-3 justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => router.back()}
-            >
-              {t('orderForm.cancel')}
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              disabled={isSubmitting}
-              onClick={handleSubmit((v) => onSubmit(v, true))}
-              data-tutorial="btn-publicar-pedido"
-            >
-              {isSubmitting ? t('orderForm.publishing') : t('orderForm.publish')}
-            </Button>
+          <div className="flex gap-3 justify-between items-center">
+            {!inTutorialMode && currentStep > 1 ? (
+              <Button type="button" variant="outline" onClick={handlePrevStep} disabled={isSubmitting}>
+                {t('orderForm.prevStep')}
+              </Button>
+            ) : <span />}
+            <div className="flex gap-3 ml-auto">
+              {!inTutorialMode && currentStep < 3 ? (
+                <Button type="button" variant="primary" onClick={handleNextStep}>
+                  {t('orderForm.nextStep')}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isSubmitting}
+                    onClick={() => router.back()}
+                  >
+                    {t('orderForm.cancel')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    disabled={isSubmitting}
+                    onClick={handleSubmit((v) => onSubmit(v, true))}
+                    data-tutorial="btn-publicar-pedido"
+                  >
+                    {isSubmitting ? t('orderForm.publishing') : t('orderForm.publish')}
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </form>

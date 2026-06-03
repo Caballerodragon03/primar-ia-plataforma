@@ -21,10 +21,12 @@ import {
   ChevronDown,
   ChevronUp,
   Minus,
+  Star,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 import type { MessageKey } from '@/lib/i18n/messages';
+import { useFavoriteProducts } from '@/lib/hooks/useFavoriteProducts';
 
 const PRIMARY = '#E1C44D';
 const SECONDARY = '#0B2E33';
@@ -101,6 +103,7 @@ export function MarketDashboard() {
   const t = useT();
   const { locale } = useLocale();
   const numLoc = locale === 'en' ? 'en-GB' : 'es-ES';
+  const { isFavorite } = useFavoriteProducts();
   const [prices, setPrices] = useState<PriceRow[]>([]);
   const [days, setDays] = useState<number>(90);
   const [report, setReport] = useState<Report | null>(null);
@@ -250,18 +253,28 @@ export function MarketDashboard() {
               <span />
             </div>
 
-            {prices.map((p) => {
-              const expanded = expandedId === p.productoId;
-              return (
-                <ProductRow
-                  key={p.productoId}
-                  row={p}
-                  expanded={expanded}
-                  windowDays={days}
-                  onToggle={() => setExpandedId(expanded ? null : p.productoId)}
-                />
-              );
-            })}
+            {(() => {
+              // Phase 16 — favoritos primero (con ⭐) cuando hay datos para
+              // ellos. El orden interno de cada grupo se mantiene como
+              // viene del backend (ya viene priorizado por matches/score).
+              const favRows = prices.filter((p) => isFavorite(p.producto));
+              const restRows = prices.filter((p) => !isFavorite(p.producto));
+              const ordered = [...favRows, ...restRows];
+              return ordered.map((p) => {
+                const expanded = expandedId === p.productoId;
+                const fav = isFavorite(p.producto);
+                return (
+                  <ProductRow
+                    key={p.productoId}
+                    row={p}
+                    expanded={expanded}
+                    windowDays={days}
+                    isFav={fav}
+                    onToggle={() => setExpandedId(expanded ? null : p.productoId)}
+                  />
+                );
+              });
+            })()}
           </div>
         )}
       </section>
@@ -276,11 +289,13 @@ function ProductRow({
   expanded,
   windowDays,
   onToggle,
+  isFav,
 }: {
   row: PriceRow;
   expanded: boolean;
   windowDays: number;
   onToggle: () => void;
+  isFav?: boolean;
 }) {
   const t = useT();
   const { locale } = useLocale();
@@ -307,7 +322,15 @@ function ProductRow({
         onClick={onToggle}
         className="w-full grid grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_auto] gap-3 px-3 py-3 text-sm text-left items-center"
       >
-        <div className="font-medium text-foreground col-span-2 md:col-span-1">{row.producto}</div>
+        <div className="font-medium text-foreground col-span-2 md:col-span-1 flex items-center gap-1.5">
+          {isFav && (
+            <Star
+              className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0"
+              aria-label={t('market.favorites.starLabel')}
+            />
+          )}
+          <span>{row.producto}</span>
+        </div>
         <div className="text-right font-semibold text-foreground">{row.avgPrice.toLocaleString(numLoc, { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg</div>
         <div className={`text-right font-medium ${deltaColor} flex items-center justify-end gap-1`}>
           <DeltaIcon className="w-3.5 h-3.5" />

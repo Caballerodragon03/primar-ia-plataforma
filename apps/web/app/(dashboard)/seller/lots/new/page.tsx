@@ -7,11 +7,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Trash2, MapPin, Truck, Wallet, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Button, Input, Select, FileDropzone, IncotermWizard } from '@/components/ui';
+import { Button, Input, Select, FileDropzone, IncotermWizard, StepProgress } from '@/components/ui';
+import { PotentialCounterpartiesBanner } from '@/components/ui/PotentialCounterpartiesBanner';
 import { ExistingEntityBanner } from '@/components/ui/ExistingEntityBanner';
 import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
 import { useTutorialStore } from '@/store/tutorial.store';
-import { useT } from '@/lib/i18n/LocaleProvider';
+import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 import {
   ALL_INCOTERMS,
   ALL_TERMINOS_PAGO,
@@ -19,7 +20,7 @@ import {
   TERMINO_PAGO_LABELS,
   incotermsForLogistica,
   logisticaFromIncoterm,
-  INCOTERM_INFO,
+  getIncotermInfo,
   type Incoterm as IncotermType,
   type LogisticaPreferencia,
   type TerminoPago as TerminoPagoType,
@@ -78,12 +79,19 @@ type Certificate = { id: string; tipo: string; estado: string; fechaExpiracion: 
 export default function PublishLotPage() {
   const router = useRouter();
   const t = useT();
+  const { locale } = useLocale();
   const [products, setProducts] = useState<Product[]>([]);
   const [approvedCerts, setApprovedCerts] = useState<Certificate[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [customVariety, setCustomVariety] = useState('');
   const [showWizard, setShowWizard] = useState(false);
+  // Phase 16 — 3-step wizard. En modo tutorial renderizamos TODO de
+  // golpe para que los spotlights del tour sigan funcionando contra los
+  // mismos `data-tutorial` selectors. Fuera de tutorial mostramos sólo
+  // un step por vez con validación per-step.
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const inTutorialMode = useTutorialStore((s) => s.flow !== null);
   // Incoterm recommendation from wizard / profile (e.g. 'FCA'). When present,
   // we auto-select that single incoterm + its derived logística on mount so
   // the seller's published lot reflects their stated preference; they can
@@ -153,6 +161,7 @@ export default function PublishLotPage() {
     control,
     watch,
     setValue,
+    trigger,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -362,6 +371,40 @@ export default function PublishLotPage() {
     }
   };
 
+  // Phase 16 — handlers de paso. Validamos solo los campos del step
+  // actual con trigger(); si fallan no avanzamos.
+  const handleNextStep = async () => {
+    let ok = true;
+    if (currentStep === 1) {
+      // Producto + calibres (calibre.cantidad_kg) + (opcional) variedad
+      // Excluimos variedadId del trigger porque vacío significa "sin
+      // variedad específica" y es válido.
+      ok = await trigger(['productoId', 'calibres'] as never);
+    } else if (currentStep === 2) {
+      ok = await trigger([
+        'direccionRecogida',
+        'fechaDisponibilidad',
+        'fechaFinDisponibilidad',
+        'incotermsAceptados',
+      ] as never);
+    }
+    if (!ok) return;
+    setCurrentStep((s) => Math.min(3, (s + 1)) as 1 | 2 | 3);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep((s) => Math.max(1, s - 1) as 1 | 2 | 3);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Visibilidad de cada section. En tutorial mode rendereamos todo
+  // (legacy single-page) para que los spotlights del tour funcionen sin
+  // tener que sincronizar el tutorial con el step state.
+  const showStep1 = inTutorialMode || currentStep === 1;
+  const showStep2 = inTutorialMode || currentStep === 2;
+  const showStep3 = inTutorialMode || currentStep === 3;
+
   const onSubmit = async (values: FormValues, publish: boolean) => {
     // Phase 15 — fix bug del tutorial: si el usuario está en modo prueba
     // y pulsa "Publicar lote" en el paso btn-publicar, antes el POST se
@@ -441,8 +484,31 @@ export default function PublishLotPage() {
         variedadId={selectedVariedadId}
       />
 
+      {/* Phase 16 — contador dinámico de potenciales compradores. */}
+      <PotentialCounterpartiesBanner
+        kind="lote"
+        draft={{
+          productoId: selectedProductId,
+          variedadId: selectedVariedadId && selectedVariedadId !== OTHER_VALUE ? selectedVariedadId : null,
+          incoterms: incotermsAceptados,
+          calibres: watch('calibres')?.filter((c) => c?.calibre).map((c) => ({ calibre: c.calibre })),
+        }}
+      />
+
+      {/* Phase 16 — barra de progreso de los 3 steps. Se oculta en
+          tutorial mode (legacy single-page). */}
+      {!inTutorialMode && (
+        <StepProgress
+          currentStep={currentStep}
+          totalSteps={3}
+          stepLabels={[t('lotForm.step1.title'), t('lotForm.step2.title'), t('lotForm.step3.title')]}
+          stepOfLabel={`${t('auth.register.stepOf').replace('{n}', String(currentStep))}`}
+        />
+      )}
+
       <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-        {/* Product Details */}
+        {/* Step 1 — Product Details */}
+        {showStep1 && (
         <section data-tutorial="form-producto" className="bg-card rounded-card border border-border p-5 space-y-4">
           <h2 className="font-semibold text-text-primary">{t('lotForm.productDetails')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -547,8 +613,10 @@ export default function PublishLotPage() {
             )}
           </div>
         </section>
+        )}
 
-        {/* Logistics */}
+        {/* Step 2 — Logistics. Phase 16: terminos de pago moved to step 3 */}
+        {showStep2 && (
         <section data-tutorial="form-logistica" className="bg-card rounded-card border border-border p-5 space-y-4">
           <h2 className="font-semibold text-text-primary">{t('lotForm.logisticsTitle')}</h2>
           <div className="relative">
@@ -618,7 +686,7 @@ export default function PublishLotPage() {
                 {availableIncoterms.map((it) => {
                   const active = incotermsAceptados.includes(it);
                   const isRec = it === recommendedIncoterm;
-                  const info = INCOTERM_INFO[it];
+                  const info = getIncotermInfo(it, locale);
                   // Native title attribute → free tooltip on hover.
                   const tooltip = info ? `${info.name} — ${info.desc} (${info.responsable})` : it;
                   return (
@@ -647,9 +715,9 @@ export default function PublishLotPage() {
               {incotermsAceptados.length > 0 && (
                 <div className="mt-3 space-y-1.5">
                   {incotermsAceptados
-                    .filter((it) => INCOTERM_INFO[it as IncotermType])
+                    .filter((it) => getIncotermInfo(it as IncotermType, locale))
                     .map((it) => {
-                      const info = INCOTERM_INFO[it as IncotermType];
+                      const info = getIncotermInfo(it as IncotermType, locale);
                       return (
                         <div key={it} className="text-[11px] text-text-secondary bg-muted/40 border border-border rounded-md px-2 py-1.5">
                           <span className="font-semibold text-text-primary">{it} — {info.name}.</span>{' '}
@@ -673,9 +741,14 @@ export default function PublishLotPage() {
               </p>
             </div>
           </div>
+        </section>
+        )}
 
+        {/* Step 3 — Payment terms + extras + publish (Phase 16) */}
+        {showStep3 && (
+        <section className="bg-card rounded-card border border-border p-5 space-y-4">
           {/* Términos de pago */}
-          <div className="pt-4 border-t border-border space-y-3">
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Wallet className="w-4 h-4 text-text-secondary" />
               <h3 className="text-sm font-semibold text-text-primary">{t('lotForm.paymentTermsTitle')}</h3>
@@ -709,11 +782,10 @@ export default function PublishLotPage() {
               </p>
             )}
           </div>
-        </section>
 
-        {/* Supporting Info */}
-        <section className="bg-card rounded-card border border-border p-5 space-y-4">
-          <h2 className="font-semibold text-text-primary">{t('lotForm.extraInfoTitle')}</h2>
+          {/* Supporting info (certificados + fotos + comentarios) */}
+          <div className="pt-4 border-t border-border space-y-4">
+            <h2 className="font-semibold text-text-primary">{t('lotForm.extraInfoTitle')}</h2>
 
           <div>
             <p className="text-sm font-medium text-text-secondary mb-2">{t('lotForm.certificates')}</p>
@@ -804,7 +876,9 @@ export default function PublishLotPage() {
               placeholder={t('lotForm.extraComments.placeholder')}
             />
           </div>
+          </div>
         </section>
+        )}
 
         {error && (
           <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-input px-4 py-2">
@@ -812,24 +886,42 @@ export default function PublishLotPage() {
           </p>
         )}
 
-        <div className="flex gap-3 justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isSubmitting}
-            onClick={handleSubmit((v) => onSubmit(v, false))}
-          >
-            {t('lotForm.saveDraft')}
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            disabled={isSubmitting}
-            onClick={handleSubmit((v) => onSubmit(v, true))}
-            data-tutorial="btn-publicar-lote"
-          >
-            {isSubmitting ? t('lotForm.publishing') : t('lotForm.publish')}
-          </Button>
+        {/* Phase 16 — controles step-aware. En tutorial mode mostramos los
+            botones clásicos (Save draft + Publish) para no romper el tour
+            (que apunta a data-tutorial="btn-publicar-lote"). */}
+        <div className="flex gap-3 justify-between items-center flex-wrap">
+          {!inTutorialMode && currentStep > 1 ? (
+            <Button type="button" variant="outline" onClick={handlePrevStep} disabled={isSubmitting}>
+              {t('lotForm.prevStep')}
+            </Button>
+          ) : <span />}
+          <div className="flex gap-3 ml-auto flex-wrap">
+            {/* Save draft disponible en TODOS los pasos para no perder
+                progreso si el vendedor cierra la pestaña. */}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={handleSubmit((v) => onSubmit(v, false))}
+            >
+              {t('lotForm.saveDraft')}
+            </Button>
+            {!inTutorialMode && currentStep < 3 ? (
+              <Button type="button" variant="primary" onClick={handleNextStep}>
+                {t('lotForm.nextStep')}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="primary"
+                disabled={isSubmitting}
+                onClick={handleSubmit((v) => onSubmit(v, true))}
+                data-tutorial="btn-publicar-lote"
+              >
+                {isSubmitting ? t('lotForm.publishing') : t('lotForm.publish')}
+              </Button>
+            )}
+          </div>
         </div>
       </form>
     </div>

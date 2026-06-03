@@ -54,9 +54,14 @@ export function ExistingEntityBanner({ kind, productoId, variedadId }: Props) {
           ? '/lots/existing-by-product'
           : '/orders/existing-by-product';
         const params: Record<string, string> = { productoId };
-        // Solo pasamos variedadId si es un id real (no el sentinel
-        // __other__ que usan los forms para "Otra variedad").
-        if (variedadId && variedadId !== '__other__' && variedadId !== '') {
+        // Solo pasamos variedadId si es un id real (no los sentinels
+        // __other__ / __any__ que usan los forms).
+        if (
+          variedadId &&
+          variedadId !== '__other__' &&
+          variedadId !== '__any__' &&
+          variedadId !== ''
+        ) {
           params['variedadId'] = variedadId;
         }
         const { data } = await api.get(endpoint, { params });

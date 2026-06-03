@@ -155,6 +155,90 @@ export const INCOTERM_DESCRIPTIONS: Record<Incoterm, string> = Object.fromEntrie
 ) as Record<Incoterm, string>;
 
 /**
+ * Phase 16 — English version of INCOTERM_INFO. Same keys, same structure.
+ * `getIncotermInfo(code, locale)` below picks the right one. Kept as a
+ * sibling object (not a function) so callers can also import directly.
+ */
+export const INCOTERM_INFO_EN: Record<Incoterm, { name: string; desc: string; responsable: string }> = {
+  EXW: {
+    name: 'Ex Works',
+    desc: "The buyer picks up at the seller's premises and handles all transport and paperwork.",
+    responsable: 'Buyer: full transport, insurance, customs.',
+  },
+  FCA: {
+    name: 'Free Carrier',
+    desc: "The seller delivers to the carrier nominated by the buyer at an agreed point (market, cooperative, warehouse).",
+    responsable: 'Buyer: main transport and insurance after handover to the carrier.',
+  },
+  FAS: {
+    name: 'Free Alongside Ship',
+    desc: 'Sea-freight only. The seller delivers the goods alongside the ship at the port of origin.',
+    responsable: 'Buyer: loading, sea freight and insurance.',
+  },
+  FOB: {
+    name: 'Free On Board',
+    desc: 'Sea-freight only. The seller delivers the goods loaded on board the ship at the port of origin.',
+    responsable: 'Buyer: sea freight and insurance from the moment of loading.',
+  },
+  CFR: {
+    name: 'Cost and Freight',
+    desc: 'Sea-freight only. The seller pays the freight to the destination port, but risk passes to the buyer at loading.',
+    responsable: 'Seller: freight. Buyer: insurance and unloading.',
+  },
+  CIF: {
+    name: 'Cost, Insurance and Freight',
+    desc: 'Sea-freight only. The seller pays freight and insurance to the destination port; risk passes at loading.',
+    responsable: 'Seller: freight + minimum insurance. Buyer: unloading and import clearance.',
+  },
+  CPT: {
+    name: 'Carriage Paid To',
+    desc: 'The seller contracts and pays for carriage to the destination, but risk passes to the buyer at the first carrier.',
+    responsable: 'Seller: carriage. Buyer: insurance and in-transit risk.',
+  },
+  CIP: {
+    name: 'Carriage and Insurance Paid To',
+    desc: 'Like CPT but the seller also contracts insurance (min. 110% of value). Ideal for perishables.',
+    responsable: 'Seller: carriage + full insurance. Buyer: unloading and import.',
+  },
+  DAP: {
+    name: 'Delivered At Place',
+    desc: 'The seller delivers the goods at the agreed destination point, ready for unloading.',
+    responsable: 'Seller: full transport to destination. Buyer: unloading and import customs.',
+  },
+  DPU: {
+    name: 'Delivered at Place Unloaded',
+    desc: 'Like DAP but the seller also performs unloading at the destination.',
+    responsable: 'Seller: transport + unloading. Buyer: import customs.',
+  },
+  DDP: {
+    name: 'Delivered Duty Paid',
+    desc: 'The seller bears all costs and paperwork, including import customs. Maximum responsibility for the seller.',
+    responsable: 'Seller: everything (transport, insurance, customs at origin and destination).',
+  },
+  DAT: {
+    name: 'Delivered at Terminal',
+    desc: 'The seller delivers and unloads the goods at the agreed transport terminal at destination.',
+    responsable: 'Seller: until unloading at terminal. Buyer: downstream paperwork.',
+  },
+};
+
+/**
+ * Phase 16 — Locale-aware helper. `locale` is a 2-letter language code; we
+ * only differentiate 'en' vs everything else (Spanish default).
+ */
+export function getIncotermInfo(
+  code: Incoterm,
+  locale: string = 'es',
+): { name: string; desc: string; responsable: string } {
+  const lc = (locale ?? 'es').toLowerCase().slice(0, 2);
+  return lc === 'en' ? INCOTERM_INFO_EN[code] : INCOTERM_INFO[code];
+}
+
+export const INCOTERM_DESCRIPTIONS_EN: Record<Incoterm, string> = Object.fromEntries(
+  (Object.keys(INCOTERM_INFO_EN) as Incoterm[]).map((k) => [k, INCOTERM_INFO_EN[k].desc]),
+) as Record<Incoterm, string>;
+
+/**
  * Validates a lot/order's logística + incotermsAceptados combination at
  * submit time, returning an array of human-readable error messages (empty
  * if OK). Used by both Lote and Pedido validation so the same rules apply.

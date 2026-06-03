@@ -65,6 +65,24 @@ export async function getSellerHiddenMatches(req: Request, res: Response): Promi
 }
 
 /**
+ * POST /api/v1/matching/preview-potential-counterparties
+ * Phase 16 — preview: ¿cuántos potenciales counterparties match el draft
+ * del lote/pedido que el usuario está rellenando? Live-count en el form.
+ */
+export async function previewPotentialCounterparties(req: Request, res: Response): Promise<void> {
+  const { role } = req.user!;
+  const side: 'BUYER' | 'SELLER' = role === 'COMPRADOR' ? 'BUYER' : 'SELLER';
+  const body = (req.body ?? {}) as {
+    productoId?: string;
+    variedadId?: string | null;
+    incoterms?: string[];
+    calibres?: Array<{ calibre: string }>;
+  };
+  const result = await matchingService.previewPotentialCounterparties(side, body);
+  res.json({ success: true, data: result });
+}
+
+/**
  * GET /api/v1/matching/lots/:loteId/matches
  * List matches for a specific lot (VENDEDOR must own it).
  * Query param: ?sortBy=precio — sort by precioKg asc instead of score desc.
