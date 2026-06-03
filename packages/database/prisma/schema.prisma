@@ -714,6 +714,16 @@ model Suscripcion {
   fechaFin             DateTime?         @map("fecha_fin")
   trialEndsAt          DateTime?         @map("trial_ends_at")
   cancelledAt          DateTime?         @map("cancelled_at")
+  // Phase 17 — downgrade diferido. Cuando un usuario pide cambiar a un
+  // plan más barato (o al gratuito), guardamos el plan destino aquí y
+  // la fecha en la que aplicará (current_period_end de Stripe). El
+  // webhook customer.subscription.updated/deleted limpia estos campos
+  // al ejecutar el cambio real.
+  pendingPlanChange    String?           @map("pending_plan_change")
+  pendingChangeEffectiveAt DateTime?     @map("pending_change_effective_at")
+  // ID del Stripe Subscription Schedule usado para diferir downgrades
+  // paid→paid. Se libera al webhook subscription_schedule.released.
+  stripeScheduleId     String?           @unique @map("stripe_schedule_id")
   comoCompensacion     Boolean           @default(false) @map("como_compensacion")
   compensacionMeses    Int?              @map("compensacion_meses")
   createdAt            DateTime          @default(now()) @map("created_at")

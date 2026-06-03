@@ -619,6 +619,11 @@ export type MessageKey =
   | 'subscription.success'
   | 'subscription.cancelled'
   | 'subscription.errorCheckout'
+  | 'subscription.changed.upgradedNow'
+  | 'subscription.changed.downgradeScheduled'
+  | 'subscription.changed.cancelScheduled'
+  | 'subscription.banner.downgradePending'
+  | 'subscription.banner.cancelPending'
   | 'subscription.currentPlan'
   | 'subscription.manage'
   | 'subscription.activeLots'
@@ -2166,6 +2171,11 @@ export const messages: Record<Locale, Messages> = {
     'subscription.success': '¡Tu suscripción se ha activado correctamente! Ya puedes disfrutar de los beneficios de tu nuevo plan.',
     'subscription.cancelled': 'El proceso de pago fue cancelado. Puedes intentarlo de nuevo cuando quieras.',
     'subscription.errorCheckout': 'Error al iniciar el pago',
+    'subscription.changed.upgradedNow': 'Plan actualizado a {plan} — el cambio aplica ya, te cobramos la diferencia prorrateada.',
+    'subscription.changed.downgradeScheduled': 'Tu plan bajará a {plan} el {date}. Hasta entonces mantienes tu plan actual ya pagado.',
+    'subscription.changed.cancelScheduled': 'Tu suscripción se cancelará el {date}. Hasta entonces mantienes el acceso del plan actual.',
+    'subscription.banner.downgradePending': 'Cambio pendiente: tu plan bajará a {plan} el {date}.',
+    'subscription.banner.cancelPending': 'Tu suscripción se cancelará el {date} y pasarás al plan gratuito.',
     'subscription.currentPlan': 'Plan actual:',
     'subscription.manage': 'Gestionar suscripción',
     'subscription.activeLots': 'Lotes activos',
@@ -3687,6 +3697,11 @@ export const messages: Record<Locale, Messages> = {
     'subscription.success': 'Your subscription has been activated successfully! You can now enjoy the benefits of your new plan.',
     'subscription.cancelled': 'The payment process was cancelled. You can try again whenever you want.',
     'subscription.errorCheckout': 'Failed to start payment',
+    'subscription.changed.upgradedNow': 'Plan upgraded to {plan} — the change applies now, with prorated billing.',
+    'subscription.changed.downgradeScheduled': 'Your plan will be downgraded to {plan} on {date}. Until then you keep your current paid plan.',
+    'subscription.changed.cancelScheduled': 'Your subscription will be cancelled on {date}. Until then you keep access to your current plan.',
+    'subscription.banner.downgradePending': 'Pending change: your plan will downgrade to {plan} on {date}.',
+    'subscription.banner.cancelPending': 'Your subscription will be cancelled on {date} and switch to the free plan.',
     'subscription.currentPlan': 'Current plan:',
     'subscription.manage': 'Manage subscription',
     'subscription.activeLots': 'Active lots',

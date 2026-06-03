@@ -28,6 +28,9 @@ interface SubscriptionData {
   hasActiveSubscription: boolean;
   credits: Credits | null;
   breakdownComprador: BreakdownComprador | null;
+  // Phase 17 — pending downgrade info.
+  pendingPlanChange: string | null;
+  pendingChangeEffectiveAt: string | null;
 }
 
 export default function BuyerSubscriptionPage() {
@@ -55,7 +58,7 @@ export default function BuyerSubscriptionPage() {
           }
         }
         const [currentRes, usageRes] = await Promise.all([
-          api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean } }>('/subscriptions/current'),
+          api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean; pendingPlanChange: string | null; pendingChangeEffectiveAt: string | null } }>('/subscriptions/current'),
           api.get<{ success: boolean; data: { pedidosActivos: number; maxPedidos: number; credits: Credits; breakdownComprador?: BreakdownComprador } }>('/subscriptions/usage'),
         ]);
         setData({
@@ -66,6 +69,8 @@ export default function BuyerSubscriptionPage() {
           hasActiveSubscription: currentRes.data.data.hasActiveSubscription,
           credits: usageRes.data.data.credits ?? null,
           breakdownComprador: usageRes.data.data.breakdownComprador ?? null,
+          pendingPlanChange: currentRes.data.data.pendingPlanChange,
+          pendingChangeEffectiveAt: currentRes.data.data.pendingChangeEffectiveAt,
         });
       } catch {
         setData({
@@ -76,6 +81,8 @@ export default function BuyerSubscriptionPage() {
           hasActiveSubscription: false,
           credits: null,
           breakdownComprador: null,
+          pendingPlanChange: null,
+          pendingChangeEffectiveAt: null,
         });
       } finally {
         setLoading(false);
@@ -85,12 +92,54 @@ export default function BuyerSubscriptionPage() {
   }, []);
 
   const handleSelectPlan = async (plan: string) => {
-    if (plan === 'MERCADO') return;
     setCheckoutLoading(true);
+    setError(null);
     try {
-      const res = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan });
-      if (res.data.data.url) {
-        window.location.href = res.data.data.url;
+      // Phase 17 — comportamiento:
+      //   - No active sub + free plan: noop (ya estás en MERCADO).
+      //   - No active sub + paid plan: Stripe Checkout para crear sub.
+      //   - Active sub: change-plan (upgrade inmediato / downgrade
+      //     diferido al fin de período / cancel a free al fin de período).
+      const hasSub = data?.hasActiveSubscription;
+      if (!hasSub) {
+        if (plan === 'MERCADO') return; // ya estás en free
+        const res = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan });
+        if (res.data.data.url) window.location.href = res.data.data.url;
+        return;
+      }
+      // Usuario con sub activa → endpoint change-plan.
+      const res = await api.post<{
+        success: boolean;
+        data:
+          | { kind: 'no-active-sub' }
+          | { kind: 'noop' }
+          | { kind: 'upgraded'; newPlan: string }
+          | { kind: 'downgrade-scheduled'; newPlan: string; effectiveAt: string }
+          | { kind: 'cancel-scheduled'; effectiveAt: string };
+      }>('/subscriptions/change-plan', { plan });
+      const result = res.data.data;
+      if (result.kind === 'no-active-sub') {
+        // Race: backend dice que no hay sub → caer a Checkout normal.
+        const r2 = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan });
+        if (r2.data.data.url) window.location.href = r2.data.data.url;
+      } else if (result.kind === 'upgraded') {
+        alert(t('subscription.changed.upgradedNow').replace('{plan}', result.newPlan));
+        window.location.reload();
+      } else if (result.kind === 'downgrade-scheduled') {
+        alert(
+          t('subscription.changed.downgradeScheduled')
+            .replace('{plan}', result.newPlan)
+            .replace('{date}', new Date(result.effectiveAt).toLocaleDateString()),
+        );
+        window.location.reload();
+      } else if (result.kind === 'cancel-scheduled') {
+        alert(
+          t('subscription.changed.cancelScheduled').replace(
+            '{date}',
+            new Date(result.effectiveAt).toLocaleDateString(),
+          ),
+        );
+        window.location.reload();
       }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('subscription.errorCheckout');
@@ -143,6 +192,23 @@ export default function BuyerSubscriptionPage() {
       {cancelled === 'true' && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-[8px] text-sm text-yellow-800">
           {t('subscription.cancelled')}
+        </div>
+      )}
+
+      {/* Phase 17 — banner de cambio pendiente. */}
+      {data?.pendingPlanChange && data.pendingChangeEffectiveAt && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-[8px] text-sm text-amber-900">
+          {(data.pendingPlanChange === 'MERCADO' || data.pendingPlanChange === 'COSECHA')
+            ? t('subscription.banner.cancelPending').replace(
+                '{date}',
+                new Date(data.pendingChangeEffectiveAt).toLocaleDateString(),
+              )
+            : t('subscription.banner.downgradePending')
+                .replace('{plan}', data.pendingPlanChange)
+                .replace(
+                  '{date}',
+                  new Date(data.pendingChangeEffectiveAt).toLocaleDateString(),
+                )}
         </div>
       )}
 

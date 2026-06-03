@@ -64,6 +64,58 @@ export function TutorialRunner() {
     return () => clearTimeout(t);
   }, [current, pathname]);
 
+  // Phase 17 — interceptor global de clicks: cuando el paso actual es
+  // spotlight + tiene un target real, y el usuario pulsa el elemento
+  // resaltado (botón "Publicar", "Contribuir", "Firmar", etc.), antes
+  // se ejecutaba la acción nativa (POST, abrir modal, navegación) y el
+  // tour quedaba colgado en el mismo paso. Ahora bloqueamos la acción
+  // nativa y avanzamos el paso, igual que si pulsara "Continuar".
+  //
+  // Whitelist: si el target es la sidebar (navegación de menú), NO
+  // interceptamos — el usuario debe navegar normalmente y el efecto
+  // useEffect de current.route hace el resto.
+  useEffect(() => {
+    if (!flow || !current) return;
+    if (current.kind !== 'spotlight') return;
+    if (!current.target) return;
+    // No interceptar la sidebar (el usuario debe poder navegar).
+    if (current.target.includes('sidebar')) return;
+
+    const handleClick = (e: MouseEvent) => {
+      const targetEl = e.target as HTMLElement | null;
+      if (!targetEl) return;
+      // El elemento clickeado debe estar DENTRO del spotlight target.
+      const spotlightEl = targetEl.closest(current.target as string);
+      if (!spotlightEl) return;
+      // Las burbujas de Joyride son siblings del target — si el click
+      // viene de la propia burbuja (Continuar / Atrás / Cerrar), no lo
+      // interceptamos para que Joyride pueda manejarlo.
+      if (targetEl.closest('.react-joyride__tooltip, .react-joyride__beacon, [data-test-id^="button-"]')) return;
+      // Solo interceptamos clicks sobre elementos accionables: <button>,
+      // <a> y elementos con role="button". Para spotlights sobre un
+      // <section> o <div> de formulario, los clicks en <input>/<select>/
+      // <textarea> dejan al usuario interactuar con el formulario sin
+      // saltar el tour.
+      const isActionable =
+        targetEl.closest('button, a, [role="button"]') !== null;
+      if (!isActionable) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // Misma transición que pulsar "Continuar" del tour.
+      const target = step + 1;
+      if (target >= flowSteps.length) {
+        void handleEnd();
+      } else {
+        next();
+      }
+    };
+    // Capture phase para llegar antes que cualquier handler del DOM
+    // que pueda bloquear (por ejemplo si el botón es un Link de Next).
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flow, current?.key, step, flowSteps.length]);
+
   // Persistir progreso al terminar.
   async function handleEnd() {
     if (flow) {

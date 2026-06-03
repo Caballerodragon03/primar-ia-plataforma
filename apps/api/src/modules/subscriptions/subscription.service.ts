@@ -355,6 +355,159 @@ export class SubscriptionService {
     });
   }
 
+  // ─── Plan change (Phase 17 — upgrade/downgrade with proper semantics) ──
+  //
+  // Rules:
+  //   - Upgrade (paid → higher paid): immediate, with proration.
+  //   - Downgrade (paid → lower paid): deferred to current period end via
+  //     Stripe Subscription Schedule. Local DB tracks the pending change.
+  //   - Downgrade (paid → free): cancel_at_period_end=true. User retains
+  //     access until the period they already paid for ends.
+  //   - No active sub yet → caller should use Stripe Checkout instead.
+  //
+  // Returns a discriminated object so the frontend can render the right
+  // confirmation banner.
+  async changeSubscriptionPlan(
+    userId: string,
+    newPlanRaw: string,
+  ): Promise<
+    | { kind: 'no-active-sub' }
+    | { kind: 'noop' }
+    | { kind: 'upgraded'; newPlan: string }
+    | { kind: 'downgrade-scheduled'; newPlan: string; effectiveAt: Date }
+    | { kind: 'cancel-scheduled'; effectiveAt: Date }
+  > {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true, suscripcion: true },
+    });
+    if (!user) throw new AppError('Usuario no encontrado', 404);
+
+    // Validate new plan matches role.
+    const isFreeNew = newPlanRaw === 'COSECHA' || newPlanRaw === 'MERCADO';
+    if (user.role === 'VENDEDOR') {
+      if (newPlanRaw !== 'COSECHA' && !VENDEDOR_PLANS.includes(newPlanRaw as VendedorPlan)) {
+        throw new AppError('Plan no valido para vendedores', 400);
+      }
+    } else if (user.role === 'COMPRADOR') {
+      if (newPlanRaw !== 'MERCADO' && !COMPRADOR_PLANS.includes(newPlanRaw as CompradorPlan)) {
+        throw new AppError('Plan no valido para compradores', 400);
+      }
+    }
+
+    const sub = user.suscripcion;
+    // If there's no active Stripe subscription, plan change requires
+    // going through Stripe Checkout (handled by caller).
+    if (!sub?.stripeSubscriptionId) return { kind: 'no-active-sub' };
+
+    const currentPlan = (user.role === 'VENDEDOR' ? sub.planVendedor : sub.planComprador) ?? null;
+    if (currentPlan === newPlanRaw) return { kind: 'noop' };
+
+    const currentPrice = currentPlan ? PLAN_LIMITS[currentPlan as keyof typeof PLAN_LIMITS]?.precio ?? 0 : 0;
+    const newPrice = isFreeNew ? 0 : PLAN_LIMITS[newPlanRaw as keyof typeof PLAN_LIMITS]?.precio ?? 0;
+
+    // ─── Downgrade to FREE → cancel at period end ──────────────────────
+    if (isFreeNew) {
+      const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+      const periodEnd = new Date((stripeSub.current_period_end ?? 0) * 1000);
+      await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+      await prisma.suscripcion.update({
+        where: { userId },
+        data: {
+          cancelledAt: new Date(),
+          pendingPlanChange: newPlanRaw,
+          pendingChangeEffectiveAt: periodEnd,
+        },
+      });
+      return { kind: 'cancel-scheduled', effectiveAt: periodEnd };
+    }
+
+    // ─── Upgrade (paid higher) → immediate with proration ──────────────
+    if (newPrice > currentPrice) {
+      const newPriceId = PLAN_LIMITS[newPlanRaw as keyof typeof PLAN_LIMITS].stripePriceId;
+      if (!newPriceId) throw new AppError('Precio de Stripe no configurado para este plan', 500);
+      const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+      const itemId = stripeSub.items.data[0]?.id;
+      if (!itemId) throw new AppError('Stripe subscription sin items', 500);
+      await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+        items: [{ id: itemId, price: newPriceId }],
+        proration_behavior: 'create_prorations',
+        // Si había un downgrade pendiente, lo cancelamos al hacer upgrade.
+        cancel_at_period_end: false,
+      });
+      // El webhook customer.subscription.updated sincronizará los campos
+      // locales (planVendedor/planComprador/stripePriceId). Limpiamos
+      // pending fields aquí ya por si el webhook se retrasa.
+      await prisma.suscripcion.update({
+        where: { userId },
+        data: {
+          pendingPlanChange: null,
+          pendingChangeEffectiveAt: null,
+          cancelledAt: null,
+        },
+      });
+      return { kind: 'upgraded', newPlan: newPlanRaw };
+    }
+
+    // ─── Downgrade (paid lower) → defer to period end via Schedule ─────
+    if (newPrice < currentPrice) {
+      const newPriceId = PLAN_LIMITS[newPlanRaw as keyof typeof PLAN_LIMITS].stripePriceId;
+      if (!newPriceId) throw new AppError('Precio de Stripe no configurado para este plan', 500);
+      const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+      const currentPriceId = stripeSub.items.data[0]?.price.id;
+      const periodEnd = new Date((stripeSub.current_period_end ?? 0) * 1000);
+      const periodStart = stripeSub.current_period_start ?? Math.floor(Date.now() / 1000);
+      if (!currentPriceId) throw new AppError('Stripe subscription sin price', 500);
+
+      // Si ya hay un schedule previo (downgrade pendiente que el usuario
+      // quiere modificar), lo releaseamos primero. Importante: usamos
+      // como fuente de verdad el campo `schedule` de Stripe, NO nuestra
+      // DB. Esto evita una race condition en clicks concurrentes donde
+      // ambas requests leen sub.stripeScheduleId=null y se crearía un
+      // segundo schedule (Stripe respondería 400 "already has schedule").
+      const existingScheduleId = stripeSub.schedule
+        ? (typeof stripeSub.schedule === 'string' ? stripeSub.schedule : stripeSub.schedule.id)
+        : null;
+      if (existingScheduleId) {
+        try {
+          await stripe.subscriptionSchedules.release(existingScheduleId);
+        } catch {
+          // ya estaba released o no existe — ignorable
+        }
+      }
+
+      const schedule = await stripe.subscriptionSchedules.create({
+        from_subscription: sub.stripeSubscriptionId,
+      });
+      await stripe.subscriptionSchedules.update(schedule.id, {
+        end_behavior: 'release',
+        phases: [
+          {
+            items: [{ price: currentPriceId, quantity: 1 }],
+            start_date: periodStart,
+            end_date: stripeSub.current_period_end,
+          },
+          {
+            items: [{ price: newPriceId, quantity: 1 }],
+          },
+        ],
+      });
+      await prisma.suscripcion.update({
+        where: { userId },
+        data: {
+          pendingPlanChange: newPlanRaw,
+          pendingChangeEffectiveAt: periodEnd,
+          stripeScheduleId: schedule.id,
+        },
+      });
+      return { kind: 'downgrade-scheduled', newPlan: newPlanRaw, effectiveAt: periodEnd };
+    }
+
+    return { kind: 'noop' };
+  }
+
   // ─── Match visibility unhide ─────────────────────────────────────────────
 
   /**
@@ -486,14 +639,67 @@ export class SubscriptionService {
         const wasInactive = dbSub.estado !== 'ACTIVA' && dbSub.estado !== 'TRIAL';
         const nowActive = estado === 'ACTIVA' || estado === 'TRIAL';
 
+        // Phase 17 — si el item de Stripe cambió de price (subscription
+        // schedule cumplió el downgrade, o upgrade vía change-plan), hay
+        // que sincronizar el plan local. Buscamos el plan que coincida
+        // con el priceId actual.
+        const stripePriceId = sub.items.data[0]?.price.id ?? null;
+        const user = await prisma.user.findUnique({
+          where: { id: dbSub.userId },
+          select: { role: true },
+        });
+        let derivedPlan: { planVendedor?: VendedorPlan | null; planComprador?: CompradorPlan | null } = {};
+        if (stripePriceId && user) {
+          // Buscar qué plan tiene este priceId.
+          const matchedPlan = (Object.keys(PLAN_LIMITS) as Array<keyof typeof PLAN_LIMITS>).find(
+            (k) => PLAN_LIMITS[k].stripePriceId === stripePriceId,
+          );
+          if (matchedPlan && user.role === 'VENDEDOR' && VENDEDOR_PLANS.includes(matchedPlan as VendedorPlan)) {
+            derivedPlan = { planVendedor: matchedPlan as VendedorPlan, planComprador: null };
+          } else if (matchedPlan && user.role === 'COMPRADOR' && COMPRADOR_PLANS.includes(matchedPlan as CompradorPlan)) {
+            derivedPlan = { planComprador: matchedPlan as CompradorPlan, planVendedor: null };
+          }
+        }
+
+        // Si la sub está canceled/incomplete_expired y había un
+        // pendingPlanChange a free, ya se ha aplicado: limpiamos los
+        // campos pending.
+        const clearPending = estado === 'CANCELADA';
+
         await prisma.suscripcion.update({
           where: { stripeSubscriptionId: sub.id },
           data: {
             estado,
-            cancelledAt: sub.cancel_at_period_end ? new Date() : null,
+            // Solo escribimos cancelledAt la PRIMERA vez que vemos
+            // cancel_at_period_end=true; los webhooks subsecuentes lo
+            // dejarían sobrescribiendo el timestamp original.
+            cancelledAt: sub.cancel_at_period_end
+              ? (dbSub.cancelledAt ?? new Date())
+              : null,
             fechaFin: sub.current_period_end ? new Date(sub.current_period_end * 1000) : null,
+            ...(stripePriceId ? { stripePriceId } : {}),
+            ...derivedPlan,
+            ...(clearPending
+              ? { pendingPlanChange: null, pendingChangeEffectiveAt: null, stripeScheduleId: null }
+              : {}),
           },
         });
+
+        // Si el plan cambió y ahora coincide con el pendingPlanChange,
+        // el downgrade se completó → limpiamos.
+        if (
+          derivedPlan.planVendedor === dbSub.pendingPlanChange ||
+          derivedPlan.planComprador === dbSub.pendingPlanChange
+        ) {
+          await prisma.suscripcion.update({
+            where: { stripeSubscriptionId: sub.id },
+            data: {
+              pendingPlanChange: null,
+              pendingChangeEffectiveAt: null,
+              stripeScheduleId: null,
+            },
+          });
+        }
 
         // Transitioned to ACTIVA/TRIAL → unhide their delayed matches
         if (wasInactive && nowActive) {
@@ -504,12 +710,21 @@ export class SubscriptionService {
 
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
+        // Phase 17 — al cancelarse del todo, limpiar planVendedor/
+        // planComprador y los campos pending (downgrade-to-free
+        // completado).
         await prisma.suscripcion.updateMany({
           where: { stripeSubscriptionId: sub.id },
           data: {
             estado: 'CANCELADA',
             cancelledAt: new Date(),
             fechaFin: new Date(),
+            planVendedor: null,
+            planComprador: null,
+            stripePriceId: null,
+            pendingPlanChange: null,
+            pendingChangeEffectiveAt: null,
+            stripeScheduleId: null,
           },
         });
         break;
