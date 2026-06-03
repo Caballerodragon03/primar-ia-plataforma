@@ -889,6 +889,32 @@ export class SubscriptionService {
         // campos pending.
         const clearPending = estado === 'CANCELADA';
 
+        // Phase 17.3 — Si el usuario canceló via Stripe Customer Portal
+        // (cancel_at_period_end=true) sin pasar por nuestro endpoint
+        // change-plan, no tenemos `pendingPlanChange` poblado y la UI
+        // no muestra el banner "se cancelará el día X". Lo rellenamos
+        // aquí con el plan gratuito correspondiente al rol del usuario
+        // (MERCADO para comprador, COSECHA para vendedor) para que el
+        // banner aparezca igual que cuando lo cancelan desde nuestra
+        // UI. Si vuelve a activar (cancel_at_period_end=false) los
+        // limpiamos.
+        const portalCancelPending =
+          sub.cancel_at_period_end && !dbSub.pendingPlanChange && user
+            ? {
+                pendingPlanChange: user.role === 'VENDEDOR' ? 'COSECHA' : 'MERCADO',
+                pendingChangeEffectiveAt: sub.current_period_end
+                  ? new Date(sub.current_period_end * 1000)
+                  : null,
+              }
+            : null;
+        const portalUncancelClear =
+          !sub.cancel_at_period_end && dbSub.pendingPlanChange && !dbSub.stripeScheduleId
+            ? {
+                pendingPlanChange: null,
+                pendingChangeEffectiveAt: null,
+              }
+            : null;
+
         await prisma.suscripcion.update({
           where: { stripeSubscriptionId: sub.id },
           data: {
@@ -905,6 +931,8 @@ export class SubscriptionService {
             ...(clearPending
               ? { pendingPlanChange: null, pendingChangeEffectiveAt: null, stripeScheduleId: null }
               : {}),
+            ...(portalCancelPending ?? {}),
+            ...(portalUncancelClear ?? {}),
           },
         });
 
