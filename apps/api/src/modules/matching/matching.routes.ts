@@ -7,6 +7,7 @@ import {
   runMatchingForOrder,
   listSellerMatches,
   listLotMatches,
+  getSellerHiddenMatches,
   contributeToOrder,
   getAutoDistributePreview,
   getNotificationsSummary,
@@ -36,6 +37,13 @@ matchingRouter.get(
   '/seller/matches',
   requireRole('VENDEDOR'),
   asyncHandler(listSellerMatches)
+);
+
+// Count of matches hidden by the 24h free-tier delay (Phase 15)
+matchingRouter.get(
+  '/seller/hidden-matches',
+  requireRole('VENDEDOR'),
+  asyncHandler(getSellerHiddenMatches)
 );
 
 // Auto-distribute preview (greedy by revenue, per-calibre capacity-aware)

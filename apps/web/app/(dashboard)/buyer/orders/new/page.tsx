@@ -10,6 +10,7 @@ import { api } from '@/lib/api';
 import { Button, Input, Select } from '@/components/ui';
 import { ExistingEntityBanner } from '@/components/ui/ExistingEntityBanner';
 import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
+import { useTutorialStore } from '@/store/tutorial.store';
 import { useT } from '@/lib/i18n/LocaleProvider';
 import {
   ALL_INCOTERMS,
@@ -260,6 +261,16 @@ export default function CreateOrderPage() {
   const calibreOptions = selectedProduct?.calibresDisponibles ?? [];
 
   const onSubmit = async (values: FormValues, publish: boolean) => {
+    // Phase 15 — fix bug del tutorial: si el usuario está en modo prueba
+    // y pulsa "Publicar pedido" en vez del botón Continuar, antes el
+    // router.push lo sacaba de /buyer/orders/new ANTES de avanzar el
+    // step y se quedaba colgado. Detectamos modo prueba y avanzamos el
+    // step del tutorial. Nada se persiste.
+    const tutorialState = useTutorialStore.getState();
+    if (tutorialState.flow === 'hacer-pedido' && publish) {
+      tutorialState.next();
+      return;
+    }
     setIsSubmitting(true);
     setError('');
     try {

@@ -53,6 +53,18 @@ export async function listSellerMatches(req: Request, res: Response): Promise<vo
 }
 
 /**
+ * GET /api/v1/matching/seller/hidden-matches
+ * Phase 15 — devuelve cuántos matches del vendedor están ocultos por el
+ * retraso de 24h del plan gratuito. Lo usa el banner de upgrade en
+ * /seller/matches.
+ */
+export async function getSellerHiddenMatches(req: Request, res: Response): Promise<void> {
+  const vendedorId = req.user!.sub;
+  const info = await matchingService.getSellerHiddenMatchesInfo(vendedorId);
+  res.json({ success: true, data: info });
+}
+
+/**
  * GET /api/v1/matching/lots/:loteId/matches
  * List matches for a specific lot (VENDEDOR must own it).
  * Query param: ?sortBy=precio — sort by precioKg asc instead of score desc.

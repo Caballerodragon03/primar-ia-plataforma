@@ -64,7 +64,7 @@ export default function BuyerDashboard() {
       setOrders(res.data.data ?? []);
       setNotifs(notifRes.data?.data ?? null);
     } catch {
-      setError('Error al cargar los datos del panel.');
+      setError(t('dashboard.loadError'));
     } finally {
       setLoading(false);
     }
@@ -276,8 +276,8 @@ export default function BuyerDashboard() {
               ) : topOrders.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-6 text-center text-sm text-secondary">
-                    Sin pedidos activos.{' '}
-                    <Link href="/buyer/orders/new" className="text-primary underline">Create one</Link>
+                    {t('dashboard.emptyOrdersInline')}{' '}
+                    <Link href="/buyer/orders/new" className="text-primary underline">{t('dashboard.emptyOrdersCta')}</Link>
                   </td>
                 </tr>
               ) : (

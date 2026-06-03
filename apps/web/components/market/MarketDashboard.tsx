@@ -64,6 +64,11 @@ interface Highlights {
   alza?: string[];
   baja?: string[];
   sentimiento?: string;
+  // Phase 15 — versiones inglesas opcionales. Pueden faltar en reports
+  // antiguos generados antes del soporte bilingüe (fallback a ES).
+  resumen_en?: string;
+  alza_en?: string[];
+  baja_en?: string[];
 }
 
 interface Report {
@@ -117,6 +122,19 @@ export function MarketDashboard() {
   }, [days]);
 
   const sentiment = report?.highlights ? sentimentBadge(report.highlights.sentimiento) : null;
+  // Phase 15 — el report viene con resumen ES y opcionalmente versión EN
+  // dentro de highlights. Si la UI está en inglés y hay EN, lo usamos;
+  // si no, fallback a ES.
+  const useEn = locale === 'en';
+  const resumenLocalized = useEn && report?.highlights?.resumen_en
+    ? report.highlights.resumen_en
+    : report?.resumen ?? '';
+  const alzaLocalized = useEn && report?.highlights?.alza_en && report.highlights.alza_en.length > 0
+    ? report.highlights.alza_en
+    : report?.highlights?.alza ?? [];
+  const bajaLocalized = useEn && report?.highlights?.baja_en && report.highlights.baja_en.length > 0
+    ? report.highlights.baja_en
+    : report?.highlights?.baja ?? [];
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
@@ -159,26 +177,26 @@ export function MarketDashboard() {
               {t('market.weekly.officialBulletin')} <ExternalLink className="w-3 h-3" />
             </a>
           </div>
-          <p className="text-sm text-foreground leading-relaxed">{report.resumen}</p>
+          <p className="text-sm text-foreground leading-relaxed">{resumenLocalized}</p>
           {report.highlights && (
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-              {report.highlights.alza && report.highlights.alza.length > 0 && (
+              {alzaLocalized.length > 0 && (
                 <div className="bg-green-50 border border-green-200 rounded-input p-3">
                   <div className="flex items-center gap-1.5 mb-1.5 text-green-800 font-medium text-xs">
                     <TrendingUp className="w-3.5 h-3.5" /> {t('market.weekly.alza')}
                   </div>
                   <ul className="space-y-0.5 text-xs text-green-900">
-                    {report.highlights.alza.map((x, i) => <li key={i}>• {x}</li>)}
+                    {alzaLocalized.map((x, i) => <li key={i}>• {x}</li>)}
                   </ul>
                 </div>
               )}
-              {report.highlights.baja && report.highlights.baja.length > 0 && (
+              {bajaLocalized.length > 0 && (
                 <div className="bg-red-50 border border-red-200 rounded-input p-3">
                   <div className="flex items-center gap-1.5 mb-1.5 text-red-800 font-medium text-xs">
                     <TrendingDown className="w-3.5 h-3.5" /> {t('market.weekly.baja')}
                   </div>
                   <ul className="space-y-0.5 text-xs text-red-900">
-                    {report.highlights.baja.map((x, i) => <li key={i}>• {x}</li>)}
+                    {bajaLocalized.map((x, i) => <li key={i}>• {x}</li>)}
                   </ul>
                 </div>
               )}

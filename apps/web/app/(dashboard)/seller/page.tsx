@@ -81,7 +81,7 @@ export default function SellerDashboard() {
       setMatches(matchesRes.data.data ?? []);
       setNotifs(notifRes.data?.data ?? null);
     } catch {
-      setError('Error al cargar los datos del panel.');
+      setError(t('dashboard.loadError'));
     } finally {
       setLoading(false);
     }
@@ -277,7 +277,7 @@ export default function SellerDashboard() {
               ) : topActiveLots.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-6 text-center text-sm text-secondary">
-                    Sin lotes activos. <Link href="/seller/lots/new" className="text-primary underline">Publica uno</Link>
+                    {t('dashboard.emptyLotsInline')} <Link href="/seller/lots/new" className="text-primary underline">{t('dashboard.emptyLotsCta')}</Link>
                   </td>
                 </tr>
               ) : (

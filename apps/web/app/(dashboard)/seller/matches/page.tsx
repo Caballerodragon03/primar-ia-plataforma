@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { Star, Filter, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
+import { Star, Filter, TrendingUp, Zap, Clock } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { MatchCard, type Match } from '@/components/ui/MatchCard';
@@ -182,6 +183,9 @@ export default function SellerMatchesPage() {
   const [incotermFilter, setIncotermFilter] = useState<Set<string>>(new Set());
   const [showIncotermFilter, setShowIncotermFilter] = useState(false);
   const [marketDemand, setMarketDemand] = useState<{ productoNombre: string; calibre: string; totalKg: number; orderCount: number }[]>([]);
+  // Phase 15 — banner "Tinder-plus": matches generados pero ocultos hasta
+  // dentro de 24 h por el retraso del plan gratuito.
+  const [hiddenInfo, setHiddenInfo] = useState<{ hiddenByDelay: number; isFreeTier: boolean; nextVisibleAt: string | null } | null>(null);
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function fetchMatches() {
@@ -193,7 +197,7 @@ export default function SellerMatchesPage() {
       );
       setMatches((res.data.data ?? []) as Match[]);
     } catch {
-      setError('Error al cargar los matches.');
+      setError(t('matches.loadError'));
     } finally {
       setLoading(false);
     }
@@ -203,6 +207,11 @@ export default function SellerMatchesPage() {
     fetchMatches();
     api.get<{ success: boolean; data: typeof marketDemand }>('/matching/seller/market-demand')
       .then(({ data }) => setMarketDemand(data.data ?? []))
+      .catch(() => {});
+    // Phase 15 — recuento de matches ocultos por el retraso de 24h del
+    // plan gratuito (banner upgrade-prompt).
+    api.get<{ success: boolean; data: { hiddenByDelay: number; isFreeTier: boolean; nextVisibleAt: string | null } }>('/matching/seller/hidden-matches')
+      .then(({ data }) => setHiddenInfo(data.data))
       .catch(() => {});
     const prefs = loadIncotermPrefs();
     if (prefs?.done) {
@@ -215,6 +224,9 @@ export default function SellerMatchesPage() {
       fetchMatches();
       api.get<{ success: boolean; data: typeof marketDemand }>('/matching/seller/market-demand')
         .then(({ data }) => setMarketDemand(data.data ?? []))
+        .catch(() => {});
+      api.get<{ success: boolean; data: { hiddenByDelay: number; isFreeTier: boolean; nextVisibleAt: string | null } }>('/matching/seller/hidden-matches')
+        .then(({ data }) => setHiddenInfo(data.data))
         .catch(() => {});
     }, 30_000);
 
@@ -338,6 +350,49 @@ export default function SellerMatchesPage() {
           {t('matches.subtitle')}
         </p>
       </div>
+
+      {/* Phase 15 — Free-tier upgrade prompt: matches existen pero están
+          ocultos hasta dentro de 24h. */}
+      {hiddenInfo && hiddenInfo.isFreeTier && hiddenInfo.hiddenByDelay > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-300 rounded-card p-4 flex items-start gap-3 shadow-soft">
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-200/70 flex items-center justify-center">
+            <Clock className="w-5 h-5 text-amber-800" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-900">
+              {t('matches.hiddenByDelay.title')
+                .replace('{n}', String(hiddenInfo.hiddenByDelay))
+                .replace(
+                  '{n_plural}',
+                  hiddenInfo.hiddenByDelay === 1 ? 'match' : 'matches',
+                )}
+            </p>
+            <p className="text-xs text-amber-900/90 mt-1 leading-relaxed">
+              {t('matches.hiddenByDelay.body')}
+            </p>
+            {hiddenInfo.nextVisibleAt && (
+              <p className="text-[11px] text-amber-800/80 mt-1">
+                {t('matches.hiddenByDelay.nextVisible').replace(
+                  '{when}',
+                  new Date(hiddenInfo.nextVisibleAt).toLocaleString(undefined, {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
+                )}
+              </p>
+            )}
+            <Link
+              href="/seller/subscription"
+              className="inline-flex items-center gap-1.5 mt-2.5 text-xs font-semibold text-amber-900 bg-amber-200 hover:bg-amber-300 px-3 py-1.5 rounded-button transition-colors"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              {t('matches.hiddenByDelay.cta')}
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Incoterm filter — shown when wizard has been completed */}
       {incotermPrefs?.done && (

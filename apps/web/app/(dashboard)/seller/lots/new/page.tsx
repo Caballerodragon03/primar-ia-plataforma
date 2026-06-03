@@ -10,6 +10,7 @@ import { api } from '@/lib/api';
 import { Button, Input, Select, FileDropzone, IncotermWizard } from '@/components/ui';
 import { ExistingEntityBanner } from '@/components/ui/ExistingEntityBanner';
 import { FreeTierMatchingNotice } from '@/components/subscriptions/FreeTierMatchingNotice';
+import { useTutorialStore } from '@/store/tutorial.store';
 import { useT } from '@/lib/i18n/LocaleProvider';
 import {
   ALL_INCOTERMS,
@@ -362,6 +363,18 @@ export default function PublishLotPage() {
   };
 
   const onSubmit = async (values: FormValues, publish: boolean) => {
+    // Phase 15 — fix bug del tutorial: si el usuario está en modo prueba
+    // y pulsa "Publicar lote" en el paso btn-publicar, antes el POST se
+    // mockeaba pero el router.push('/seller/lots') sacaba al usuario de
+    // /seller/lots/new ANTES de que el tutorial avanzara → se quedaba
+    // colgado sin poder continuar. Ahora detectamos el modo prueba y
+    // tratamos el click igual que el botón "Continuar" del tour: solo
+    // avanzamos el step. Nada se persiste.
+    const tutorialState = useTutorialStore.getState();
+    if (tutorialState.flow === 'crear-lote' && publish) {
+      tutorialState.next();
+      return;
+    }
     setIsSubmitting(true);
     setError('');
     try {

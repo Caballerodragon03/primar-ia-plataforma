@@ -1067,6 +1067,50 @@ export class MatchingService {
   }
 
   /**
+   * Phase 15 — devuelve cuántos matches del vendedor están aún ocultos por
+   * el retraso de 24h del plan gratuito (visibleDesde > now). Lo usa el
+   * banner "Tienes X matches, espera 24h o upgradea" en /seller/matches.
+   *
+   * También devuelve isFreeTier para que el frontend solo muestre el
+   * banner cuando aplica.
+   */
+  async getSellerHiddenMatchesInfo(vendedorId: string): Promise<{
+    hiddenByDelay: number;
+    isFreeTier: boolean;
+    nextVisibleAt: Date | null;
+  }> {
+    // ¿El vendedor está en plan gratuito?
+    const sub = await prisma.suscripcion.findUnique({
+      where: { userId: vendedorId },
+      select: { planVendedor: true, estado: true },
+    });
+    const isActiveSub = !!sub && (sub.estado === 'ACTIVA' || sub.estado === 'TRIAL');
+    const planKey = isActiveSub ? (sub.planVendedor as keyof typeof PLAN_LIMITS | null) : null;
+    const isFreeTier = !planKey || planKey === 'COSECHA';
+
+    if (!isFreeTier) {
+      return { hiddenByDelay: 0, isFreeTier: false, nextVisibleAt: null };
+    }
+
+    const now = new Date();
+    const hidden = await prisma.match.findMany({
+      where: {
+        lote: { vendedorId, estado: { not: 'VENDIDO' } },
+        pedido: { estado: { notIn: ['TOTALMENTE_CUBIERTO', 'CANCELADO', 'CERRADO'] } },
+        visibleDesde: { gt: now },
+      },
+      select: { id: true, visibleDesde: true },
+      orderBy: { visibleDesde: 'asc' },
+    });
+
+    return {
+      hiddenByDelay: hidden.length,
+      isFreeTier: true,
+      nextVisibleAt: hidden.length > 0 ? hidden[0]!.visibleDesde : null,
+    };
+  }
+
+  /**
    * El vendedor acepta contribuir a un pedido con calibres específicos.
    */
   async contributeToOrder(

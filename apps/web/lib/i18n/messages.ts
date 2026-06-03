@@ -229,6 +229,20 @@ export type MessageKey =
   | 'orders.rateNow'
   // ─── matches page (seller) ──────────────────────────────────────────────
   | 'matches.title'
+  | 'matches.loadError'
+  | 'matches.hiddenByDelay.title'
+  | 'matches.hiddenByDelay.body'
+  | 'matches.hiddenByDelay.cta'
+  | 'matches.hiddenByDelay.nextVisible'
+  | 'dashboard.loadError'
+  | 'dashboard.emptyOrdersInline'
+  | 'dashboard.emptyOrdersCta'
+  | 'dashboard.emptyLotsInline'
+  | 'dashboard.emptyLotsCta'
+  | 'freeTier.notice.title'
+  | 'freeTier.notice.bodyLote'
+  | 'freeTier.notice.bodyPedido'
+  | 'freeTier.notice.cta'
   | 'matches.subtitle'
   | 'matches.incotermFilter'
   | 'matches.incotermFilterRecommended'
@@ -1742,6 +1756,20 @@ export const messages: Record<Locale, Messages> = {
     'orders.pendingRating': 'Tienes una transacción pendiente de valorar.',
     'orders.rateNow': 'Valorar ahora',
     'matches.title': 'Tus pedidos compatibles',
+    'matches.loadError': 'Error al cargar los matches.',
+    'matches.hiddenByDelay.title': 'Tienes {n} {n_plural} esperando',
+    'matches.hiddenByDelay.body': 'Como vendedor en plan gratuito, los matches se generan al instante pero no son visibles hasta pasadas 24 h. Mejora tu plan para verlos ahora — o espera y aparecerán solos.',
+    'matches.hiddenByDelay.cta': 'Ver planes y desbloquear ahora',
+    'matches.hiddenByDelay.nextVisible': 'El próximo será visible {when}',
+    'dashboard.loadError': 'Error al cargar los datos del panel.',
+    'dashboard.emptyOrdersInline': 'Sin pedidos activos.',
+    'dashboard.emptyOrdersCta': 'Crear uno',
+    'dashboard.emptyLotsInline': 'Sin lotes activos.',
+    'dashboard.emptyLotsCta': 'Publica uno',
+    'freeTier.notice.title': 'Tu plan gratuito retrasa el matching 24 horas',
+    'freeTier.notice.bodyLote': 'Cuando publiques este lote, las propuestas de matching se generarán de inmediato pero no serán visibles hasta dentro de 24 h. Mejora tu plan para que tu lote comience a recibir matches al instante.',
+    'freeTier.notice.bodyPedido': 'Cuando publiques este pedido, las propuestas de matching se generarán de inmediato pero no serán visibles hasta dentro de 24 h. Mejora tu plan para que tu pedido comience a recibir matches al instante.',
+    'freeTier.notice.cta': 'Ver planes y eliminar el retraso',
     'matches.subtitle': 'Pedidos que mejor encajan con tus lotes publicados.',
     'matches.incotermFilter': 'Filtro de incoterm',
     'matches.incotermFilterRecommended': 'Recomendado',
@@ -3218,6 +3246,20 @@ export const messages: Record<Locale, Messages> = {
     'orders.pendingRating': 'You have a transaction pending rating.',
     'orders.rateNow': 'Rate now',
     'matches.title': 'Compatible orders',
+    'matches.loadError': 'Could not load matches.',
+    'matches.hiddenByDelay.title': 'You have {n} {n_plural} waiting',
+    'matches.hiddenByDelay.body': 'On the free seller plan, matches are generated instantly but only become visible 24 h later. Upgrade your plan to see them now — or wait and they will appear on their own.',
+    'matches.hiddenByDelay.cta': 'See plans and unlock now',
+    'matches.hiddenByDelay.nextVisible': 'The next one becomes visible {when}',
+    'dashboard.loadError': 'Could not load dashboard data.',
+    'dashboard.emptyOrdersInline': 'No active orders.',
+    'dashboard.emptyOrdersCta': 'Create one',
+    'dashboard.emptyLotsInline': 'No active lots.',
+    'dashboard.emptyLotsCta': 'Publish one',
+    'freeTier.notice.title': 'Your free plan delays matching by 24 hours',
+    'freeTier.notice.bodyLote': 'Once you publish this lot, match proposals will be generated immediately but not visible until 24 h later. Upgrade your plan so your lot starts receiving matches instantly.',
+    'freeTier.notice.bodyPedido': 'Once you publish this order, match proposals will be generated immediately but not visible until 24 h later. Upgrade your plan so your order starts receiving matches instantly.',
+    'freeTier.notice.cta': 'See plans and remove the delay',
     'matches.subtitle': 'Orders that best match your published lots.',
     'matches.incotermFilter': 'Incoterm filter',
     'matches.incotermFilterRecommended': 'Recommended',
