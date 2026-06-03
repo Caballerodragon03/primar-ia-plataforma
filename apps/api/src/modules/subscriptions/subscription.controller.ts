@@ -28,8 +28,17 @@ export class SubscriptionController {
       // Phase 17 — expose pending change for the downgrade banner.
       const sub = await prisma.suscripcion.findUnique({
         where: { userId },
-        select: { pendingPlanChange: true, pendingChangeEffectiveAt: true, cancelledAt: true },
+        select: {
+          pendingPlanChange: true,
+          pendingChangeEffectiveAt: true,
+          cancelledAt: true,
+          usedFirstDowngradeGift: true,
+        },
       });
+      // Phase 17.2 — gift elegibilidad: solo si el usuario tiene una
+      // sub activa de pago y no ha usado el regalo todavía.
+      const giftEligible =
+        hasActiveSubscription && !(sub?.usedFirstDowngradeGift ?? true);
 
       res.json({
         success: true,
@@ -40,6 +49,7 @@ export class SubscriptionController {
           pendingPlanChange: sub?.pendingPlanChange ?? null,
           pendingChangeEffectiveAt: sub?.pendingChangeEffectiveAt ?? null,
           cancelledAt: sub?.cancelledAt ?? null,
+          firstDowngradeGiftEligible: giftEligible,
         },
       });
     } catch (err) {
@@ -80,6 +90,22 @@ export class SubscriptionController {
         return;
       }
       const result = await subscriptionService.changeSubscriptionPlan(userId, plan);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Phase 17.2 — POST /subscriptions/accept-downgrade-gift
+   * El usuario, ante el ofrecimiento del primer downgrade, acepta el
+   * regalo de 1 mes gratis. Extiende la sub vía trial_end y marca el
+   * flag usedFirstDowngradeGift.
+   */
+  async acceptDowngradeGift(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.sub;
+      const result = await subscriptionService.acceptFirstDowngradeGift(userId);
       res.json({ success: true, data: result });
     } catch (err) {
       next(err);

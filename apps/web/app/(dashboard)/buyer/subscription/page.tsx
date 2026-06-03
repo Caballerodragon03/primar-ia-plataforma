@@ -5,7 +5,17 @@ import { api } from '@/lib/api';
 import { PlanComparison } from '@/components/subscriptions/PlanComparison';
 import { UsageMeter } from '@/components/subscriptions/UsageMeter';
 import { CreationCreditsCard } from '@/components/subscriptions/CreationCreditsCard';
+import { PlanChangeConfirmModal, type PlanChangeKind } from '@/components/subscriptions/PlanChangeConfirmModal';
 import { useT } from '@/lib/i18n/LocaleProvider';
+
+// Phase 17.2 — pricing por plan (en céntimos, mismo que backend).
+// Lo usamos en cliente para detectar si target es upgrade/downgrade
+// SIN tener que llamar al backend antes de mostrar la confirmación.
+const BUYER_PLAN_PRICE: Record<string, number> = {
+  MERCADO: 0,
+  LONJA: 2900,
+  CENTRAL: 8900,
+};
 
 interface Credits {
   available: number;
@@ -31,6 +41,8 @@ interface SubscriptionData {
   // Phase 17 — pending downgrade info.
   pendingPlanChange: string | null;
   pendingChangeEffectiveAt: string | null;
+  // Phase 17.2 — gift eligibility.
+  firstDowngradeGiftEligible: boolean;
 }
 
 export default function BuyerSubscriptionPage() {
@@ -58,7 +70,7 @@ export default function BuyerSubscriptionPage() {
           }
         }
         const [currentRes, usageRes] = await Promise.all([
-          api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean; pendingPlanChange: string | null; pendingChangeEffectiveAt: string | null } }>('/subscriptions/current'),
+          api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean; pendingPlanChange: string | null; pendingChangeEffectiveAt: string | null; firstDowngradeGiftEligible?: boolean } }>('/subscriptions/current'),
           api.get<{ success: boolean; data: { pedidosActivos: number; maxPedidos: number; credits: Credits; breakdownComprador?: BreakdownComprador } }>('/subscriptions/usage'),
         ]);
         setData({
@@ -71,6 +83,7 @@ export default function BuyerSubscriptionPage() {
           breakdownComprador: usageRes.data.data.breakdownComprador ?? null,
           pendingPlanChange: currentRes.data.data.pendingPlanChange,
           pendingChangeEffectiveAt: currentRes.data.data.pendingChangeEffectiveAt,
+          firstDowngradeGiftEligible: currentRes.data.data.firstDowngradeGiftEligible ?? false,
         });
       } catch {
         setData({
@@ -83,6 +96,7 @@ export default function BuyerSubscriptionPage() {
           breakdownComprador: null,
           pendingPlanChange: null,
           pendingChangeEffectiveAt: null,
+          firstDowngradeGiftEligible: false,
         });
       } finally {
         setLoading(false);
@@ -91,23 +105,51 @@ export default function BuyerSubscriptionPage() {
     fetchData();
   }, []);
 
+  // Phase 17.2 — estado del modal de confirmación.
+  const [pendingTargetPlan, setPendingTargetPlan] = useState<string | null>(null);
+  const pendingKind: PlanChangeKind | null = (() => {
+    if (!pendingTargetPlan || !data) return null;
+    if (pendingTargetPlan === 'MERCADO') return 'downgrade-free';
+    const currentPrice = BUYER_PLAN_PRICE[data.plan] ?? 0;
+    const targetPrice = BUYER_PLAN_PRICE[pendingTargetPlan] ?? 0;
+    if (targetPrice > currentPrice) return 'upgrade';
+    if (targetPrice < currentPrice) return 'downgrade-paid';
+    return null;
+  })();
+
+  /**
+   * Punto de entrada: el usuario clica un plan en PlanComparison.
+   * Si no tiene sub activa → caemos al flujo legacy (Checkout para
+   * planes de pago, noop para free). Si tiene sub activa → abrimos el
+   * modal de confirmación.
+   */
   const handleSelectPlan = async (plan: string) => {
+    setError(null);
+    const hasSub = data?.hasActiveSubscription;
+    if (!hasSub) {
+      if (plan === 'MERCADO') return; // ya estás en free
+      setCheckoutLoading(true);
+      try {
+        const res = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan });
+        if (res.data.data.url) window.location.href = res.data.data.url;
+      } catch (err: unknown) {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('subscription.errorCheckout');
+        setError(msg);
+      } finally {
+        setCheckoutLoading(false);
+      }
+      return;
+    }
+    if (plan === data?.plan) return; // mismo plan
+    setPendingTargetPlan(plan);
+  };
+
+  /** Llamada real al backend tras confirmar en el modal. */
+  const confirmPlanChange = async () => {
+    if (!pendingTargetPlan) return;
     setCheckoutLoading(true);
     setError(null);
     try {
-      // Phase 17 — comportamiento:
-      //   - No active sub + free plan: noop (ya estás en MERCADO).
-      //   - No active sub + paid plan: Stripe Checkout para crear sub.
-      //   - Active sub: change-plan (upgrade inmediato / downgrade
-      //     diferido al fin de período / cancel a free al fin de período).
-      const hasSub = data?.hasActiveSubscription;
-      if (!hasSub) {
-        if (plan === 'MERCADO') return; // ya estás en free
-        const res = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan });
-        if (res.data.data.url) window.location.href = res.data.data.url;
-        return;
-      }
-      // Usuario con sub activa → endpoint change-plan.
       const res = await api.post<{
         success: boolean;
         data:
@@ -116,31 +158,47 @@ export default function BuyerSubscriptionPage() {
           | { kind: 'upgraded'; newPlan: string }
           | { kind: 'downgrade-scheduled'; newPlan: string; effectiveAt: string }
           | { kind: 'cancel-scheduled'; effectiveAt: string };
-      }>('/subscriptions/change-plan', { plan });
+      }>('/subscriptions/change-plan', { plan: pendingTargetPlan });
       const result = res.data.data;
       if (result.kind === 'no-active-sub') {
-        // Race: backend dice que no hay sub → caer a Checkout normal.
-        const r2 = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan });
+        const r2 = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan: pendingTargetPlan });
         if (r2.data.data.url) window.location.href = r2.data.data.url;
-      } else if (result.kind === 'upgraded') {
-        alert(t('subscription.changed.upgradedNow').replace('{plan}', result.newPlan));
-        window.location.reload();
-      } else if (result.kind === 'downgrade-scheduled') {
+        return;
+      }
+      // Cualquier kind exitoso → cerrar modal y refrescar.
+      setPendingTargetPlan(null);
+      window.location.reload();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('subscription.errorCheckout');
+      setError(msg);
+      setPendingTargetPlan(null);
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  /** El usuario acepta el regalo de 1 mes en vez de bajar de plan. */
+  const acceptDowngradeGift = async () => {
+    setError(null);
+    setCheckoutLoading(true);
+    try {
+      const res = await api.post<{
+        success: boolean;
+        data:
+          | { applied: false; reason: string }
+          | { applied: true; newPeriodEnd: string };
+      }>('/subscriptions/accept-downgrade-gift');
+      const result = res.data.data;
+      if (result.applied) {
         alert(
-          t('subscription.changed.downgradeScheduled')
-            .replace('{plan}', result.newPlan)
-            .replace('{date}', new Date(result.effectiveAt).toLocaleDateString()),
-        );
-        window.location.reload();
-      } else if (result.kind === 'cancel-scheduled') {
-        alert(
-          t('subscription.changed.cancelScheduled').replace(
+          t('subscription.confirm.giftApplied').replace(
             '{date}',
-            new Date(result.effectiveAt).toLocaleDateString(),
+            new Date(result.newPeriodEnd).toLocaleDateString(),
           ),
         );
-        window.location.reload();
       }
+      setPendingTargetPlan(null);
+      window.location.reload();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('subscription.errorCheckout');
       setError(msg);
@@ -271,6 +329,19 @@ export default function BuyerSubscriptionPage() {
               </div>
             </div>
           )}
+
+          {/* Phase 17.2 — modal de confirmación de cambio de plan. */}
+          <PlanChangeConfirmModal
+            isOpen={pendingTargetPlan !== null && pendingKind !== null}
+            currentPlanLabel={data.plan}
+            targetPlanLabel={pendingTargetPlan ?? ''}
+            kind={pendingKind ?? 'downgrade-paid'}
+            giftEligible={data.firstDowngradeGiftEligible}
+            loading={checkoutLoading}
+            onCancel={() => setPendingTargetPlan(null)}
+            onConfirm={confirmPlanChange}
+            onAcceptGift={acceptDowngradeGift}
+          />
         </>
       )}
     </div>

@@ -355,6 +355,64 @@ export class SubscriptionService {
     });
   }
 
+  /**
+   * Phase 17.2 — retention gift: extiende la suscripción actual 30 días
+   * gratis (via trial_end de Stripe) cuando el usuario acepta el regalo
+   * en su primer intento de downgrade. Marca `usedFirstDowngradeGift`
+   * a true para que no se vuelva a ofrecer.
+   *
+   * Idempotente: si el usuario ya lo usó, devuelve { applied: false }.
+   * Si no tiene sub activa, también devuelve false (sin gift posible).
+   */
+  async acceptFirstDowngradeGift(
+    userId: string,
+  ): Promise<
+    | { applied: false; reason: 'already-used' | 'no-active-sub' }
+    | { applied: true; newPeriodEnd: Date }
+  > {
+    const sub = await prisma.suscripcion.findUnique({ where: { userId } });
+    if (!sub?.stripeSubscriptionId) return { applied: false, reason: 'no-active-sub' };
+    if (sub.usedFirstDowngradeGift) return { applied: false, reason: 'already-used' };
+
+    try {
+      // Marcamos el flag PRIMERO (defensa contra doble-click + race). Si
+      // la llamada a Stripe falla, el flag queda a true pero el usuario
+      // no recibe el regalo — preferible que perder dinero por gaming
+      // del endpoint (clicks repetidos durante un fallo intermitente).
+      await prisma.suscripcion.update({
+        where: { userId },
+        data: { usedFirstDowngradeGift: true },
+      });
+
+      // Extendemos la sub 30 días vía trial_end. Cuando Stripe procese
+      // el siguiente ciclo de facturación, ya no cobrará hasta el nuevo
+      // trial_end. Si la sub ya tenía un trial activo, lo sobreescribe.
+      const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+      const currentEnd = stripeSub.current_period_end ?? Math.floor(Date.now() / 1000);
+      const newEnd = currentEnd + 30 * 24 * 60 * 60; // +30 días en segundos
+      await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+        trial_end: newEnd,
+        // Sin proration: el usuario ya pagó el periodo en curso, solo
+        // estamos extendiéndolo gratis.
+        proration_behavior: 'none',
+      });
+
+      const newPeriodEnd = new Date(newEnd * 1000);
+      await prisma.suscripcion.update({
+        where: { userId },
+        data: { fechaFin: newPeriodEnd },
+      });
+      return { applied: true, newPeriodEnd };
+    } catch (err: unknown) {
+      const stripeErr = err as { type?: string; message?: string; code?: string };
+      if (stripeErr.type && typeof stripeErr.type === 'string' && stripeErr.type.startsWith('Stripe')) {
+        console.error('[acceptFirstDowngradeGift] Stripe error:', stripeErr);
+        throw new AppError(`No se pudo aplicar el regalo: ${stripeErr.message ?? 'error de Stripe'}`, 400);
+      }
+      throw err;
+    }
+  }
+
   // ─── Plan change (Phase 17 — upgrade/downgrade with proper semantics) ──
   //
   // Rules:
@@ -464,9 +522,35 @@ export class SubscriptionService {
           },
         });
       }
-    } catch (peekErr) {
-      // No-op si retrieve falla; las ramas de abajo lo volverán a
-      // intentar y reportarán el error real.
+    } catch (peekErr: unknown) {
+      // Caso especial: stripeSubscriptionId apunta a una sub que no
+      // existe en Stripe (datos manuales/test/limpieza incompleta). En
+      // ese caso limpiamos el row local y devolvemos no-active-sub para
+      // que el frontend caiga al flow de Checkout normal (creación
+      // limpia de una nueva sub).
+      const stripeErr = peekErr as { code?: string; type?: string; message?: string };
+      if (
+        stripeErr?.code === 'resource_missing' ||
+        (stripeErr?.message && stripeErr.message.includes('No such subscription'))
+      ) {
+        console.warn(
+          `[changePlan] stale stripeSubscriptionId=${sub.stripeSubscriptionId} for user ${userId}; cleaning up`,
+        );
+        await prisma.suscripcion.update({
+          where: { userId },
+          data: {
+            stripeSubscriptionId: null,
+            stripeScheduleId: null,
+            stripePriceId: null,
+            pendingPlanChange: null,
+            pendingChangeEffectiveAt: null,
+            cancelledAt: null,
+          },
+        });
+        return { kind: 'no-active-sub' };
+      }
+      // Otro tipo de error en retrieve — no fatal, las ramas de abajo
+      // lo volverán a intentar y reportarán el error real.
       console.warn('[changePlan] peek subscription failed:', peekErr);
     }
 
@@ -484,6 +568,10 @@ export class SubscriptionService {
             cancelledAt: new Date(),
             pendingPlanChange: newPlanRaw,
             pendingChangeEffectiveAt: periodEnd,
+            // Phase 17.2 — el usuario decidió cancelar a pesar del
+            // regalo ofrecido. Consumimos el flag para que no se le
+            // vuelva a ofrecer (volverá si se reinscribe).
+            usedFirstDowngradeGift: true,
           },
         });
         return { kind: 'cancel-scheduled', effectiveAt: periodEnd };
@@ -615,6 +703,8 @@ export class SubscriptionService {
             pendingPlanChange: newPlanRaw,
             pendingChangeEffectiveAt: periodEnd,
             stripeScheduleId: schedule.id,
+            // Phase 17.2 — usuario decidió bajar a pesar del regalo.
+            usedFirstDowngradeGift: true,
           },
         });
         return { kind: 'downgrade-scheduled', newPlan: newPlanRaw, effectiveAt: periodEnd };

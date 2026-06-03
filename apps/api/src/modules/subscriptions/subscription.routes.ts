@@ -13,6 +13,7 @@ subscriptionRouter.get('/plans', (req, res, next) => subscriptionController.getP
 subscriptionRouter.get('/current', (req, res, next) => subscriptionController.getCurrent(req, res, next));
 subscriptionRouter.post('/checkout', validateBody(checkoutSchema), (req, res, next) => subscriptionController.checkout(req, res, next));
 subscriptionRouter.post('/change-plan', (req, res, next) => subscriptionController.changePlan(req, res, next));
+subscriptionRouter.post('/accept-downgrade-gift', (req, res, next) => subscriptionController.acceptDowngradeGift(req, res, next));
 subscriptionRouter.post('/portal', (req, res, next) => subscriptionController.portal(req, res, next));
 subscriptionRouter.post('/cancel', (req, res, next) => subscriptionController.cancel(req, res, next));
 subscriptionRouter.get('/usage', (req, res, next) => subscriptionController.getUsage(req, res, next));

@@ -5,7 +5,15 @@ import { api } from '@/lib/api';
 import { PlanComparison } from '@/components/subscriptions/PlanComparison';
 import { UsageMeter } from '@/components/subscriptions/UsageMeter';
 import { CreationCreditsCard } from '@/components/subscriptions/CreationCreditsCard';
+import { PlanChangeConfirmModal, type PlanChangeKind } from '@/components/subscriptions/PlanChangeConfirmModal';
 import { useT } from '@/lib/i18n/LocaleProvider';
+
+// Phase 17.2 — pricing (céntimos) para detectar upgrade vs downgrade en cliente.
+const SELLER_PLAN_PRICE: Record<string, number> = {
+  COSECHA: 0,
+  CAMPO: 1900,
+  FINCA: 4900,
+};
 
 interface Credits {
   available: number;
@@ -29,6 +37,7 @@ interface SubscriptionData {
   breakdownVendedor: BreakdownVendedor | null;
   pendingPlanChange: string | null;
   pendingChangeEffectiveAt: string | null;
+  firstDowngradeGiftEligible: boolean;
 }
 
 export default function SellerSubscriptionPage() {
@@ -58,7 +67,7 @@ export default function SellerSubscriptionPage() {
           }
         }
         const [currentRes, usageRes] = await Promise.all([
-          api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean; pendingPlanChange: string | null; pendingChangeEffectiveAt: string | null } }>('/subscriptions/current'),
+          api.get<{ success: boolean; data: { plan: string; badge: string | null; hasActiveSubscription: boolean; pendingPlanChange: string | null; pendingChangeEffectiveAt: string | null; firstDowngradeGiftEligible?: boolean } }>('/subscriptions/current'),
           api.get<{ success: boolean; data: { lotesActivos: number; maxLotes: number; credits: Credits; breakdownVendedor?: BreakdownVendedor } }>('/subscriptions/usage'),
         ]);
         setData({
@@ -71,6 +80,7 @@ export default function SellerSubscriptionPage() {
           breakdownVendedor: usageRes.data.data.breakdownVendedor ?? null,
           pendingPlanChange: currentRes.data.data.pendingPlanChange,
           pendingChangeEffectiveAt: currentRes.data.data.pendingChangeEffectiveAt,
+          firstDowngradeGiftEligible: currentRes.data.data.firstDowngradeGiftEligible ?? false,
         });
       } catch {
         setData({
@@ -83,6 +93,7 @@ export default function SellerSubscriptionPage() {
           breakdownVendedor: null,
           pendingPlanChange: null,
           pendingChangeEffectiveAt: null,
+          firstDowngradeGiftEligible: false,
         });
       } finally {
         setLoading(false);
@@ -91,17 +102,44 @@ export default function SellerSubscriptionPage() {
     fetchData();
   }, []);
 
+  // Phase 17.2 — modal state.
+  const [pendingTargetPlan, setPendingTargetPlan] = useState<string | null>(null);
+  const pendingKind: PlanChangeKind | null = (() => {
+    if (!pendingTargetPlan || !data) return null;
+    if (pendingTargetPlan === 'COSECHA') return 'downgrade-free';
+    const currentPrice = SELLER_PLAN_PRICE[data.plan] ?? 0;
+    const targetPrice = SELLER_PLAN_PRICE[pendingTargetPlan] ?? 0;
+    if (targetPrice > currentPrice) return 'upgrade';
+    if (targetPrice < currentPrice) return 'downgrade-paid';
+    return null;
+  })();
+
   const handleSelectPlan = async (plan: string) => {
+    setError(null);
+    const hasSub = data?.hasActiveSubscription;
+    if (!hasSub) {
+      if (plan === 'COSECHA') return;
+      setCheckoutLoading(true);
+      try {
+        const res = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan });
+        if (res.data.data.url) window.location.href = res.data.data.url;
+      } catch (err: unknown) {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('subscription.errorCheckout');
+        setError(msg);
+      } finally {
+        setCheckoutLoading(false);
+      }
+      return;
+    }
+    if (plan === data?.plan) return;
+    setPendingTargetPlan(plan);
+  };
+
+  const confirmPlanChange = async () => {
+    if (!pendingTargetPlan) return;
     setCheckoutLoading(true);
     setError(null);
     try {
-      const hasSub = data?.hasActiveSubscription;
-      if (!hasSub) {
-        if (plan === 'COSECHA') return; // ya estás en free
-        const res = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan });
-        if (res.data.data.url) window.location.href = res.data.data.url;
-        return;
-      }
       const res = await api.post<{
         success: boolean;
         data:
@@ -110,30 +148,45 @@ export default function SellerSubscriptionPage() {
           | { kind: 'upgraded'; newPlan: string }
           | { kind: 'downgrade-scheduled'; newPlan: string; effectiveAt: string }
           | { kind: 'cancel-scheduled'; effectiveAt: string };
-      }>('/subscriptions/change-plan', { plan });
+      }>('/subscriptions/change-plan', { plan: pendingTargetPlan });
       const result = res.data.data;
       if (result.kind === 'no-active-sub') {
-        const r2 = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan });
+        const r2 = await api.post<{ success: boolean; data: { url: string } }>('/subscriptions/checkout', { plan: pendingTargetPlan });
         if (r2.data.data.url) window.location.href = r2.data.data.url;
-      } else if (result.kind === 'upgraded') {
-        alert(t('subscription.changed.upgradedNow').replace('{plan}', result.newPlan));
-        window.location.reload();
-      } else if (result.kind === 'downgrade-scheduled') {
+        return;
+      }
+      setPendingTargetPlan(null);
+      window.location.reload();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('subscription.errorCheckout');
+      setError(msg);
+      setPendingTargetPlan(null);
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const acceptDowngradeGift = async () => {
+    setError(null);
+    setCheckoutLoading(true);
+    try {
+      const res = await api.post<{
+        success: boolean;
+        data:
+          | { applied: false; reason: string }
+          | { applied: true; newPeriodEnd: string };
+      }>('/subscriptions/accept-downgrade-gift');
+      const result = res.data.data;
+      if (result.applied) {
         alert(
-          t('subscription.changed.downgradeScheduled')
-            .replace('{plan}', result.newPlan)
-            .replace('{date}', new Date(result.effectiveAt).toLocaleDateString()),
-        );
-        window.location.reload();
-      } else if (result.kind === 'cancel-scheduled') {
-        alert(
-          t('subscription.changed.cancelScheduled').replace(
+          t('subscription.confirm.giftApplied').replace(
             '{date}',
-            new Date(result.effectiveAt).toLocaleDateString(),
+            new Date(result.newPeriodEnd).toLocaleDateString(),
           ),
         );
-        window.location.reload();
       }
+      setPendingTargetPlan(null);
+      window.location.reload();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? t('subscription.errorCheckout');
       setError(msg);
@@ -263,6 +316,19 @@ export default function SellerSubscriptionPage() {
               </div>
             </div>
           )}
+
+          {/* Phase 17.2 — modal de confirmación de cambio de plan. */}
+          <PlanChangeConfirmModal
+            isOpen={pendingTargetPlan !== null && pendingKind !== null}
+            currentPlanLabel={data.plan}
+            targetPlanLabel={pendingTargetPlan ?? ''}
+            kind={pendingKind ?? 'downgrade-paid'}
+            giftEligible={data.firstDowngradeGiftEligible}
+            loading={checkoutLoading}
+            onCancel={() => setPendingTargetPlan(null)}
+            onConfirm={confirmPlanChange}
+            onAcceptGift={acceptDowngradeGift}
+          />
         </>
       )}
     </div>

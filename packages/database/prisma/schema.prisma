@@ -724,6 +724,11 @@ model Suscripcion {
   // ID del Stripe Subscription Schedule usado para diferir downgrades
   // paid→paid. Se libera al webhook subscription_schedule.released.
   stripeScheduleId     String?           @unique @map("stripe_schedule_id")
+  // Phase 17.2 — regalo de retención: la PRIMERA vez que un usuario
+  // intenta hacer downgrade, le ofrecemos 1 mes gratis si se queda.
+  // Una vez aceptado (o rechazado y bajado de plan), el flag queda
+  // a true para que no se le vuelva a ofrecer.
+  usedFirstDowngradeGift Boolean         @default(false) @map("used_first_downgrade_gift")
   comoCompensacion     Boolean           @default(false) @map("como_compensacion")
   compensacionMeses    Int?              @map("compensacion_meses")
   createdAt            DateTime          @default(now()) @map("created_at")

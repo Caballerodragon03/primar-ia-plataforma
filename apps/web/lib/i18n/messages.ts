@@ -624,6 +624,21 @@ export type MessageKey =
   | 'subscription.changed.cancelScheduled'
   | 'subscription.banner.downgradePending'
   | 'subscription.banner.cancelPending'
+  | 'subscription.confirm.upgradeTitle'
+  | 'subscription.confirm.upgradeBody'
+  | 'subscription.confirm.upgradeCta'
+  | 'subscription.confirm.downgradeTitle'
+  | 'subscription.confirm.downgradeBody'
+  | 'subscription.confirm.downgradeCta'
+  | 'subscription.confirm.cancelTitle'
+  | 'subscription.confirm.cancelBody'
+  | 'subscription.confirm.cancelCta'
+  | 'subscription.confirm.keepPlan'
+  | 'subscription.confirm.giftTitle'
+  | 'subscription.confirm.giftBody'
+  | 'subscription.confirm.giftCta'
+  | 'subscription.confirm.giftLoading'
+  | 'subscription.confirm.giftApplied'
   | 'subscription.currentPlan'
   | 'subscription.manage'
   | 'subscription.activeLots'
@@ -2176,6 +2191,21 @@ export const messages: Record<Locale, Messages> = {
     'subscription.changed.cancelScheduled': 'Tu suscripción se cancelará el {date}. Hasta entonces mantienes el acceso del plan actual.',
     'subscription.banner.downgradePending': 'Cambio pendiente: tu plan bajará a {plan} el {date}.',
     'subscription.banner.cancelPending': 'Tu suscripción se cancelará el {date} y pasarás al plan gratuito.',
+    'subscription.confirm.upgradeTitle': '¿Subir a un plan superior?',
+    'subscription.confirm.upgradeBody': 'Vas a cambiar de {current} a {target}. El cambio es inmediato y se te cobrará la diferencia prorrateada del periodo actual.',
+    'subscription.confirm.upgradeCta': 'Subir ahora',
+    'subscription.confirm.downgradeTitle': '¿Bajar a un plan inferior?',
+    'subscription.confirm.downgradeBody': 'Vas a cambiar de {current} a {target}. Mantienes tu plan actual hasta el fin del periodo que ya has pagado; el mes siguiente se te cobrará el plan más bajo.',
+    'subscription.confirm.downgradeCta': 'Bajar de plan',
+    'subscription.confirm.cancelTitle': '¿Cancelar suscripción?',
+    'subscription.confirm.cancelBody': 'Vas a pasar de {current} al plan gratuito. Mantienes el acceso completo hasta que termine el periodo que ya has pagado; después se cancelará la suscripción automáticamente.',
+    'subscription.confirm.cancelCta': 'Cancelar suscripción',
+    'subscription.confirm.keepPlan': 'Mantener mi plan',
+    'subscription.confirm.giftTitle': '¡Espera! Un regalo de bienvenida 🎁',
+    'subscription.confirm.giftBody': 'Como agradecimiento por seguir con nosotros, te regalamos 1 mes EXTRA gratis en tu plan {current}. Solo se ofrece la primera vez.',
+    'subscription.confirm.giftCta': 'Aceptar regalo y mantener mi plan',
+    'subscription.confirm.giftLoading': 'Aplicando regalo…',
+    'subscription.confirm.giftApplied': 'Regalo aplicado. Tu próxima fecha de cobro es {date}.',
     'subscription.currentPlan': 'Plan actual:',
     'subscription.manage': 'Gestionar suscripción',
     'subscription.activeLots': 'Lotes activos',
@@ -3702,6 +3732,21 @@ export const messages: Record<Locale, Messages> = {
     'subscription.changed.cancelScheduled': 'Your subscription will be cancelled on {date}. Until then you keep access to your current plan.',
     'subscription.banner.downgradePending': 'Pending change: your plan will downgrade to {plan} on {date}.',
     'subscription.banner.cancelPending': 'Your subscription will be cancelled on {date} and switch to the free plan.',
+    'subscription.confirm.upgradeTitle': 'Upgrade to a higher plan?',
+    'subscription.confirm.upgradeBody': "You're about to switch from {current} to {target}. The change is immediate and the prorated difference for the current period will be charged.",
+    'subscription.confirm.upgradeCta': 'Upgrade now',
+    'subscription.confirm.downgradeTitle': 'Downgrade to a lower plan?',
+    'subscription.confirm.downgradeBody': "You're about to switch from {current} to {target}. You keep your current plan until the end of the period you've already paid for; next month you'll be charged for the lower plan.",
+    'subscription.confirm.downgradeCta': 'Downgrade',
+    'subscription.confirm.cancelTitle': 'Cancel subscription?',
+    'subscription.confirm.cancelBody': "You're about to switch from {current} to the free plan. You keep full access until the end of the period you've already paid for; the subscription will then be cancelled automatically.",
+    'subscription.confirm.cancelCta': 'Cancel subscription',
+    'subscription.confirm.keepPlan': 'Keep my plan',
+    'subscription.confirm.giftTitle': 'Wait! A welcome gift 🎁',
+    'subscription.confirm.giftBody': "As a thank-you for staying with us, we'll give you 1 EXTRA month free on your {current} plan. One-time offer only.",
+    'subscription.confirm.giftCta': 'Accept gift and keep my plan',
+    'subscription.confirm.giftLoading': 'Applying gift…',
+    'subscription.confirm.giftApplied': 'Gift applied. Your next billing date is {date}.',
     'subscription.currentPlan': 'Current plan:',
     'subscription.manage': 'Manage subscription',
     'subscription.activeLots': 'Active lots',
