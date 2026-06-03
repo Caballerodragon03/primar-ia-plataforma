@@ -406,6 +406,70 @@ export class SubscriptionService {
     const currentPrice = currentPlan ? PLAN_LIMITS[currentPlan as keyof typeof PLAN_LIMITS]?.precio ?? 0 : 0;
     const newPrice = isFreeNew ? 0 : PLAN_LIMITS[newPlanRaw as keyof typeof PLAN_LIMITS]?.precio ?? 0;
 
+    // ─── Pre-step (Phase 17.1) — normalizar el estado pre-cambio ────────
+    // Para que el usuario pueda cambiar de plan cuantas veces quiera, hay
+    // que dejar la suscripción de Stripe en estado "limpio" antes de
+    // aplicar la nueva acción:
+    //
+    //   1. Si tiene un Subscription Schedule activo (downgrade paid→paid
+    //      pendiente), lo liberamos. Sin esto, Stripe rechaza cualquier
+    //      update directo al sub con "The subscription is managed by the
+    //      subscription schedule X". release() vuelve el sub a su estado
+    //      independiente, manteniendo la fase actual (no cancela el
+    //      periodo en curso).
+    //   2. Si tiene `cancel_at_period_end: true` (downgrade paid→free
+    //      pendiente), lo limpiamos. Sin esto, crear un nuevo schedule
+    //      desde la sub fallaría porque la sub está marcada para
+    //      cancelarse.
+    //
+    // Limpiamos también los campos pending locales — si la nueva acción
+    // genera otro schedule o cancel, los re-poblamos abajo.
+    try {
+      const peekSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+      let didCleanup = false;
+
+      const activeScheduleId = peekSub.schedule
+        ? (typeof peekSub.schedule === 'string' ? peekSub.schedule : peekSub.schedule.id)
+        : null;
+      if (activeScheduleId) {
+        try {
+          await stripe.subscriptionSchedules.release(activeScheduleId);
+          didCleanup = true;
+        } catch (releaseErr) {
+          console.warn('[changePlan] release schedule failed (continuing):', releaseErr);
+        }
+      }
+
+      if (peekSub.cancel_at_period_end && !activeScheduleId) {
+        // Solo lo limpiamos si NO había schedule (release ya nos deja en
+        // estado limpio). Reactivamos el sub para los siguientes pasos.
+        try {
+          await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+            cancel_at_period_end: false,
+          });
+          didCleanup = true;
+        } catch (uncancelErr) {
+          console.warn('[changePlan] uncancel failed (continuing):', uncancelErr);
+        }
+      }
+
+      if (didCleanup) {
+        await prisma.suscripcion.update({
+          where: { userId },
+          data: {
+            stripeScheduleId: null,
+            pendingPlanChange: null,
+            pendingChangeEffectiveAt: null,
+            cancelledAt: null,
+          },
+        });
+      }
+    } catch (peekErr) {
+      // No-op si retrieve falla; las ramas de abajo lo volverán a
+      // intentar y reportarán el error real.
+      console.warn('[changePlan] peek subscription failed:', peekErr);
+    }
+
     // ─── Downgrade to FREE → cancel at period end ──────────────────────
     if (isFreeNew) {
       try {
