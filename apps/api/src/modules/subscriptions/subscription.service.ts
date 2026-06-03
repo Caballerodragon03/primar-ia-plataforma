@@ -408,101 +408,170 @@ export class SubscriptionService {
 
     // ─── Downgrade to FREE → cancel at period end ──────────────────────
     if (isFreeNew) {
-      const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
-      const periodEnd = new Date((stripeSub.current_period_end ?? 0) * 1000);
-      await stripe.subscriptions.update(sub.stripeSubscriptionId, {
-        cancel_at_period_end: true,
-      });
-      await prisma.suscripcion.update({
-        where: { userId },
-        data: {
-          cancelledAt: new Date(),
-          pendingPlanChange: newPlanRaw,
-          pendingChangeEffectiveAt: periodEnd,
-        },
-      });
-      return { kind: 'cancel-scheduled', effectiveAt: periodEnd };
+      try {
+        const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+        const periodEnd = new Date((stripeSub.current_period_end ?? 0) * 1000);
+        await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+          cancel_at_period_end: true,
+        });
+        await prisma.suscripcion.update({
+          where: { userId },
+          data: {
+            cancelledAt: new Date(),
+            pendingPlanChange: newPlanRaw,
+            pendingChangeEffectiveAt: periodEnd,
+          },
+        });
+        return { kind: 'cancel-scheduled', effectiveAt: periodEnd };
+      } catch (err: unknown) {
+        const stripeErr = err as { type?: string; message?: string; code?: string };
+        if (stripeErr.type && typeof stripeErr.type === 'string' && stripeErr.type.startsWith('Stripe')) {
+          console.error('[changePlan] Stripe error in cancel-at-period-end:', {
+            type: stripeErr.type,
+            code: stripeErr.code,
+            message: stripeErr.message,
+          });
+          throw new AppError(`No se pudo programar la cancelación: ${stripeErr.message ?? 'error de Stripe'}`, 400);
+        }
+        throw err;
+      }
     }
 
     // ─── Upgrade (paid higher) → immediate with proration ──────────────
     if (newPrice > currentPrice) {
       const newPriceId = PLAN_LIMITS[newPlanRaw as keyof typeof PLAN_LIMITS].stripePriceId;
-      if (!newPriceId) throw new AppError('Precio de Stripe no configurado para este plan', 500);
-      const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
-      const itemId = stripeSub.items.data[0]?.id;
-      if (!itemId) throw new AppError('Stripe subscription sin items', 500);
-      await stripe.subscriptions.update(sub.stripeSubscriptionId, {
-        items: [{ id: itemId, price: newPriceId }],
-        proration_behavior: 'create_prorations',
-        // Si había un downgrade pendiente, lo cancelamos al hacer upgrade.
-        cancel_at_period_end: false,
-      });
-      // El webhook customer.subscription.updated sincronizará los campos
-      // locales (planVendedor/planComprador/stripePriceId). Limpiamos
-      // pending fields aquí ya por si el webhook se retrasa.
-      await prisma.suscripcion.update({
-        where: { userId },
-        data: {
-          pendingPlanChange: null,
-          pendingChangeEffectiveAt: null,
-          cancelledAt: null,
-        },
-      });
-      return { kind: 'upgraded', newPlan: newPlanRaw };
+      if (!newPriceId) throw new AppError(`Precio de Stripe no configurado para el plan ${newPlanRaw}`, 500);
+      try {
+        const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+        const itemId = stripeSub.items.data[0]?.id;
+        if (!itemId) throw new AppError('La suscripción de Stripe no tiene items', 500);
+        await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+          items: [{ id: itemId, price: newPriceId }],
+          proration_behavior: 'create_prorations',
+          // Si había un downgrade pendiente, lo cancelamos al hacer upgrade.
+          cancel_at_period_end: false,
+        });
+        // El webhook customer.subscription.updated sincronizará los campos
+        // locales (planVendedor/planComprador/stripePriceId). Limpiamos
+        // pending fields aquí ya por si el webhook se retrasa.
+        await prisma.suscripcion.update({
+          where: { userId },
+          data: {
+            pendingPlanChange: null,
+            pendingChangeEffectiveAt: null,
+            cancelledAt: null,
+          },
+        });
+        return { kind: 'upgraded', newPlan: newPlanRaw };
+      } catch (err: unknown) {
+        const stripeErr = err as { type?: string; message?: string; code?: string };
+        if (stripeErr.type && typeof stripeErr.type === 'string' && stripeErr.type.startsWith('Stripe')) {
+          console.error('[changePlan] Stripe error in upgrade:', {
+            type: stripeErr.type,
+            code: stripeErr.code,
+            message: stripeErr.message,
+          });
+          throw new AppError(`No se pudo actualizar el plan: ${stripeErr.message ?? 'error de Stripe'}`, 400);
+        }
+        throw err;
+      }
     }
 
     // ─── Downgrade (paid lower) → defer to period end via Schedule ─────
     if (newPrice < currentPrice) {
       const newPriceId = PLAN_LIMITS[newPlanRaw as keyof typeof PLAN_LIMITS].stripePriceId;
-      if (!newPriceId) throw new AppError('Precio de Stripe no configurado para este plan', 500);
-      const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
-      const currentPriceId = stripeSub.items.data[0]?.price.id;
-      const periodEnd = new Date((stripeSub.current_period_end ?? 0) * 1000);
-      const periodStart = stripeSub.current_period_start ?? Math.floor(Date.now() / 1000);
-      if (!currentPriceId) throw new AppError('Stripe subscription sin price', 500);
-
-      // Si ya hay un schedule previo (downgrade pendiente que el usuario
-      // quiere modificar), lo releaseamos primero. Importante: usamos
-      // como fuente de verdad el campo `schedule` de Stripe, NO nuestra
-      // DB. Esto evita una race condition en clicks concurrentes donde
-      // ambas requests leen sub.stripeScheduleId=null y se crearía un
-      // segundo schedule (Stripe respondería 400 "already has schedule").
-      const existingScheduleId = stripeSub.schedule
-        ? (typeof stripeSub.schedule === 'string' ? stripeSub.schedule : stripeSub.schedule.id)
-        : null;
-      if (existingScheduleId) {
-        try {
-          await stripe.subscriptionSchedules.release(existingScheduleId);
-        } catch {
-          // ya estaba released o no existe — ignorable
-        }
+      if (!newPriceId) {
+        throw new AppError(`Precio de Stripe no configurado para el plan ${newPlanRaw}`, 500);
       }
+      try {
+        const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+        const currentPriceId = stripeSub.items.data[0]?.price.id;
+        const currentPeriodEnd = stripeSub.current_period_end;
+        if (!currentPriceId) {
+          throw new AppError('La suscripción de Stripe no tiene un price asociado', 500);
+        }
+        if (!currentPeriodEnd) {
+          throw new AppError('La suscripción de Stripe no tiene current_period_end', 500);
+        }
+        const periodEnd = new Date(currentPeriodEnd * 1000);
 
-      const schedule = await stripe.subscriptionSchedules.create({
-        from_subscription: sub.stripeSubscriptionId,
-      });
-      await stripe.subscriptionSchedules.update(schedule.id, {
-        end_behavior: 'release',
-        phases: [
-          {
-            items: [{ price: currentPriceId, quantity: 1 }],
-            start_date: periodStart,
-            end_date: stripeSub.current_period_end,
+        // Si ya hay un schedule previo (downgrade pendiente que el
+        // usuario quiere modificar), lo releaseamos. Usamos
+        // stripeSub.schedule (fuente de verdad de Stripe) en vez de
+        // nuestro DB para evitar race conditions.
+        const existingScheduleId = stripeSub.schedule
+          ? (typeof stripeSub.schedule === 'string' ? stripeSub.schedule : stripeSub.schedule.id)
+          : null;
+        if (existingScheduleId) {
+          try {
+            await stripe.subscriptionSchedules.release(existingScheduleId);
+          } catch (releaseErr) {
+            console.warn('[changePlan] release schedule failed (ignorable):', releaseErr);
+          }
+        }
+
+        // Creamos un schedule wrappeando la sub existente. Stripe
+        // inicializa la fase 0 automáticamente con los datos del
+        // periodo actual; nosotros la sustituimos por una fase 0
+        // explícita (current items hasta period_end) + fase 1 con el
+        // nuevo plan.
+        //
+        // CLAVE: NO especificamos `start_date` en la fase 0. Stripe
+        // requiere que start_date coincida exactamente con el periodo
+        // actual del schedule, y al pasar timestamps explícitos a veces
+        // hay drift de segundos que dispara "phase start_date in the
+        // past". Omitir start_date hace que Stripe use el valor que ya
+        // tiene internamente (current_period_start). end_date sí lo
+        // pasamos para forzar el switch al period_end actual.
+        //
+        // proration_behavior='none' en ambas fases para que NO se
+        // cobre nada al usuario al crear el schedule — sigue pagando
+        // su plan actual hasta period_end, después se cobra el plan
+        // nuevo en el siguiente ciclo de facturación.
+        const schedule = await stripe.subscriptionSchedules.create({
+          from_subscription: sub.stripeSubscriptionId,
+        });
+        await stripe.subscriptionSchedules.update(schedule.id, {
+          end_behavior: 'release',
+          phases: [
+            {
+              items: [{ price: currentPriceId, quantity: 1 }],
+              end_date: currentPeriodEnd,
+              proration_behavior: 'none',
+            },
+            {
+              items: [{ price: newPriceId, quantity: 1 }],
+              proration_behavior: 'none',
+            },
+          ],
+        });
+        await prisma.suscripcion.update({
+          where: { userId },
+          data: {
+            pendingPlanChange: newPlanRaw,
+            pendingChangeEffectiveAt: periodEnd,
+            stripeScheduleId: schedule.id,
           },
-          {
-            items: [{ price: newPriceId, quantity: 1 }],
-          },
-        ],
-      });
-      await prisma.suscripcion.update({
-        where: { userId },
-        data: {
-          pendingPlanChange: newPlanRaw,
-          pendingChangeEffectiveAt: periodEnd,
-          stripeScheduleId: schedule.id,
-        },
-      });
-      return { kind: 'downgrade-scheduled', newPlan: newPlanRaw, effectiveAt: periodEnd };
+        });
+        return { kind: 'downgrade-scheduled', newPlan: newPlanRaw, effectiveAt: periodEnd };
+      } catch (err: unknown) {
+        // Si Stripe responde con un error operativo (StripeInvalidRequestError,
+        // etc), surface el mensaje real al cliente en vez de un 500 ciego.
+        const stripeErr = err as { type?: string; message?: string; code?: string };
+        if (stripeErr.type && typeof stripeErr.type === 'string' && stripeErr.type.startsWith('Stripe')) {
+          console.error('[changePlan] Stripe error in downgrade-paid:', {
+            type: stripeErr.type,
+            code: stripeErr.code,
+            message: stripeErr.message,
+          });
+          throw new AppError(
+            `No se pudo programar el cambio de plan: ${stripeErr.message ?? 'error de Stripe'}`,
+            400,
+          );
+        }
+        // No-Stripe error → re-lanzamos para que el handler general lo trate.
+        throw err;
+      }
     }
 
     return { kind: 'noop' };
