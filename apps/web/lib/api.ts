@@ -50,6 +50,11 @@ api.interceptors.request.use((config) => {
 let refreshPromise: Promise<string> | null = null;
 let isRedirecting = false;
 
+function isAuthRejection(error: unknown): boolean {
+  const status = (error as { response?: { status?: number } })?.response?.status;
+  return status === 401 || status === 403;
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -88,7 +93,7 @@ api.interceptors.response.use(
               return newToken;
             })
             .catch((err) => {
-              if (!isRedirecting) {
+              if (isAuthRejection(err) && !isRedirecting) {
                 isRedirecting = true;
                 useAuthStore.getState().clearAuth();
                 window.location.replace('/login');

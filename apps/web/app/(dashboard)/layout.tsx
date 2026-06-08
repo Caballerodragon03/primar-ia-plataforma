@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -18,14 +18,8 @@ import { PushPermissionPrompt } from '@/components/pwa/PushPermissionPrompt';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, _hydrated, _bootstrapped, _restoring } = useAuthStore();
   const router = useRouter();
-  const [timedOut, setTimedOut] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setTimedOut(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const ready = (_hydrated && _bootstrapped && !_restoring) || timedOut;
+  const ready = _hydrated && _bootstrapped && !_restoring;
 
   useEffect(() => {
     if (ready && !user) router.replace('/login');

@@ -24,6 +24,11 @@ type RefreshResponse = {
   };
 };
 
+function isAuthRejection(error: unknown): boolean {
+  const status = (error as { response?: { status?: number } })?.response?.status;
+  return status === 401 || status === 403;
+}
+
 export function AuthSessionBootstrap() {
   const {
     user,
@@ -62,13 +67,18 @@ export function AuthSessionBootstrap() {
           setAuth(refreshedUser, token, newRefreshToken);
           return;
         }
-        if (!cancelled) clearAuth();
-      } catch {
-        if (!cancelled) clearAuth();
+        if (!cancelled) {
+          if (refreshToken || localStorage.getItem('refreshToken')) setBootstrapped(true);
+          else clearAuth();
+        }
+      } catch (err) {
+        if (!cancelled) {
+          if (isAuthRejection(err)) clearAuth();
+          else setBootstrapped(true);
+        }
       } finally {
         if (!cancelled) {
           setRestoring(false);
-          setBootstrapped(true);
         }
       }
     }

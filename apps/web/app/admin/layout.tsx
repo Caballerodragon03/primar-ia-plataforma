@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
@@ -11,14 +11,8 @@ import { ReportBugButton } from '@/components/feedback/ReportBugButton';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { clearAuth, user, refreshToken, _hydrated, _bootstrapped, _restoring } = useAuthStore();
-  const [timedOut, setTimedOut] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setTimedOut(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const ready = (_hydrated && _bootstrapped && !_restoring) || timedOut;
+  const ready = _hydrated && _bootstrapped && !_restoring;
 
   useEffect(() => {
     if (ready && (!user || user.role !== 'ADMIN')) router.replace('/login');
