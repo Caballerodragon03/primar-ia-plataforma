@@ -16,6 +16,7 @@
  * en cada navegación dentro de la misma sesión si el usuario lo cierra.
  */
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Bell, X } from 'lucide-react';
 import { useT } from '@/lib/i18n/LocaleProvider';
 import { api } from '@/lib/api';
@@ -109,6 +110,12 @@ export function PushPermissionPrompt() {
           >
             {t('push.prompt.later')}
           </button>
+          <Link
+            href="/debug/pwa-auth"
+            className="text-xs text-amber-900/70 hover:text-amber-900 px-3 py-1 transition-colors"
+          >
+            Diagnóstico
+          </Link>
         </div>
       </div>
       <button
