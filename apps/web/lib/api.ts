@@ -61,9 +61,14 @@ api.interceptors.response.use(
       try {
         if (!refreshPromise) {
           refreshPromise = axios
-            .post(`${API_URL}/api/v1/auth/refresh`, {}, { withCredentials: true })
+            .post(
+              `${API_URL}/api/v1/auth/refresh`,
+              { refreshToken: useAuthStore.getState().refreshToken ?? localStorage.getItem('refreshToken') ?? undefined },
+              { withCredentials: true },
+            )
             .then((res) => {
               const newToken = res.data?.data?.accessToken as string;
+              const newRefreshToken = res.data?.data?.refreshToken as string | undefined;
               const refreshedUser = res.data?.data?.user as
                 | {
                     id: string;
@@ -75,9 +80,10 @@ api.interceptors.response.use(
                   }
                 | undefined;
               localStorage.setItem('accessToken', newToken);
+              if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
               const user = refreshedUser ?? useAuthStore.getState().user;
               if (user) {
-                useAuthStore.getState().setAuth(user, newToken);
+                useAuthStore.getState().setAuth(user, newToken, newRefreshToken);
               }
               return newToken;
             })

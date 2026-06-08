@@ -42,6 +42,7 @@ export class AuthController {
         success: true,
         data: {
           accessToken,
+          refreshToken,
           user: {
             id: user.id,
             email: user.email,
@@ -69,7 +70,7 @@ export class AuthController {
 
   async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const token = req.cookies?.[REFRESH_COOKIE_NAME] as string | undefined;
+      const token = (req.cookies?.[REFRESH_COOKIE_NAME] ?? req.body?.refreshToken) as string | undefined;
       if (!token) {
         res.status(401).json({ success: false, error: 'No refresh token' });
         return;
@@ -82,6 +83,7 @@ export class AuthController {
         success: true,
         data: {
           accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
           user: {
             id: tokens.user.id,
             email: tokens.user.email,
@@ -120,7 +122,7 @@ export class AuthController {
 
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const token = req.cookies?.[REFRESH_COOKIE_NAME] as string | undefined;
+      const token = (req.cookies?.[REFRESH_COOKIE_NAME] ?? req.body?.refreshToken) as string | undefined;
       if (token) await authService.logout(token);
       res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
       res.json({ success: true, message: 'Sesion cerrada' });

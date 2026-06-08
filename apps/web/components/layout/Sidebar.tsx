@@ -116,7 +116,7 @@ const EMPTY_NOTIFICATIONS: NotificationSummary = {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, clearAuth } = useAuthStore();
+  const { user, refreshToken, clearAuth } = useAuthStore();
   const t = useT();
 
   const [notifications, setNotifications] =
@@ -177,7 +177,7 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/auth/logout', { refreshToken });
     } catch {
       // ignore
     }

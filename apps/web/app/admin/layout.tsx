@@ -10,7 +10,7 @@ import { ReportBugButton } from '@/components/feedback/ReportBugButton';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { clearAuth, user, _hydrated, _bootstrapped, _restoring } = useAuthStore();
+  const { clearAuth, user, refreshToken, _hydrated, _bootstrapped, _restoring } = useAuthStore();
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/auth/logout', { refreshToken });
     } catch {
       // ignore
     }

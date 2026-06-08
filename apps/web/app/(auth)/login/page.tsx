@@ -52,8 +52,12 @@ export default function LoginPage() {
     setServerError(null);
     try {
       const res = await api.post('/auth/login', data);
-      const { accessToken, user } = res.data.data as { accessToken: string; user: { id: string; email: string; role: 'VENDEDOR' | 'COMPRADOR' | 'ADMIN'; estado: string; nombre: string; apellidos: string } };
-      setAuth(user, accessToken);
+      const { accessToken, refreshToken, user } = res.data.data as {
+        accessToken: string;
+        refreshToken?: string;
+        user: { id: string; email: string; role: 'VENDEDOR' | 'COMPRADOR' | 'ADMIN'; estado: string; nombre: string; apellidos: string };
+      };
+      setAuth(user, accessToken, refreshToken);
       if (user.role === 'COMPRADOR') router.push('/buyer');
       else if (user.role === 'ADMIN') router.push('/admin/dashboard');
       else router.push('/seller');

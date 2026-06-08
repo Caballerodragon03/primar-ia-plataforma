@@ -89,7 +89,7 @@ const EMPTY_NOTIFICATIONS: NotificationSummary = {
 export function MobileSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, clearAuth } = useAuthStore();
+  const { user, refreshToken, clearAuth } = useAuthStore();
   const t = useT();
 
   const [open, setOpen] = useState(false);
@@ -152,7 +152,7 @@ export function MobileSidebar() {
 
   const handleLogout = async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/auth/logout', { refreshToken });
     } catch { /* ignore */ }
     clearAuth();
     setOpen(false);

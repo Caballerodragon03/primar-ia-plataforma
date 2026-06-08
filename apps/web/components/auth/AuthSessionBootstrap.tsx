@@ -19,6 +19,7 @@ type RefreshResponse = {
   success: boolean;
   data?: {
     accessToken?: string;
+    refreshToken?: string;
     user?: AuthUser;
   };
 };
@@ -27,6 +28,7 @@ export function AuthSessionBootstrap() {
   const {
     user,
     accessToken,
+    refreshToken,
     _hydrated,
     _bootstrapped,
     setAuth,
@@ -50,13 +52,14 @@ export function AuthSessionBootstrap() {
       try {
         const res = await axios.post<RefreshResponse>(
           `${API_URL}/api/v1/auth/refresh`,
-          {},
+          { refreshToken: refreshToken ?? localStorage.getItem('refreshToken') ?? undefined },
           { withCredentials: true, timeout: 15000 },
         );
         const token = res.data.data?.accessToken;
+        const newRefreshToken = res.data.data?.refreshToken;
         const refreshedUser = res.data.data?.user;
         if (!cancelled && token && refreshedUser) {
-          setAuth(refreshedUser, token);
+          setAuth(refreshedUser, token, newRefreshToken);
           return;
         }
         if (!cancelled) clearAuth();
@@ -80,6 +83,7 @@ export function AuthSessionBootstrap() {
     _hydrated,
     accessToken,
     clearAuth,
+    refreshToken,
     setAuth,
     setBootstrapped,
     setRestoring,

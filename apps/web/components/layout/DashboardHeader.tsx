@@ -59,6 +59,7 @@ function generateBreadcrumbs(pathname: string, t: (k: MessageKey) => string) {
 
 export function DashboardHeader() {
   const user = useAuthStore((s) => s.user);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const pathname = usePathname();
   const router = useRouter();
@@ -87,7 +88,7 @@ export function DashboardHeader() {
 
   const handleLogout = async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/auth/logout', { refreshToken });
     } catch {
       // ignore
     }
