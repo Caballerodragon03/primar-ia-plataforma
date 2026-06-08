@@ -13,6 +13,7 @@ import { TutorialRunner } from '@/components/tutorials/TutorialRunner';
 import { TutorialBanner } from '@/components/tutorials/TutorialBanner';
 import { TutorialErrorBoundary } from '@/components/tutorials/TutorialErrorBoundary';
 import { PendingApprovalBanner } from '@/components/layout/PendingApprovalBanner';
+import { PushPermissionPrompt } from '@/components/pwa/PushPermissionPrompt';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, _hydrated } = useAuthStore();
@@ -55,7 +56,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <DashboardHeader />
         </div>
         <PendingApprovalBanner />
-        <main id="main-content" data-tutorial="main-content" className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 lg:p-8 animate-fade-in">
+        <main id="main-content" data-tutorial="main-content" className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 lg:p-8 animate-fade-in space-y-4">
+          <PushPermissionPrompt />
           <TutorialErrorBoundary>{children}</TutorialErrorBoundary>
         </main>
       </div>

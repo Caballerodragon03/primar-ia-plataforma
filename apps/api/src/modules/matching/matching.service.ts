@@ -3,6 +3,7 @@ import type { Lote, Pedido, Match, LoteEstado, TransaccionEstado, MatchEstado } 
 import { AppError } from '../../middleware/error.middleware.js';
 import type { ContributeInput } from './matching.schema.js';
 import { sendMatchProposalEmail } from '../../shared/emails/transactional.js';
+import { sendPushToUser } from '../push/push.service.js';
 import { calcularComision } from '@primaria/shared';
 import { PLAN_LIMITS } from '../subscriptions/subscription.constants.js';
 
@@ -777,6 +778,30 @@ export class MatchingService {
             }
           } catch (emailErr) {
             console.error('[Matching] Failed to send match proposal email:', emailErr);
+          }
+          // Phase 18 — push al vendedor del nuevo match.
+          try {
+            const [producto, empresa] = await Promise.all([
+              prisma.producto.findUnique({
+                where: { id: lote.productoId },
+                select: { nombre: true },
+              }),
+              pedido.compradorId
+                ? prisma.empresa.findUnique({
+                    where: { userId: pedido.compradorId },
+                    select: { razonSocial: true },
+                  })
+                : Promise.resolve(null),
+            ]);
+            const compradorName = empresa?.razonSocial ?? 'Un comprador';
+            await sendPushToUser(lote.vendedorId, {
+              title: 'Nuevo match disponible',
+              body: `${compradorName} busca ${Number(cantidadKg).toLocaleString('es-ES')} kg de ${producto?.nombre ?? 'tu producto'}`,
+              url: '/seller/matches',
+              tag: `match-new-${lote.id}`,
+            });
+          } catch (pushErr) {
+            console.warn('[Matching] push match notify failed:', pushErr);
           }
         })();
       }

@@ -556,6 +556,11 @@ export type MessageKey =
   | 'register.step1.password'
   | 'register.step1.passwordHint'
   | 'register.step1.confirmPassword'
+  | 'push.prompt.title'
+  | 'push.prompt.body'
+  | 'push.prompt.enable'
+  | 'push.prompt.enabling'
+  | 'push.prompt.later'
   | 'register.step1.phone'
   | 'register.step1.language'
   | 'register.step1.continue'
@@ -2125,6 +2130,11 @@ export const messages: Record<Locale, Messages> = {
     'register.step1.password': 'Crear contraseña',
     'register.step1.passwordHint': 'Mínimo 12 caracteres',
     'register.step1.confirmPassword': 'Confirmar contraseña',
+    'push.prompt.title': 'Activa las notificaciones',
+    'push.prompt.body': 'Recibe en tu móvil los mensajes nuevos, las acciones que requieren tu atención y los matches en cuanto ocurran — igual que WhatsApp.',
+    'push.prompt.enable': 'Activar notificaciones',
+    'push.prompt.enabling': 'Activando…',
+    'push.prompt.later': 'Más tarde',
     'register.step1.phone': 'Teléfono de contacto',
     'register.step1.language': 'Idioma preferido',
     'register.step1.continue': 'Continuar a datos fiscales',
@@ -3667,6 +3677,11 @@ export const messages: Record<Locale, Messages> = {
     'register.step1.password': 'Create password',
     'register.step1.passwordHint': 'Minimum 12 characters',
     'register.step1.confirmPassword': 'Confirm password',
+    'push.prompt.title': 'Enable notifications',
+    'push.prompt.body': 'Get new messages, required actions and matches as push notifications on your phone — just like WhatsApp.',
+    'push.prompt.enable': 'Enable notifications',
+    'push.prompt.enabling': 'Enabling…',
+    'push.prompt.later': 'Later',
     'register.step1.phone': 'Contact phone number',
     'register.step1.language': 'Preferred language',
     'register.step1.continue': 'Continue to business details',

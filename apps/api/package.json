@@ -18,6 +18,7 @@
     "@primaria/database": "*",
     "@primaria/email": "*",
     "@primaria/shared": "*",
+    "@types/web-push": "^3.6.4",
     "bcrypt": "^5.1.1",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.7",
@@ -36,6 +37,7 @@
     "qrcode": "^1.5.4",
     "stripe": "^17.4.0",
     "uuid": "^11.0.3",
+    "web-push": "^3.6.7",
     "xlsx": "^0.18.5",
     "zod": "^3.24.1"
   },

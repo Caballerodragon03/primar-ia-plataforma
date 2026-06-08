@@ -14,6 +14,11 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().default('whsec_placeholder'),
   RESEND_API_KEY: z.string().default('re_placeholder'),
   EMAIL_FROM: z.string().email().default('noreply@primar-ia.com'),
+  // Phase 18 — Web Push VAPID keys. Si están vacías, los endpoints de
+  // push devuelven 503 y el frontend silenciosamente no se suscribe.
+  PUSH_VAPID_PUBLIC_KEY: z.string().default(''),
+  PUSH_VAPID_PRIVATE_KEY: z.string().default(''),
+  PUSH_VAPID_SUBJECT: z.string().default('mailto:soporte@primar-ia.com'),
   R2_ACCOUNT_ID: z.string().default('placeholder'),
   R2_ACCESS_KEY_ID: z.string().default('placeholder'),
   R2_SECRET_ACCESS_KEY: z.string().default('placeholder'),

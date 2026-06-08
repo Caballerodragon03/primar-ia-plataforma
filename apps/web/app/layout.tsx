@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Poppins } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { LocaleProvider } from '@/lib/i18n/LocaleProvider';
+import { PWARegister } from '@/components/pwa/PWARegister';
 import './globals.css';
 
 const poppins = Poppins({
@@ -19,11 +20,21 @@ export const metadata: Metadata = {
     'Marketplace B2B que conecta productores agrícolas españoles con compradores y distribuidores. Sin intermediarios.',
   keywords: ['marketplace', 'B2B', 'agricultura', 'productores', 'España', 'Primar-IA'],
   authors: [{ name: 'Primar-IA' }],
+  // Phase 18 — PWA: manifest + iOS standalone webapp config.
+  manifest: '/manifest.json',
+  applicationName: 'Primar-IA',
+  appleWebApp: {
+    capable: true,
+    title: 'Primar-IA',
+    statusBarStyle: 'default',
+  },
   icons: {
     icon: [
       { url: '/logo-icon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
-    apple: '/logo-icon.png',
+    apple: '/icons/icon-180.png',
   },
   openGraph: {
     type: 'website',
@@ -70,6 +81,7 @@ export default function RootLayout({
         >
           Saltar al contenido
         </a>
+        <PWARegister />
         <LocaleProvider>{children}</LocaleProvider>
         <Toaster
           position="bottom-right"

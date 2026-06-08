@@ -1,0 +1,115 @@
+// Primar-IA service worker — Phase 18
+//
+// Responsabilidades:
+//   1. PWA installability: el navegador exige un SW activo para
+//      considerar la web "installable" (con manifest + HTTPS).
+//   2. Push notifications: handler de `push` y `notificationclick`
+//      para mostrar notificaciones nativas + abrir la app en la URL
+//      relevante cuando el usuario las pulsa.
+//
+// NO hacemos cache offline agresiva — la app es online-first (datos
+// vienen del backend en cada request) y queremos que las nuevas
+// versiones de Next.js se sirvan sin trabar al usuario en una vieja.
+// Estrategia: pasarela transparente (fetch → network).
+
+const SW_VERSION = 'primaria-sw-v1';
+
+self.addEventListener('install', (event) => {
+  // skipWaiting → cuando hay una nueva versión del SW, se activa de
+  // inmediato en vez de esperar a que se cierren todas las pestañas.
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  // claim → controla todos los clientes (pestañas) abiertos sin
+  // esperar a un reload.
+  event.waitUntil(self.clients.claim());
+});
+
+// Push event — el backend manda un mensaje empujado vía web-push.
+// El payload viene en JSON: { title, body, url, tag, icon }.
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: 'Primar-IA', body: event.data ? event.data.text() : '' };
+  }
+
+  const title = data.title || 'Primar-IA';
+  const options = {
+    body: data.body || '',
+    icon: data.icon || '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    // tag: si llegan varias notifs con la misma tag, se colapsan en
+    // una sola en lugar de apilarse (p.ej. múltiples mensajes del
+    // mismo chat).
+    tag: data.tag,
+    // data.url se usa en notificationclick para abrir la pantalla.
+    data: { url: data.url || '/' },
+    requireInteraction: false,
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Click sobre la notificación → abrir/enfocar la app en la URL del
+// payload. Si la pestaña ya está abierta, hace focus en ella en vez
+// de abrir una nueva.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/';
+  event.waitUntil(
+    (async () => {
+      const allClients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      for (const client of allClients) {
+        try {
+          const url = new URL(client.url);
+          // Si la app ya está abierta en cualquier ruta, navegamos a
+          // la URL de la notif dentro de esa pestaña.
+          if (url.origin === self.location.origin && 'focus' in client && 'navigate' in client) {
+            await client.focus();
+            // navigate puede no estar disponible en algunos browsers
+            try {
+              await client.navigate(targetUrl);
+            } catch { /* ignore */ }
+            return;
+          }
+        } catch { /* ignore */ }
+      }
+      // No hay pestaña → abre una nueva.
+      if (self.clients.openWindow) {
+        await self.clients.openWindow(targetUrl);
+      }
+    })(),
+  );
+});
+
+// Si el backend revoca o caduca una subscription, el navegador
+// dispara este evento. Re-subscribimos y notificamos al backend
+// para que actualice su DB.
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        // Hace falta la VAPID public key. La leemos via fetch al backend
+        // (el SW no tiene acceso a process.env).
+        const r = await fetch('/api/v1/push/public-key');
+        const { data } = await r.json();
+        const newSub = await self.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: data.publicKey,
+        });
+        await fetch('/api/v1/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newSub),
+        });
+      } catch (err) {
+        console.error('[sw] pushsubscriptionchange failed', err);
+      }
+    })(),
+  );
+});

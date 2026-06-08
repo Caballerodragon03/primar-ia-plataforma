@@ -291,6 +291,7 @@ model User {
   negociacionesIniciadas  Negociacion[]  @relation("NegociacionIniciador")
   refreshTokens           RefreshToken[]
   emailTokens             EmailToken[]
+  pushSubscriptions       PushSubscription[]
   suscripcion             Suscripcion?
   auditoria               Auditoria[]
   certificadosVerificados Certificado[]  @relation("CertificadoVerificador")
@@ -774,6 +775,27 @@ model RefreshToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+// Phase 18 — Web Push subscriptions. Cada dispositivo/navegador
+// donde el usuario haya autorizado notifs guarda aquí su endpoint y
+// keys (p256dh, auth). El backend usa web-push para enviarles
+// payloads cifrados al endpoint. Si el navegador devuelve 410 Gone
+// al enviar, eliminamos el row (suscripción caducada).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 model EmailToken {

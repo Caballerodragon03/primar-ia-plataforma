@@ -11,6 +11,7 @@
  */
 import { prisma } from '@primaria/database';
 import { AppError } from '../../middleware/error.middleware.js';
+import { sendPushToUser } from '../push/push.service.js';
 
 export class ShippingService {
   /**
@@ -23,6 +24,7 @@ export class ShippingService {
       where: { id: matchId },
       include: {
         lote: { select: { vendedorId: true } },
+        pedido: { select: { compradorId: true } },
         transaccion: { select: { id: true } },
       },
     });
@@ -56,6 +58,14 @@ export class ShippingService {
       },
     });
 
+    // Phase 18 — push al comprador (acción: confirmar recepción).
+    void sendPushToUser(match.pedido.compradorId, {
+      title: 'Mercancía enviada',
+      body: 'El vendedor ha marcado tu pedido como enviado. Confirma la recepción al recibirlo.',
+      url: `/buyer/contracts/${matchId}`,
+      tag: `contract-${matchId}`,
+    }).catch(() => {});
+
     return { enviadoEn: enviadoEn.toISOString() };
   }
 
@@ -68,6 +78,7 @@ export class ShippingService {
     const match = await prisma.match.findUnique({
       where: { id: matchId },
       include: {
+        lote: { select: { vendedorId: true } },
         pedido: { select: { compradorId: true } },
         transaccion: { select: { id: true, enviadoEn: true } },
       },
@@ -100,6 +111,14 @@ export class ShippingService {
         tipo: 'TEXTO',
       },
     });
+
+    // Phase 18 — push al vendedor (entrega confirmada → puedes valorar).
+    void sendPushToUser(match.lote.vendedorId, {
+      title: 'Entrega confirmada',
+      body: 'El comprador ha confirmado la recepción. Ya puedes valorar al comprador.',
+      url: `/seller/contracts/${matchId}`,
+      tag: `contract-${matchId}`,
+    }).catch(() => {});
 
     // Phase 14M v3.20 — si todos los matches del pedido tienen
     // recibidoEn marcado, el pedido pasa a CERRADO y desaparece de la

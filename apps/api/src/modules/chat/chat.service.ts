@@ -1,6 +1,7 @@
 import { prisma } from '@primaria/database';
 import { detectarBypass, sanitizarMensaje } from '@primaria/shared';
 import { AppError } from '../../middleware/error.middleware.js';
+import { sendPushToUser } from '../push/push.service.js';
 import type { SendMessageInput } from './chat.schema.js';
 
 const PAGE_SIZE = 50;
@@ -209,7 +210,7 @@ export class ChatService {
     const bypass = detectarBypass(data.contenido);
     const { sanitized } = sanitizarMensaje(data.contenido);
 
-    return prisma.mensaje.create({
+    const mensaje = await prisma.mensaje.create({
       data: {
         transaccionId,
         remitenteId,
@@ -218,6 +219,52 @@ export class ChatService {
         archivoUrl: data.archivoUrl,
         intentoBypass: bypass,
       },
+    });
+
+    // Phase 18 — push notification al destinatario (el otro participante
+    // de la transacción). Fire-and-forget: errores no rompen el envío.
+    void this.notifyMessageRecipient(transaccionId, remitenteId, mensaje.contenido).catch(
+      (err) => console.warn('[chat] push notify failed:', err),
+    );
+    return mensaje;
+  }
+
+  /**
+   * Phase 18 — manda un push al participante que NO es el remitente.
+   * El tag agrupa por matchId para que múltiples mensajes seguidos no
+   * apilen notifs (la nueva reemplaza la vieja).
+   */
+  private async notifyMessageRecipient(
+    transaccionId: string,
+    remitenteId: string,
+    contenido: string,
+  ): Promise<void> {
+    const tx = await prisma.transaccion.findUnique({
+      where: { id: transaccionId },
+      select: { vendedorId: true, compradorId: true, matchId: true },
+    });
+    if (!tx) return;
+    const recipientId = remitenteId === tx.vendedorId ? tx.compradorId : tx.vendedorId;
+    if (!recipientId) return;
+    const [remitente, recipient] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: remitenteId },
+        select: { nombre: true, apellidos: true, empresa: { select: { razonSocial: true } } },
+      }),
+      prisma.user.findUnique({ where: { id: recipientId }, select: { role: true } }),
+    ]);
+    const fromName =
+      remitente?.empresa?.razonSocial ||
+      `${remitente?.nombre ?? ''} ${remitente?.apellidos ?? ''}`.trim() ||
+      'Mensaje nuevo';
+    const recipientRoleSegment = recipient?.role === 'VENDEDOR' ? 'seller' : 'buyer';
+    const url = `/${recipientRoleSegment}/messages/${tx.matchId}`;
+    const preview = contenido.length > 80 ? `${contenido.slice(0, 80)}…` : contenido;
+    await sendPushToUser(recipientId, {
+      title: fromName,
+      body: preview,
+      url,
+      tag: `chat-${transaccionId}`,
     });
   }
 

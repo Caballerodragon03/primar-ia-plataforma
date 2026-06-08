@@ -592,6 +592,26 @@ export class ContractsService {
       }
     })();
 
+    // Phase 18 — push al comprador (firma + pago comisión pendientes).
+    void (async () => {
+      try {
+        const tx = await prisma.transaccion.findFirst({
+          where: { matchId },
+          select: { compradorId: true },
+        });
+        if (!tx?.compradorId) return;
+        const { sendPushToUser } = await import('../push/push.service.js');
+        await sendPushToUser(tx.compradorId, {
+          title: 'El vendedor ha firmado',
+          body: 'Te toca firmar y pagar la comisión para cerrar el contrato.',
+          url: `/buyer/contracts/${matchId}`,
+          tag: `contract-${matchId}`,
+        });
+      } catch (err) {
+        console.warn('[push] sellerSigned notify failed:', err);
+      }
+    })();
+
     return result;
   }
 
@@ -746,6 +766,22 @@ export class ContractsService {
             data.pedido.comprador.nombre,
             { matchId, productoNombre, isSeller: false },
           ),
+        ]);
+        // Phase 18 — push a ambas partes (contrato FIRMADO).
+        const { sendPushToUser } = await import('../push/push.service.js');
+        await Promise.allSettled([
+          sendPushToUser(data.lote.vendedorId, {
+            title: 'Contrato firmado',
+            body: `${productoNombre} — ya puedes preparar el envío.`,
+            url: `/seller/contracts/${matchId}`,
+            tag: `contract-${matchId}`,
+          }),
+          sendPushToUser(data.pedido.compradorId, {
+            title: 'Contrato firmado',
+            body: `${productoNombre} — esperando envío del vendedor.`,
+            url: `/buyer/contracts/${matchId}`,
+            tag: `contract-${matchId}`,
+          }),
         ]);
       } catch (err) {
         console.error('[email] sendContractFinalizedEmail failed for match', matchId, err);
