@@ -14,6 +14,7 @@ import { TutorialBanner } from '@/components/tutorials/TutorialBanner';
 import { TutorialErrorBoundary } from '@/components/tutorials/TutorialErrorBoundary';
 import { PendingApprovalBanner } from '@/components/layout/PendingApprovalBanner';
 import { PushPermissionPrompt } from '@/components/pwa/PushPermissionPrompt';
+import { PWAAppBadge } from '@/components/pwa/PWAAppBadge';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, _hydrated, _bootstrapped, _restoring } = useAuthStore();
@@ -38,6 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-background flex-col">
+      <PWAAppBadge />
       <TutorialBanner />
       <div className="flex flex-1 min-h-0">
       <div data-tutorial="sidebar">

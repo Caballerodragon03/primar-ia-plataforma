@@ -49,7 +49,20 @@ self.addEventListener('push', (event) => {
     data: { url: data.url || '/' },
     requireInteraction: false,
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    (async () => {
+      if ('setAppBadge' in self.navigator) {
+        try {
+          if (typeof data.badgeCount === 'number' && data.badgeCount > 0) {
+            await self.navigator.setAppBadge(data.badgeCount);
+          } else {
+            await self.navigator.setAppBadge();
+          }
+        } catch { /* ignore */ }
+      }
+      await self.registration.showNotification(title, options);
+    })(),
+  );
 });
 
 // Click sobre la notificación → abrir/enfocar la app en la URL del
@@ -57,7 +70,12 @@ self.addEventListener('push', (event) => {
 // de abrir una nueva.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/';
+  const rawTargetUrl = event.notification.data?.url || '/';
+  let targetUrl = new URL('/', self.location.origin).href;
+  try {
+    const parsed = new URL(rawTargetUrl, self.location.origin);
+    if (parsed.origin === self.location.origin) targetUrl = parsed.href;
+  } catch { /* keep fallback */ }
   event.waitUntil(
     (async () => {
       const allClients = await self.clients.matchAll({

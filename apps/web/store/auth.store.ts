@@ -48,6 +48,10 @@ export const useAuthStore = create<AuthState>()(
       clearAuth: () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        const nav = typeof navigator !== 'undefined'
+          ? navigator as Navigator & { clearAppBadge?: () => Promise<void> }
+          : null;
+        nav?.clearAppBadge?.().catch(() => {});
         set({ user: null, accessToken: null, refreshToken: null, _bootstrapped: true, _restoring: false });
       },
       setRestoring: (_restoring) => set({ _restoring }),

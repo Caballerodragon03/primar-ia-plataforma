@@ -258,7 +258,7 @@ export class ChatService {
       `${remitente?.nombre ?? ''} ${remitente?.apellidos ?? ''}`.trim() ||
       'Mensaje nuevo';
     const recipientRoleSegment = recipient?.role === 'VENDEDOR' ? 'seller' : 'buyer';
-    const url = `/${recipientRoleSegment}/messages/${tx.matchId}`;
+    const url = `/${recipientRoleSegment}/messages?tx=${encodeURIComponent(transaccionId)}`;
     const preview = contenido.length > 80 ? `${contenido.slice(0, 80)}…` : contenido;
     await sendPushToUser(recipientId, {
       title: fromName,
