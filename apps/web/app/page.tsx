@@ -1,6 +1,24 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/auth.store';
+
+function dashboardPath(role: 'VENDEDOR' | 'COMPRADOR' | 'ADMIN') {
+  if (role === 'COMPRADOR') return '/buyer';
+  if (role === 'ADMIN') return '/admin/dashboard';
+  return '/seller';
+}
 
 export default function HomePage() {
+  const router = useRouter();
+  const { user, _bootstrapped } = useAuthStore();
+
+  useEffect(() => {
+    if (_bootstrapped && user) router.replace(dashboardPath(user.role));
+  }, [_bootstrapped, router, user]);
+
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center">
       <div className="text-center max-w-2xl px-4">

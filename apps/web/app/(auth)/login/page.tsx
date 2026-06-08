@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,11 +18,23 @@ import { useT } from '@/lib/i18n/LocaleProvider';
 // Phase 14M v3.38 — schema construido dentro del componente para que los
 // mensajes de error sigan el idioma actual del usuario.
 
+function dashboardPath(role: 'VENDEDOR' | 'COMPRADOR' | 'ADMIN') {
+  if (role === 'COMPRADOR') return '/buyer';
+  if (role === 'ADMIN') return '/admin/dashboard';
+  return '/seller';
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const user = useAuthStore((s) => s.user);
+  const bootstrapped = useAuthStore((s) => s._bootstrapped);
   const [serverError, setServerError] = useState<string | null>(null);
   const t = useT();
+
+  useEffect(() => {
+    if (bootstrapped && user) router.replace(dashboardPath(user.role));
+  }, [bootstrapped, router, user]);
 
   const loginSchema = z.object({
     email: z.string().email(t('auth.login.emailInvalid')),

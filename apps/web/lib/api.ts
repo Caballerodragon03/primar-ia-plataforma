@@ -64,10 +64,20 @@ api.interceptors.response.use(
             .post(`${API_URL}/api/v1/auth/refresh`, {}, { withCredentials: true })
             .then((res) => {
               const newToken = res.data?.data?.accessToken as string;
+              const refreshedUser = res.data?.data?.user as
+                | {
+                    id: string;
+                    email: string;
+                    role: 'VENDEDOR' | 'COMPRADOR' | 'ADMIN';
+                    estado: string;
+                    nombre: string;
+                    apellidos: string;
+                  }
+                | undefined;
               localStorage.setItem('accessToken', newToken);
-              const currentUser = useAuthStore.getState().user;
-              if (currentUser) {
-                useAuthStore.getState().setAuth(currentUser, newToken);
+              const user = refreshedUser ?? useAuthStore.getState().user;
+              if (user) {
+                useAuthStore.getState().setAuth(user, newToken);
               }
               return newToken;
             })

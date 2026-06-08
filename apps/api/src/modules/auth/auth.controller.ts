@@ -75,7 +75,20 @@ export class AuthController {
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
 
-      res.json({ success: true, data: { accessToken: tokens.accessToken } });
+      res.json({
+        success: true,
+        data: {
+          accessToken: tokens.accessToken,
+          user: {
+            id: tokens.user.id,
+            email: tokens.user.email,
+            role: tokens.user.role,
+            estado: tokens.user.estado,
+            nombre: tokens.user.nombre,
+            apellidos: tokens.user.apellidos,
+          },
+        },
+      });
     } catch (err) {
       next(err);
     }

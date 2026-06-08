@@ -10,7 +10,7 @@ import { ReportBugButton } from '@/components/feedback/ReportBugButton';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { clearAuth, user, _hydrated } = useAuthStore();
+  const { clearAuth, user, _hydrated, _bootstrapped, _restoring } = useAuthStore();
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => clearTimeout(timer);
   }, []);
 
-  const ready = _hydrated || timedOut;
+  const ready = (_hydrated && _bootstrapped && !_restoring) || timedOut;
 
   useEffect(() => {
     if (ready && (!user || user.role !== 'ADMIN')) router.replace('/login');

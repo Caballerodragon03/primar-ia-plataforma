@@ -14,6 +14,8 @@
  * sincronizamos el estado existente.
  */
 import { useEffect } from 'react';
+import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/auth.store';
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -34,27 +36,17 @@ async function ensureSubscription(registration: ServiceWorkerRegistration): Prom
     if (existing) {
       // Re-enviar al backend (idempotente — el endpoint hace upsert
       // por endpoint, así que no crea duplicados).
-      await fetch('/api/v1/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(existing.toJSON()),
-      }).catch(() => {});
+      await api.post('/push/subscribe', existing.toJSON()).catch(() => {});
       return;
     }
-    const keyRes = await fetch('/api/v1/push/public-key');
-    if (!keyRes.ok) return;
-    const { data } = await keyRes.json();
+    const keyRes = await api.get('/push/public-key');
+    const { data } = keyRes.data as { data?: { publicKey?: string } };
+    if (!data?.publicKey) return;
     const sub = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(data.publicKey) as BufferSource,
     });
-    await fetch('/api/v1/push/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(sub.toJSON()),
-    });
+    await api.post('/push/subscribe', sub.toJSON());
   } catch (err) {
     // Silencioso — la subscripción puede fallar por mil motivos
     // (private mode, navegador antiguo, etc). El user puede reintentar
@@ -64,6 +56,9 @@ async function ensureSubscription(registration: ServiceWorkerRegistration): Prom
 }
 
 export function PWARegister() {
+  const user = useAuthStore((s) => s.user);
+  const bootstrapped = useAuthStore((s) => s._bootstrapped);
+
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
     const onLoad = () => {
@@ -71,14 +66,14 @@ export function PWARegister() {
         .register('/sw.js', { scope: '/' })
         .then((reg) => {
           // Tras registro, intentamos rehidratar la subscription.
-          void ensureSubscription(reg);
+          if (bootstrapped && user) void ensureSubscription(reg);
         })
         .catch((err) => console.debug('[pwa] SW register failed:', err));
     };
     if (document.readyState === 'complete') onLoad();
     else window.addEventListener('load', onLoad, { once: true });
     return () => window.removeEventListener('load', onLoad);
-  }, []);
+  }, [bootstrapped, user]);
 
   return null;
 }

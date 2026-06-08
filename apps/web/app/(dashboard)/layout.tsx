@@ -16,7 +16,7 @@ import { PendingApprovalBanner } from '@/components/layout/PendingApprovalBanner
 import { PushPermissionPrompt } from '@/components/pwa/PushPermissionPrompt';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, _hydrated } = useAuthStore();
+  const { user, _hydrated, _bootstrapped, _restoring } = useAuthStore();
   const router = useRouter();
   const [timedOut, setTimedOut] = useState(false);
 
@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => clearTimeout(timer);
   }, []);
 
-  const ready = _hydrated || timedOut;
+  const ready = (_hydrated && _bootstrapped && !_restoring) || timedOut;
 
   useEffect(() => {
     if (ready && !user) router.replace('/login');

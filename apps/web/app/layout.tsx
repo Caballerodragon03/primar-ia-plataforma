@@ -3,6 +3,7 @@ import { Poppins } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { LocaleProvider } from '@/lib/i18n/LocaleProvider';
 import { PWARegister } from '@/components/pwa/PWARegister';
+import { AuthSessionBootstrap } from '@/components/auth/AuthSessionBootstrap';
 import './globals.css';
 
 const poppins = Poppins({
@@ -81,6 +82,7 @@ export default function RootLayout({
         >
           Saltar al contenido
         </a>
+        <AuthSessionBootstrap />
         <PWARegister />
         <LocaleProvider>{children}</LocaleProvider>
         <Toaster

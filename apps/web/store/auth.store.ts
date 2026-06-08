@@ -14,8 +14,12 @@ interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
   _hydrated: boolean;
+  _restoring: boolean;
+  _bootstrapped: boolean;
   setAuth: (user: AuthUser, token: string) => void;
   clearAuth: () => void;
+  setRestoring: (restoring: boolean) => void;
+  setBootstrapped: (bootstrapped: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -24,14 +28,18 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       _hydrated: false,
+      _restoring: false,
+      _bootstrapped: false,
       setAuth: (user, accessToken) => {
         localStorage.setItem('accessToken', accessToken);
-        set({ user, accessToken, _hydrated: true });
+        set({ user, accessToken, _hydrated: true, _bootstrapped: true, _restoring: false });
       },
       clearAuth: () => {
         localStorage.removeItem('accessToken');
-        set({ user: null, accessToken: null });
+        set({ user: null, accessToken: null, _bootstrapped: true, _restoring: false });
       },
+      setRestoring: (_restoring) => set({ _restoring }),
+      setBootstrapped: (_bootstrapped) => set({ _bootstrapped }),
     }),
     {
       name: 'primaria-auth',

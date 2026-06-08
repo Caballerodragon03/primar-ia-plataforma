@@ -2,7 +2,7 @@
   "name": "Primar-IA",
   "short_name": "Primar-IA",
   "description": "Marketplace digital para el sector primario español. Conecta productores y compradores sin intermediarios.",
-  "start_url": "/",
+  "start_url": "/login?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

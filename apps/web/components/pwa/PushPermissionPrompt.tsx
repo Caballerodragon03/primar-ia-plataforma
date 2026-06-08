@@ -18,6 +18,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, X } from 'lucide-react';
 import { useT } from '@/lib/i18n/LocaleProvider';
+import { api } from '@/lib/api';
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -54,22 +55,17 @@ export function PushPermissionPrompt() {
         return;
       }
       const reg = await navigator.serviceWorker.ready;
-      const keyRes = await fetch('/api/v1/push/public-key');
-      if (!keyRes.ok) {
+      const keyRes = await api.get('/push/public-key');
+      const { data } = keyRes.data as { data?: { publicKey?: string } };
+      if (!data?.publicKey) {
         setVisible(false);
         return;
       }
-      const { data } = await keyRes.json();
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(data.publicKey) as BufferSource,
       });
-      await fetch('/api/v1/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(sub.toJSON()),
-      });
+      await api.post('/push/subscribe', sub.toJSON());
       setVisible(false);
     } catch (err) {
       console.warn('[push] enable failed', err);

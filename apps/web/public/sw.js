@@ -93,23 +93,10 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('pushsubscriptionchange', (event) => {
   event.waitUntil(
     (async () => {
-      try {
-        // Hace falta la VAPID public key. La leemos via fetch al backend
-        // (el SW no tiene acceso a process.env).
-        const r = await fetch('/api/v1/push/public-key');
-        const { data } = await r.json();
-        const newSub = await self.registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: data.publicKey,
-        });
-        await fetch('/api/v1/push/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newSub),
-        });
-      } catch (err) {
-        console.error('[sw] pushsubscriptionchange failed', err);
-      }
+      // El service worker no puede leer localStorage ni adjuntar el
+      // Bearer token que requiere /push/subscribe. La re-sincronización
+      // autenticada se hace al abrir la app desde <PWARegister />.
+      console.info('[sw] pushsubscriptionchange: resync deferred until app opens');
     })(),
   );
 });

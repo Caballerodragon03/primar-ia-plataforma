@@ -249,7 +249,7 @@ export class AuthService {
       }),
     ]);
 
-    return { accessToken, refreshToken: newRefreshToken };
+    return { accessToken, refreshToken: newRefreshToken, user };
   }
 
   async forgotPassword(data: ForgotPasswordInput) {
