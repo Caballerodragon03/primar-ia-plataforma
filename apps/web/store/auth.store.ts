@@ -21,6 +21,7 @@ interface AuthState {
   clearAuth: () => void;
   setRestoring: (restoring: boolean) => void;
   setBootstrapped: (bootstrapped: boolean) => void;
+  setHydrated: (hydrated: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -51,6 +52,7 @@ export const useAuthStore = create<AuthState>()(
       },
       setRestoring: (_restoring) => set({ _restoring }),
       setBootstrapped: (_bootstrapped) => set({ _bootstrapped }),
+      setHydrated: (_hydrated) => set({ _hydrated }),
     }),
     {
       name: 'primaria-auth',
@@ -59,12 +61,12 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
       }),
-      onRehydrateStorage: () => {
-        return (_state, error) => {
+      onRehydrateStorage: (currentState) => {
+        return (rehydratedState, error) => {
           if (error) {
             console.error('Auth hydration failed:', error);
           }
-          useAuthStore.setState({ _hydrated: true });
+          (rehydratedState ?? currentState)?.setHydrated(true);
         };
       },
     },

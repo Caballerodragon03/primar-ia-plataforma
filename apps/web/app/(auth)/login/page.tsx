@@ -39,15 +39,6 @@ export default function LoginPage() {
     window.location.replace(target);
   }, [bootstrapped, router, user]);
 
-  if (bootstrapped && user) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-4">
-        <Logo variant="small" width={100} className="animate-pulse" />
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   const loginSchema = z.object({
     email: z.string().email(t('auth.login.emailInvalid')),
     password: z.string().min(1, t('auth.login.passwordRequired')),
@@ -88,6 +79,15 @@ export default function LoginPage() {
       setServerError(localized ?? resp?.error ?? t('auth.login.serverErrorFallback'));
     }
   };
+
+  if (bootstrapped && user) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-4">
+        <Logo variant="small" width={100} className="animate-pulse" />
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
