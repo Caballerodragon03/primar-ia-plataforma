@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
 import { Logo } from '@/components/brand/Logo';
 import { LogoIcon } from '@/components/brand/LogoIcon';
+import { InstallAppButton } from '@/components/pwa/InstallAppButton';
 import { useT } from '@/lib/i18n/LocaleProvider';
 
 // Phase 14M v3.38 — schema construido dentro del componente para que los
@@ -176,6 +177,8 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
+
+          <InstallAppButton />
 
           <p className="text-center text-xs text-muted-foreground mt-6">
             {t('auth.login.endorsedBy')}

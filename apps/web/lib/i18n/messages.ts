@@ -561,6 +561,24 @@ export type MessageKey =
   | 'push.prompt.enable'
   | 'push.prompt.enabling'
   | 'push.prompt.later'
+  | 'pwa.install.title'
+  | 'pwa.install.installedTitle'
+  | 'pwa.install.installedBody'
+  | 'pwa.install.directBody'
+  | 'pwa.install.instructionsBody'
+  | 'pwa.install.button'
+  | 'pwa.install.modalTitle'
+  | 'pwa.install.iosSafariIntro'
+  | 'pwa.install.iosOtherIntro'
+  | 'pwa.install.genericIntro'
+  | 'pwa.install.close'
+  | 'pwa.install.stepSafari'
+  | 'pwa.install.stepShare'
+  | 'pwa.install.stepMenu'
+  | 'pwa.install.stepAddHome'
+  | 'pwa.install.stepInstall'
+  | 'pwa.install.stepOpen'
+  | 'pwa.install.understood'
   | 'register.step1.phone'
   | 'register.step1.language'
   | 'register.step1.continue'
@@ -2135,6 +2153,24 @@ export const messages: Record<Locale, Messages> = {
     'push.prompt.enable': 'Activar notificaciones',
     'push.prompt.enabling': 'Activando…',
     'push.prompt.later': 'Más tarde',
+    'pwa.install.title': 'Descarga Primar-IA en tu móvil',
+    'pwa.install.installedTitle': 'Primar-IA ya está instalada',
+    'pwa.install.installedBody': 'Abre la app desde el icono de tu pantalla de inicio para usarla como aplicación.',
+    'pwa.install.directBody': 'Instálala desde aquí y accede sin abrir el navegador.',
+    'pwa.install.instructionsBody': 'En iPhone te guiamos para añadirla a la pantalla de inicio.',
+    'pwa.install.button': 'Descargar app',
+    'pwa.install.modalTitle': 'Instalar Primar-IA',
+    'pwa.install.iosSafariIntro': 'Apple no permite que la web instale la app con un solo toque en iPhone. Estos son los pasos exactos.',
+    'pwa.install.iosOtherIntro': 'En iPhone la instalación debe hacerse desde Safari. Abre esta misma página en Safari y sigue estos pasos.',
+    'pwa.install.genericIntro': 'Si tu navegador no muestra el instalador automático, puedes añadir Primar-IA desde el menú del navegador.',
+    'pwa.install.close': 'Cerrar',
+    'pwa.install.stepSafari': 'Abre app.primar-ia.com en Safari.',
+    'pwa.install.stepShare': 'Pulsa el botón Compartir de Safari.',
+    'pwa.install.stepMenu': 'Abre el menú del navegador.',
+    'pwa.install.stepAddHome': 'Elige “Añadir a pantalla de inicio”.',
+    'pwa.install.stepInstall': 'Elige “Instalar aplicación” o “Añadir a pantalla de inicio”.',
+    'pwa.install.stepOpen': 'Abre Primar-IA desde el nuevo icono.',
+    'pwa.install.understood': 'Entendido',
     'register.step1.phone': 'Teléfono de contacto',
     'register.step1.language': 'Idioma preferido',
     'register.step1.continue': 'Continuar a datos fiscales',
@@ -3682,6 +3718,24 @@ export const messages: Record<Locale, Messages> = {
     'push.prompt.enable': 'Enable notifications',
     'push.prompt.enabling': 'Enabling…',
     'push.prompt.later': 'Later',
+    'pwa.install.title': 'Download Primar-IA on your phone',
+    'pwa.install.installedTitle': 'Primar-IA is already installed',
+    'pwa.install.installedBody': 'Open it from your home screen icon to use it like an app.',
+    'pwa.install.directBody': 'Install it from here and access it without opening the browser.',
+    'pwa.install.instructionsBody': 'On iPhone, we will guide you to add it to your home screen.',
+    'pwa.install.button': 'Download app',
+    'pwa.install.modalTitle': 'Install Primar-IA',
+    'pwa.install.iosSafariIntro': 'Apple does not let websites install apps with one tap on iPhone. These are the exact steps.',
+    'pwa.install.iosOtherIntro': 'On iPhone, installation must be done from Safari. Open this same page in Safari and follow these steps.',
+    'pwa.install.genericIntro': 'If your browser does not show the automatic installer, you can add Primar-IA from the browser menu.',
+    'pwa.install.close': 'Close',
+    'pwa.install.stepSafari': 'Open app.primar-ia.com in Safari.',
+    'pwa.install.stepShare': 'Tap Safari’s Share button.',
+    'pwa.install.stepMenu': 'Open the browser menu.',
+    'pwa.install.stepAddHome': 'Choose “Add to Home Screen”.',
+    'pwa.install.stepInstall': 'Choose “Install app” or “Add to Home Screen”.',
+    'pwa.install.stepOpen': 'Open Primar-IA from the new icon.',
+    'pwa.install.understood': 'Got it',
     'register.step1.phone': 'Contact phone number',
     'register.step1.language': 'Preferred language',
     'register.step1.continue': 'Continue to business details',

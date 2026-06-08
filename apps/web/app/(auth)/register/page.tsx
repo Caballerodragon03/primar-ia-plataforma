@@ -14,6 +14,7 @@ import { Step4 } from './steps/Step4';
 import { api } from '@/lib/api';
 import { Logo } from '@/components/brand/Logo';
 import { LogoIcon } from '@/components/brand/LogoIcon';
+import { InstallAppButton } from '@/components/pwa/InstallAppButton';
 import { useT } from '@/lib/i18n/LocaleProvider';
 import type { RegisterFormData } from './types';
 
@@ -183,6 +184,7 @@ export default function RegisterPage() {
             <Link href="/login">
               <Button variant="outline" size="lg" className="w-full">{t('auth.register.backToLogin')}</Button>
             </Link>
+            <InstallAppButton compact />
           </div>
         </div>
       </div>
@@ -251,6 +253,8 @@ export default function RegisterPage() {
               <Link href="/login" className="font-semibold text-foreground hover:text-primary transition-colors">{t('auth.register.signIn')}</Link>
             </p>
           </div>
+
+          <InstallAppButton />
         </div>
       </div>
     </div>
