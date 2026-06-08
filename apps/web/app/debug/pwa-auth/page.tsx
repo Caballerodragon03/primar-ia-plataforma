@@ -38,6 +38,31 @@ function decodeJwtMeta(token: string | null): DebugState | null {
   }
 }
 
+async function collectLocalPushState(): Promise<DebugState> {
+  if (typeof window === 'undefined') return { supported: false };
+  const notificationPermission =
+    typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
+  const pushManagerSupported = 'PushManager' in window;
+  const serviceWorkerSupported = 'serviceWorker' in navigator;
+  if (!serviceWorkerSupported) {
+    return { serviceWorkerSupported, pushManagerSupported, notificationPermission };
+  }
+
+  const registration = await navigator.serviceWorker.getRegistration();
+  const subscription = registration && pushManagerSupported
+    ? await registration.pushManager.getSubscription()
+    : null;
+  return {
+    serviceWorkerSupported,
+    pushManagerSupported,
+    notificationPermission,
+    hasRegistration: Boolean(registration),
+    registrationScope: registration?.scope ?? null,
+    hasLocalSubscription: Boolean(subscription),
+    endpointHost: subscription?.endpoint ? new URL(subscription.endpoint).host : null,
+  };
+}
+
 function collectDebugState(): DebugState {
   const store = useAuthStore.getState();
   const persistedRaw = localStorage.getItem('primaria-auth');
@@ -151,6 +176,69 @@ export default function PwaAuthDebugPage() {
     }
   }
 
+  async function testLocalPush() {
+    try {
+      const push = await collectLocalPushState();
+      setLastResult({ action: 'local-push', ok: true, push });
+    } catch (err) {
+      setLastResult({
+        action: 'local-push',
+        ok: false,
+        message: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setDebug(collectDebugState());
+    }
+  }
+
+  async function testPushStatus() {
+    try {
+      const res = await api.get('/push/status');
+      setLastResult({
+        action: 'push-status',
+        ok: true,
+        status: res.status,
+        data: res.data?.data ?? null,
+      });
+    } catch (err) {
+      const e = err as { response?: { status?: number; data?: unknown }; message?: string; code?: string };
+      setLastResult({
+        action: 'push-status',
+        ok: false,
+        status: e.response?.status ?? null,
+        code: e.code ?? null,
+        message: e.message ?? null,
+        response: e.response?.data ?? null,
+      });
+    } finally {
+      setDebug(collectDebugState());
+    }
+  }
+
+  async function sendTestPush() {
+    try {
+      const res = await api.post('/push/test');
+      setLastResult({
+        action: 'push-test',
+        ok: true,
+        status: res.status,
+        data: res.data?.data ?? null,
+      });
+    } catch (err) {
+      const e = err as { response?: { status?: number; data?: unknown }; message?: string; code?: string };
+      setLastResult({
+        action: 'push-test',
+        ok: false,
+        status: e.response?.status ?? null,
+        code: e.code ?? null,
+        message: e.message ?? null,
+        response: e.response?.data ?? null,
+      });
+    } finally {
+      setDebug(collectDebugState());
+    }
+  }
+
   async function copyDebug() {
     await navigator.clipboard.writeText(formatted);
     setLastResult({ action: 'copy', ok: true });
@@ -175,6 +263,15 @@ export default function PwaAuthDebugPage() {
           </button>
           <button className="rounded-button border border-border px-4 py-2 text-sm font-semibold" onClick={testProfile}>
             Probar perfil
+          </button>
+          <button className="rounded-button border border-border px-4 py-2 text-sm font-semibold" onClick={testLocalPush}>
+            Push local
+          </button>
+          <button className="rounded-button border border-border px-4 py-2 text-sm font-semibold" onClick={testPushStatus}>
+            Push backend
+          </button>
+          <button className="rounded-button border border-border px-4 py-2 text-sm font-semibold" onClick={sendTestPush}>
+            Enviar push test
           </button>
           <button className="rounded-button border border-border px-4 py-2 text-sm font-semibold" onClick={copyDebug}>
             Copiar diagnóstico

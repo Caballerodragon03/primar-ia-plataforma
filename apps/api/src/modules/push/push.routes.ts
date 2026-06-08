@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import { prisma } from '@primaria/database';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import { asyncHandler } from '../../shared/async-handler.js';
 import {
@@ -7,6 +8,8 @@ import {
   deleteSubscriptionByEndpoint,
   deleteAllSubscriptionsForUser,
   getPushPublicKey,
+  getPushStatusForUser,
+  sendPushToUser,
 } from './push.service.js';
 
 export const pushRouter = Router();
@@ -24,6 +27,40 @@ pushRouter.get('/public-key', (_req: Request, res: Response) => {
 
 // El resto requiere autenticación.
 pushRouter.use(requireAuth);
+
+pushRouter.get(
+  '/status',
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.sub;
+    const data = await getPushStatusForUser(userId);
+    res.json({ success: true, data });
+  }),
+);
+
+pushRouter.post(
+  '/test',
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.sub;
+    const unreadMessages = await prisma.mensaje.count({
+      where: {
+        remitenteId: { not: userId },
+        leido: false,
+        transaccion: {
+          OR: [{ vendedorId: userId }, { compradorId: userId }],
+          estado: { not: 'CANCELADO' },
+        },
+      },
+    });
+    await sendPushToUser(userId, {
+      title: 'Primar-IA test',
+      body: 'Si ves esto, el push nativo llega a este dispositivo.',
+      url: '/debug/pwa-auth',
+      tag: `debug-push-${userId}`,
+      badgeCount: Math.max(1, unreadMessages),
+    });
+    res.json({ success: true, data: { attempted: true, badgeCount: Math.max(1, unreadMessages) } });
+  }),
+);
 
 // Body: { endpoint, keys: { p256dh, auth } } — formato que devuelve
 // PushSubscription.toJSON() del navegador.
