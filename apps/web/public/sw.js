@@ -53,8 +53,12 @@ self.addEventListener('push', (event) => {
     (async () => {
       if ('setAppBadge' in self.navigator) {
         try {
-          if (typeof data.badgeCount === 'number' && data.badgeCount > 0) {
-            await self.navigator.setAppBadge(data.badgeCount);
+          if (typeof data.badgeCount === 'number') {
+            if (data.badgeCount > 0) {
+              await self.navigator.setAppBadge(data.badgeCount);
+            } else if ('clearAppBadge' in self.navigator) {
+              await self.navigator.clearAppBadge();
+            }
           } else {
             await self.navigator.setAppBadge();
           }

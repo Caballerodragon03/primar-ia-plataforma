@@ -43,6 +43,8 @@ export interface PushPayload {
   tag?: string;
   /** Icono opcional. Por defecto el logo de la PWA. */
   icon?: string;
+  /** Contador para la Badging API de la PWA (burbuja roja del icono instalado). */
+  badgeCount?: number;
 }
 
 /**

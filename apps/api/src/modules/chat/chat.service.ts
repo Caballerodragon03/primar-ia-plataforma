@@ -260,11 +260,22 @@ export class ChatService {
     const recipientRoleSegment = recipient?.role === 'VENDEDOR' ? 'seller' : 'buyer';
     const url = `/${recipientRoleSegment}/messages?tx=${encodeURIComponent(transaccionId)}`;
     const preview = contenido.length > 80 ? `${contenido.slice(0, 80)}…` : contenido;
+    const unreadMessages = await prisma.mensaje.count({
+      where: {
+        remitenteId: { not: recipientId },
+        leido: false,
+        transaccion: {
+          OR: [{ vendedorId: recipientId }, { compradorId: recipientId }],
+          estado: { not: 'CANCELADO' },
+        },
+      },
+    });
     await sendPushToUser(recipientId, {
       title: fromName,
       body: preview,
       url,
       tag: `chat-${transaccionId}`,
+      badgeCount: unreadMessages,
     });
   }
 
