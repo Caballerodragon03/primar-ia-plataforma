@@ -1,28 +1,49 @@
 // Unit tests for MatchingService — Prisma client is fully mocked.
 
-jest.mock('@primaria/database', () => ({
-  prisma: {
-    lote: { findUnique: jest.fn() },
-    pedido: { findMany: jest.fn() },
-    match: { upsert: jest.fn() },
-    user: { findUnique: jest.fn() },
-    empresa: { findUnique: jest.fn() },
-    disputa: { findFirst: jest.fn().mockResolvedValue(null) },
-    transaccion: { count: jest.fn().mockResolvedValue(0) },
-    suscripcion: { findUnique: jest.fn().mockResolvedValue(null) },
-    mensaje: { create: jest.fn() },
-    producto: { findUnique: jest.fn() },
-    $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn({
-      match: { update: jest.fn().mockResolvedValue({}) },
-      lote: { update: jest.fn() },
-      pedido: { update: jest.fn() },
-    })),
-  },
-}));
+jest.mock('@primaria/database', () => {
+  const lote = { findUnique: jest.fn(), update: jest.fn() };
+  const pedido = { findMany: jest.fn(), update: jest.fn() };
+  const match = {
+    findUnique: jest.fn().mockResolvedValue(null),
+    findMany: jest.fn().mockResolvedValue([]),
+    upsert: jest.fn(),
+    update: jest.fn().mockResolvedValue({}),
+  };
+  const transaccion = {
+    count: jest.fn().mockResolvedValue(0),
+    findUnique: jest.fn().mockResolvedValue(null),
+    create: jest.fn(),
+  };
+
+  return {
+    prisma: {
+      lote,
+      pedido,
+      match,
+      user: { findUnique: jest.fn() },
+      empresa: { findUnique: jest.fn() },
+      disputa: { findFirst: jest.fn().mockResolvedValue(null) },
+      transaccion,
+      suscripcion: { findUnique: jest.fn().mockResolvedValue(null) },
+      mensaje: { create: jest.fn() },
+      producto: { findUnique: jest.fn() },
+      $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn({
+        match,
+        lote,
+        pedido,
+        transaccion,
+      })),
+    },
+  };
+});
 
 // Also mock transactional email so tests never attempt network calls
 jest.mock('../../src/shared/emails/transactional', () => ({
   sendMatchProposalEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../src/modules/contracts/contracts.service', () => ({
+  contractsService: { generateContractDraft: jest.fn().mockResolvedValue(undefined) },
 }));
 
 import { prisma } from '@primaria/database';
@@ -204,5 +225,86 @@ describe('MatchingService.runMatchingForLot', () => {
 
     const result = await service.runMatchingForLot('lote-001');
     expect(result).toEqual([]);
+  });
+});
+
+describe('MatchingService.contributeToOrder', () => {
+  let service: MatchingService;
+
+  beforeEach(() => {
+    service = new MatchingService();
+    jest.clearAllMocks();
+  });
+
+  it('allows a calibrated lote calibre to cover an uncalibrated pedido', async () => {
+    const matchUpdate = jest.fn().mockResolvedValue(makeMatch({
+      estado: 'ACEPTADO_VENDEDOR',
+      cantidadKg: 50,
+      precioKg: 3,
+      calibresJson: [{ calibre: 'M', cantidad_kg: 50 }],
+    }));
+    const transaccionCreate = jest.fn().mockResolvedValue({});
+    const tx = {
+      match: {
+        findUnique: jest.fn().mockResolvedValue({
+          ...makeMatch(),
+          estado: 'PROPUESTO',
+          lote: {
+            ...makeLote({
+              calibres: [{ calibre: 'M', cantidad_kg: 50, precio_min_kg: 2.5 }],
+            }),
+            matches: [],
+          },
+          pedido: {
+            ...makePedido({
+              compradorId: 'buyer-001',
+              calibresSolicitados: [
+                { calibre: 'UNCALIBRATED', cantidad_kg: 50, precio_max_kg: 3 },
+              ],
+            }),
+            matches: [],
+          },
+        }),
+        update: matchUpdate,
+      },
+      lote: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'lote-001',
+          estado: 'ACTIVO',
+          calibres: [{ calibre: 'M', cantidad_kg: 50, precio_min_kg: 2.5 }],
+          matches: [],
+        }),
+        update: jest.fn(),
+      },
+      pedido: { update: jest.fn() },
+      transaccion: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: transaccionCreate,
+      },
+    };
+    (mockPrisma.$transaction as jest.Mock).mockImplementation((fn) => fn(tx));
+
+    await service.contributeToOrder('seller-001', 'match-001', [
+      { calibre: 'M', cantidad_kg: 50 },
+    ]);
+
+    expect(matchUpdate).toHaveBeenCalledWith({
+      where: { id: 'match-001' },
+      data: expect.objectContaining({
+        estado: 'ACEPTADO_VENDEDOR',
+        calibresJson: [{ calibre: 'M', cantidad_kg: 50 }],
+        cantidadKg: 50,
+        precioKg: 3,
+      }),
+    });
+    expect(transaccionCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        matchId: 'match-001',
+        vendedorId: 'seller-001',
+        compradorId: 'buyer-001',
+        cantidadKg: 50,
+        precioTotal: 150,
+      }),
+    });
   });
 });

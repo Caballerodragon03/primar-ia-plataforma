@@ -22,6 +22,12 @@ interface CalibreContribucion {
   maxAllowed: number; // min(pedidoRestante, loteRestante)
 }
 
+interface LoteCalibre {
+  calibre: string;
+  cantidad_kg: number;
+  precio_min_kg: number;
+}
+
 interface ContributeModalProps {
   match: Match | null;
   isOpen: boolean;
@@ -43,6 +49,44 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
       : [];
     const pedidoRest = match.pedidoRestantePorCalibre ?? {};
     const loteRest = match.loteRestantePorCalibre ?? {};
+    const loteCalibres = Array.isArray(match.lote.calibres)
+      ? (match.lote.calibres as LoteCalibre[])
+      : [];
+    const pedidoUncalibrated =
+      solicitados.length === 1 && solicitados[0]?.calibre === 'UNCALIBRATED';
+
+    if (pedidoUncalibrated) {
+      const buyerBucket = solicitados[0];
+      if (!buyerBucket) {
+        setCalibres([]);
+        return;
+      }
+
+      const pedidoTotal = buyerBucket.cantidad_kg;
+      const pedidoRestante = pedidoRest[buyerBucket.calibre] ?? pedidoTotal;
+      const rows = loteCalibres
+        .filter((c) => c.calibre && c.cantidad_kg > 0)
+        .filter((c) => Number(c.precio_min_kg ?? 0) <= buyerBucket.precio_max_kg)
+        .map((c) => {
+          const loteRestante = loteRest[c.calibre] ?? c.cantidad_kg;
+          const maxAllowed = Math.max(0, Math.min(pedidoRestante, loteRestante));
+          return {
+            calibre: c.calibre,
+            cantidadKg: 0,
+            precioMaxKg: buyerBucket.precio_max_kg,
+            pedidoTotal,
+            pedidoRestante,
+            loteRestante,
+            maxAllowed,
+          };
+        });
+
+      setCalibres(rows);
+      setError(null);
+      setSuccess(false);
+      return;
+    }
+
     setCalibres(
       solicitados.map((c) => {
         const pedidoTotal = c.cantidad_kg;
@@ -75,19 +119,29 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
 
   const matchPrecioKg = parseFloat(match.precioKg);
 
+  const pedidoCalibresSolicitados = Array.isArray(match.pedido.calibresSolicitados)
+    ? (match.pedido.calibresSolicitados as CalibresSolicitados[])
+    : [];
+  const pedidoUncalibrated =
+    pedidoCalibresSolicitados.length === 1 &&
+    pedidoCalibresSolicitados[0]?.calibre === 'UNCALIBRATED';
+
   const estimatedTotal = calibres.reduce(
     (sum, c) => sum + c.cantidadKg * matchPrecioKg,
     0
   );
 
-  const totalKgNeeded = (
-    Array.isArray(match.pedido.calibresSolicitados)
-      ? (match.pedido.calibresSolicitados as CalibresSolicitados[])
-      : []
-  ).reduce((sum, c) => sum + c.cantidad_kg, 0);
+  const totalKgNeeded = pedidoCalibresSolicitados.reduce((sum, c) => sum + c.cantidad_kg, 0);
+  const totalContributionKg = calibres.reduce((sum, c) => sum + c.cantidadKg, 0);
+  const uncalibratedOrderRemaining = pedidoUncalibrated
+    ? (calibres[0]?.pedidoRestante ?? 0)
+    : 0;
 
   const hasContribution = calibres.some((c) => c.cantidadKg > 0);
-  const anyOverMax = calibres.some((c) => c.cantidadKg > c.maxAllowed);
+  const exceedsUncalibratedOrder =
+    pedidoUncalibrated && totalContributionKg > uncalibratedOrderRemaining;
+  const anyOverMax =
+    calibres.some((c) => c.cantidadKg > c.maxAllowed) || exceedsUncalibratedOrder;
 
   function updateCalibre(index: number, field: keyof CalibreContribucion, value: string | number) {
     setCalibres((prev) =>
@@ -217,7 +271,7 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
             {calibres.length === 0 && (
               <p className="text-sm text-text-secondary text-center py-4">
-                No calibers found for this order.
+                No compatible calibers found for this order.
               </p>
             )}
             {calibres.map((c, i) => {
@@ -285,6 +339,11 @@ export function ContributeModal({ match, isOpen, onClose, onSuccess }: Contribut
             {error && (
               <p className="text-sm text-red-500 text-center" role="alert">
                 {error}
+              </p>
+            )}
+            {exceedsUncalibratedOrder && (
+              <p className="text-sm text-red-500 text-center" role="alert">
+                La suma supera lo que falta cubrir del pedido ({uncalibratedOrderRemaining.toLocaleString('es-ES')} kg).
               </p>
             )}
             {success && (

@@ -624,9 +624,12 @@ function computePrecioKgFromContribucion(
 ): number {
   let totalKg = 0;
   let totalPrecio = 0;
+  const uncalibratedBucket = isUncalibratedPedido(pedidoCalibres)
+    ? pedidoCalibres[0]
+    : null;
 
   for (const contrib of contribucion) {
-    const pc = pedidoCalibres.find((p) => p.calibre === contrib.calibre);
+    const pc = uncalibratedBucket ?? pedidoCalibres.find((p) => p.calibre === contrib.calibre);
     totalKg += contrib.cantidad_kg;
     totalPrecio += (pc?.precio_max_kg ?? 0) * contrib.cantidad_kg;
   }
@@ -1237,7 +1240,14 @@ export class MatchingService {
         const match = await tx.match.findUnique({
           where: { id: matchId },
           include: {
-            lote: true,
+            lote: {
+              include: {
+                matches: {
+                  where: { estado: { in: CAPACITY_HOLDING_ESTADOS } },
+                  select: { id: true, calibresJson: true },
+                },
+              },
+            },
             pedido: {
               include: {
                 matches: {
@@ -1256,21 +1266,49 @@ export class MatchingService {
         }
 
         const loteCalibres = toLoteCalibre(match.lote.calibres);
+        const pedidoCalibres = toPedidoCalibre(match.pedido.calibresSolicitados);
+        const pedidoUncalibrated = isUncalibratedPedido(pedidoCalibres);
+        const buyerBucket = pedidoUncalibrated ? pedidoCalibres[0] : null;
+        const loteCommitted = sumCommittedPerCalibre(
+          (match.lote.matches ?? []).filter((lm) => lm.id !== matchId)
+        );
 
         for (const contrib of calibresContribucion) {
           const lc = loteCalibres.find((l) => l.calibre === contrib.calibre);
           if (!lc) {
             throw new AppError(`Calibre "${contrib.calibre}" no existe en el lote`, 400);
           }
-          if (contrib.cantidad_kg > lc.cantidad_kg) {
+          const loteDisponible = Math.max(0, lc.cantidad_kg - (loteCommitted.get(lc.calibre) ?? 0));
+          if (contrib.cantidad_kg > loteDisponible) {
             throw new AppError(
-              `Calibre "${contrib.calibre}": cantidad solicitada (${contrib.cantidad_kg} kg) supera la disponible (${lc.cantidad_kg} kg)`,
+              `Calibre "${contrib.calibre}": cantidad solicitada (${contrib.cantidad_kg} kg) supera la disponible (${loteDisponible} kg)`,
               400
             );
           }
+          if (pedidoUncalibrated) {
+            if (!buyerBucket) {
+              throw new AppError('Pedido sin calibrar inválido', 400);
+            }
+            if (lc.precio_min_kg > buyerBucket.precio_max_kg) {
+              throw new AppError(
+                `Calibre "${contrib.calibre}": precio mínimo (${lc.precio_min_kg} €/kg) supera el máximo del pedido (${buyerBucket.precio_max_kg} €/kg)`,
+                400
+              );
+            }
+          } else {
+            const pc = pedidoCalibres.find((p) => p.calibre === contrib.calibre);
+            if (!pc) {
+              throw new AppError(`Calibre "${contrib.calibre}" no está solicitado en el pedido`, 400);
+            }
+            if (lc.precio_min_kg > pc.precio_max_kg) {
+              throw new AppError(
+                `Calibre "${contrib.calibre}": precio mínimo (${lc.precio_min_kg} €/kg) supera el máximo del pedido (${pc.precio_max_kg} €/kg)`,
+                400
+              );
+            }
+          }
         }
 
-        const pedidoCalibres = toPedidoCalibre(match.pedido.calibresSolicitados);
         const totalPedidoKg = pedidoCalibres.reduce((s, c) => s + c.cantidad_kg, 0);
 
         const otrosCommittedKg = match.pedido.matches
