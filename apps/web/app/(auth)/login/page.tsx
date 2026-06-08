@@ -33,8 +33,20 @@ export default function LoginPage() {
   const t = useT();
 
   useEffect(() => {
-    if (bootstrapped && user) router.replace(dashboardPath(user.role));
+    if (!bootstrapped || !user) return;
+    const target = dashboardPath(user.role);
+    router.replace(target);
+    window.location.replace(target);
   }, [bootstrapped, router, user]);
+
+  if (bootstrapped && user) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-4">
+        <Logo variant="small" width={100} className="animate-pulse" />
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const loginSchema = z.object({
     email: z.string().email(t('auth.login.emailInvalid')),

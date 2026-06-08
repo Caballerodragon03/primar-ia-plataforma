@@ -16,8 +16,19 @@ export default function HomePage() {
   const { user, _bootstrapped } = useAuthStore();
 
   useEffect(() => {
-    if (_bootstrapped && user) router.replace(dashboardPath(user.role));
+    if (!_bootstrapped || !user) return;
+    const target = dashboardPath(user.role);
+    router.replace(target);
+    window.location.replace(target);
   }, [_bootstrapped, router, user]);
+
+  if (_bootstrapped && user) {
+    return (
+      <main className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center">
