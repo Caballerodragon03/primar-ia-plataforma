@@ -9,10 +9,12 @@ dist
 out
 build
 
-# Environment
+# Environment — ignoramos TODO .env* y luego permitimos solo el
+# template .env.example explícitamente. Con el patrón anterior un
+# .env.production o .env.staging accidental se habría subido.
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Database
 *.db
@@ -40,3 +42,31 @@ packages/database/prisma/migrations/*.sql
 
 # Generated
 packages/database/src/generated
+
+# Secrets — private keys, certificates, credentials
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+service-account*.json
+*-credentials.json
+
+# Test artifacts
+coverage
+playwright-report
+test-results
+*.lcov
+
+# Caches
+.eslintcache
+*.tsbuildinfo
+.cache
+.tmp
+tmp
+
+# macOS / Node misc
+*.pid
+*.seed
+*.pid.lock
