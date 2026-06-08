@@ -64,6 +64,15 @@ export function Step1({ onNext }: Step1Props) {
       />
 
       <Input
+        label={t('register.step1.confirmPassword')}
+        showPasswordToggle
+        autoComplete="new-password"
+        required
+        error={errors.confirmPassword?.message}
+        {...register('confirmPassword')}
+      />
+
+      <Input
         label={t('register.step1.phone')}
         type="tel"
         placeholder="+34 600 000 000"

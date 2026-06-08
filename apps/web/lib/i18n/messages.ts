@@ -555,6 +555,7 @@ export type MessageKey =
   | 'register.step1.emailPh'
   | 'register.step1.password'
   | 'register.step1.passwordHint'
+  | 'register.step1.confirmPassword'
   | 'register.step1.phone'
   | 'register.step1.language'
   | 'register.step1.continue'
@@ -2123,6 +2124,7 @@ export const messages: Record<Locale, Messages> = {
     'register.step1.emailPh': 'tu@empresa.com',
     'register.step1.password': 'Crear contraseña',
     'register.step1.passwordHint': 'Mínimo 12 caracteres',
+    'register.step1.confirmPassword': 'Confirmar contraseña',
     'register.step1.phone': 'Teléfono de contacto',
     'register.step1.language': 'Idioma preferido',
     'register.step1.continue': 'Continuar a datos fiscales',
@@ -3664,6 +3666,7 @@ export const messages: Record<Locale, Messages> = {
     'register.step1.emailPh': 'you@company.com',
     'register.step1.password': 'Create password',
     'register.step1.passwordHint': 'Minimum 12 characters',
+    'register.step1.confirmPassword': 'Confirm password',
     'register.step1.phone': 'Contact phone number',
     'register.step1.language': 'Preferred language',
     'register.step1.continue': 'Continue to business details',

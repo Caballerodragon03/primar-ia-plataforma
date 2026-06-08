@@ -17,10 +17,15 @@ import { LogoIcon } from '@/components/brand/LogoIcon';
 import { useT } from '@/lib/i18n/LocaleProvider';
 import type { RegisterFormData } from './types';
 
+// Phase 18 — confirmPassword se valida con un cross-field check en el
+// handler nextStep (no en el schema), para no romper step1Schema.merge
+// que usa ZodObject. La regla es: si password y confirmPassword se
+// rellenan ambos, deben coincidir.
 const step1Schema = z.object({
   role: z.enum(['VENDEDOR', 'COMPRADOR']),
   email: z.string().email('Email no válido'),
   password: z.string().min(12, 'Mínimo 12 caracteres'),
+  confirmPassword: z.string().min(1, 'Confirma tu contraseña'),
   telefono: z.string().optional(),
   idioma: z.enum(['ES', 'EN']).default('ES'),
 });
@@ -90,7 +95,7 @@ export default function RegisterPage() {
     mode: 'onBlur',
   });
 
-  const { handleSubmit, trigger, formState: { isSubmitting } } = methods;
+  const { handleSubmit, trigger, getValues, setError, clearErrors, formState: { isSubmitting } } = methods;
 
   const nextStep = async () => {
     const schema = STEP_SCHEMAS[currentStep - 1];
@@ -99,7 +104,19 @@ export default function RegisterPage() {
     const shape = (schema as any)._def?.shape?.() ?? {};
     const fields = Object.keys(shape) as (keyof RegisterFormData)[];
     const valid = await trigger(fields.length > 0 ? fields : undefined);
-    if (valid) setCurrentStep((s) => Math.min(s + 1, 4));
+    if (!valid) return;
+    // Phase 18 — cross-field check en Step 1: password === confirmPassword.
+    // Se hace aquí (no en el schema) para mantener step1Schema como
+    // ZodObject y poder hacer step1Schema.merge(step2Schema) abajo.
+    if (currentStep === 1) {
+      const { password, confirmPassword } = getValues();
+      if (password !== confirmPassword) {
+        setError('confirmPassword', { type: 'manual', message: 'Las contraseñas no coinciden' });
+        return;
+      }
+      clearErrors('confirmPassword');
+    }
+    setCurrentStep((s) => Math.min(s + 1, 4));
   };
 
   const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1));

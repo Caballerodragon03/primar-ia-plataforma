@@ -3,6 +3,7 @@ export interface RegisterFormData {
   role: 'VENDEDOR' | 'COMPRADOR';
   email: string;
   password: string;
+  confirmPassword: string;
   telefono?: string;
   idioma: 'ES' | 'EN';
   // Step 2
