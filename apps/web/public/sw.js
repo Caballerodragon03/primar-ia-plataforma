@@ -14,6 +14,26 @@
 
 const SW_VERSION = 'primaria-sw-v1';
 
+async function setBadgeCount(count) {
+  const normalized = Number.isFinite(Number(count)) ? Math.max(0, Math.floor(Number(count))) : null;
+  const attempts = [];
+  if (self.navigator && 'setAppBadge' in self.navigator) {
+    attempts.push(() => normalized === null
+      ? self.navigator.setAppBadge()
+      : self.navigator.setAppBadge(normalized));
+  }
+  if (self.registration && 'setAppBadge' in self.registration) {
+    attempts.push(() => normalized === null
+      ? self.registration.setAppBadge()
+      : self.registration.setAppBadge(normalized));
+  }
+  if (normalized === 0 && self.navigator && 'clearAppBadge' in self.navigator) {
+    attempts.push(() => self.navigator.clearAppBadge());
+  }
+
+  await Promise.allSettled(attempts.map((attempt) => attempt()));
+}
+
 self.addEventListener('install', (event) => {
   // skipWaiting → cuando hay una nueva versión del SW, se activa de
   // inmediato en vez de esperar a que se cierren todas las pestañas.
@@ -51,19 +71,7 @@ self.addEventListener('push', (event) => {
   };
   event.waitUntil(
     (async () => {
-      if ('setAppBadge' in self.navigator) {
-        try {
-          if (typeof data.badgeCount === 'number') {
-            if (data.badgeCount > 0) {
-              await self.navigator.setAppBadge(data.badgeCount);
-            } else if ('clearAppBadge' in self.navigator) {
-              await self.navigator.clearAppBadge();
-            }
-          } else {
-            await self.navigator.setAppBadge();
-          }
-        } catch { /* ignore */ }
-      }
+      await setBadgeCount(typeof data.badgeCount === 'number' ? data.badgeCount : null);
       await self.registration.showNotification(title, options);
     })(),
   );

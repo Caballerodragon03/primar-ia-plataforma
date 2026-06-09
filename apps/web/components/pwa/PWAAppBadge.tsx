@@ -21,6 +21,11 @@ type BadgeNavigator = Navigator & {
   clearAppBadge?: () => Promise<void>;
 };
 
+type BadgeNotification = typeof Notification & {
+  setAppBadge?: (contents?: number) => Promise<void>;
+  clearAppBadge?: () => Promise<void>;
+};
+
 const POLL_INTERVAL_MS = 30_000;
 
 function totalBadgeCount(summary: NotificationSummary): number {
@@ -40,12 +45,24 @@ function totalBadgeCount(summary: NotificationSummary): number {
 async function setPwaBadge(count: number): Promise<void> {
   if (typeof navigator === 'undefined') return;
   const badgeNavigator = navigator as BadgeNavigator;
+  const badgeNotification =
+    typeof Notification !== 'undefined' ? (Notification as BadgeNotification) : null;
+  const normalized = Math.max(0, Math.floor(Number(count) || 0));
   try {
-    if (count > 0 && badgeNavigator.setAppBadge) {
-      await badgeNavigator.setAppBadge(count);
-    } else if (count <= 0 && badgeNavigator.clearAppBadge) {
-      await badgeNavigator.clearAppBadge();
+    const attempts: Array<Promise<void>> = [];
+    if (badgeNavigator.setAppBadge) {
+      attempts.push(badgeNavigator.setAppBadge(normalized));
     }
+    if (badgeNotification?.setAppBadge) {
+      attempts.push(badgeNotification.setAppBadge(normalized));
+    }
+    if (normalized <= 0 && badgeNavigator.clearAppBadge) {
+      attempts.push(badgeNavigator.clearAppBadge());
+    }
+    if (normalized <= 0 && badgeNotification?.clearAppBadge) {
+      attempts.push(badgeNotification.clearAppBadge());
+    }
+    await Promise.allSettled(attempts);
   } catch {
     // iOS/desktop support varies. Badge failures must never affect the app.
   }
