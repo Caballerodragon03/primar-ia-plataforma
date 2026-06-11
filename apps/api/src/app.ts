@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import { prisma } from '@primaria/database';
 import { env } from './config/env.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { uploadRouter } from './modules/upload/upload.routes.js';
@@ -71,7 +72,6 @@ if (env.R2_ACCOUNT_ID === 'placeholder') {
 // Health check
 app.get('/health', async (_req, res) => {
   try {
-    const { prisma } = await import('@primaria/database');
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   } catch {

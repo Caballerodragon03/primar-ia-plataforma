@@ -1,17 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  BarChart,
-  Bar,
-} from 'recharts';
 import {
   TrendingUp,
   TrendingDown,
@@ -28,8 +18,9 @@ import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 import type { MessageKey } from '@/lib/i18n/messages';
 import { useFavoriteProducts } from '@/lib/hooks/useFavoriteProducts';
 
-const PRIMARY = '#E1C44D';
-const SECONDARY = '#0B2E33';
+const chartLoading = () => <div className="h-full w-full bg-muted animate-pulse rounded-input" />;
+const PriceLineChart = dynamic(() => import('@/components/charts/LazyCharts').then((m) => m.PriceLineChart), { ssr: false, loading: chartLoading });
+const CalibreBarChart = dynamic(() => import('@/components/charts/LazyCharts').then((m) => m.CalibreBarChart), { ssr: false, loading: chartLoading });
 
 interface PriceRow {
   productoId: string;
@@ -477,18 +468,7 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
           {t('market.detail.priceHistoryHeader')}
         </h3>
         <div className="h-56 bg-card rounded-input border border-border p-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-              <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v.toLocaleString(numLoc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} width={60} />
-              <Tooltip
-                formatter={(v: number) => [`${v.toLocaleString(numLoc, { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg`, t('market.tooltip.priceAvg')]}
-                contentStyle={{ fontSize: 12 }}
-              />
-              <Line type="monotone" dataKey="avgPrice" stroke={SECONDARY} strokeWidth={2} dot={{ r: 2 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <PriceLineChart data={chartData} numLoc={numLoc} tooltipLabel={t('market.tooltip.priceAvg')} />
         </div>
       </div>
 
@@ -500,21 +480,10 @@ function ProductDetailContent({ detail, productName }: { detail: ProductDetail; 
           </h3>
           <div className="grid md:grid-cols-2 gap-3">
             <div className="h-56 bg-card rounded-input border border-border p-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={detail.calibreBreakdown.map((c) => ({ ...c, calibre: c.calibre || t('market.detail.noCalibre') }))}
-                  margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="calibre" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`} width={60} />
-                  <Tooltip
-                    formatter={(v: number) => [`${v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} €/kg`, 'Precio medio']}
-                    contentStyle={{ fontSize: 12 }}
-                  />
-                  <Bar dataKey="avgPrice" fill={PRIMARY} />
-                </BarChart>
-              </ResponsiveContainer>
+              <CalibreBarChart
+                data={detail.calibreBreakdown.map((c) => ({ ...c, calibre: c.calibre || t('market.detail.noCalibre') }))}
+                tooltipLabel="Precio medio"
+              />
             </div>
             <div className="overflow-x-auto bg-card rounded-input border border-border">
               <table className="w-full text-sm">

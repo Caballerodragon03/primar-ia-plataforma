@@ -1,17 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from 'recharts';
+import dynamic from 'next/dynamic';
 import { type ColumnDef } from '@tanstack/react-table';
 import { KPICard } from '@/components/ui/KPICard';
 import { DataTable } from '@/components/ui/DataTable';
@@ -20,7 +10,10 @@ import { api } from '@/lib/api';
 import { useT, useLocale } from '@/lib/i18n/LocaleProvider';
 import { useMemo } from 'react';
 
-const PRIMARY = '#E1C44D';
+const chartLoading = () => <div className="h-[260px] bg-muted animate-pulse rounded-card" />;
+const VolumeAreaChart = dynamic(() => import('@/components/charts/LazyCharts').then((m) => m.VolumeAreaChart), { ssr: false, loading: chartLoading });
+const HorizontalBarChart = dynamic(() => import('@/components/charts/LazyCharts').then((m) => m.HorizontalBarChart), { ssr: false, loading: chartLoading });
+const CategoryBarChart = dynamic(() => import('@/components/charts/LazyCharts').then((m) => m.CategoryBarChart), { ssr: false, loading: chartLoading });
 
 type AnalyticsData = {
   totalVolumen: number;
@@ -133,24 +126,12 @@ export default function BuyerAnalyticsPage() {
           {t('analytics.volBuyerHeader')}
         </h2>
         {hasMatches ? (
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={data.volumeOverTime} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="buyerVolumeGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={PRIMARY} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={PRIMARY} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6B7280' }} />
-              <YAxis
-                tick={{ fontSize: 11, fill: '#6B7280' }}
-                tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-              />
-              <Tooltip formatter={(v: number) => [`${v.toLocaleString(numLoc)} kg`, t('analytics.tooltip.volume')]} />
-              <Area type="monotone" dataKey="kg" stroke={PRIMARY} strokeWidth={2} fill="url(#buyerVolumeGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          <VolumeAreaChart
+            data={data.volumeOverTime}
+            numLoc={numLoc}
+            tooltipLabel={t('analytics.tooltip.volume')}
+            gradientId="buyerVolumeGrad"
+          />
         ) : (
           <p className="text-xs text-text-muted text-center py-10">
             {t('analytics.noMatchedVolume')}
@@ -164,23 +145,14 @@ export default function BuyerAnalyticsPage() {
         <div className="bg-card rounded-card border border-border p-5">
           <h2 className="text-sm font-semibold text-foreground mb-4">{t('analytics.topProductsBuyer')}</h2>
           {data.topProducts.length > 0 ? (
-            <ResponsiveContainer width="100%" height={Math.max(140, data.topProducts.length * 44)}>
-              <BarChart
-                data={data.topProducts}
-                layout="vertical"
-                margin={{ top: 4, right: 20, left: 100, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" horizontal={false} />
-                <XAxis
-                  type="number"
-                  tick={{ fontSize: 11, fill: '#6B7280' }}
-                  tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-                />
-                <YAxis type="category" dataKey="product" tick={{ fontSize: 11, fill: '#6B7280' }} width={100} />
-                <Tooltip formatter={(v: number) => [`${v.toLocaleString(numLoc)} kg`, t('analytics.tooltip.volume')]} />
-                <Bar dataKey="kg" fill={PRIMARY} radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <HorizontalBarChart
+              data={data.topProducts}
+              categoryKey="product"
+              valueKey="kg"
+              numLoc={numLoc}
+              tooltipLabel={t('analytics.tooltip.volume')}
+              height={Math.max(140, data.topProducts.length * 44)}
+            />
           ) : (
             <p className="text-xs text-text-muted text-center py-8">{t('analytics.noProductData')}</p>
           )}
@@ -190,15 +162,13 @@ export default function BuyerAnalyticsPage() {
         <div className="bg-card rounded-card border border-border p-5">
           <h2 className="text-sm font-semibold text-foreground mb-4">{t('analytics.ordersByCategory')}</h2>
           {data.ordersByCategory.length > 0 ? (
-            <ResponsiveContainer width="100%" height={Math.max(140, data.ordersByCategory.length * 44)}>
-              <BarChart data={data.ordersByCategory} margin={{ top: 4, right: 8, left: 0, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="category" tick={{ fontSize: 10, fill: '#6B7280' }} angle={-20} textAnchor="end" />
-                <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} allowDecimals={false} />
-                <Tooltip formatter={(v: number) => [v, t('analytics.tooltip.orders')]} />
-                <Bar dataKey="orders" fill={PRIMARY} radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <CategoryBarChart
+              data={data.ordersByCategory}
+              categoryKey="category"
+              valueKey="orders"
+              tooltipLabel={t('analytics.tooltip.orders')}
+              height={Math.max(140, data.ordersByCategory.length * 44)}
+            />
           ) : (
             <p className="text-xs text-text-muted text-center py-8">{t('analytics.noCategoryData')}</p>
           )}
