@@ -74,7 +74,15 @@ export class LotsService {
       draft: 'BORRADOR',
     };
     const mappedEstado = tab && tab !== 'all' ? (estadoMap[tab.toLowerCase()] as LoteEstado | undefined) : undefined;
-    const where = { vendedorId, ...(mappedEstado ? { estado: mappedEstado } : {}) };
+    // Phase 19 — la pestaña "Todos" muestra solo lotes activos o en
+    // progreso (BORRADOR, ACTIVO, PARCIALMENTE_VENDIDO). Los terminales
+    // (CANCELADO, VENDIDO) viven en sus pestañas dedicadas.
+    const where = {
+      vendedorId,
+      ...(mappedEstado
+        ? { estado: mappedEstado }
+        : { estado: { notIn: ['CANCELADO', 'VENDIDO'] as LoteEstado[] } }),
+    };
 
     const lots = await prisma.lote.findMany({
       where,

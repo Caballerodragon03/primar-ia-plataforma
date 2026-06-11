@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Plus, TrendingUp, Clock, DollarSign, RefreshCw, PenLine, CreditCard, PackageCheck, AlarmClock, MessageCircle, Leaf, Star } from 'lucide-react';
+import { Plus, TrendingUp, Clock, DollarSign, RefreshCw, PenLine, PackageCheck, AlarmClock, MessageCircle, Leaf, Star } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { KPICard } from '@/components/ui/KPICard';
@@ -109,15 +109,10 @@ export default function BuyerDashboard() {
         : '/buyer/orders/tasks/contracts',
       color: 'amber',
     },
-    n && n.pendingOffers > 0 && {
-      icon: <CreditCard className="w-5 h-5" />,
-      label: pl(n.pendingOffers, 'dashboard.action.authorizePayment.one', 'dashboard.action.authorizePayment.many'),
-      desc: t('dashboard.action.authorizePayment.desc'),
-      href: n.pendingOffers === 1 && n.firstPendingOfferOrderId
-        ? `/buyer/orders/${n.firstPendingOfferOrderId}`
-        : '/buyer/orders/tasks/offers',
-      color: 'blue',
-    },
+    // Phase 19 — acción "pre-autorizar pago" (escrow legacy) retirada.
+    // Ya no es un paso del flujo: el comprador firma + paga la comisión
+    // en un solo step (cubierto por "firmar contrato"), sin
+    // pre-autorización en escrow.
     n && n.pendingDeliveries > 0 && {
       icon: <PackageCheck className="w-5 h-5" />,
       label: pl(n.pendingDeliveries, 'dashboard.action.confirmDelivery.one', 'dashboard.action.confirmDelivery.many'),

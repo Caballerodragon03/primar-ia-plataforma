@@ -19,6 +19,7 @@ import {
   FileText,
   QrCode,
   Download,
+  PenTool,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button, StatusBadge, CoverageBar } from '@/components/ui';
@@ -33,6 +34,9 @@ type Match = {
   cantidadKg: string;
   precioKg: string;
   estado: string;
+  // Phase 19 — estado del contrato para mostrar un botón "Firmar
+  // contrato" claro cuando le toca firmar al vendedor.
+  contratoEstado?: string | null;
   pedido: {
     id: string;
     comprador: {
@@ -346,12 +350,26 @@ export default function LotDetailPage() {
                           </Button>
                         </Link>
                       )}
+                      {/* Phase 19 — cuando le toca firmar al vendedor
+                          (BORRADOR / PENDIENTE_FIRMA_VENDEDOR) mostramos
+                          un botón claro con texto "Firmar contrato"
+                          (primario, igual de visible que el del
+                          comprador). En el resto de estados se mantiene
+                          el botón icon-only "Ver contrato". */}
                       {['ACEPTADO_VENDEDOR', 'PENDIENTE_PAGO', 'CONFIRMADO'].includes(m.estado) && (
-                        <Link href={`/seller/contracts/${m.id}`} title={t('lotDetail.action.viewContract')}>
-                          <Button variant="ghost" size="sm" className="!p-2" aria-label={t('lotDetail.action.viewContract')}>
-                            <FileText className="w-4 h-4" />
-                          </Button>
-                        </Link>
+                        (m.contratoEstado === 'BORRADOR' || m.contratoEstado === 'PENDIENTE_FIRMA_VENDEDOR') ? (
+                          <Link href={`/seller/contracts/${m.id}`} title={t('contract.sign.btn')}>
+                            <Button variant="primary" size="sm" className="flex items-center gap-1.5">
+                              <PenTool className="w-4 h-4" /> {t('contract.sign.btn')}
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Link href={`/seller/contracts/${m.id}`} title={t('lotDetail.action.viewContract')}>
+                            <Button variant="ghost" size="sm" className="!p-2" aria-label={t('lotDetail.action.viewContract')}>
+                              <FileText className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                        )
                       )}
       {/* Phase 14M v3.19 — botón QR/fotos retirado. Era del flujo legacy
                           v1 (escrow) donde el vendedor subía fotos del lote y

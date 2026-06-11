@@ -368,6 +368,18 @@ export function generateContractPdf(data: ContractData): Promise<Buffer> {
         'EL COMPRADOR dispondrá de cuarenta y ocho (48) horas hábiles desde la recepción para inspeccionar ' +
         'la mercancía y notificar al VENDEDOR cualquier discrepancia respecto a las calidades pactadas. ' +
         'Transcurrido dicho plazo sin reclamación, se entenderá que la mercancía ha sido aceptada plenamente.'],
+      ['Reserva de dominio',
+        'EL VENDEDOR conservará la propiedad de la mercancía hasta el completo pago del precio pactado en la ' +
+        'cláusula 2, sin perjuicio de que el riesgo se transmita conforme al incoterm acordado en la cláusula 3. ' +
+        'Hasta dicho pago íntegro, EL COMPRADOR se obliga a custodiar la mercancía con la diligencia debida y ' +
+        'no podrá pignorarla, gravarla ni transmitirla a terceros libre de cargas.'],
+      ['Interés de demora y costes de cobro',
+        'El retraso en el pago del precio por parte del COMPRADOR devengará automáticamente, y sin necesidad de ' +
+        'requerimiento previo, el interés de demora previsto en la Ley 3/2004, de 29 de diciembre, por la que se ' +
+        'establecen medidas de lucha contra la morosidad en las operaciones comerciales. EL VENDEDOR tendrá ' +
+        'asimismo derecho a reclamar la indemnización por costes de cobro prevista en dicha norma. Los plazos de ' +
+        'pago se entienden en todo caso sujetos a los límites establecidos en la Ley 12/2013, de 2 de agosto, ' +
+        'de medidas para mejorar el funcionamiento de la cadena alimentaria.'],
       ['Seguridad alimentaria',
         'EL VENDEDOR garantiza que la mercancía es apta para el consumo humano, ha sido producida y ' +
         'manipulada conforme a las normativas españolas y europeas de seguridad alimentaria vigentes en la ' +

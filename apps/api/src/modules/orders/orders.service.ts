@@ -78,12 +78,14 @@ export class OrdersService {
       closed: 'CERRADO',
     };
     const mappedEstado = tab && tab !== 'all' ? (estadoMap[tab.toLowerCase()] as PedidoEstado | undefined) : undefined;
-    // "All" excludes closed/archived orders — they live in the "Closed" tab only
+    // Phase 19 — la pestaña "Todos" muestra solo pedidos activos o en
+    // progreso. Los terminales (CERRADO, CANCELADO) viven en sus
+    // pestañas dedicadas y no contaminan la vista por defecto.
     const where = {
       compradorId,
       ...(mappedEstado
         ? { estado: mappedEstado }
-        : { estado: { not: 'CERRADO' as PedidoEstado } }),
+        : { estado: { notIn: ['CERRADO', 'CANCELADO'] as PedidoEstado[] } }),
     };
 
     const orders = await prisma.pedido.findMany({
