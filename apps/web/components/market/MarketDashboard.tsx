@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   TrendingUp,
   TrendingDown,
@@ -363,6 +364,8 @@ function ProductDetailLazy({
   days: number;
 }) {
   const t = useT();
+  const pathname = usePathname();
+  const subscriptionPath = pathname?.startsWith('/buyer') ? '/buyer/subscription' : '/seller/subscription';
   const [detail, setDetail] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
@@ -394,7 +397,7 @@ function ProductDetailLazy({
           {t('market.detail.lockedDesc')}
         </p>
         <Link
-          href="../subscription"
+          href={subscriptionPath}
           className="inline-block bg-primary text-foreground font-semibold px-4 py-1.5 rounded-button hover:opacity-90 transition-opacity text-xs"
         >
           {t('market.detail.viewPlans')}

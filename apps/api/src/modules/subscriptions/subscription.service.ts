@@ -40,7 +40,12 @@ export class SubscriptionService {
 
   async hasActiveSubscription(userId: string): Promise<boolean> {
     const sub = await prisma.suscripcion.findUnique({ where: { userId } });
-    return !!sub && (sub.estado === 'ACTIVA' || sub.estado === 'TRIAL') && !!sub.stripeSubscriptionId;
+    if (!sub) return false;
+    if (sub.estado !== 'ACTIVA' && sub.estado !== 'TRIAL') return false;
+    // Free plans (precio 0) don't grant premium feature access
+    const activePlan = sub.planVendedor ?? sub.planComprador ?? null;
+    const FREE_PLANS = ['COSECHA', 'MERCADO'];
+    return activePlan !== null && !FREE_PLANS.includes(activePlan);
   }
 
   // ─── Free-tier creation credits (token bucket) ───────────────────────────

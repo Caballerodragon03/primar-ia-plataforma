@@ -958,7 +958,7 @@ export class MatchingService {
   ): Promise<MatchWithScore[]> {
     const matches = await prisma.match.findMany({
       where: {
-        lote: { vendedorId, estado: { not: 'VENDIDO' } },
+        lote: { vendedorId, estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] } },
         pedido: { estado: { notIn: ['TOTALMENTE_CUBIERTO', 'CANCELADO', 'CERRADO'] } },
         visibleDesde: { lte: new Date() },
         ...(loteId ? { loteId } : {}),
@@ -1123,7 +1123,7 @@ export class MatchingService {
     const now = new Date();
     const hidden = await prisma.match.findMany({
       where: {
-        lote: { vendedorId, estado: { not: 'VENDIDO' } },
+        lote: { vendedorId, estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] } },
         pedido: { estado: { notIn: ['TOTALMENTE_CUBIERTO', 'CANCELADO', 'CERRADO'] } },
         visibleDesde: { gt: now },
       },
@@ -1261,6 +1261,9 @@ export class MatchingService {
 
         if (!match) throw new AppError('Match no encontrado', 404);
         if (match.lote.vendedorId !== vendedorId) throw new AppError('Acceso prohibido', 403);
+        if (!['ACTIVO', 'PARCIALMENTE_VENDIDO'].includes(match.lote.estado)) {
+          throw new AppError('El lote ya no está activo y no permite contribuciones', 400);
+        }
         if (!['PROPUESTO', 'ENVIADO_VENDEDOR'].includes(match.estado)) {
           throw new AppError('El match no está en un estado aceptable para contribuir', 400);
         }
@@ -1600,7 +1603,7 @@ export class MatchingService {
       // vendedor PUEDE actuar ahora mismo.
       prisma.match.count({
         where: {
-          lote: { vendedorId: userId, estado: { not: 'VENDIDO' } },
+          lote: { vendedorId: userId, estado: { in: ['ACTIVO', 'PARCIALMENTE_VENDIDO'] } },
           estado: { in: ['PROPUESTO', 'ENVIADO_VENDEDOR'] },
           visibleDesde: { lte: new Date() },
           pedido: { estado: { in: ['ACTIVO', 'PARCIALMENTE_CUBIERTO'] } },
